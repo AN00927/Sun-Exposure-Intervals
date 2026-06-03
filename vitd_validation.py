@@ -6,7 +6,9 @@ Validation and sanity check suite for vitd_model.
 Three categories:
 
 1. Sanity checks - basic numerical correctness
-   a. Decay half-life of D matches Schoenmakers (15 days)
+   a. Effective decay half-life of D is 30 days (plasma 15 d per
+      Schoenmakers 2015 + adipose buffering per Prentice 2017;
+      see vitd_model.py docstring for derivation)
    b. 1 SED bolus in untanned FST III produces 3-5 nmol/L rise (Webb 2018)
    c. Photoadaptation: synthesis at high M is meaningfully reduced vs baseline M
 

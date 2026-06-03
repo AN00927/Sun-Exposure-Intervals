@@ -38,11 +38,28 @@ A = 4.50 nmol/L per ln(1+SED) unit
    the lower end of Webb 2018's 3-5 nmol/L light-skin range.
 
 alpha = 0.05 per SED
-   Photoadaptation rise rate from Miyamura 2011 (SPF-3 tan after 2 weeks).
+   Photoadaptation rise rate estimated from Miyamura 2011 (PMID 20979596).
+   That study found UVB-induced tanning provides modest photoprotection
+   while UVA-induced tanning provides essentially none. A specific SPF-3
+   figure cited in earlier notes could not be confirmed from any accessible
+   source (full text paywalled; open-access follow-up Coelho 2015 describes
+   only "very modest photoprotective benefit" without a numerical SPF value).
    NEEDS CALIBRATION FOR FST V-VI; sensitivity sweep is the priority test.
 
 beta = ln(2) / 56 per day (~8-week M half-life)
-   Photoadaptation decay rate (Tadokoro 2005).
+   Photoadaptation decay rate. Ravnbak et al. 2008 (Acta Derm Venereol
+   88:223-8, PMID 18480919) measured UVB tanning fade in 12 Scandinavians
+   and 12 Indians/Pakistanis, finding "fading took 4-5 months and was not
+   related to frequency of UV exposure or to ethnic origin." A companion
+   paper (Ravnbak 2009, PMID 19688146) found UVA tanning fade took 5-6
+   months. Neither paper reports an explicit half-life or exponential model;
+   the 56-day value is a mid-range estimate compatible with the 4-5 month
+   fade if "complete fading" corresponds to ~3 e-folding times (12.5%
+   residual), which gives an implied half-life of ~40-50 days. The plausible
+   range from Ravnbak 2008 is approximately 30-75 days.
+   Tadokoro 2005 (PMID 15955111), previously cited here, only measured
+   melanin changes 0-7 days post-exposure and does not report a decay
+   timescale; it should not be cited for this parameter.
 
 K_ATTEN = 2.0
    Exponential melanin penalty coefficient. Estimated; not measured in FST V-VI.

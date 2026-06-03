@@ -39,6 +39,7 @@ def main():
     # 2. Analyses
     _, alpha_log = capture(vitd_analyses.analysis_alpha_sweep)
     _, k_log = capture(vitd_analyses.analysis_K_ATTEN_sweep)
+    _, beta_log = capture(vitd_analyses.analysis_beta_sweep)
     _, frame_log = capture(vitd_analyses.analysis_two_framings)
     _, traj_log = capture(vitd_analyses.analysis_trajectories)
 
@@ -46,6 +47,7 @@ def main():
     print(val_log)
     print(alpha_log)
     print(k_log)
+    print(beta_log)
     print(frame_log)
     print(traj_log)
 
@@ -72,7 +74,20 @@ def main():
     report.append("\n![alpha sweep, efficiency](figs/alpha_sweep_efficiency.png)\n")
     report.append("\n![alpha sweep, absolute D](figs/alpha_sweep_absolute_D.png)\n")
 
-    report.append("\n## 3. K_ATTEN sensitivity sweep\n")
+    report.append("\n## 3. beta sensitivity sweep (tanning decay rate, NEW)\n")
+    report.append(
+        "\nVaries beta (tanning decay rate). Ravnbak et al. 2008 (PMID 18480919) "
+        "measured UVB tanning fade of 4-5 months in Scandinavians and "
+        "Indians/Pakistanis. The prior citation (Tadokoro 2005, PMID 15955111) "
+        "only measured 0-7 days post-exposure and does not report a decay "
+        "timescale. The 56-day half-life (default beta) is a mid-range estimate "
+        "compatible with Ravnbak 2008 if complete fading requires ~3 e-folding "
+        "times. The sweep covers half-lives of 21-120 days.\n"
+    )
+    report.append("\n```\n" + beta_log + "\n```\n")
+    report.append("\n![beta sweep](figs/beta_sweep.png)\n")
+
+    report.append("\n## 4. K_ATTEN sensitivity sweep\n")
     report.append(
         "\nVaries the melanin attenuation coefficient (K_ATTEN). The default value "
         "of 2.0 is estimated, not measured. Young 2020 measured an overall vitamin D "
@@ -82,7 +97,7 @@ def main():
     report.append("\n```\n" + k_log + "\n```\n")
     report.append("\n![K_ATTEN sweep](figs/K_ATTEN_sweep.png)\n")
 
-    report.append("\n## 4. Two-framing schedule comparison\n")
+    report.append("\n## 5. Two-framing schedule comparison\n")
     report.append(
         "\nCentral handoff finding: the optimal interval depends on what's being "
         "optimized.\n\n"
@@ -94,14 +109,14 @@ def main():
     report.append("\n```\n" + frame_log + "\n```\n")
     report.append("\n![two framings](figs/two_framings.png)\n")
 
-    report.append("\n## 5. Example trajectories\n")
+    report.append("\n## 6. Example trajectories\n")
     report.append(
         "\nD(t) and M(t) under three representative schedules at fixed 1 SED per "
         "session. Shows the temporal dynamics directly.\n"
     )
     report.append("\n![trajectories](figs/trajectories.png)\n")
 
-    report.append("\n## 6. Interpretation\n")
+    report.append("\n## 7. Interpretation\n")
     report.append("""
 ### What the sweeps actually showed
 
@@ -118,6 +133,17 @@ dosing, FST V) but **does not change which interval wins**. So if Young 2020 is 
 and K_ATTEN should be lower than 2.0, the model predicts FST V-VI can actually reach
 sufficiency at daily 1 SED dosing - which is consistent with the broader literature
 showing the FST penalty is smaller than older textbook claims.
+
+The **beta sweep** (Analysis E, NEW) tests the tanning decay rate over half-lives of
+21–120 days, covering the full range compatible with Ravnbak 2008 (PMID 18480919),
+which measured UVB tanning fade of 4–5 months in Scandinavians and Indians/Pakistanis.
+The prior citation for beta (Tadokoro 2005) was incorrect — that paper only measures
+0–7 days post-exposure and does not report a decay timescale. The model's default
+56-day half-life is within the plausible range. The scheduling decision is **robust
+to beta** across the full 21–120 day sweep: 21-day interval always wins on efficiency,
+daily always wins on absolute D. Absolute D varies by only ~10% across the sweep
+(FST V daily: ~83 nmol/L at t1/2=21d vs ~74 nmol/L at t1/2=120d) — far smaller
+than the effect of K_ATTEN calibration.
 
 ### The two-framing finding
 

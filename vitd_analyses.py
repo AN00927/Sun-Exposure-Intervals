@@ -358,6 +358,110 @@ def analysis_two_framings():
 
 
 # ===========================================================================
+# Analysis E: beta sensitivity sweep (tanning decay rate)
+# ===========================================================================
+def analysis_beta_sweep():
+    """
+    Vary beta (photoadaptation decay rate) over the range compatible with
+    Ravnbak 2008 (PMID 18480919), which measured UVB tanning fade of 4-5
+    months in Scandinavians and Indians/Pakistanis.
+
+    If "complete fading" corresponds to ~3 e-folding times (12.5% residual),
+    the Ravnbak 2008 data implies a half-life of ~40-50 days. If ~4 e-folding
+    times (6% residual), ~30-37 days. The plausible range is ~30-75 days.
+    The sweep extends beyond this range to test robustness.
+
+    Analogous to analysis_alpha_sweep and analysis_K_ATTEN_sweep.
+    """
+    print("\n" + "=" * 70)
+    print("ANALYSIS E: beta sensitivity sweep (tanning decay rate)")
+    print("=" * 70)
+
+    half_lives_days = [21, 30, 56, 80, 120]
+    betas = [np.log(2) / t for t in half_lives_days]
+    fsts = [5, 6]
+    sed_per_session = 1.0
+
+    rows = []
+    for fst in fsts:
+        for hl, beta_val in zip(half_lives_days, betas):
+            for interval in INTERVALS_DAYS:
+                sched = build_pulse_schedule(PROTOCOL_DAYS, sed_per_session, interval)
+                r = simulate(fst=fst, schedule=sched,
+                             duration_days=PROTOCOL_DAYS,
+                             k_decay_M_override=beta_val)
+                rows.append({
+                    "FST": fst,
+                    "beta_halflife_days": hl,
+                    "beta": beta_val,
+                    "interval_days": interval,
+                    "cumulative_SED": r["cumulative_SED"],
+                    "steady_state_D": steady_state_D(r),
+                    "final_D": final_D(r),
+                    "final_M": mean_final_M(r),
+                    "efficiency_D_per_SED": efficiency_D_per_SED(r),
+                })
+    df = pd.DataFrame(rows)
+    df.to_csv(f"{TAB_DIR}/beta_sweep.csv", index=False)
+
+    fig, axes = plt.subplots(2, 2, figsize=(13, 9))
+    for col, fst in enumerate([5, 6]):
+        sub = df[df["FST"] == fst]
+        pe = sub.pivot(index="beta_halflife_days", columns="interval_days",
+                       values="efficiency_D_per_SED")
+        ax = axes[0, col]
+        im = ax.imshow(pe.values, aspect="auto", origin="lower", cmap="viridis")
+        ax.set_xticks(range(len(pe.columns))); ax.set_xticklabels(pe.columns)
+        ax.set_yticks(range(len(pe.index)))
+        ax.set_yticklabels([f"{t}d" for t in pe.index])
+        ax.set_xlabel("interval (days)"); ax.set_ylabel("beta half-life (days)")
+        ax.set_title(f"FST {fst}: efficiency D/SED")
+        for ri in range(len(pe.index)):
+            ax.plot(np.argmax(pe.iloc[ri].values), ri,
+                    "r*", markersize=14, markeredgecolor="white")
+        plt.colorbar(im, ax=ax)
+
+        pd_ = sub.pivot(index="beta_halflife_days", columns="interval_days",
+                        values="steady_state_D")
+        ax = axes[1, col]
+        im = ax.imshow(pd_.values, aspect="auto", origin="lower", cmap="magma")
+        ax.set_xticks(range(len(pd_.columns))); ax.set_xticklabels(pd_.columns)
+        ax.set_yticks(range(len(pd_.index)))
+        ax.set_yticklabels([f"{t}d" for t in pd_.index])
+        ax.set_xlabel("interval (days)"); ax.set_ylabel("beta half-life (days)")
+        ax.set_title(f"FST {fst}: steady-state D")
+        for ri in range(len(pd_.index)):
+            ax.plot(np.argmax(pd_.iloc[ri].values), ri,
+                    "r*", markersize=14, markeredgecolor="white")
+        plt.colorbar(im, ax=ax)
+
+    fig.suptitle(
+        "beta sensitivity: tanning decay half-life (Ravnbak 2008 plausible range: ~30-75 d)\n"
+        "Top: efficiency (D/SED).  Bottom: steady-state D.  Red star = optimal interval.",
+        fontsize=12
+    )
+    fig.tight_layout()
+    fig.savefig(f"{FIG_DIR}/beta_sweep.png", dpi=130)
+    plt.close(fig)
+
+    print("\nOptimal interval by beta half-life (efficiency framing, fixed 1 SED/session):")
+    for fst in fsts:
+        sub = df[df["FST"] == fst]
+        print(f"\nFST {fst}:")
+        for hl in half_lives_days:
+            sub2 = sub[sub["beta_halflife_days"] == hl]
+            best_eff = sub2.loc[sub2["efficiency_D_per_SED"].idxmax()]
+            best_D = sub2.loc[sub2["steady_state_D"].idxmax()]
+            print(f"  t1/2={hl:3d}d:  "
+                  f"opt-eff interval={int(best_eff['interval_days'])}d "
+                  f"(eff {best_eff['efficiency_D_per_SED']:.2f}); "
+                  f"opt-D interval={int(best_D['interval_days'])}d "
+                  f"(D {best_D['steady_state_D']:.1f})")
+
+    return df
+
+
+# ===========================================================================
 # Analysis D: trajectory plots for the best schedule under each framing
 # ===========================================================================
 def analysis_trajectories():
