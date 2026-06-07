@@ -17,8 +17,13 @@ Governing equations
 dD/dt = S(UV(t), M(t), F)  -  k_decay_D * D
 dM/dt = alpha * UV(t) * (M_max - M)  -  beta * (M - M_baseline(F))
 
-Synthesis function (Webb 2018 logarithmic dose-response, melanin-attenuated):
+Synthesis function (logarithmic dose-response per Webb 2021, melanin-attenuated):
     S(UV, M, F) = A * ln(1 + UV) * exp(-K_ATTEN * max(0, M - M_baseline(F)))
+# NOTE: This formula gives IDENTICAL synthesis for all FST types at baseline
+# (when M = M_baseline, exponent = 0). Young 2020 shows FST II synthesizes
+# ~1.35x more D than FST VI at baseline — a constitutive effect not yet
+# modeled here. Future revision: add exp(-K_const * M_baseline(F)) multiplier
+# with K_const ≈ 0.5 to capture this ~30-40% constitutive baseline spread.
 
 UV(t) is a pulse train delivered in standard erythemal doses (SED).
 
@@ -37,14 +42,17 @@ A = 4.50 nmol/L per ln(1+SED) unit
    Calibrated so that 1 SED in untanned FST III gives delta-D of 3.12 nmol/L,
    the lower end of Webb 2018's 3-5 nmol/L light-skin range.
 
-alpha = 0.05 per SED
-   Photoadaptation rise rate estimated from Miyamura 2011 (PMID 20979596).
-   That study found UVB-induced tanning provides modest photoprotection
-   while UVA-induced tanning provides essentially none. A specific SPF-3
-   figure cited in earlier notes could not be confirmed from any accessible
-   source (full text paywalled; open-access follow-up Coelho 2015 describes
-   only "very modest photoprotective benefit" without a numerical SPF value).
-   NEEDS CALIBRATION FOR FST V-VI; sensitivity sweep is the priority test.
+alpha = 0.0025 per SED
+   Photoadaptation rise rate calibrated from de Boer et al. 2025
+   (J Invest Dermatol 145:2304-2312; PMID 39956428). Protocol: 0.8 SED
+   x 3x/week x 9 weeks (21.6 SED total) in 31 subjects FP I-VI.
+   Melanin index rose +15% in FP I-III and +9% in FP IV-VI. Solving
+   the ODE steady-state equation for M_ss gives alpha ~ 0.0025/SED for
+   lighter phototypes (FP I-III) and ~0.002/SED for darker (FP IV-VI).
+   Prior estimate of 0.05 from Miyamura 2011 was 20x too high; the
+   Miyamura 2011 SPF figure was never confirmed from the full text.
+   NOTE: de Boer 2025 shows vitamin D rose significantly only in FP I-III
+   (p=0.023), not in FP IV-VI (p=0.495), at this sub-melanogenic dose.
 
 beta = ln(2) / 56 per day (~8-week M half-life)
    Photoadaptation decay rate. Ravnbak et al. 2008 (Acta Derm Venereol
@@ -62,14 +70,40 @@ beta = ln(2) / 56 per day (~8-week M half-life)
    timescale; it should not be cited for this parameter.
 
 K_ATTEN = 2.0
-   Exponential melanin penalty coefficient. Estimated; not measured in FST V-VI.
-   Young 2020 measured overall vitamin D inhibition factor of only 1.3-1.4x
-   between FST II and FST VI, implying K_ATTEN may be substantially LOWER
-   than 2.0. Sensitivity sweep is the priority test.
+   Exponential melanin penalty coefficient for ADDITIONAL attenuation from
+   tanning above M_baseline. This parameter governs the tanning-induced
+   reduction in synthesis, not the constitutive baseline melanin effect.
+   Young et al. 2020 (PMID 31883961) measured 1.3-1.4x inhibition between
+   FST II and FST VI at baseline — this is a CONSTITUTIVE effect not captured
+   by K_ATTEN (which only activates when M > M_baseline). FST III-VI showed
+   NO significant slope differences (p>0.517), and only FST II was steeper.
+   The constitutive baseline effect is NOT yet incorporated in this model
+   (see open problem below). K_ATTEN at 2.0 is approximately consistent with
+   Matsuoka 1990 tanning attenuation at higher summer-sun UV doses, though
+   the validation protocol may need updating with corrected alpha.
+   OPEN PROBLEM: With alpha=0.0025, the Matsuoka 1990 validation (4-week
+   preconditioning at 0.75 SED every 2 days) produces only ~9% M excess,
+   giving attenuation ratio ~0.91. Matsuoka's observed ratio was 0.51.
+   This gap indicates either K_ATTEN should be higher (~4-6 for real summer
+   tanning) or the validation protocol needs updating to match Matsuoka's
+   actual exposure conditions. For now, K_ATTEN=2.0 is retained pending
+   Matsuoka full-text access and protocol reconstruction.
 
 M_baseline by Fitzpatrick: 0.10 (I), 0.20 (II), 0.30 (III),
                            0.45 (IV), 0.65 (V), 0.80 (VI)
-   Datta 2019-style reflectance baseline.
+   FLAG: These values are researcher estimates on a 0-1 scale roughly
+   consistent with the Derma-Spectrophotometer MI values used by the
+   Copenhagen/Bispebjerg group (Datta 2019, de Boer 2025, Ravnbak 2008).
+   Approximate mapping: M ≈ MI/100, where MI=29 ↔ M=0.29 (FST III) and
+   MI=32-35 ↔ M=0.32-0.35 (mostly FST IV subjects). The M=0.65/0.80 values
+   for FST V/VI were NOT confirmed in Datta 2019 full text (paywalled) and
+   may be overestimated — de Boer 2025 showed FP IV-VI subjects had baseline
+   MI~31.8 (M~0.32), though that group was mostly FP IV (n=13) vs FP V (n=3)
+   and FP VI (n=2). Direct measurement needed.
+   NOTE: Young 2020 shows FST III-VI synthesize similar D per SED at baseline
+   (no significant slope difference, p>0.517). Only FST II is significantly
+   higher. The constitutive baseline melanin reduction (K_const ≈ 0.5,
+   accounting for 1.3-1.4x FST II vs VI inhibition) is not yet in this model.
 
 Author: Ahaan
 Last updated: 2026
@@ -85,7 +119,7 @@ from typing import Dict, List, Tuple
 class ModelParams:
     k_decay_D: float = np.log(2) / 30.0
     A: float = 4.50
-    alpha: float = 0.05
+    alpha: float = 0.0025
     beta: float = np.log(2) / 56.0
     M_max: float = 0.95
     K_ATTEN: float = 2.0

@@ -98,6 +98,14 @@ def validate_matsuoka_1990(verbose=True):
 
     Implementation: compare synthesis_per_session at M_baseline vs at
     a tanned state representative of a multi-week pretanning regimen.
+
+   NOTE (June 2026): With the corrected alpha=0.0025/SED, this protocol
+   (0.75 SED every 2 days for 4 weeks, total ~10.5 SED) produces M_excess
+   ≈ 0.046 and synthesis ratio ≈ 0.91 — which FAILS the <0.70 threshold.
+   Matsuoka's observed ratio was ~0.51, achieved with genuine summer tans
+   from higher UV doses than this protocol. The validation protocol should
+   be updated to match Matsuoka's actual conditions once the full text is
+   accessed. Currently flagged as a known inconsistency.
     """
     p = ModelParams()
     fst = 3
