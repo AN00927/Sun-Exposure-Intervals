@@ -117,15 +117,17 @@ from typing import Dict, List, Tuple
 
 @dataclass
 class ModelParams:
-    k_decay_D: float = np.log(2) / 30.0
-    A: float = 4.50
+    k_decay_D: float = np.log(2) / 80.0
+    A: float = 1.6875
     alpha: float = 0.0025
+    alpha_max: float = 0.02
+    UV_threshold: float = 2.0
     beta: float = np.log(2) / 56.0
     M_max: float = 0.95
     K_ATTEN: float = 2.0
     D0_default: float = 25.0
     M_baseline_by_FST: Dict[int, float] = field(default_factory=lambda: {
-        1: 0.10, 2: 0.20, 3: 0.30, 4: 0.45, 5: 0.65, 6: 0.80,
+        1: 0.10, 2: 0.20, 3: 0.30, 4: 0.38, 5: 0.46, 6: 0.60,
     })
 
     def M_baseline(self, fst: int) -> float:
@@ -188,10 +190,6 @@ def simulate(fst: int,
     pulse_days = [p[0] for p in schedule]
     pulse_seds = [p[1] for p in schedule]
 
-    def deriv(t, y):
-        D, M = y
-        return [-params.k_decay_D * D, -beta_eff * (M - M_base)]
-
     t_record, D_record, M_record = [0.0], [D], [M]
     synthesis_log = []
     cumulative_SED = 0.0
@@ -205,13 +203,19 @@ def simulate(fst: int,
         end_t = min(next_t, duration_days)
 
         if end_t > current_t:
-            sol = solve_ivp(deriv, (current_t, end_t), [D, M],
-                            rtol=1e-7, atol=1e-10, max_step=0.5)
-            for ti, Di, Mi in zip(sol.t[1:], sol.y[0][1:], sol.y[1][1:]):
+            dt = 0.5
+            t_steps = np.arange(current_t + dt, end_t, dt)
+            if len(t_steps) == 0 or t_steps[-1] < end_t:
+                t_steps = np.append(t_steps, end_t)
+            for ti in t_steps:
+                delta_time = ti - current_t
+                Di = D * np.exp(-params.k_decay_D * delta_time)
+                Mi = M_base + (M - M_base) * np.exp(-beta_eff * delta_time)
                 t_record.append(ti)
                 D_record.append(Di)
                 M_record.append(Mi)
-            D, M = sol.y[0][-1], sol.y[1][-1]
+            D = D * np.exp(-params.k_decay_D * (end_t - current_t))
+            M = M_base + (M - M_base) * np.exp(-beta_eff * (end_t - current_t))
             current_t = end_t
 
         if (pulse_idx < len(pulse_days)
@@ -220,7 +224,11 @@ def simulate(fst: int,
             delta_D = synthesis_per_session(sed, M, M_base, params,
                                             K_ATTEN_override=K_eff)
             D = D + delta_D
-            M = M + alpha_eff * sed * (params.M_max - M)
+            if alpha_override is not None:
+                alpha_p = alpha_override
+            else:
+                alpha_p = params.alpha + (params.alpha_max - params.alpha) * (sed**2 / (sed**2 + params.UV_threshold**2))
+            M = params.M_max - (params.M_max - M) * np.exp(-alpha_p * sed)
             cumulative_SED += sed
             synthesis_log.append((current_t, sed, delta_D, M))
 
