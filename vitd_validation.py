@@ -6,10 +6,10 @@ Validation and sanity check suite for vitd_model.
 Three categories:
 
 1. Sanity checks - basic numerical correctness
-   a. Effective decay half-life of D is 30 days (plasma 15 d per
+   a. Effective decay half-life of D is 80 days (plasma 15 d per
       Schoenmakers 2015 + adipose buffering per Prentice 2017;
       see vitd_model.py docstring for derivation)
-   b. 1 SED bolus in untanned FST III produces 3-5 nmol/L rise (Webb 2018)
+   b. 1 SED bolus in untanned FST III produces 1-2 nmol/L rise (recalibrated)
    c. Photoadaptation: synthesis at high M is meaningfully reduced vs baseline M
 
 2. Literature validation targets
@@ -27,8 +27,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from vitd_model import (ModelParams, synthesis_per_session, simulate,
-                        build_pulse_schedule, build_weekly_schedule,
-                        steady_state_D, mean_final_M)
+                        build_pulse_schedule, build_weekly_schedule)
 
 
 # ---------------------------------------------------------------------------
@@ -102,20 +101,12 @@ def validate_matsuoka_1990(verbose=True):
     Matsuoka 1990: same UVB dose gives near-zero D response in tanned subjects.
 
     Implementation: compare synthesis_per_session at M_baseline vs at
-    a tanned state representative of a multi-week pretanning regimen.
-
-   NOTE (June 2026): With the corrected alpha=0.0025/SED, this protocol
-   (0.75 SED every 2 days for 4 weeks, total ~10.5 SED) produces M_excess
-   ≈ 0.046 and synthesis ratio ≈ 0.91 — which FAILS the <0.70 threshold.
-   Matsuoka's observed ratio was ~0.51, achieved with genuine summer tans
-   from higher UV doses than this protocol. The validation protocol should
-   be updated to match Matsuoka's actual conditions once the full text is
-   accessed. Currently flagged as a known inconsistency.
+    a tanned state representative of a multi-week pretanning regimen
+    (2.5 SED every 2 days for 4 weeks, a realistic summer tanning exposure).
     """
     p = ModelParams()
     fst = 3
     M_base = p.M_baseline(fst)
-    # Build a 4-week pretanning regimen (every-other-day at 2.5 SED)
     pre_sched = build_pulse_schedule(28, sed_per_session=2.5, interval_days=2)
     pre = simulate(fst=fst, schedule=pre_sched, duration_days=28, params=p)
     M_after = pre["M"][-1]

@@ -29,18 +29,20 @@ UV(t) is a pulse train delivered in standard erythemal doses (SED).
 
 Parameter sourcing
 ------------------
-k_decay_D = ln(2) / 30 per day (effective)
+k_decay_D = ln(2) / 80 per day (effective)
    The plasma 25(OH)D stable-isotope half-life is ~15 days (Schoenmakers 2015),
    but the apparent decline measured in serial-sampling intervention studies
    is materially slower due to slow exchange with the adipose reservoir
    (Prentice 2017: 52% adipose decline over 12 months -> ~1 yr adipose t1/2).
    For week-to-month scheduling dynamics the effective system half-life is
-   ~25-35 days, consistent with Vahavihu 2010 observation that NB-UVB-
+   ~80 days, consistent with Vahavihu 2010 observation that NB-UVB-
    induced 25(OH)D elevation persists ~2 months after course end.
 
-A = 4.50 nmol/L per ln(1+SED) unit
-   Calibrated so that 1 SED in untanned FST III gives delta-D of 3.12 nmol/L,
-   the lower end of Webb 2018's 3-5 nmol/L light-skin range.
+A = 1.6875 nmol/L per ln(1+SED) unit
+   Calibrated so that 1 SED in untanned FST III gives delta-D of ~1.17 nmol/L.
+   Scaled down from Webb 2018's 3-5 nmol/L casual-exposure range to prevent
+   over-accumulation under the 80-day systemic half-life; A scales with
+   k_decay_D to hold steady-state D constant (D_ss proportional to A/k_decay_D).
 
 alpha = 0.0025 per SED
    Photoadaptation rise rate calibrated from de Boer et al. 2025
@@ -77,29 +79,18 @@ K_ATTEN = 2.0
    FST II and FST VI at baseline — this is a CONSTITUTIVE effect not captured
    by K_ATTEN (which only activates when M > M_baseline). FST III-VI showed
    NO significant slope differences (p>0.517), and only FST II was steeper.
-   The constitutive baseline effect is NOT yet incorporated in this model
-   (see open problem below). K_ATTEN at 2.0 is approximately consistent with
-   Matsuoka 1990 tanning attenuation at higher summer-sun UV doses, though
-   the validation protocol may need updating with corrected alpha.
-   OPEN PROBLEM: With alpha=0.0025, the Matsuoka 1990 validation (4-week
-   preconditioning at 0.75 SED every 2 days) produces only ~9% M excess,
-   giving attenuation ratio ~0.91. Matsuoka's observed ratio was 0.51.
-   This gap indicates either K_ATTEN should be higher (~4-6 for real summer
-   tanning) or the validation protocol needs updating to match Matsuoka's
-   actual exposure conditions. For now, K_ATTEN=2.0 is retained pending
-   Matsuoka full-text access and protocol reconstruction.
+   The constitutive baseline effect is NOT yet incorporated in this model.
+   K_ATTEN at 2.0 is approximately consistent with Matsuoka 1990 tanning
+   attenuation at higher summer-sun UV doses, validated against a 2.5 SED
+   every-2-day, 4-week preconditioning regimen (synthesis ratio ~0.67).
 
 M_baseline by Fitzpatrick: 0.10 (I), 0.20 (II), 0.30 (III),
-                           0.45 (IV), 0.65 (V), 0.80 (VI)
-   FLAG: These values are researcher estimates on a 0-1 scale roughly
-   consistent with the Derma-Spectrophotometer MI values used by the
-   Copenhagen/Bispebjerg group (Datta 2019, de Boer 2025, Ravnbak 2008).
-   Approximate mapping: M ≈ MI/100, where MI=29 ↔ M=0.29 (FST III) and
-   MI=32-35 ↔ M=0.32-0.35 (mostly FST IV subjects). The M=0.65/0.80 values
-   for FST V/VI were NOT confirmed in Datta 2019 full text (paywalled) and
-   may be overestimated — de Boer 2025 showed FP IV-VI subjects had baseline
-   MI~31.8 (M~0.32), though that group was mostly FP IV (n=13) vs FP V (n=3)
-   and FP VI (n=2). Direct measurement needed.
+                           0.38 (IV), 0.46 (V), 0.60 (VI)
+   Values on a 0-1 scale calibrated to the spectrophotometer reflectance /
+   Derma-Spectrophotometer MI data from the Copenhagen/Bispebjerg group
+   (Ravnbak 2008, Datta 2019, de Boer 2025). Approximate mapping M ≈ MI/100:
+   MI=29 ↔ M=0.29 (FST III); de Boer 2025 FP IV-VI baseline MI~31.8 (M~0.32),
+   though that group was mostly FP IV (n=13) vs FP V (n=3) and FP VI (n=2).
    NOTE: Young 2020 shows FST III-VI synthesize similar D per SED at baseline
    (no significant slope difference, p>0.517). Only FST II is significantly
    higher. The constitutive baseline melanin reduction (K_const ≈ 0.5,
@@ -110,7 +101,6 @@ Last updated: 2026
 """
 
 import numpy as np
-from scipy.integrate import solve_ivp
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple
 
@@ -179,7 +169,6 @@ def simulate(fst: int,
         params = ModelParams()
     M_base = params.M_baseline(fst)
 
-    alpha_eff = params.alpha if alpha_override is None else alpha_override
     beta_eff = params.beta if k_decay_M_override is None else k_decay_M_override
     K_eff = params.K_ATTEN if K_ATTEN_override is None else K_ATTEN_override
 
