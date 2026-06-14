@@ -43,13 +43,20 @@ python3 run_all.py
 
 - Effective serum 25(OH)D decay half-life is now 80 days:
   `k_decay_D = ln(2) / 80 ≈ 0.00866 day^-1`, reflecting systemic tissue and
-  adipose buffering rather than plasma-only decay.
-- The synthesis coefficient is recalibrated to `A = 1.6875`, preserving the
-  prior steady-state level under baseline conditions after the longer D
-  half-life (`D_ss ∝ A / k_decay_D`).
+  adipose buffering rather than plasma-only decay. Datta 2017 is the direct
+  post-UVB citation to verify for this value.
+- The synthesis coefficient is recalibrated to `A = 2.112`, preserving the
+  prior ~1.17 nmol/L rise from 1 SED in untanned FST III after adding the
+  constitutive baseline factor (`D_ss ∝ A / k_decay_D` no longer the only
+  calibration constraint).
+- `K_const = 0.75` adds a constitutive baseline synthesis penalty using
+  `exp(-K_const * M_baseline(F))`.
 - Baseline melanin by Fitzpatrick type is now `1:0.10, 2:0.20, 3:0.30,
-  4:0.38, 5:0.46, 6:0.60`, matching spectrophotometer reflectance data from
-  Ravnbak 2008 / Datta 2019.
+  4:0.38, 5:0.65, 6:0.80`, matching the updated Datta 2019-style reflectance
+  mapping.
+- Photoadaptation rise rates are FST-stratified from de Boer 2025:
+  `alpha_by_FST = 0.0025` for FP I-III and `0.002` for FP IV-VI, with
+  `alpha = 0.0025` retained as the fallback default.
 - The Matsuoka 1990 tanned-state validation uses a 2.5 SED preconditioning
   protocol every 2 days for 4 weeks, representing a realistic summer tanning
   exposure rather than the prior 0.75 SED protocol.
@@ -72,14 +79,14 @@ remain robust across melanin decay half-lives of 21-120 days. Beta changes
 absolute D modestly, but not interval ranking.
 
 **K_ATTEN sweep**: Same robustness. K_ATTEN moves the magnitude of
-steady-state D from ~27 to ~110 nmol/L across K = 8.0 to 0.2 under daily
+steady-state D from ~47.5 to ~60.5 nmol/L across K = 8.0 to 0.2 under daily
 dosing, but does not change interval ranking. Calibrating K_ATTEN
 accurately matters for absolute-level predictions, not for scheduling
 conclusions.
 
 **Two-framing finding**: Under matched per-session dose (1 SED/session),
-- shortest interval (daily) wins absolute D (FST V: ~67, FST VI: ~69 nmol/L)
-- longest interval (every 21 days) wins efficiency (~1.16 vs ~1.00-1.05 nmol/L per SED)
+- shortest interval (daily) wins absolute D (FST V: ~57, FST VI: ~54 nmol/L)
+- longest interval (every 21 days) wins efficiency (~0.90 vs ~0.82 nmol/L per SED)
 
 This is the central finding for clinical relevance: UV is the constrained
 resource (skin cancer risk), so the efficiency framing matters. But
@@ -94,10 +101,11 @@ Trade-off, not optimum.
 2. NB-UVB vs broadband UV conversion. The model is calibrated to broadband
    per Webb 2018, so direct comparison to phototherapy studies (Bogh,
    Karppinen) underpredicts in absolute terms.
-3. Baseline-dependent dose-response. Webb 2018 notes the response is
-   steepest at low starting D. The model doesn't yet incorporate this.
-4. Constitutive FST effects. The current attenuation term only applies to
-   tanning above baseline melanin; it does not yet model the smaller
-   constitutive baseline synthesis difference between light and dark skin.
+3. Baseline-dependent dose-response. Bogh 2010 confirms synthesis per SED is
+   inversely correlated with baseline D. The model doesn't yet incorporate this.
+4. SC thickening state variable. de Boer 2025 reports +34% SC thickening as an
+   independent UV attenuation channel, but the model still only tracks melanin.
+5. Datta 2017 verification. The full text should confirm that the 80-day
+   effective half-life is post-UVB, not post-supplement washout.
 
 See `RESULTS.md` for full interpretation.
