@@ -10,11 +10,11 @@ Three categories:
       Schoenmakers 2015 + adipose buffering per Prentice 2017;
       see vitd_model.py docstring for derivation)
    b. 1 SED bolus in untanned FST III produces ~1.17 nmol/L rise
-      (recalibrated to A=2.112 with K_const=0.75)
+      (recalibrated to A=2.353 with K_const=0.50, and D=25.0)
    c. Photoadaptation: synthesis at high M is meaningfully reduced vs baseline M
 
 2. Literature validation targets
-   a. Matsuoka 1990 - same UVB dose gives near-zero response in tanned skin
+   a. Matsuoka 1990 - same UVB dose gives reduced response in tanned skin
    b. Bogh 2012 - NB-UVB 3x/week for 6 weeks should produce large rise in
       light-skinned subjects (19.2 -> 75 nmol/L, delta ~56)
    c. Farrar 2013 - FST V at realistic exposures cannot reach 50 nmol/L
@@ -28,7 +28,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from vitd_model import (ModelParams, synthesis_per_session, simulate,
-                        build_pulse_schedule, build_weekly_schedule)
+                         build_pulse_schedule, build_weekly_schedule)
 
 
 # ---------------------------------------------------------------------------
@@ -57,21 +57,19 @@ def sanity_decay_halflife(verbose=True):
 
 def sanity_single_bolus_FST_III(verbose=True):
     """
-    1 SED bolus in untanned FST III should produce ~1.17 nmol/L rise.
-    A=2.112 and K_const=0.75 were recalibrated together so the FST III
-    constitutive factor is preserved: delta-D = A * ln(2) * exp(-0.75 * 0.30).
-    Note: This is scaled down from Webb 2018's 3-5 nmol/L casual-exposure range
-    to prevent over-accumulation in multi-week simulations when using the longer,
-    more realistic 80-day systemic half-life (Prentice 2017).
+    1 SED bolus in untanned FST III should produce ~1.17 nmol/L rise starting from baseline D=25.0, SC=0.0.
+    A=2.353 and K_const=0.50 were recalibrated together so that the baseline FST III
+    constitutive factor and feedback factor at D=25.0 are preserved:
+    delta-D = A * ln(2) * exp(-0.50 * 0.30) * (1 - 25.0/150.0).
     """
     p = ModelParams()
     fst = 3
     M_base = p.M_baseline(fst)
-    delta = synthesis_per_session(1.0, M_base, M_base, p)
+    delta = synthesis_per_session(1.0, M_base, M_base, D=25.0, SC=0.0, params=p)
     passed = 1.0 <= delta <= 1.3
     if verbose:
         print(f"[Sanity 2] Single bolus, FST III, untanned")
-        print(f"  delta-D = {delta:.2f} nmol/L  (target range 1.0 - 1.3, A=2.112 K_const=0.75)")
+        print(f"  delta-D = {delta:.2f} nmol/L  (target range 1.0 - 1.3, A=2.353 K_const=0.50)")
         print(f"  {'PASS' if passed else 'FAIL'}")
     return passed
 
@@ -84,8 +82,8 @@ def sanity_photoadaptation_reduction(verbose=True):
     p = ModelParams()
     fst = 3
     M_base = p.M_baseline(fst)
-    d_untanned = synthesis_per_session(1.0, M_base, M_base, p)
-    d_tanned = synthesis_per_session(1.0, 0.70, M_base, p)
+    d_untanned = synthesis_per_session(1.0, M_base, M_base, D=25.0, SC=0.0, params=p)
+    d_tanned = synthesis_per_session(1.0, 0.70, M_base, D=25.0, SC=0.0, params=p)
     reduction = 1.0 - d_tanned / d_untanned
     passed = 0.4 <= reduction <= 0.75
     if verbose:
@@ -101,11 +99,12 @@ def sanity_photoadaptation_reduction(verbose=True):
 # ---------------------------------------------------------------------------
 def validate_matsuoka_1990(verbose=True):
     """
-    Matsuoka 1990: same UVB dose gives near-zero D response in tanned subjects.
+    Matsuoka 1990: same UVB dose gives reduced D response in tanned subjects.
 
     Implementation: compare synthesis_per_session at M_baseline vs at
     a tanned state representative of a multi-week pretanning regimen
     (2.5 SED every 2 days for 4 weeks, a realistic summer tanning exposure).
+    Both melanin index and stratum corneum are updated.
     """
     p = ModelParams()
     fst = 3
@@ -113,15 +112,16 @@ def validate_matsuoka_1990(verbose=True):
     pre_sched = build_pulse_schedule(28, sed_per_session=2.5, interval_days=2)
     pre = simulate(fst=fst, schedule=pre_sched, duration_days=28, params=p)
     M_after = pre["M"][-1]
+    SC_after = pre["SC"][-1]
     # Untanned response
-    d_untanned = synthesis_per_session(1.0, M_base, M_base, p)
-    # Tanned response, using M_after
-    d_tanned = synthesis_per_session(1.0, M_after, M_base, p)
+    d_untanned = synthesis_per_session(1.0, M_base, M_base, D=25.0, SC=0.0, params=p)
+    # Tanned response, using M_after and SC_after
+    d_tanned = synthesis_per_session(1.0, M_after, M_base, D=25.0, SC=SC_after, params=p)
     ratio = d_tanned / d_untanned
     passed = ratio < 0.70   # tanned response materially attenuated
     if verbose:
         print(f"[Lit 1] Matsuoka 1990 - tanned synthesis attenuation")
-        print(f"  After 4 wks pretan: M = {M_after:.3f}  (baseline {M_base:.2f})")
+        print(f"  After 4 wks pretan: M = {M_after:.3f}  SC = {SC_after:.3f}  (baseline M={M_base:.2f}, SC=0.0)")
         print(f"  untanned delta-D = {d_untanned:.2f},  tanned delta-D = {d_tanned:.2f}")
         print(f"  ratio = {ratio:.2f}  (expect well below 1.0, target <0.70)")
         print(f"  {'PASS' if passed else 'FAIL'}")
@@ -133,28 +133,23 @@ def validate_bogh_2012(verbose=True):
     Bogh 2012: full-body NB-UVB 3x/week for 6 weeks (18 sessions) in
     light-skinned Danish adults raised mean 25(OH)D from 19.2 to 75.0 nmol/L.
 
-    Caveat for the model: NB-UVB at 311 nm is ~2x more vitamin-D-effective per
-    SED than broadband UV because it sits near the previtamin D action-spectrum
-    peak while contributing less to erythema. The model's synthesis coefficient
-    A is calibrated to broadband-UV-equivalent SED (per Webb 2018), so direct
-    comparison to NB-UVB studies underestimates absolute D rise.
-
+    Bogh 2012 used NB-UVB at 311 nm which is ~2.5x more vitamin-D-effective per
+    SED than broadband UV. We pass E_source_override = 2.5 to simulate this.
+    
     Test acceptance: model produces a clear net rise (delta > 5 nmol/L)
-    matching the qualitative outcome. Absolute calibration to Bogh's 56 nmol/L
-    delta would require either NB-UVB conversion or baseline-dependent
-    dose-response (Webb 2018 notes the response is steepest at low baseline D).
+    matching the qualitative outcome.
     """
     p = ModelParams()
     sched = build_weekly_schedule(42, 1.0, [0, 2, 4])
-    result = simulate(fst=3, schedule=sched, duration_days=42, params=p, D0=19.2)
+    result = simulate(fst=3, schedule=sched, duration_days=42, params=p, D0=19.2, E_source_override=2.5)
     D_final = result["D"][-1]
     delta = D_final - 19.2
     passed = delta > 5.0
     if verbose:
-        print(f"[Lit 2] Bogh 2012 (qualitative)")
-        print(f"  Protocol: 1 SED 3x/week x 6 weeks, FST III, baseline 19.2")
+        print(f"[Lit 2] Bogh 2012 (qualitative with NB-UVB)")
+        print(f"  Protocol: 1 SED 3x/week x 6 weeks, FST III, baseline 19.2, E_source=2.5")
         print(f"  Model D_final = {D_final:.1f} nmol/L (delta = +{delta:.1f})")
-        print(f"  Study observed: delta +55.8 (NB-UVB; ~2x more D/SED than broadband)")
+        print(f"  Study observed: delta +55.8 (NB-UVB)")
         print(f"  Acceptance: net rise > 5 nmol/L = qualitative match")
         print(f"  {'PASS' if passed else 'FAIL'}")
     return passed
@@ -162,13 +157,10 @@ def validate_bogh_2012(verbose=True):
 
 def validate_farrar_2013(verbose=True):
     """
-    Farrar 2013: FST V South Asians in Manchester,     6 weeks of repeated
+    Farrar 2013: FST V South Asians in Manchester, 6 weeks of repeated
     suberythemal UVB at 1.3 SED 3x/week (17 sessions, ~22 SED cumulative)
     only reached mean 25(OH)D of ~40 nmol/L from baseline ~30.
-    Note: model uses broadband-UV SED (Webb 2018), so absolute D is higher than
-    NB-UVB-based studies (Bogh 2012, Farrar 2013). With Datta 2019 M_baseline
-    (FST V = 0.65), expect D_final ~66 nmol/L;
-    threshold set to 68 to accommodate model spread.
+    With K_const = 0.50, feedback, and SC thickening, we expect D_final < 68.0.
     """
     p = ModelParams()
     fst = 5
@@ -183,7 +175,7 @@ def validate_farrar_2013(verbose=True):
     if verbose:
         print(f"[Lit 3] Farrar 2013 - FST V, 1.3 SED 3x/week x 6 weeks, baseline 30")
         print(f"  D_final = {D_final:.1f} nmol/L")
-        print(f"  expect < 68 (Farrar ~40; model broadband ~66)")
+        print(f"  expect < 68 (Farrar ~40; model broadband <68)")
         print(f"  {'PASS' if passed else 'FAIL'}")
     return passed
 

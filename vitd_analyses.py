@@ -462,36 +462,44 @@ def analysis_beta_sweep():
 
 
 # ===========================================================================
+# ===========================================================================
 # Analysis D: trajectory plots for the best schedule under each framing
 # ===========================================================================
 def analysis_trajectories():
     """
-    Show D(t), M(t) trajectories for selected schedules at FST V and VI,
+    Show D(t), M(t), SC(t) trajectories for selected schedules at FST V and VI,
     so the temporal dynamics are visually obvious.
     """
     print("\n" + "=" * 70)
     print("ANALYSIS D: example trajectories")
     print("=" * 70)
     intervals_to_plot = [2, 7, 14]
-    fig, axes = plt.subplots(2, 2, figsize=(13, 8), sharex=True)
+    fig, axes = plt.subplots(3, 2, figsize=(13, 11), sharex=True)
     for col, fst in enumerate([5, 6]):
         ax_D = axes[0, col]
         ax_M = axes[1, col]
+        ax_SC = axes[2, col]
         for iv in intervals_to_plot:
             sched = build_pulse_schedule(PROTOCOL_DAYS, 1.0, iv)
             r = simulate(fst=fst, schedule=sched, duration_days=PROTOCOL_DAYS)
             ax_D.plot(r["t"], r["D"], label=f"every {iv} days")
             ax_M.plot(r["t"], r["M"], label=f"every {iv} days")
+            ax_SC.plot(r["t"], r["SC"], label=f"every {iv} days")
         ax_D.axhline(50, color="gray", linestyle=":", alpha=0.5,
                      label="50 nmol/L sufficiency")
         ax_D.set_ylabel("25(OH)D (nmol/L)")
-        ax_D.set_title(f"FST {fst}")
+        ax_D.set_title(f"FST {['I','II','III','IV','V','VI'][fst-1]}")
         ax_D.legend(loc="best", fontsize=9)
         ax_D.grid(alpha=0.3)
+        
         ax_M.set_ylabel("effective melanin index M")
-        ax_M.set_xlabel("day")
         ax_M.legend(loc="best", fontsize=9)
         ax_M.grid(alpha=0.3)
+        
+        ax_SC.set_ylabel("stratum corneum SC")
+        ax_SC.set_xlabel("day")
+        ax_SC.legend(loc="best", fontsize=9)
+        ax_SC.grid(alpha=0.3)
     fig.suptitle("Trajectories at fixed 1 SED/session, three schedule densities",
                  fontsize=13)
     fig.tight_layout()

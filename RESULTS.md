@@ -15,7 +15,7 @@ VALIDATION SUITE
   PASS
 
 [Sanity 2] Single bolus, FST III, untanned
-  delta-D = 1.17 nmol/L  (target range 1.0 - 1.3, A=2.112 K_const=0.75)
+  delta-D = 1.17 nmol/L  (target range 1.0 - 1.3, A=2.353 K_const=0.50)
   PASS
 
 [Sanity 3] Photoadaptation reduction (FST III, M 0.30 -> 0.70)
@@ -24,21 +24,21 @@ VALIDATION SUITE
   PASS
 
 [Lit 1] Matsuoka 1990 - tanned synthesis attenuation
-  After 4 wks pretan: M = 0.503  (baseline 0.30)
-  untanned delta-D = 1.17,  tanned delta-D = 0.78
-  ratio = 0.67  (expect well below 1.0, target <0.70)
+  After 4 wks pretan: M = 0.503  SC = 0.057  (baseline M=0.30, SC=0.0)
+  untanned delta-D = 1.17,  tanned delta-D = 0.74
+  ratio = 0.63  (expect well below 1.0, target <0.70)
   PASS
 
-[Lit 2] Bogh 2012 (qualitative)
-  Protocol: 1 SED 3x/week x 6 weeks, FST III, baseline 19.2
-  Model D_final = 29.8 nmol/L (delta = +10.6)
-  Study observed: delta +55.8 (NB-UVB; ~2x more D/SED than broadband)
+[Lit 2] Bogh 2012 (qualitative with NB-UVB)
+  Protocol: 1 SED 3x/week x 6 weeks, FST III, baseline 19.2, E_source=2.5
+  Model D_final = 50.0 nmol/L (delta = +30.8)
+  Study observed: delta +55.8 (NB-UVB)
   Acceptance: net rise > 5 nmol/L = qualitative match
   PASS
 
 [Lit 3] Farrar 2013 - FST V, 1.3 SED 3x/week x 6 weeks, baseline 30
-  D_final = 36.3 nmol/L
-  expect < 68 (Farrar ~40; model broadband ~66)
+  D_final = 36.6 nmol/L
+  expect < 68 (Farrar ~40; model broadband <68)
   PASS
 
 ======================================================================
@@ -60,20 +60,20 @@ ANALYSIS A: alpha sensitivity sweep
 Optimal interval by alpha (efficiency framing, fixed 1 SED/session):
 
 FST 5:
-  alpha=0.010:  optimal interval = 21d (efficiency 0.89, ss D 16.1)
-  alpha=0.025:  optimal interval = 21d (efficiency 0.89, ss D 16.0)
-  alpha=0.050:  optimal interval = 21d (efficiency 0.87, ss D 16.0)
-  alpha=0.100:  optimal interval = 21d (efficiency 0.85, ss D 15.9)
-  alpha=0.200:  optimal interval = 21d (efficiency 0.82, ss D 15.8)
-  alpha=0.400:  optimal interval = 21d (efficiency 0.77, ss D 15.7)
+  alpha=0.010:  optimal interval = 21d (efficiency 1.01, ss D 16.4)
+  alpha=0.025:  optimal interval = 21d (efficiency 1.00, ss D 16.4)
+  alpha=0.050:  optimal interval = 21d (efficiency 0.99, ss D 16.3)
+  alpha=0.100:  optimal interval = 21d (efficiency 0.96, ss D 16.2)
+  alpha=0.200:  optimal interval = 21d (efficiency 0.92, ss D 16.1)
+  alpha=0.400:  optimal interval = 21d (efficiency 0.87, ss D 16.0)
 
 FST 6:
-  alpha=0.010:  optimal interval = 21d (efficiency 0.80, ss D 15.8)
-  alpha=0.025:  optimal interval = 21d (efficiency 0.80, ss D 15.8)
-  alpha=0.050:  optimal interval = 21d (efficiency 0.79, ss D 15.8)
-  alpha=0.100:  optimal interval = 21d (efficiency 0.78, ss D 15.8)
-  alpha=0.200:  optimal interval = 21d (efficiency 0.77, ss D 15.7)
-  alpha=0.400:  optimal interval = 21d (efficiency 0.74, ss D 15.6)
+  alpha=0.010:  optimal interval = 21d (efficiency 0.94, ss D 16.2)
+  alpha=0.025:  optimal interval = 21d (efficiency 0.94, ss D 16.2)
+  alpha=0.050:  optimal interval = 21d (efficiency 0.93, ss D 16.2)
+  alpha=0.100:  optimal interval = 21d (efficiency 0.92, ss D 16.1)
+  alpha=0.200:  optimal interval = 21d (efficiency 0.90, ss D 16.1)
+  alpha=0.400:  optimal interval = 21d (efficiency 0.87, ss D 16.0)
 
 ```
 
@@ -94,18 +94,18 @@ ANALYSIS E: beta sensitivity sweep (tanning decay rate)
 Optimal interval by beta half-life (efficiency framing, fixed 1 SED/session):
 
 FST 5:
-  t1/2= 21d:  opt-eff interval=21d (eff 0.90); opt-D interval=1d (D 58.2)
-  t1/2= 30d:  opt-eff interval=21d (eff 0.90); opt-D interval=1d (D 57.7)
-  t1/2= 56d:  opt-eff interval=21d (eff 0.90); opt-D interval=1d (D 57.0)
-  t1/2= 80d:  opt-eff interval=21d (eff 0.90); opt-D interval=1d (D 56.7)
-  t1/2=120d:  opt-eff interval=21d (eff 0.90); opt-D interval=1d (D 56.5)
+  t1/2= 21d:  opt-eff interval=21d (eff 1.01); opt-D interval=1d (D 54.3)
+  t1/2= 30d:  opt-eff interval=21d (eff 1.01); opt-D interval=1d (D 54.1)
+  t1/2= 56d:  opt-eff interval=21d (eff 1.01); opt-D interval=1d (D 53.9)
+  t1/2= 80d:  opt-eff interval=21d (eff 1.01); opt-D interval=1d (D 53.8)
+  t1/2=120d:  opt-eff interval=21d (eff 1.01); opt-D interval=1d (D 53.7)
 
 FST 6:
-  t1/2= 21d:  opt-eff interval=21d (eff 0.80); opt-D interval=1d (D 54.6)
-  t1/2= 30d:  opt-eff interval=21d (eff 0.80); opt-D interval=1d (D 54.4)
-  t1/2= 56d:  opt-eff interval=21d (eff 0.80); opt-D interval=1d (D 54.1)
-  t1/2= 80d:  opt-eff interval=21d (eff 0.80); opt-D interval=1d (D 54.0)
-  t1/2=120d:  opt-eff interval=21d (eff 0.80); opt-D interval=1d (D 53.8)
+  t1/2= 21d:  opt-eff interval=21d (eff 0.94); opt-D interval=1d (D 52.3)
+  t1/2= 30d:  opt-eff interval=21d (eff 0.94); opt-D interval=1d (D 52.3)
+  t1/2= 56d:  opt-eff interval=21d (eff 0.94); opt-D interval=1d (D 52.2)
+  t1/2= 80d:  opt-eff interval=21d (eff 0.94); opt-D interval=1d (D 52.1)
+  t1/2=120d:  opt-eff interval=21d (eff 0.94); opt-D interval=1d (D 52.1)
 
 ```
 
@@ -124,20 +124,20 @@ ANALYSIS B: K_ATTEN sensitivity sweep
 Optimal interval by K_ATTEN (efficiency framing):
 
 FST 5:
-  K=0.2:  opt-eff interval=21d (eff 0.90); opt-D interval=1d (D 60.5)
-  K=0.5:  opt-eff interval=21d (eff 0.90); opt-D interval=1d (D 59.9)
-  K=1.0:  opt-eff interval=21d (eff 0.90); opt-D interval=1d (D 58.9)
-  K=2.0:  opt-eff interval=21d (eff 0.90); opt-D interval=1d (D 57.0)
-  K=4.0:  opt-eff interval=21d (eff 0.89); opt-D interval=1d (D 53.5)
-  K=8.0:  opt-eff interval=21d (eff 0.89); opt-D interval=1d (D 47.5)
+  K=0.2:  opt-eff interval=21d (eff 1.02); opt-D interval=1d (D 55.0)
+  K=0.5:  opt-eff interval=21d (eff 1.01); opt-D interval=1d (D 54.8)
+  K=1.0:  opt-eff interval=21d (eff 1.01); opt-D interval=1d (D 54.5)
+  K=2.0:  opt-eff interval=21d (eff 1.01); opt-D interval=1d (D 53.9)
+  K=4.0:  opt-eff interval=21d (eff 1.01); opt-D interval=1d (D 52.7)
+  K=8.0:  opt-eff interval=21d (eff 1.01); opt-D interval=1d (D 50.4)
 
 FST 6:
-  K=0.2:  opt-eff interval=21d (eff 0.80); opt-D interval=1d (D 55.7)
-  K=0.5:  opt-eff interval=21d (eff 0.80); opt-D interval=1d (D 55.4)
-  K=1.0:  opt-eff interval=21d (eff 0.80); opt-D interval=1d (D 55.0)
-  K=2.0:  opt-eff interval=21d (eff 0.80); opt-D interval=1d (D 54.1)
-  K=4.0:  opt-eff interval=21d (eff 0.80); opt-D interval=1d (D 52.4)
-  K=8.0:  opt-eff interval=21d (eff 0.80); opt-D interval=1d (D 49.3)
+  K=0.2:  opt-eff interval=21d (eff 0.94); opt-D interval=1d (D 52.7)
+  K=0.5:  opt-eff interval=21d (eff 0.94); opt-D interval=1d (D 52.6)
+  K=1.0:  opt-eff interval=21d (eff 0.94); opt-D interval=1d (D 52.4)
+  K=2.0:  opt-eff interval=21d (eff 0.94); opt-D interval=1d (D 52.2)
+  K=4.0:  opt-eff interval=21d (eff 0.94); opt-D interval=1d (D 51.6)
+  K=8.0:  opt-eff interval=21d (eff 0.94); opt-D interval=1d (D 50.5)
 
 ```
 
@@ -158,41 +158,41 @@ ANALYSIS C: two-framing schedule comparison
 
 Framing 1 (matched cumulative SED = 42):
  FST  interval_days  sed_per_session  n_sessions  cumulative_SED  steady_state_D  final_D  final_M  efficiency
-   5              1             0.50          84           42.00           40.60    42.42     0.67        1.02
-   5              2             1.00          42           42.00           36.36    37.35     0.69        0.86
-   5              3             1.50          28           42.00           33.36    33.76     0.70        0.74
-   5              5             2.47          17           42.00           29.48    29.37     0.73        0.60
-   5              7             3.50          12           42.00           27.25    26.43     0.74        0.50
-   5             10             4.67           9           42.00           24.81    24.65     0.74        0.43
-   5             14             7.00           6           42.00           23.31    21.66     0.75        0.35
-   5             21            10.50           4           42.00           21.30    19.43     0.76        0.27
-   6              1             0.50          84           42.00           38.05    39.59     0.81        0.93
-   6              2             1.00          42           42.00           34.41    35.24     0.82        0.78
-   6              3             1.50          28           42.00           31.85    32.17     0.83        0.68
-   6              5             2.47          17           42.00           28.46    28.34     0.84        0.56
-   6              7             3.50          12           42.00           26.46    25.67     0.84        0.47
-   6             10             4.67           9           42.00           24.16    24.00     0.85        0.41
-   6             14             7.00           6           42.00           22.78    21.17     0.85        0.33
-   6             21            10.50           4           42.00           20.85    19.01     0.85        0.26
+   5              1             0.50          84           42.00           40.34    41.73     0.66        1.01
+   5              2             1.00          42           42.00           37.01    37.87     0.67        0.88
+   5              3             1.50          28           42.00           34.58    35.02     0.67        0.79
+   5              5             2.47          17           42.00           31.14    31.22     0.67        0.66
+   5              7             3.50          12           42.00           28.93    28.27     0.68        0.56
+   5             10             4.67           9           42.00           26.30    26.41     0.69        0.49
+   5             14             7.00           6           42.00           24.55    22.92     0.71        0.39
+   5             21            10.50           4           42.00           22.22    20.32     0.73        0.31
+   6              1             0.50          84           42.00           38.84    40.13     0.81        0.95
+   6              2             1.00          42           42.00           35.69    36.47     0.81        0.83
+   6              3             1.50          28           42.00           33.42    33.79     0.81        0.74
+   6              5             2.47          17           42.00           30.22    30.25     0.81        0.62
+   6              7             3.50          12           42.00           28.20    27.53     0.81        0.54
+   6             10             4.67           9           42.00           25.74    25.83     0.82        0.47
+   6             14             7.00           6           42.00           24.18    22.58     0.83        0.38
+   6             21            10.50           4           42.00           21.96    20.10     0.84        0.30
 
 Framing 2 (matched 1 SED per session):
  FST  interval_days  sed_per_session  n_sessions  cumulative_SED  steady_state_D  final_D  final_M  efficiency
-   5              1             1.00          84           84.00           57.02    60.58     0.72        0.82
-   5              2             1.00          42           42.00           36.36    37.35     0.69        0.86
-   5              3             1.00          28           28.00           29.10    29.13     0.67        0.87
-   5              5             1.00          17           17.00           23.15    22.53     0.67        0.88
-   5              7             1.00          12           12.00           20.55    19.40     0.66        0.89
-   5             10             1.00           9            9.00           18.57    17.68     0.66        0.89
-   5             14             1.00           6            6.00           17.26    15.66     0.66        0.89
-   5             21             1.00           4            4.00           16.07    14.39     0.65        0.90
-   6              1             1.00          84           84.00           54.09    57.55     0.83        0.77
-   6              2             1.00          42           42.00           34.41    35.24     0.82        0.78
-   6              3             1.00          28           28.00           27.67    27.58     0.81        0.79
-   6              5             1.00          17           17.00           22.21    21.52     0.81        0.80
-   6              7             1.00          12           12.00           19.86    18.67     0.81        0.80
-   6             10             1.00           9            9.00           18.07    17.11     0.80        0.80
-   6             14             1.00           6            6.00           16.89    15.28     0.80        0.80
-   6             21             1.00           4            4.00           15.82    14.15     0.80        0.80
+   5              1             1.00          84           84.00           53.89    56.13     0.68        0.76
+   5              2             1.00          42           42.00           37.01    37.87     0.67        0.88
+   5              3             1.00          28           28.00           30.13    30.23     0.66        0.93
+   5              5             1.00          17           17.00           24.09    23.59     0.66        0.97
+   5              7             1.00          12           12.00           21.33    20.26     0.65        0.99
+   5             10             1.00           9            9.00           19.18    18.42     0.65        1.00
+   5             14             1.00           6            6.00           17.73    16.14     0.65        1.01
+   5             21             1.00           4            4.00           16.39    14.71     0.65        1.01
+   6              1             1.00          84           84.00           52.15    54.38     0.81        0.73
+   6              2             1.00          42           42.00           35.69    36.47     0.81        0.83
+   6              3             1.00          28           28.00           29.12    29.14     0.81        0.87
+   6              5             1.00          17           17.00           23.41    22.85     0.80        0.91
+   6              7             1.00          12           12.00           20.81    19.71     0.80        0.92
+   6             10             1.00           9            9.00           18.80    17.98     0.80        0.93
+   6             14             1.00           6            6.00           17.44    15.85     0.80        0.94
+   6             21             1.00           4            4.00           16.20    14.53     0.80        0.94
 
 ```
 
