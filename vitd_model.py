@@ -26,6 +26,28 @@ Synthesis function (logarithmic dose-response, melanin and SC-attenuated, feedba
                          exp(-K_ATTEN * max(0, M - M_baseline(F))) *
                          exp(-K_SC * SC) * E_source * max(0, 1 - D / D_max)
 
+Parameter & Source Sourcing
+---------------------------
+- k_decay_D = ln(2) / 80 per day:
+    Effective systemic decay rate including adipose buffering. Supported by
+    Prentice 2017 (PMID: 28738961) and post-UVB cycles in Datta 2017 (DOI: 10.1039/c6pp00258g).
+- A = 2.353:
+    Synthesis scaling factor calibrated to preserve a 1.17 nmol/L rise for a 1 SED
+    dose in untanned FST III at baseline D=25.0, SC=0.0.
+- K_const = 0.50:
+    Baseline (constitutive) inhibition coefficient. Calibrated to match the 1.3-1.4x
+    synthesis ratio between FST II and VI reported by Young 2020 (PMID: 31883961).
+- D_max = 150.0 nmol/L:
+    Homeostatic feedback regulation saturation ceiling, based on Bogh 2010 (PMID: 19798069).
+- UV_threshold_by_FST = {I-III: 2.0, IV: 5.0, V: 8.0, VI: 10.0}:
+    Fitzpatrick-stratified minimal melanogenesis thresholds, based on Ravnbak 2008 (PMID: 18480919).
+- Stratum Corneum (SC) Thickening:
+    Decay k_decay_SC (28-day half-life), rise alpha_SC = 0.005, and ceiling SC_max = 0.50.
+    Calibrated to represent the +34% thickness rise observed in de Boer 2025 (PMID: 39956428).
+- E_source:
+    Spectral efficiency coefficient (1.0 default for broadband/solar simulator;
+    2.5 for Narrowband UVB 311 nm clinical phototherapy per Bogh 2012, PMID: 22524297).
+
 Author: Ahaan
 Last updated: 2026
 """
