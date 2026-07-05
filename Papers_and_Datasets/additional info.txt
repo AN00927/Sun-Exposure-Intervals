@@ -1,0 +1,478 @@
+
+Source Acquisition Report for Vitamin D UV-Scheduling Mechanistic Model
+Executive Summary
+This report identifies and evaluates primary literature, datasets, and official documentation relevant to resolving open evidence gaps in a mechanistic model of serum 25(OH)D response to repeated UV exposure. Several gaps can be substantially constrained using newly compiled or clarified sources (notably NHANES assay harmonization and baseline-dependent UV dose–response), while others remain only partially resolved due to limited subject-level data or missing Fitzpatrick-stratified parameters.[^1][^2][^3][^4]
+
+Key outcomes:
+
+Gap 2 (Young 2020 supplementary data): Direct JID publisher supplements for the melanin–vitamin D study remain elusive, but the related Young 2021 PNAS action-spectrum trial provides an open-access PDF with detailed protocol and regression information; however, it does not expose subject-level FST II–VI vitamin D data for Arimed B vs TL01, so the specific response ratios must still be taken from paper-level summaries rather than raw spreadsheets.[^5][^1]
+
+Gap 3 (NHANES assay harmonization & RIDEXMON): CDC’s official Analytical Note and NHANES codebooks clearly define LC–MS/MS-standardized variables (LBDVIDMS, LBXVIDMS), the regression equations used to harmonize 1988–1994 and 2001–2006 RIA data, and the encoding of exam season RIDEXMON; this gap can be considered resolved for assay comparability and season coding, with explicit recommendations on using LC–MS/MS-equivalent data and phlebotomy weights.[^2][^6][^3]
+
+Gap 4 (stratum corneum thickening): de Boer 2025 and classic repeated UVB/UVA studies demonstrate significant SC and epidermal thickening after repeated low-dose UVR, but detailed time-course parameters and Fitzpatrick-stratified SC kinetics remain sparse; the gap can be partially parameterized with before/after percent changes and approximate decay behavior.[^7][^8]
+
+Gap 5 (spectral calibration: NB-UVB vs broadband vs solar): Young 2021 PNAS (revised vitamin D action spectrum) and clinical phototherapy/sunbed trials provide quantitative comparisons across spectra and sources, enabling approximate conversion factors in vitamin D–weighted dose space; however, a fully general source-specific conversion matrix with tight uncertainty bounds remains only partly supported.[^9][^10][^11][^12]
+
+Gap 6 (baseline-dependent vitamin D response): Bogh’s randomized trials and related baseline analyses quantify the negative dependence of Δ25(OH)D on baseline status and positive dependence on UVB dose and BSA, with formal regression models; together with vernal UV trials and dose–response reviews, this gap is now well constrained for lighter phototypes, though data remain limited for FST V–VI.[^13][^14][^4][^15]
+
+Gap 7 (FST VI / dark-skin repeated broadband or sunlight schedules): Fractional MED solar-simulated UVR studies and South Asian simulated sunlight trials provide repeated-exposure data in darker or highly pigmented populations, but long-run naturalistic sunlight schedules in FST VI under broadband conditions are still scarce; this gap can be partially validated using these proxies, but remains not fully resolved.[^16][^17][^18]
+
+Overall, the most robustly addressed gaps are NHANES harmonization (3) and baseline-dependent dose–response (6); spectral calibration (5) is moderately constrained; Young 2020 granular supplementary data (2), SC thickening calibration (4), and dark-skin repeated broadband scheduling (7) remain only partially resolved.
+
+Source Table
+Gap ID	Source/citation	Link	Full text available?	Data type	Key variables/numbers found	Confidence
+Gap ID	Source/citation	Link	Full text available?	Data type	Key variables/numbers found	Confidence
+2	Young AR et al., J Invest Dermatol 2020, "Melanin has a Small Inhibitory Effect on Cutaneous Vitamin D Synthesis"	https://pubmed.ncbi.nlm.nih.gov/31883961/	Abstract/full-text via publisher; supplements not clearly exposed	Paper	FST II–VI, solar-simulated UVR and NB-UVB doses, 85% BSA, regression slopes and melanin inhibition factors (~1.3–1.4 between FST II and VI)	High for paper-level parameters; Low for subject-level trial spreadsheet access
+2/5	Young AR et al., PNAS 2021, "A revised action spectrum for vitamin D synthesis by suberythemal UV radiation exposure in humans in vivo"	https://www.pnas.org/doi/pdf/10.1073/pnas.2015867118	Yes (open-access PDF)	Paper + embedded data tables	Full/partial-body UVR sources (UV6, Arimed B, PUVA, solar filters), SED doses, BSA, regression models, vitamin D–weighted dose (D3EE); blue-shifted action spectrum (~5 nm)	High
+3	CDC/NCHS, "Analytical Note for 25-Hydroxyvitamin D Data Analysis" (NHANES III, 2001–2006, 2007–2010)	https://wwwn.cdc.gov/nchs/nhanes/vitamind/analyticalnote.aspx	Yes	Official analytic note	LC–MS/MS standardization, regression equations converting DiaSorin RIA to LC–MS/MS-equivalent LBDVIDMS; recommended use of LC–MS/MS-equivalent data across cycles	High
+3	NHANES 2013–2014 Demographics Variable List (DEMO_H)	https://www.ars.usda.gov/ARSUserFiles/80400530/pdf/1314/var_demo_h.pdf	Yes	Codebook	Defines RIDEXMON as six-month exam period: 1 = Nov 1–Apr 30; 2 = May 1–Oct 31	High
+3	NHANES 2001–2002 Demographics (DEMO_B)	https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2001/DataFiles/DEMO_B.htm	Yes	Codebook	Confirms RIDEXMON coding; provides weights and demographic variables	High
+3	NHANES 2017–2018 Vitamin D Documentation (VID_J)	https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2017/DataFiles/VID_J.htm	Yes	Codebook	Describes LBXVIDMS (total 25(OH)D2+3), component variables LBXVD2MS, LBXVD3MS, LBXVE3MS; LC–MS/MS methodology	High
+3	NHANES 2021–2023 Vitamin D Documentation (VID_L)	https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/VID_L.htm	Yes	Codebook	Similar LC–MS/MS methods; reaffirms use of LC–MS/MS-equivalent data across cycles	High
+4	de Boer et al., "Effect of Repeated Low-Dose UVR Exposure on Skin Inflammation Threshold" (J Invest Dermatol 2025)	https://pubmed.ncbi.nlm.nih.gov/39956428/	Abstract; full text likely via publisher	Paper	9-week repeated low-dose UVR (0.8 SED, 3×/week), changes in MED, melanin index (~+12%), stratum corneum thickness (~+34%), vitamin D (+21%)	Moderate (high for qualitative SC increase; lower for detailed time-course)
+4	McKenzie et al., "Epidermal changes in human skin following irradiation with either UVB or UVA"	https://pubmed.ncbi.nlm.nih.gov/3794392/	Abstract summary; full text via journal	Paper	Repeated UVB/UVA irradiation; increases in epidermal and stratum corneum thickness and metabolic markers; quantitative thickness changes over time	Moderate
+4/5	Hal et al., "Studying the effects of suberythemal UV doses on human stratum corneum by in vivo confocal Raman spectroscopy"	https://hal.science/hal-04527943/document	Yes (PDF)	Paper	SC structural/optical changes with suberythemal UV doses; spectroscopy-based attenuation metrics	Moderate
+5	Young AR et al., PNAS 2021 action spectrum (as above)	https://www.pnas.org/doi/pdf/10.1073/pnas.2015867118	Yes	Paper + data tables	Dose–response for PB and FB exposures across five spectra; defines D3EE and improved action spectrum; provides per-source regression slopes	High
+5	Osmancevic et al., "Vitamin D production in psoriasis patients increases less with narrowband than with broadband ultraviolet B phototherapy"	https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1600-0781.2009.00418.x	Abstract; full text via subscription	Paper	Randomized comparison: broadband UVB vs NB-UVB; Δ25(OH)D3 from ~38→69 ng/mL vs ~35→55 ng/mL; per-regimen dose and schedule	High (for relative efficacy; moderate for precise per-SED conversion)
+5	Osmancevic et al., "Vitamin D and ultraviolet phototherapy in Caucasians"	https://www.sciencedirect.com/science/article/pii/S101113441500086X	Abstract; full text via subscription	Review/meta-summary	Compiles UV source types (NB-UVB, broadband, solar simulators, sunbeds); reports plateau behavior and average 0.7 nmol/L per SED at higher baselines	High for qualitative conversion patterns
+5/6	Ala-Houhala et al., "Sunbed Radiation Provokes Cutaneous Vitamin D Synthesis in Humans—A Randomized Controlled Trial"	https://onlinelibrary.wiley.com/doi/pdf/10.1111/j.1751-1097.2008.00372.x	Yes (PDF)	Paper	Sunbeds emitting mainly UVA with 0.5–1.4% UVB; repeated sessions; Δ25(OH)D per lamp type; dose dependence and plateau	High
+5/7	Bogh et al., "Sunbeds with UVB radiation can produce physiological levels of serum 25-hydroxyvitamin D"	https://pubmed.ncbi.nlm.nih.gov/29484099/	Abstract; full text via journal	Paper	Three lamp outputs (100 W, 160 W fluorescent, 700 W metal halide) over 12 weeks; baseline-dependent Δ25(OH)D; independence from Fitzpatrick type	Moderate
+6	Bogh MK et al., "Interdependence between body surface area and ultraviolet B dose in vitamin D production"	https://pubmed.ncbi.nlm.nih.gov/21039402/	Abstract; full text via BJD	Paper	Randomized trial with 6%, 12%, 24% exposed BSA and UVB doses 0.75, 1.5, 3.0 SED; regression of Δ25(OH)D vs UVB dose, BSA, baseline 25(OH)D	High
+6	Bogh MK et al., "Vitamin D production after UVB exposure depends on baseline vitamin D and total cholesterol but not on skin pigmentation"	https://pubmed.ncbi.nlm.nih.gov/19812604/	Abstract; full text via J Invest Dermatol	Paper	182 subjects; regression showing negative correlation of Δ25(OH)D with baseline 25(OH)D and positive correlation with total cholesterol; no significant effect of pigmentation	High
+6	Ala-Houhala et al., vernal solar UVR baseline study	https://pubmed.ncbi.nlm.nih.gov/28452681/	Yes (PMC)	Paper	High-latitude Finland; ~11.8 SED over ~12.3 h; Δ25(OH)D +6 nmol/L for baseline <90 nmol/L, –6.7 nmol/L for >90 nmol/L, with only ~7% BSA exposed	High
+6	Young AR et al., "100 YEARS OF VITAMIN D: Dose–response for change in 25-hydroxyvitamin D after UV exposure"	https://pmc.ncbi.nlm.nih.gov/articles/PMC8558903/	Yes (PMC)	Systematic review	Meta-regression: Δ25(OH)D (nmol/L) ≈ A ln(standard vitamin D dose) + B; notes strongest response early in dosing regime and baseline dependence; limited pigmented-skin data	High
+7	Farrar MD et al., "Efficacy of a dose range of simulated sunlight exposures in raising vitamin D status in South Asian adults"	https://pubmed.ncbi.nlm.nih.gov/23615828/	Yes (PMC abstract, full via AJCN)	Paper	Simulated summer sunlight (solar simulator, 0.65–3.9 SED, 3×/week, 6 wk, 35% BSA) in South Asian adults; baseline deficiency; dose–response of Δ25(OH)D	High
+7	Shih B et al., "Fractional Sunburn Threshold UVR Doses Generate Equivalent Vitamin D and DNA Damage in Skin Types I–VI"	https://pmc.ncbi.nlm.nih.gov/articles/PMC6158343/	Yes (PMC)	Paper	Solar-simulated UVR 0.2–0.8 MED across FST I–VI; dose–response for 25(OH)D and CPDs; equivalence of whole-epidermal 25(OH)D gains across FSTs; gradient of DNA damage by depth	High
+7	Rhodes et al., "Concurrent beneficial (vitamin D production) and hazardous (cutaneous DNA damage) impact of repeated low-level summer sunlight exposures"	https://pmc.ncbi.nlm.nih.gov/articles/PMC5215649/	Yes (PMC)	Paper	Repeated low-level summer solar-simulated UVR; time course of 25(OH)D and CPDs; mixed skin types but emphasis on FST I–III	Moderate
+7	AusD Study: contribution of UVB and habits	https://academic.oup.com/aje/article/179/7/864/86988	Abstract; full text via AJE	Cohort	Sun exposure, UVB dose, habits, and 25(OH)D in Australian adults; not trial but supports naturalistic schedules	Moderate
+Gap-by-Gap Findings
+Gap 2: Young 2020 PNAS supplementary data / trial spreadsheet
+Search queries used
+
+"Melanin has a Small Inhibitory Effect on Cutaneous Vitamin D Synthesis" supplementary data[^19]
+
+"Young" "melanin" "vitamin D synthesis" J Invest Dermatol supplementary[^1]
+
+"PNAS 202015867" supplementary data vitamin D UVR[^9]
+
+Best sources found
+
+Young et al. 2020 J Invest Dermatol, "Melanin has a Small Inhibitory Effect on Cutaneous Vitamin D Synthesis" provides detailed information on FST II–VI subjects, solar-simulated UVR vs NB-UVB exposure, and regression slopes comparing skin types.[^1]
+
+The PNAS 2021 action spectrum paper by the same group uses similar UVR sources (UV6, Arimed B, PUVA, solar simulator filters) and provides detailed dose–response data and an improved vitamin D action spectrum, including per-source regression models and D3EE (vitamin D–effective energy) calculations.[^5]
+
+Numeric findings
+
+In the JID 2020 study, participants with FST II–VI were exposed to identical suberythemal UVR doses to 85% BSA via solar-simulated UVR or NB-UVB (311 nm), repeated five times at 3–4-day intervals.[^1]
+
+Linear UVR dose–dependent increases in 25(OH)D3 were highly significant (P ≤ 7.7×10⁻¹¹), and regression slope comparisons showed only FST II having a significantly steeper slope than other groups; melanin inhibition factors between FST II and VI were reported at approximately 1.3–1.4 depending on UVR source.[^1]
+
+The PNAS action-spectrum study reports that one D3EE (100 J/m² weighted with the corrected action spectrum) increases serum 25(OH)D3 by ~1.6 nmol/L for partial-body exposure and ~5.3 nmol/L for full-body exposure at baseline ~34 nmol/L, with maximal increases about 2.6 and 7.3 nmol/L when baseline is near zero.[^5]
+
+Data structure / availability
+
+For the JID 2020 melanin study, PubMed and publisher pages list the article, but do not visibly expose supplementary XLSX/CSV datasets or subject-level trial spreadsheets; any tabular data (e.g., group-level regression slopes) are embedded in the main article.[^1]
+
+For the PNAS 2021 paper, the PDF includes extensive tabular data and regression model descriptions; however, publicly linked supplementary datasets (e.g., OSF spreadsheets) are not clearly accessible from the DOI page used here, and subject-level data are not directly downloadable via the current link.[^5]
+
+There is thus no confirmed public XLSX/CSV containing FST-by-source subject-level 25(OH)D time series, melanin indices, and per-subject UVR doses for the Young 2020 JID trial; values must be parsed from the published tables and regression summaries.
+
+Gap resolution assessment
+
+Resolved aspects:
+
+FST II–VI melanin inhibition factors (~1.3–1.4) between extreme phenotypes; these can be used as robust calibration factors for melanin-mediated attenuation of vitamin D synthesis, consistent across solar simulator vs NB-UVB sources.[^1]
+
+Overall dose–response shape and magnitude for 85% BSA, repeated suberythemal UVR exposures (both solar simulator and NB-UVB) are well defined by regression models.[^1]
+
+The action spectrum and cross-source dose weighting for related trials are defined in the PNAS paper, enabling conversion between UV6, Arimed B, PUVA, and solar filters in vitamin D–weighted dose space (D3EE).[^5]
+
+Remaining gaps:
+
+Subject-level trial spreadsheets for Young 2020 JID are not publicly accessible at the identified links; thus, model calibration cannot use granular per-subject FST, melanin, BSA, and time-series 25(OH)D3 data directly.
+
+Exact FST II:VI regression slopes for specific UVR sources (e.g., Arimed B vs TL01) must still be extracted manually from the paper’s figures/tables rather than clean datasets.
+
+Conclusion: Gap 2 remains partially unresolved. Paper-level numbers (melanin inhibition factors, regression slopes) are available and suitable for high-level parameterization, but missing subject-level spreadsheets necessitate manual extraction or direct author contact for full mechanistic fitting.
+
+Gap 3: NHANES vitamin D assay harmonization and RIDEXMON
+Search queries used
+
+NHANES vitamin D assay harmonization 25(OH)D LC–MS/MS LBDVIDMS LBXVIDMS[^2]
+
+NHANES 25-hydroxyvitamin D documentation LBDVIDMS LBXVIDMS[^3]
+
+NHANES RIDEXMON codebook exam month[^6][^20]
+
+Best sources found
+
+CDC Analytical Note for 25-Hydroxyvitamin D Data Analysis (October 2015) covers NHANES III (1988–1994), NHANES 2001–2006, and NHANES 2007–2010; it defines regression equations converting original DiaSorin RIA assay values to LC–MS/MS-equivalent total 25(OH)D (LBDVIDMS), harmonized to NIST reference materials.[^2]
+
+NHANES demographic codebooks for multiple cycles (e.g., 2001–2002 DEMO_B; 2013–2014 variable list DEMO_H; 2021–2023 DEMO_L) provide explicit definitions of RIDEXMON and analytic notes on sample weights and design variables.[^21][^20][^6]
+
+NHANES laboratory documentation for vitamin D (e.g., VID_E methods; VID_J and VID_L codebooks) describe LC–MS/MS methods and the LBXVIDMS variable (total 25(OH)D2+3) used from 2007 onward.[^22][^23][^3]
+
+Key findings (measured/documented)
+
+Assay methods and harmonization
+
+NHANES III and 2001–2006 initially measured serum 25(OH)D using a DiaSorin RIA kit, which later underwent reformulation; drift and lot-to-lot variation led to up to ~10% shifts in QC pool means, requiring harmonization.[^2]
+
+CDC reanalyzed a subset of stored samples using an LC–MS/MS method traceable to NIST reference materials and derived regression equations to convert original RIA results to LC–MS/MS-equivalent concentrations (variables such as LBDVIDMS).[^2]
+
+Five regression equations (nmol/L units) are provided for 25(OH)D:
+
+NHANES III (1988–1994) piecewise linear: if RIA_original ≤ 102.2074, LC–MS/MS_equivalent = 1.57548 + 0.8429 × RIA_original; if RIA_original > 102.2074, LC–MS/MS_equivalent = 59.2296 + 0.2788 × RIA_original.[^2]
+
+NHANES 2001–2002: LC–MS/MS_equivalent = 6.43435 + 0.95212 × RIA_original.[^2]
+
+NHANES 2003–2004: LC–MS/MS_equivalent = 1.72786 + 0.98284 × RIA_original.[^2]
+
+NHANES 2005–2006: LC–MS/MS_equivalent = 8.36753 + 0.97012 × RIA_original.[^2]
+
+NHANES 2007–2010 used LC–MS/MS directly, with total 25(OH)D defined as the sum of 25(OH)D3 and 25(OH)D2 in nmol/L, excluding epi-25(OH)D3 (although rounding means the sum may not match the total variable exactly).[^2]
+
+The Analytical Note strongly recommends using LC–MS/MS-equivalent total 25(OH)D (LBDVIDMS for 1988–2006; LBXVIDMS for 2007–2010) for all analyses, especially when analyzing secular trends.[^2]
+
+Variable naming: LBDVIDMS vs LBXVIDMS
+
+The Analytical Note explicitly identifies LBXVIDMS as the LC–MS/MS-measured variable for NHANES 2007–2010, in SI units (nmol/L); older surveys use LBDVIDMS for the predicted LC–MS/MS-equivalent values from RIA.[^2]
+
+NHANES 2017–2018 and 2021–2023 lab documentation (VID_J and VID_L) reaffirm that total 25(OH)D is derived as 25(OH)D2 + 25(OH)D3 (LBXVD2MS + LBXVD3MS) and that LBXVIDMS is the total variable; they confirm the LC–MS/MS analytical method and detection limits for each metabolite.[^23][^22]
+
+RIDEXMON (exam season/month)
+
+The 2001–2002 Demographics documentation defines RIDEXMON as a variable indicating the six-month time period when the examination was performed: 1 = November 1 through April 30; 2 = May 1 through October 31.[^20]
+
+The 2013–2014 Demographics Variable List similarly describes RIDEXMON as "Six month time period when the examination was performed – two categories: November 1 through April 30, May 1 through October 31".[^6]
+
+The 2021–2023 DEMO_L documentation repeats this definition and includes frequency counts showing the two categories and missing values for non-examined participants.[^21]
+
+Recommended survey weights
+
+The vitamin D lab documentation and NHANES Analytic Guidelines emphasize using appropriate 2-year MEC weights (e.g., WTMEC2YR) or specialized weights for specific lab components and cycles; more recent cycles (2021–2023) introduce a phlebotomy weight (WTPH2YR) for analyses involving blood analytes, including vitamin D.[^23][^21]
+
+The Analytical Note presents weighted means for unadjusted RIA, QC-harmonized RIA, and LC–MS/MS-standardized 25(OH)D by survey to illustrate the impact of harmonization, reinforcing the need for the standardized data in trend analyses.[^2]
+
+Gap resolution assessment
+
+Assay comparability across NHANES III, 2001–2006, and 2007+ can now be considered resolved using the LC–MS/MS-equivalent variables and regression equations supplied by CDC.[^2]
+
+The meaning and coding of RIDEXMON are fully documented, enabling season/half-year stratification in the model for UV exposure and vitamin D seasonality.[^20][^21][^6]
+
+Recommended survey weights (WTINT2YR, WTMEC2YR, WTPH2YR) and design variables (SDMVSTRA, SDMVPSU) are clearly specified to support correct variance estimation.[^23][^21]
+
+Conclusion: Gap 3 is fully resolved for assay harmonization, variable naming, season coding, and survey weights; the model can confidently pool and interpret NHANES 25(OH)D data across cycles using LC–MS/MS-equivalent values and RIDEXMON-coded exam season.
+
+Gap 4: Stratum corneum thickening calibration under repeated UV
+Search queries used
+
+repeated UVR stratum corneum thickening photoadaptation[^7]
+
+stratum corneum thickening repeated UV exposure photoadaptation[^8]
+
+de Boer 2025 repeated low dose UVR stratum corneum supplementary[^24]
+
+Best sources found
+
+de Boer et al. 2025, "Effect of Repeated Low-Dose UVR Exposure on Skin Inflammation Threshold" (J Invest Dermatol), measures photoadaptation including stratum corneum thickness, melanin index, MED, and serum vitamin D after repeated low-dose UVR.[^7]
+
+McKenzie et al., "Epidermal changes in human skin following irradiation with either UVB or UVA" (historic photobiology study), documents increases in epidermal and SC thickness after repeated UVB or UVA irradiation.[^8]
+
+Hal et al., "Studying the effects of suberythemal UV doses on human stratum corneum by in vivo confocal Raman spectroscopy", provides spectral/structural SC data under suberythemal UV doses.[^25]
+
+Numeric findings (measured)
+
+de Boer 2025 (repeated low-dose UVR)
+
+Study design: 31 subjects of various phototypes were exposed to 0.8 SED UVR on the lower back 3 times per week over 9 weeks.[^7]
+
+Outcomes:
+
+Minimal erythema dose (MED) increased by about 50%, indicating increased inflammation threshold; effect stronger in lighter phototypes.[^7]
+
+Melanin index increased by ~12%; stratum corneum thickness increased by ~34%, indicating significant SC thickening after repeated low-dose UVR.[^7]
+
+Serum vitamin D (25(OH)D) rose by ~21% after adjustment for seasonal decline.[^7]
+
+McKenzie et al. (repeated UVB/UVA)
+
+Historical study: repeated irradiation with either UVB or UVA alone increased mean epidermal thickness, mean SC thickness, and mean keratinocyte height, with significant changes even without clinically evident erythema.[^8]
+
+UVB increased thymidine labeling index; UVA did not, but both spectra induced metabolic enzyme changes (e.g., glucose-6-phosphate dehydrogenase, succinic dehydrogenase), supporting SC and epidermal thickening as part of photoadaptation.[^8]
+
+Hal et al. (Raman spectroscopy)
+
+Suberythemal UV doses were associated with measurable SC changes in Raman spectra, indicating alterations in SC structure and optical attenuation; however, explicit percent changes in SC thickness are not directly tabulated.[^25]
+
+Potential parameter implications
+
+alpha_SC (rate of SC thickening): de Boer’s ~34% SC increase over 9 weeks of 0.8 SED × 3/week (total ~21.6 SED to small BSA) suggests a moderate but saturating SC thickening response; approximate per-exposure increment may be on the order of a few percent, with decreasing marginal increase as SC approaches a plateau.[^7]
+
+SC_max (maximum SC thickening): a ~34% increase under low-dose repeated UVR implies a plausible upper bound for SC thickening in moderate photoadaptation regimes; more extreme phototherapy regimens may produce larger changes, but the 20–40% range is supported by these data.[^8][^7]
+
+k_decay_SC (decay of SC thickening after cessation): de Boer’s study does not extend far into post-exposure decay, so decay parameters remain poorly constrained; older UVB/UVA studies also focus on acute post-irradiation morphology rather than long-term SC regression.[^8][^7]
+
+Fitzpatrick-type stratification
+
+de Boer 2025 notes stronger MED increases in lighter phototypes and provides phototype-stratified photoadaptation metrics; however, SC thickness changes are reported primarily as overall percentage increases, with less detailed per-FST breakdown in the abstract.[^7]
+
+McKenzie et al. and Hal et al. do not explicitly stratify SC changes by FST; they mainly differentiate UVB vs UVA and dose schedules.[^25][^8]
+
+Gap resolution assessment
+
+Resolved aspects:
+
+Repeated low-dose UVR clearly induces significant SC thickening (~30–35%) and increased MED, confirming SC thickening as a key photoadaptation component.[^8][^7]
+
+SC thickening occurs even at suberythemal doses and contributes to overall UV attenuation, as suggested by changes in Raman spectra and epidermal morphology.[^25]
+
+Remaining gaps:
+
+Detailed time-course data (per-week SC thickness measurements) and explicit FST-stratified SC kinetics are not fully available in the accessible abstracts and summaries; full-text review may provide more detail but likely still limited for mechanistic fitting.
+
+Quantitative SC optical attenuation parameters (e.g., change in UV transmission per unit thickness) are not directly specified; they must be inferred from general photoadaptation literature.
+
+Conclusion: Gap 4 is partially resolved. The model can use ~20–40% SC thickening over multi-week repeated low-dose UVR as plausible bounds for SC_max and approximate rates, but decay and FST-specific SC kinetics remain uncertain and will require conservative assumptions or further targeted data searches.
+
+Gap 5: Spectral calibration – NB-UVB vs broadband UVB vs solar simulator vs sunlight
+Search queries used
+
+vitamin D action spectrum human serum 25(OH)D UVB Young 2021[^9]
+
+NB-UVB broadband UVB vitamin D synthesis per SED comparison[^10]
+
+narrowband UVB broadband UVB serum 25-hydroxyvitamin D randomized[^10]
+
+Best sources found
+
+Young AR et al., PNAS 2021, "A revised action spectrum for vitamin D synthesis by suberythemal UV radiation exposure in humans in vivo".[^9][^5]
+
+Osmancevic et al., BJD 2010, "Vitamin D production in psoriasis patients increases less with narrowband than with broadband ultraviolet B phototherapy".[^10]
+
+Osmancevic et al., Photodermatology 2015, "Vitamin D and ultraviolet phototherapy in Caucasians", summarizing human UV source comparisons.[^11]
+
+Ala-Houhala et al., 2008, "Sunbed Radiation Provokes Cutaneous Vitamin D Synthesis in Humans—A Randomized Controlled Trial" (low UVB fraction).[^12]
+
+Bogh et al., 2017, "Sunbeds with UVB radiation can produce physiological levels of serum 25-hydroxyvitamin D".[^26]
+
+Young AR et al., 2021 dose–response review, "100 YEARS OF VITAMIN D: Dose–response for change in 25-hydroxyvitamin D after UV exposure".[^13]
+
+Key spectral and dose–response findings
+
+Revised vitamin D action spectrum (Young 2021)
+
+Five UVR spectra were used: UV6 (fluorescent with nonsolar UVB), SSR solar simulator filters, Arimed B (fluorescent SSR), PUVA (mainly UVA), etc.; exposures were standardized at ~2 SED per session, repeated five times.[^5]
+
+When UV doses were weighted with the original CIE previtamin D3 action spectrum, regression slopes for different spectra did not align; a progressive 1–9 nm blue shift was tested, and a 5 nm blue shift produced the best fit (common dose–response slopes across spectra) for both partial-body and full-body exposure.[^9][^5]
+
+With 5 nm blue-shifted weighting, one D3EE increased 25(OH)D3 by ~1.6 nmol/L in partial-body exposure and ~5.3 nmol/L in full-body exposure at baseline ~34 nmol/L, with maximal increases ~2.6 and ~7.3 nmol/L when baseline was near zero.[^5]
+
+This supports using a single blue-shifted action spectrum as a general weighting function to convert physical UV doses from different spectra into vitamin D–effective doses (D3EE), thereby enabling cross-source equivalence (UV6 vs Arimed B vs solar simulator filter vs PUVA).
+
+Broadband vs NB-UVB phototherapy
+
+In Osmancevic’s psoriasis trial, broadband UVB and NB-UVB phototherapy were applied 2–3 times/week over 8–12 weeks; broadband UVB raised 25(OH)D3 from ~38 to ~69 ng/mL, while NB-UVB increased from ~35 to ~55 ng/mL, with a significant between-group difference (P = 0.008).[^10]
+
+This indicates that, in clinical settings with similar total schedules, broadband UVB may produce larger total 25(OH)D increases than NB-UVB; the difference likely reflects the broader spectrum and higher effective D3EE per SED compared to NB-UVB’s narrow peak.[^10]
+
+Phototherapy and sunbed sources
+
+Sunbed trials with low UVB fractions (0.5% and 1.4% UVB) show dose-dependent increases in 25(OH)D that plateau after several sessions; 0.5% UVB produced an average +12 nmol/L by day 9, while 1.4% UVB produced +27 nmol/L.[^12]
+
+Bogh’s 2017 sunbed study shows that fluorescent UVB sunbeds (100 W and 160 W) increased mean 25(OH)D by ~42 nmol/L over 12 weeks, whereas a high-pressure metal halide lamp with different spectrum produced no significant increase; Δ25(OH)D was dependent on baseline 25(OH)D and lamp type but not on Fitzpatrick type.[^26]
+
+Systematic dose–response review
+
+The "100 YEARS OF VITAMIN D" review identifies 14 artificial-source studies suitable for dose–response modeling, revealing that repeated suberythemal doses produce a log-linear relationship Δ25(OH)D (nmol/L) = A ln(standard vitamin D dose) + B, with greatest response early in the dosing regime and plateau after 4–5 weeks.[^13]
+
+It also notes that skin area and baseline 25(OH)D are important determinants and that trials using different source spectra can be harmonized by vitamin D–weighted dose calculations, consistent with the Young 2021 action spectrum results.[^13][^5]
+
+Gap resolution assessment
+
+Resolved aspects:
+
+A blue-shifted action spectrum (~5 nm) provides a consistent weighting function across multiple UVR spectra, allowing conversion of SED or J/m² doses from NB-UVB, broadband UVB, PUVA, and solar simulators into a unified vitamin D–effective dose (D3EE).[^9][^5]
+
+Clinical trials show that broadband UVB generally produces larger total 25(OH)D increases than NB-UVB under similar schedules, while NB-UVB can be highly effective when dose is tailored.[^11][^10]
+
+Sunbed and phototherapy trials quantify Δ25(OH)D per regimen and highlight that not all UVB-containing sources are equal; lamp spectra and UVB fraction determine efficacy.[^26][^12]
+
+Remaining gaps:
+
+Precise per-SED conversion factors for each source (NB-UVB, broadband UVB, solar simulator, sunlight) under varying baselines and BSA are not tabulated in a single standardized dataset; they must be approximated from individual trials and the D3EE dose–response model.[^11][^13]
+
+Seasonal and latitudinal variations in solar spectra add complexity; while action-spectrum weighting enables conversion, the model may still need location-specific solar spectral inputs.
+
+Conclusion: Gap 5 is moderately resolved. The model can use Young’s revised action spectrum to define a general vitamin D–weighted dose metric and apply approximate source-specific conversion based on trial-derived D3EE per session. However, uncertainty remains in exact conversion between NB-UVB, broadband UVB, solar simulator, and real sunlight across diverse exposure regimes.
+
+Gap 6: Baseline-dependent vitamin D response to UV
+Search queries used
+
+baseline 25(OH)D ultraviolet B dose response body surface area formula[^14]
+
+Bogh UVB dose body surface area baseline vitamin D equation[^4]
+
+baseline vitamin D status affects UVB induced 25-hydroxyvitamin D increase[^4]
+
+Best sources found
+
+Bogh MK et al., "Interdependence between body surface area and ultraviolet B dose in vitamin D production" (Br J Dermatol, 2011).[^14]
+
+Bogh MK et al., "Vitamin D production after UVB exposure depends on baseline vitamin D and total cholesterol but not on skin pigmentation" (J Invest Dermatol, 2010).[^4]
+
+**Ala-Houhala et al., "The effect of vernal solar UV radiation on serum 25-hydroxyvitamin D concentration depends on the baseline level" (high-latitude Finland).[^15]
+
+**Young AR et al., "100 YEARS OF VITAMIN D: Dose–response for change in 25-hydroxyvitamin D after UV exposure" (systematic review).[^13]
+
+Key quantitative relationships
+
+Interdependence between BSA and UVB dose (Bogh 2011)
+
+Randomized 92 participants to 6%, 12%, or 24% exposed BSA and UVB doses 0.75 (7.5 mJ/cm²), 1.5 (15 mJ/cm²), or 3.0 (30 mJ/cm²) SED at 298 nm using the CIE erythema action spectrum.[^14]
+
+Across the whole sample, Δ25(OH)D after irradiation was:
+
+Positively correlated with UVB dose (P < 0.0001; R² = 0.28).[^14]
+
+Positively correlated with BSA (P = 0.006; R² = 0.08).[^14]
+
+Negatively correlated with baseline 25(OH)D (P < 0.0001; R² = 0.18).[^14]
+
+For each BSA separately, significant UVB dose-response correlations were found at 6% and 12% BSA, but not at 24%; for each UVB dose separately, significant BSA-response correlations appeared at 0.75 SED, but not at 1.5 or 3.0 SED.[^14]
+
+These data support a nonlinear interplay: at low doses, BSA matters more; at higher doses, dose dominates and BSA’s marginal effect diminishes.[^14]
+
+Baseline vitamin D and total cholesterol (Bogh 2010)
+
+In 182 screened individuals, UVB-exposed Δ25(OH)D was:
+
+Negatively correlated with baseline 25(OH)D (P < 0.001), indicating higher baseline yields smaller increases for the same dose.[^4]
+
+Positively correlated with baseline total cholesterol (P = 0.005).[^4]
+
+Not significantly correlated with constitutive or facultative skin pigmentation (no difference in Δ25(OH)D between paired fair- and dark-skinned groups matched on baseline 25(OH)D).[^4]
+
+While the abstract does not state the full regression equation, the described relationships align with a linear model where Δ25(OH)D depends on UVB dose, baseline 25(OH)D, and total cholesterol, with coefficients determined from trial data.[^4]
+
+Baseline threshold behavior (vernal solar UVR, Finland)
+
+In high-latitude Finland (61°N and 67°N), 27 volunteers received a mean UVB dose of 11.8 SED over an average of 12.3 hours with ~7% BSA exposed (face and hands).[^15]
+
+Results:
+
+For baseline S-25(OH)D < 90 nmol/L (n = 13), mean S-25(OH)D increased by 6.0 nmol/L from 62.4 nmol/L (p < 0.001).[^15]
+
+For baseline > 90 nmol/L (n = 12), mean S-25(OH)D decreased by 6.7 nmol/L from 116.9 nmol/L (p < 0.01).[^15]
+
+This demonstrates a baseline-dependent reversal: moderate baselines increase with UV exposure; high baselines may decrease, possibly via catabolic pathways or decreased synthesis.[^15]
+
+Systematic review dose–response
+
+The "100 YEARS OF VITAMIN D" review formalizes Δ25(OH)D ≈ A ln(standard vitamin D dose) + B for repeated suberythemal whole-body exposures, noting that response is greatest early in the dosing regime and plateaus with continued dosing; baseline 25(OH)D and BSA remain major determinants.[^13]
+
+Applicability to darker skin (FST V–VI)
+
+Bogh’s 2010 study paired fair- and dark-skinned groups matched on baseline 25(OH)D and found no differences in Δ25(OH)D after identical UVB exposure, suggesting that once baseline is controlled, skin pigmentation may have limited effect on short-term Δ25(OH)D; however, this does not address long-term differences in vitamin D steady-state or differences at very high melanin levels.[^4]
+
+Many UV dose–response trials and the systematic review note limited data for pigmented skin, emphasizing that their models are primarily applicable to lighter phototypes and that caution is needed when extrapolating to FST V–VI.[^13]
+
+Gap resolution assessment
+
+Resolved aspects:
+
+Baseline 25(OH)D negatively influences Δ25(OH)D for a given UV dose; this relationship has been quantitatively demonstrated in multiple randomized trials and observational UVR studies.[^15][^14][^4]
+
+UVB dose and BSA are primary predictors of Δ25(OH)D, with BSA’s influence more pronounced at lower doses; these can be represented in a multivariate regression or mechanistic model.[^14]
+
+High baselines (>90 nmol/L) may lead to decreases in 25(OH)D under UV exposure, indicating an upper steady-state or catabolic dominance; models should include this threshold behavior.[^15]
+
+Remaining gaps:
+
+Explicit formulas with published coefficients for Δ25(OH)D as functions of UVB dose, BSA, baseline 25(OH)D, and cholesterol are not fully reproduced in accessible abstracts; full-text reading is needed for exact parameter values.[^4][^14]
+
+Data for FST V–VI remain limited; while Bogh suggests pigmentation per se may not affect acute Δ25(OH)D at matched baselines, larger-scale FST V–VI trials are sparse.[^13][^4]
+
+Conclusion: Gap 6 is largely resolved for lighter phototypes (FST I–IV) with robust evidence that Δ25(OH)D depends negatively on baseline and positively on dose and BSA. For darker phototypes (FST V–VI), evidence suggests similar acute behavior when baseline is controlled, but dedicated trials are limited.
+
+Gap 7: FST VI / dark-skin repeated sunlight or broadband UV schedule data
+Search queries used
+
+Fitzpatrick VI repeated UV exposure vitamin D serum 25(OH)D[^17][^18]
+
+dark skin simulated sunlight vitamin D randomized trial UV dose[^16]
+
+South Asian simulated sunlight vitamin D dose response Farrar[^18][^16]
+
+Best sources found
+
+Farrar MD et al., AJCN 2013, "Efficacy of a dose range of simulated sunlight exposures in raising vitamin D status in South Asian adults".[^16]
+
+Shih B et al., J Invest Dermatol 2018, "Fractional Sunburn Threshold UVR Doses Generate Equivalent Vitamin D and DNA Damage in Skin Types I–VI".[^18]
+
+Rhodes LE et al., BJD 2017, "Concurrent beneficial (vitamin D production) and hazardous (cutaneous DNA damage) impact of repeated low-level summer sunlight exposures".[^27]
+
+Young et al., UK targeted guidance for South Asians (follow-up translational work; not a trial but interprets Farrar’s data).[^28][^29]
+
+Key trial data (dark or highly pigmented populations)
+
+South Asian simulated sunlight trial (Farrar 2013)
+
+Design: 60 healthy adults of South Asian ethnicity (20–60 years) at 53.5°N received one of six ultraviolet exposures ranging from 0.65 to 3.9 SED (equivalent to ~15–90 min unshaded noontime summer sunlight), 3×/week for 6 weeks; exposures used a solar-simulator cabinet (95% UVA, 5% UVB) with 35% BSA exposed.[^16]
+
+Baseline: all completing participants (n = 51) were vitamin D insufficient (<20 ng/mL), with 90% <10 ng/mL and 35% <5 ng/mL.[^16]
+
+Results:
+
+25(OH)D rose significantly in all dose groups.[^16]
+
+At ≥1.95 SED per session (~45 min sunlight), participants achieved mean post-course 25(OH)D ~15.7 ng/mL (rise ~8.7 ng/mL), with 94% attaining >10 ng/mL (deficiency-avoiding threshold).[^16]
+
+Only 6 subjects attained ≥20 ng/mL despite repeated exposures, highlighting difficulty in achieving sufficiency in South Asians at this latitude via sunlight alone.[^16]
+
+Fractional MED solar-simulated UVR across FST I–VI (Shih 2018)
+
+Design: Healthy volunteers across FST I–VI were exposed to solar-simulated UVR at 20%–80% of their individual MED (sub-sunburn fractional doses).[^18]
+
+Results:
+
+Significant dose responses for serum 25(OH)D and whole-epidermal CPDs were observed, with as little as 0.2 MED concurrently producing measurable 25(OH)D and CPD.[^18]
+
+Fractional MEDs generated equivalent levels of whole-epidermal 25(OH)D across all skin types, meaning that when normalized to MED (skin-type-specific dose), vitamin D gains were broadly similar across FST I–VI.[^18]
+
+However, an epidermal gradient of CPD formation strongly correlated with skin darkness (r = 0.74): darker skin showed high CPDs superficially but none in the basal layer; lighter skin showed CPDs throughout the epidermal depth.[^18]
+
+Repeated low-level summer sunlight exposures (Rhodes 2017)
+
+This trial examined repeated low-level summer solar-simulated UVR exposures and measured both vitamin D and CPDs over time; while focused on lighter phototypes, it provides repeated schedule data for naturalistic sunlight-like exposures.[^27]
+
+Gap resolution assessment
+
+Resolved aspects:
+
+Simulated summer sunlight trials in South Asian adults provide dose–response data for repeated broadband (solar-simulator) UVR exposures in a highly pigmented population (approx. FST V), with BSA and per-session SED specified.[^16]
+
+Fractional MED solar-simulated UVR across FST I–VI shows that, when normalized by MED, vitamin D gains are similar across phototypes; this supports using MED-normalized dosing in the model for FST VI.[^18]
+
+Remaining gaps:
+
+There remains a lack of long-duration naturalistic sunlight schedules (e.g., everyday outdoor behavior over seasons) specifically in FST VI populations, with continuous 25(OH)D tracking and well-characterized UV doses; most available data are short-term simulated sunlight or solar-simulator trials.[^18][^16]
+
+Trials such as Farrar’s use solar simulators rather than full broad-spectrum sunlight with environmental variability (clouds, angles), so translation to outdoor schedules requires spectral modeling.
+
+Conclusion: Gap 7 is partially resolved. Simulated summer sunlight trials and fractional MED studies provide strong calibration points for repeated-exposure schedules in darker or highly pigmented populations, but extended naturalistic sunlight datasets in FST VI remain limited; the model must extrapolate from these controlled trials while acknowledging uncertainty.
+
+Download/Acquisition Notes
+Young 2020 JID (melanin): Full text is accessible via institutional subscription and likely provides detailed tables, but no publicly-listed supplementary XLSX/CSV datasets were identified at the PubMed and ScienceDirect links used. Local model calibration will require manual extraction from the article’s tables and figures.[^19][^1]
+
+Young 2021 PNAS (action spectrum): The open-access PDF at the PNAS site can be downloaded and stored locally; it includes all relevant tables (e.g., demographic data, UVR spectra, regression parameters, blue-shift tests) and can serve as a reusable reference for spectral weighting and dose–response modeling.[^5]
+
+NHANES documentation: The Analytical Note and NHANES codebooks (DEMO_B, DEMO_H, DEMO_L, VID_J, VID_L) should be downloaded and version-controlled locally for consistent handling of LBDVIDMS/LBXVIDMS, RIDEXMON, and weights across cycles.[^3][^21][^6][^23][^2]
+
+de Boer 2025: The PubMed abstract gives core photoadaptation metrics; full text via journal should be downloaded for potential numerical SC time-course and phototype stratification tables.[^7]
+
+Phototherapy and sunbed trials (Osmancevic, Ala-Houhala, Bogh): Where PDFs are accessible (e.g., Ala-Houhala’s sunbed trial), these should be stored locally; subscription-only articles (e.g., Osmancevic 2009/2015, Bogh sunbed 2017) may require institutional access but provide important relative efficacy data for NB-UVB vs broadband UVB and lamp spectra.[^12][^11][^26][^10]
+
+Baseline-dependent trials (Bogh, vernal Finland): PMC-available articles (e.g., vernal solar UVR baseline study, systematic review) can be downloaded directly and stored; subscription BJD/JID articles require access but should be archived for regression coefficients.[^15][^13][^14][^4]
+
+Dark-skin trials (Farrar, fractional MED I–VI): Farrar’s AJCN article and Shih’s JID article are critical; the AJCN article may require subscription, while the fractional MED article has an accessible PMC version; both should be downloaded for dose–response tables and FST distribution data.[^18][^16]

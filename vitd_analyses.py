@@ -25,7 +25,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from vitd_model import (ModelParams, simulate, build_pulse_schedule,
                         steady_state_D, efficiency_D_per_SED, mean_final_M,
-                        final_D)
+                        final_D, gross_synth_per_SED, net_final_D_change_per_SED,
+                        auc_D_per_SED, auc_above_baseline_per_SED,
+                        auc_above_sufficiency_per_SED)
 
 FIG_DIR = "figs"
 TAB_DIR = "tables"
@@ -73,7 +75,11 @@ def analysis_alpha_sweep():
                     "steady_state_D": steady_state_D(r),
                     "final_D": final_D(r),
                     "final_M": mean_final_M(r),
-                    "efficiency_D_per_SED": efficiency_D_per_SED(r),
+                    "gross_synth_per_SED": gross_synth_per_SED(r),
+                    "net_final_D_change_per_SED": net_final_D_change_per_SED(r),
+                    "auc_D_per_SED": auc_D_per_SED(r),
+                    "auc_above_baseline_per_SED": auc_above_baseline_per_SED(r),
+                    "auc_above_sufficiency_per_SED": auc_above_sufficiency_per_SED(r),
                 })
     df = pd.DataFrame(rows)
     df.to_csv(f"{TAB_DIR}/alpha_sweep.csv", index=False)
@@ -83,7 +89,7 @@ def analysis_alpha_sweep():
     for ax, fst in zip(axes, fsts):
         sub = df[df["FST"] == fst]
         pivot = sub.pivot(index="alpha", columns="interval_days",
-                          values="efficiency_D_per_SED")
+                          values="gross_synth_per_SED")
         im = ax.imshow(pivot.values, aspect="auto", origin="lower",
                        cmap="viridis")
         ax.set_xticks(range(len(pivot.columns)))
@@ -93,7 +99,7 @@ def analysis_alpha_sweep():
         ax.set_xlabel("inter-session interval (days)")
         ax.set_ylabel(r"$\alpha$ (photoadaptation rise per SED)")
         ax.set_title(f"FST {['I','II','III','IV','V','VI'][fst-1]}: "
-                     "efficiency (nmol/L per SED)")
+                     "gross synth efficiency (nmol/L per SED)")
         # mark the argmax per alpha row
         for ri, alpha_val in enumerate(pivot.index):
             argmax_col = np.argmax(pivot.iloc[ri].values)
@@ -143,10 +149,11 @@ def analysis_alpha_sweep():
         print(f"\nFST {fst}:")
         for alpha in alphas:
             sub2 = sub[sub["alpha"] == alpha]
-            best = sub2.loc[sub2["efficiency_D_per_SED"].idxmax()]
+            best = sub2.loc[sub2["gross_synth_per_SED"].idxmax()]
             print(f"  alpha={alpha:.3f}:  optimal interval = "
                   f"{int(best['interval_days'])}d "
-                  f"(efficiency {best['efficiency_D_per_SED']:.2f}, "
+                  f"(gross_eff {best['gross_synth_per_SED']:.2f}, "
+                  f"net_eff {best['net_final_D_change_per_SED']:.2f}, "
                   f"ss D {best['steady_state_D']:.1f})")
 
     return df
@@ -184,7 +191,11 @@ def analysis_K_ATTEN_sweep():
                     "steady_state_D": steady_state_D(r),
                     "final_D": final_D(r),
                     "final_M": mean_final_M(r),
-                    "efficiency_D_per_SED": efficiency_D_per_SED(r),
+                    "gross_synth_per_SED": gross_synth_per_SED(r),
+                    "net_final_D_change_per_SED": net_final_D_change_per_SED(r),
+                    "auc_D_per_SED": auc_D_per_SED(r),
+                    "auc_above_baseline_per_SED": auc_above_baseline_per_SED(r),
+                    "auc_above_sufficiency_per_SED": auc_above_sufficiency_per_SED(r),
                 })
     df = pd.DataFrame(rows)
     df.to_csv(f"{TAB_DIR}/K_ATTEN_sweep.csv", index=False)
@@ -194,7 +205,7 @@ def analysis_K_ATTEN_sweep():
         sub = df[df["FST"] == fst]
         # Efficiency
         pe = sub.pivot(index="K_ATTEN", columns="interval_days",
-                       values="efficiency_D_per_SED")
+                       values="gross_synth_per_SED")
         ax = axes[0, col]
         im = ax.imshow(pe.values, aspect="auto", origin="lower",
                        cmap="viridis")
@@ -202,7 +213,7 @@ def analysis_K_ATTEN_sweep():
         ax.set_yticks(range(len(pe.index)))
         ax.set_yticklabels([f"{k:.2f}" for k in pe.index])
         ax.set_xlabel("interval (days)"); ax.set_ylabel("K_ATTEN")
-        ax.set_title(f"FST {fst}: efficiency D/SED")
+        ax.set_title(f"FST {fst}: gross synth efficiency D/SED")
         for ri in range(len(pe.index)):
             ax.plot(np.argmax(pe.iloc[ri].values), ri,
                     "r*", markersize=14, markeredgecolor="white")
@@ -235,11 +246,12 @@ def analysis_K_ATTEN_sweep():
         print(f"\nFST {fst}:")
         for K in K_vals:
             sub2 = sub[sub["K_ATTEN"] == K]
-            best_eff = sub2.loc[sub2["efficiency_D_per_SED"].idxmax()]
+            best_eff = sub2.loc[sub2["gross_synth_per_SED"].idxmax()]
             best_D = sub2.loc[sub2["steady_state_D"].idxmax()]
             print(f"  K={K:.1f}:  "
                   f"opt-eff interval={int(best_eff['interval_days'])}d "
-                  f"(eff {best_eff['efficiency_D_per_SED']:.2f}); "
+                  f"(gross_eff {best_eff['gross_synth_per_SED']:.2f}, "
+                  f"net_eff {best_eff['net_final_D_change_per_SED']:.2f}); "
                   f"opt-D interval={int(best_D['interval_days'])}d "
                   f"(D {best_D['steady_state_D']:.1f})")
     return df
@@ -286,7 +298,11 @@ def analysis_two_framings():
                 "steady_state_D": steady_state_D(r1),
                 "final_D": final_D(r1),
                 "final_M": mean_final_M(r1),
-                "efficiency": efficiency_D_per_SED(r1),
+                "gross_synth_per_SED": gross_synth_per_SED(r1),
+                "net_final_D_change_per_SED": net_final_D_change_per_SED(r1),
+                "auc_D_per_SED": auc_D_per_SED(r1),
+                "auc_above_baseline_per_SED": auc_above_baseline_per_SED(r1),
+                "auc_above_sufficiency_per_SED": auc_above_sufficiency_per_SED(r1),
             })
             # Framing 2: matched per-session dose
             sched2 = build_pulse_schedule(PROTOCOL_DAYS, 1.0, interval)
@@ -300,7 +316,11 @@ def analysis_two_framings():
                 "steady_state_D": steady_state_D(r2),
                 "final_D": final_D(r2),
                 "final_M": mean_final_M(r2),
-                "efficiency": efficiency_D_per_SED(r2),
+                "gross_synth_per_SED": gross_synth_per_SED(r2),
+                "net_final_D_change_per_SED": net_final_D_change_per_SED(r2),
+                "auc_D_per_SED": auc_D_per_SED(r2),
+                "auc_above_baseline_per_SED": auc_above_baseline_per_SED(r2),
+                "auc_above_sufficiency_per_SED": auc_above_sufficiency_per_SED(r2),
             })
 
     df1 = pd.DataFrame(rows_f1)
@@ -320,14 +340,20 @@ def analysis_two_framings():
         ax.set_xlabel("interval (days)")
         ax.set_ylabel("steady-state D (nmol/L)", color="C0")
         ax.tick_params(axis='y', labelcolor="C0")
+        ax.legend(loc="upper left")
+        
         ax2 = ax.twinx()
-        ax2.plot(s1["interval_days"], s1["efficiency"],
-                 "s-", color="C3", label="efficiency D/SED")
-        ax2.set_ylabel("efficiency (nmol/L per SED)", color="C3")
+        ax2.plot(s1["interval_days"], s1["gross_synth_per_SED"],
+                 "s-", color="C3", label="gross synth efficiency")
+        ax2.plot(s1["interval_days"], s1["net_final_D_change_per_SED"],
+                 "d--", color="C1", label="net ΔD per SED")
+        ax2.set_ylabel("gross synth efficiency\n(nmol/L synthesized per SED)", color="C3")
         ax2.tick_params(axis='y', labelcolor="C3")
+        ax2.legend(loc="upper right")
         ax.set_title(f"FST {fst}: Framing 1 — matched cumulative SED ({TOTAL_SED:.0f} SED)")
         ax.axhline(50, color="gray", linestyle=":", alpha=0.5)
         ax.grid(alpha=0.3)
+        
         # Framing 2
         ax = axes[1, col]
         ax.plot(s2["interval_days"], s2["steady_state_D"],
@@ -335,11 +361,16 @@ def analysis_two_framings():
         ax.set_xlabel("interval (days)")
         ax.set_ylabel("steady-state D (nmol/L)", color="C0")
         ax.tick_params(axis='y', labelcolor="C0")
+        ax.legend(loc="upper left")
+        
         ax2 = ax.twinx()
-        ax2.plot(s2["interval_days"], s2["efficiency"],
-                 "s-", color="C3", label="efficiency D/SED")
-        ax2.set_ylabel("efficiency (nmol/L per SED)", color="C3")
+        ax2.plot(s2["interval_days"], s2["gross_synth_per_SED"],
+                 "s-", color="C3", label="gross synth efficiency")
+        ax2.plot(s2["interval_days"], s2["net_final_D_change_per_SED"],
+                 "d--", color="C1", label="net ΔD per SED")
+        ax2.set_ylabel("gross synth efficiency\n(nmol/L synthesized per SED)", color="C3")
         ax2.tick_params(axis='y', labelcolor="C3")
+        ax2.legend(loc="upper right")
         ax.set_title(f"FST {fst}: Framing 2 — matched 1 SED/session (cumulative varies)")
         ax.axhline(50, color="gray", linestyle=":", alpha=0.5)
         ax.grid(alpha=0.3)
@@ -399,7 +430,11 @@ def analysis_beta_sweep():
                     "steady_state_D": steady_state_D(r),
                     "final_D": final_D(r),
                     "final_M": mean_final_M(r),
-                    "efficiency_D_per_SED": efficiency_D_per_SED(r),
+                    "gross_synth_per_SED": gross_synth_per_SED(r),
+                    "net_final_D_change_per_SED": net_final_D_change_per_SED(r),
+                    "auc_D_per_SED": auc_D_per_SED(r),
+                    "auc_above_baseline_per_SED": auc_above_baseline_per_SED(r),
+                    "auc_above_sufficiency_per_SED": auc_above_sufficiency_per_SED(r),
                 })
     df = pd.DataFrame(rows)
     df.to_csv(f"{TAB_DIR}/beta_sweep.csv", index=False)
@@ -408,14 +443,14 @@ def analysis_beta_sweep():
     for col, fst in enumerate([5, 6]):
         sub = df[df["FST"] == fst]
         pe = sub.pivot(index="beta_halflife_days", columns="interval_days",
-                       values="efficiency_D_per_SED")
+                       values="gross_synth_per_SED")
         ax = axes[0, col]
         im = ax.imshow(pe.values, aspect="auto", origin="lower", cmap="viridis")
         ax.set_xticks(range(len(pe.columns))); ax.set_xticklabels(pe.columns)
         ax.set_yticks(range(len(pe.index)))
         ax.set_yticklabels([f"{t}d" for t in pe.index])
         ax.set_xlabel("interval (days)"); ax.set_ylabel("beta half-life (days)")
-        ax.set_title(f"FST {fst}: efficiency D/SED")
+        ax.set_title(f"FST {fst}: gross synth efficiency D/SED")
         for ri in range(len(pe.index)):
             ax.plot(np.argmax(pe.iloc[ri].values), ri,
                     "r*", markersize=14, markeredgecolor="white")
@@ -450,11 +485,12 @@ def analysis_beta_sweep():
         print(f"\nFST {fst}:")
         for hl in half_lives_days:
             sub2 = sub[sub["beta_halflife_days"] == hl]
-            best_eff = sub2.loc[sub2["efficiency_D_per_SED"].idxmax()]
+            best_eff = sub2.loc[sub2["gross_synth_per_SED"].idxmax()]
             best_D = sub2.loc[sub2["steady_state_D"].idxmax()]
             print(f"  t1/2={hl:3d}d:  "
                   f"opt-eff interval={int(best_eff['interval_days'])}d "
-                  f"(eff {best_eff['efficiency_D_per_SED']:.2f}); "
+                  f"(gross_eff {best_eff['gross_synth_per_SED']:.2f}, "
+                  f"net_eff {best_eff['net_final_D_change_per_SED']:.2f}); "
                   f"opt-D interval={int(best_D['interval_days'])}d "
                   f"(D {best_D['steady_state_D']:.1f})")
 

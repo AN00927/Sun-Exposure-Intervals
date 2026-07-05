@@ -310,6 +310,69 @@ def efficiency_D_per_SED(result):
     return total_d / total_s if total_s > 0 else 0.0
 
 
+gross_synth_per_SED = efficiency_D_per_SED
+
+
+def net_final_D_change_per_SED(result, D0=None):
+    if D0 is None:
+        D0 = result["D"][0]
+    total_sed = result["cumulative_SED"]
+    if total_sed <= 0:
+        return 0.0
+    return (result["D"][-1] - D0) / total_sed
+
+
+def auc_D_per_SED(result):
+    t = result["t"]
+    D = result["D"]
+    total_sed = result["cumulative_SED"]
+    if total_sed <= 0:
+        return 0.0
+    if len(t) < 2:
+        return 0.0
+    if hasattr(np, 'trapezoid'):
+        auc = np.trapezoid(D, t)
+    else:
+        auc = np.trapz(D, t)
+    return float(auc) / total_sed
+
+
+def auc_above_baseline_per_SED(result, D0=None):
+    if D0 is None:
+        D0 = result["D"][0]
+    t = result["t"]
+    D = result["D"]
+    total_sed = result["cumulative_SED"]
+    if total_sed <= 0:
+        return 0.0
+    if len(t) < 2:
+        return 0.0
+    y = np.maximum(0.0, D - D0)
+    if hasattr(np, 'trapezoid'):
+        auc = np.trapezoid(y, t)
+    else:
+        auc = np.trapz(y, t)
+    return float(auc) / total_sed
+
+
+def auc_above_sufficiency_per_SED(result, threshold_nmol_L=50.0):
+    t = result["t"]
+    D = result["D"]
+    total_sed = result["cumulative_SED"]
+    if total_sed <= 0:
+        return 0.0
+    if len(t) < 2:
+        return 0.0
+    if np.max(D) <= threshold_nmol_L:
+        return 0.0
+    y = np.maximum(0.0, D - threshold_nmol_L)
+    if hasattr(np, 'trapezoid'):
+        auc = np.trapezoid(y, t)
+    else:
+        auc = np.trapz(y, t)
+    return float(auc) / total_sed
+
+
 def mean_final_M(result, window_days=28):
     t = result["t"]; M = result["M"]
     mask = t >= t[-1] - window_days
@@ -335,4 +398,8 @@ if __name__ == "__main__":
     print(f"  ss D:    {steady_state_D(r):.2f} nmol/L")
     print(f"  final M: {mean_final_M(r):.3f}")
     print(f"  final SC:{mean_final_SC(r):.3f}")
-    print(f"  D/SED:   {efficiency_D_per_SED(r):.3f}")
+    print(f"  gross_synth_per_SED:           {gross_synth_per_SED(r):.3f}")
+    print(f"  net_final_D_change_per_SED:    {net_final_D_change_per_SED(r):.3f}")
+    print(f"  auc_D_per_SED:                 {auc_D_per_SED(r):.3f}")
+    print(f"  auc_above_baseline_per_SED:    {auc_above_baseline_per_SED(r):.3f}")
+    print(f"  auc_above_sufficiency_per_SED: {auc_above_sufficiency_per_SED(r):.3f}")

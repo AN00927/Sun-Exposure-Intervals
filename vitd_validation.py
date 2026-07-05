@@ -56,7 +56,10 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from vitd_model import (ModelParams, synthesis_per_session, simulate,
-                         build_pulse_schedule, build_weekly_schedule)
+                         build_pulse_schedule, build_weekly_schedule,
+                         gross_synth_per_SED, net_final_D_change_per_SED,
+                         auc_D_per_SED, auc_above_baseline_per_SED,
+                         auc_above_sufficiency_per_SED)
 
 
 # ---------------------------------------------------------------------------
@@ -296,6 +299,54 @@ def validate_bogh_baseline_bsa(verbose=True):
     return passed
 
 
+def validate_metric_ordering(verbose=True):
+    """
+    Asserts:
+    1. Gross >= Net: gross_synth_per_SED >= net_final_D_change_per_SED for a sparse schedule.
+    2. AUC above sufficiency = 0 when D(t) never exceeds the threshold (e.g. mild schedule with threshold 50.0).
+    3. AUC above baseline is > 0 when D(t) rises above baseline.
+    """
+    p = ModelParams()
+    
+    # 1. Sparse schedule check: Gross >= Net
+    sched_sparse = build_pulse_schedule(84, 10.5, 21)
+    r_sparse = simulate(fst=5, schedule=sched_sparse, duration_days=84, params=p, D0=30.0)
+    gross_sparse = gross_synth_per_SED(r_sparse)
+    net_sparse = net_final_D_change_per_SED(r_sparse)
+    
+    # 2. Check AUC above sufficiency = 0 when D never reaches threshold (e.g. 50)
+    sched_mild = build_pulse_schedule(84, 0.1, 7)
+    r_mild = simulate(fst=3, schedule=sched_mild, duration_days=84, params=p, D0=25.0)
+    auc_suff_mild = auc_above_sufficiency_per_SED(r_mild, threshold_nmol_L=50.0)
+    
+    # 3. Check AUC above baseline > 0 when D rises
+    sched_rise = build_pulse_schedule(84, 1.0, 2)
+    r_rise = simulate(fst=3, schedule=sched_rise, duration_days=84, params=p, D0=25.0)
+    auc_base_rise = auc_above_baseline_per_SED(r_rise)
+    
+    passed_gross_net = gross_sparse >= net_sparse
+    passed_auc_suff = abs(auc_suff_mild) < 1e-9
+    passed_auc_base = auc_base_rise > 0.0
+    
+    passed = passed_gross_net and passed_auc_suff and passed_auc_base
+    
+    if verbose:
+        print(f"[New Check] Metric ordering and sanity assertions")
+        print(f"  Sparse schedule (10.5 SED every 21d):")
+        print(f"    gross_synth_per_SED:        {gross_sparse:.4f}")
+        print(f"    net_final_D_change_per_SED: {net_sparse:.4f}")
+        print(f"    Gross >= Net: {'YES' if passed_gross_net else 'NO'}")
+        print(f"  Mild schedule (0.1 SED every 7d, D0=25.0):")
+        print(f"    auc_above_sufficiency (threshold 50): {auc_suff_mild:.4f} (target: 0.0)")
+        print(f"    AUC above sufficiency = 0: {'YES' if passed_auc_suff else 'NO'}")
+        print(f"  Standard schedule (1.0 SED every 2d, D0=25.0):")
+        print(f"    auc_above_baseline: {auc_base_rise:.4f} (target: > 0.0)")
+        print(f"    AUC above baseline > 0: {'YES' if passed_auc_base else 'NO'}")
+        print(f"  {'PASS' if passed else 'FAIL'}")
+        
+    return passed
+
+
 # ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
@@ -308,6 +359,7 @@ def run_all(verbose=True):
         ("Bogh 2012 [C1 quantitative]",   validate_bogh_2012),
         ("Farrar 2013 [C2 quantitative]", validate_farrar_2013),
         ("Bogh baseline+BSA [C4]",        validate_bogh_baseline_bsa),
+        ("metric ordering and sanity",    validate_metric_ordering),
     ]
     results = {}
     print("=" * 70)

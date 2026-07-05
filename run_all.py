@@ -15,6 +15,7 @@ from contextlib import redirect_stdout
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import vitd_validation
+from vitd_validation import validate_metric_ordering
 import vitd_analyses
 
 
@@ -35,6 +36,8 @@ def main():
 
     # 1. Validation
     val_results, val_log = capture(vitd_validation.run_all)
+    # Explicitly call the new validation check
+    _, _ = capture(validate_metric_ordering)
 
     # 2. Analyses
     _, alpha_log = capture(vitd_analyses.analysis_alpha_sweep)
@@ -157,6 +160,12 @@ metric is the one that matters. The model predicts that for darker-skinned indiv
 who want to reach sufficiency, **dose density beats spacing** despite the photoadaptation
 penalty - because the logarithmic dose-response curve plus 80-day-effective-D-half-life
 makes frequent small doses more cumulative than the photoadaptation penalty erodes.
+
+### Divergence of Gross vs. Net Efficiency
+
+We introduced net clinical efficiency metrics (`net_final_D_change_per_SED`, `auc_D_per_SED`, `auc_above_baseline_per_SED`, and `auc_above_sufficiency_per_SED`) to complement the traditional gross synthesis efficiency (`gross_synth_per_SED`).
+
+For sparse schedules (such as the 21-day interval), the gross synthesis efficiency remains high because each individual pulse produces significant D synthesis on a receptive, low-melanin skin state. However, the net final D change per SED diverges significantly and can even become negative, because the long periods between pulses allow serum D to decay back to or below baseline. Thus, while a sparse schedule appears optimal under the gross synthesis efficiency framing, it is less effective at maintaining an elevated net serum D level. This divergence highlights that gross synthesis performance does not necessarily equate to net clinical benefit.
 
 ### What needs better data
 
