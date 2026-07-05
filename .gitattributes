@@ -1,3 +1,4 @@
 Papers_and_Datasets/*.csv filter=lfs diff=lfs merge=lfs -text
 output_data/**/*.csv filter=lfs diff=lfs merge=lfs -text
 output_data/*.csv filter=lfs diff=lfs merge=lfs -text
+audit_outputs/nhanes_serum_demo_body_merged.csv filter=lfs diff=lfs merge=lfs -text

@@ -14,14 +14,14 @@ synthesis from subsequent sessions. The model then optimizes the
 inter-session interval to maximize either absolute serum D or efficiency per
 unit UV dose.
 
-The model now uses exact analytical step updates for the D and M states
-between UV pulses, with 0.5-day sampling for smooth trajectories. Melanin
-pulse updates use a stable exponential saturation form, and the tanning rise
-rate is dose-dependent through a Hill-style alpha(UV) term.
+The model now uses exact analytical step updates for the D, M, and SC states
+between UV pulses, with 0.5-day sampling for smooth trajectories. Melanin and
+stratum-corneum pulse updates use stable exponential saturation forms, and the
+tanning rise rate is dose-dependent through a Hill-style alpha(UV) term.
 
 ## Files
 
-- **`vitd_model.py`** — Core two-state analytical model (D and M).
+- **`vitd_model.py`** — Core three-state analytical model (D, M, and SC).
   All parameters carry literature citations in the module docstring.
 - **`vitd_validation.py`** — Six checks: three sanity (numerical correctness)
   and three literature validation (Matsuoka, Bogh, Farrar).
@@ -29,8 +29,12 @@ rate is dose-dependent through a Hill-style alpha(UV) term.
   beta sweep, two-framing schedule comparison, example trajectories.
 - **`run_all.py`** — Runs validation + all analyses, writes `RESULTS.md`.
 - **`RESULTS.md`** — Auto-generated summary with figures and interpretation.
+- **`SCIENTIFIC_AUDIT_HANDOFF.md`** — Dataset/paper synthesis and recommended
+  future fixes, generated from local CSV/PDF analysis artifacts.
 - **`figs/`** — PNG plots from each analysis.
 - **`tables/`** — CSV outputs of every parameter sweep.
+- **`audit_outputs/`** — Generated dataset profiles, extracted PDF text, and
+  computed summary tables used by `SCIENTIFIC_AUDIT_HANDOFF.md`.
 
 ## How to run
 
@@ -45,11 +49,11 @@ python3 run_all.py
   `k_decay_D = ln(2) / 80 ≈ 0.00866 day^-1`, reflecting systemic tissue and
   adipose buffering rather than plasma-only decay. Datta 2017 is the direct
   post-UVB citation to verify for this value.
-- The synthesis coefficient is recalibrated to `A = 2.112`, preserving the
+- The synthesis coefficient is currently `A = 2.353`, preserving the
   prior ~1.17 nmol/L rise from 1 SED in untanned FST III after adding the
   constitutive baseline factor (`D_ss ∝ A / k_decay_D` no longer the only
   calibration constraint).
-- `K_const = 0.75` adds a constitutive baseline synthesis penalty using
+- `K_const = 0.50` adds a constitutive baseline synthesis penalty using
   `exp(-K_const * M_baseline(F))`.
 - Baseline melanin by Fitzpatrick type is now `1:0.10, 2:0.20, 3:0.30,
   4:0.38, 5:0.65, 6:0.80`, matching the updated Datta 2019-style reflectance
@@ -57,9 +61,15 @@ python3 run_all.py
 - Photoadaptation rise rates are FST-stratified from de Boer 2025:
   `alpha_by_FST = 0.0025` for FP I-III and `0.002` for FP IV-VI, with
   `alpha = 0.0025` retained as the fallback default.
+- Stratum-corneum thickening is modeled as `SC(t)` with 28-day half-life,
+  `alpha_SC = 0.005`, `SC_max = 0.50`, and attenuation coefficient `K_SC = 1.0`.
+  The July 2026 audit found that this state is structurally present but still
+  needs FST/source-specific calibration.
 - The Matsuoka 1990 tanned-state validation uses a 2.5 SED preconditioning
   protocol every 2 days for 4 weeks, representing a realistic summer tanning
-  exposure rather than the prior 0.75 SED protocol.
+  exposure rather than the prior 0.75 SED protocol. The local PDF named
+  `Matsuoka et al., 1990.pdf` is a different sunscreen/body-region paper, so
+  the tanned-state validation still needs the correct full-text source.
 
 ## Headline results
 
@@ -103,9 +113,17 @@ Trade-off, not optimum.
    Karppinen) underpredicts in absolute terms.
 3. Baseline-dependent dose-response. Bogh 2010 confirms synthesis per SED is
    inversely correlated with baseline D. The model doesn't yet incorporate this.
-4. SC thickening state variable. de Boer 2025 reports +34% SC thickening as an
-   independent UV attenuation channel, but the model still only tracks melanin.
-5. Datta 2017 verification. The full text should confirm that the 80-day
-   effective half-life is post-UVB, not post-supplement washout.
+4. SC thickening calibration. The model tracks SC, but de Boer 2025 supports
+   FST-stratified SC/MI behavior that is not yet quantitatively fit.
+5. Source/action-spectrum calibration. NB-UVB, broadband UVB, and solar
+   simulator comparisons should use explicit spectral calibration rather than a
+   single hardcoded multiplier.
+6. Datta 2017 half-life structure. The local full text supports a post-UVB
+   half-life near 89 days at high start levels, but also longer half-lives at
+   medium/low start levels.
+7. Validation thresholds. The July 2026 audit recommends replacing loose
+   qualitative checks with quantitative targets from Farrar 2013, Bogh 2012,
+   and related trial data.
 
-See `RESULTS.md` for full interpretation.
+See `RESULTS.md` for model-run interpretation and
+`SCIENTIFIC_AUDIT_HANDOFF.md` for the dataset/literature audit.

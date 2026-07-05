@@ -2,3 +2,7 @@ __pycache__/
 *.pyc
 ANTIGRAVITY.md
 Papers_and_Datasets/prompt_B_filled.md
+
+# Generated audit extraction artifacts. Keep PDFs and summarized audit outputs,
+# but do not commit full-text paper extracts.
+audit_outputs/extracted_text/

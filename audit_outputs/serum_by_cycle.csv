@@ -1,0 +1,11 @@
+cycle,n,serum_non_missing,serum_missing_pct,mean_25ohd,median_25ohd,sd_25ohd,weighted_mean_25ohd,serum_source_column,serum_schema,has_d2_d3_epid3_components
+2001-2002,8647,8647,0.0,52.33,53.9,26.33,57.68,LBDVIDMS,total_only,False
+2003-2004,9179,9179,0.0,53.67,55.7,28.09,58.8,LBDVIDMS,total_only,False
+2005-2006,9440,9440,0.0,50.99,54.4,26.94,56.77,LBDVIDMS,total_only,False
+2007-2008,9307,9307,0.0,46.77,51.6,34.2,52.38,LBXVIDMS,total_plus_D2_D3_epiD3_components,True
+2009-2010,9835,9835,0.0,56.67,58.9,30.76,61.74,LBXVIDMS,total_plus_D2_D3_epiD3_components,True
+2011-2012,8956,8956,0.0,54.83,56.5,32.42,63.68,LBXVIDMS,total_plus_D2_D3_epiD3_components,True
+2013-2014,9422,9422,0.0,57.88,59.2,31.24,64.01,LBXVIDMS,total_plus_D2_D3_epiD3_components,True
+2015-2016,9165,9165,0.0,56.15,57.2,32.06,64.56,LBXVIDMS,total_plus_D2_D3_epiD3_components,True
+2017-2018,8366,8366,0.0,59.26,59.9,34.61,65.86,LBXVIDMS,total_plus_D2_D3_epiD3_components,True
+2019-2020,8727,8727,0.0,64.86,65.1,43.77,65.54,LBXVIDMS,total_plus_D2_D3_epiD3_components,True
