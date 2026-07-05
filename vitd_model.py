@@ -13,7 +13,9 @@ D(t)  : effective serum 25(OH)D, nmol/L
 M(t)  : effective melanin index, dimensionless 0-1
         (Datta 2019 reflectance scale; 0.10 = FST I, 0.80 = FST VI)
 SC(t) : additional stratum corneum thickness, dimensionless (above baseline 0)
-        (representing epidermal thickening/hyperplasia photoadaptation channel)
+        (representing epidermal thickening/hyperplasia photoadaptation channel;
+        [C8] this state is ACTIVE in the model -- SC is NOT unmodeled;
+        remaining task is FST/source-specific calibration, not implementation)
 
 Governing equations
 -------------------
@@ -31,22 +33,66 @@ Parameter & Source Sourcing
 - k_decay_D = ln(2) / 80 per day:
     Effective systemic decay rate including adipose buffering. Supported by
     Prentice 2017 (PMID: 28738961) and post-UVB cycles in Datta 2017 (DOI: 10.1039/c6pp00258g).
+    Datta 2017 (P4) directly measures an exponential half-life of 89 days in
+    high-start subjects, with longer half-lives (148-199 days) at medium/low start
+    levels. An 80-day fixed constant is approximately supported but should become
+    state-dependent in more mechanistic implementations.
 - A = 2.353:
     Synthesis scaling factor calibrated to preserve a 1.17 nmol/L rise for a 1 SED
     dose in untanned FST III at baseline D=25.0, SC=0.0.
 - K_const = 0.50:
-    Baseline (constitutive) inhibition coefficient. Calibrated to match the 1.3-1.4x
-    synthesis ratio between FST II and VI reported by Young 2020 (PMID: 31883961).
+    Baseline (constitutive) inhibition coefficient. Calibrated so that the FST II:VI
+    synthesis ratio from the constitutive factor alone is consistent with the
+    1.3-1.4x range reported in Young 2020 (PMID: 31883961). See K_ATTEN note below.
 - D_max = 150.0 nmol/L:
     Homeostatic feedback regulation saturation ceiling, based on Bogh 2010 (PMID: 19798069).
 - UV_threshold_by_FST = {I-III: 2.0, IV: 5.0, V: 8.0, VI: 10.0}:
     Fitzpatrick-stratified minimal melanogenesis thresholds, based on Ravnbak 2008 (PMID: 18480919).
 - Stratum Corneum (SC) Thickening:
+    [C8] SC(t) IS modeled as an active state variable. Documents or comments
+    saying 'SC not modeled' are incorrect and have been corrected.
     Decay k_decay_SC (28-day half-life), rise alpha_SC = 0.005, and ceiling SC_max = 0.50.
-    Calibrated to represent the +34% thickness rise observed in de Boer 2025 (PMID: 39956428).
+    Current parameters are calibrated to approximate the +34% average SC thickness
+    rise observed in de Boer 2025 (PMID: 39956428). The REMAINING task is
+    FST-stratified and source-specific calibration (de Boer 2025 reports +23% in
+    FP I-III and +36% in FP IV-VI); alpha_SC, k_decay_SC, and K_SC should be
+    jointly fit from individual-level supplementary data when available.
 - E_source:
     Spectral efficiency coefficient (1.0 default for broadband/solar simulator;
     2.5 for Narrowband UVB 311 nm clinical phototherapy per Bogh 2012, PMID: 22524297).
+    [C3] E_source must be treated as a per-study calibration input, NOT a fixed
+    NB-UVB conversion constant. Young 2020 (P20, PMID: 32690635) shows a 5 nm
+    blue shift in the CIE action spectrum is needed to collapse polychromatic
+    responses; Osmancevic 2009 (P18) shows broadband UVB outperformed NB-UVB
+    per SED in psoriasis. Source handling must become a first-class calibration
+    surface in future versions.
+- K_ATTEN = 2.0:
+    [C5] EVIDENCE CAVEAT: K_ATTEN governs the facultative (photoadaptive) melanin
+    inhibition via exp(-K_ATTEN * excess_M). The value 2.0 is NOT measured from
+    a single direct experiment. New evidence from Young 2020 (P9) shows the
+    FST II:VI vitamin D slope ratio is only about 1.3-1.4 (Arimed B: 1.29;
+    TL01: 1.43), implying a SMALL melanin-only penalty for vitamin D synthesis.
+    Datta 2019 (P13) further shows measured skin pigmentation explains only
+    1.9-2.6% of individual response variation once genetics/demographics are
+    included. K_ATTEN=2.0 should be understood as a placeholder; the current
+    combined effect of K_const and K_ATTEN produces a constitutive+facultative
+    inhibition consistent with the 1.3-1.4x observed ratio when M values are in
+    realistic ranges. Do NOT present K_ATTEN=2.0 as a directly measured parameter.
+- M_baseline_by_FST:
+    [C7] INDIVIDUAL-VARIABILITY WARNING: Datta 2019 (P13, PMID: 30656228)
+    reports a 25(OH)D response range of 2.9 to 139 nmol/L under IDENTICAL UVB
+    dose and body area, with measured skin pigmentation (PPF) explaining only
+    1.9-2.6% of individual response variation. M_baseline_by_FST provides a
+    group-level lookup, but it should NOT be used as a precise individual
+    predictor or as justification for large FST-based synthesis penalties.
+    Use it as a coarse prior; genetics, genotype (VDR, CYP2R1, CYP24A1, etc.),
+    supplementation, and baseline serum D dominate individual outcomes.
+
+Audit change tags (July 2026 Scientific Audit):
+  [C3] E_source per-study calibration requirement
+  [C5] K_ATTEN small-penalty evidence caveat
+  [C7] M_baseline_by_FST individual-variability warning
+  [C8] SC state active, calibration pending
 
 Author: Ahaan
 Last updated: 2026
@@ -75,7 +121,7 @@ class ModelParams:
     beta: float = np.log(2) / 56.0
     K_const: float = 0.50
     M_max: float = 0.95
-    K_ATTEN: float = 2.0
+    K_ATTEN: float = 2.0  # [C5] placeholder; evidence supports only 1.3-1.4x FST II-VI ratio (Young 2020 P9)
     D0_default: float = 25.0
     D_max: float = 150.0
     E_source: float = 1.0
@@ -84,6 +130,8 @@ class ModelParams:
     alpha_SC: float = 0.005
     SC_max: float = 0.50
     K_SC: float = 1.0
+    # [C7] M_baseline_by_FST is a group-level prior only; Datta 2019 (P13) shows
+    # pigmentation explains <3% of individual UV-D3 response. Do not overfit to FST alone.
     M_baseline_by_FST: Dict[int, float] = field(default_factory=lambda: {
         1: 0.10, 2: 0.20, 3: 0.30, 4: 0.38, 5: 0.65, 6: 0.80,
     })

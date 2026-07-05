@@ -73,11 +73,27 @@ python3 run_all.py
 
 ## Headline results
 
-**Validation**: 6 / 6 checks pass. The model reproduces the 80-day effective
-D half-life, a recalibrated 1.17 nmol/L rise from 1 SED in untanned FST III,
-Matsuoka 1990 tanned-state attenuation (ratio 0.67 after 2.5 SED
-preconditioning), qualitative Bogh 2012 rise, and Farrar 2013
-sufficiency-failure for FST V.
+**Validation**: 6 / 7 checks pass (3 sanity + 4 literature). The model reproduces
+the 80-day effective D half-life, a recalibrated 1.17 nmol/L rise from 1 SED in
+untanned FST III, Matsuoka 1990 tanned-state attenuation (ratio ~0.67 after 2.5 SED
+preconditioning), Farrar 2013 FST V quantitative window, and baseline-dependent
+synthesis direction (Bogh 2010/P5).
+
+**Bogh 2012 now FAILS under the new quantitative threshold** — the model predicts
+delta +30.8 nmol/L vs the observed +55.8 nmol/L (gap ~25 nmol/L). This FAIL is
+scientifically correct: the old qualitative `delta > 5` criterion was hiding a real
+model underprediction. The gap must be closed by per-study spectral calibration
+(E_source tuning) before using this model for absolute NB-UVB predictions.
+
+> **July 2026 audit change [C1/C2]**: Bogh 2012 and Farrar 2013 thresholds are
+> now QUANTITATIVE. Bogh 2012 requires `|delta - 55.8| ≤ 15 nmol/L` (not just
+> `delta > 5`). Farrar 2013 requires D_final in [25, 55] nmol/L and delta in
+> [10, 35] nmol/L (not just `D_final < 68`).
+
+> **[C6] Matsuoka citation warning**: The local `Matsuoka et al., 1990.pdf` is a
+> sunscreen/body-region paper, NOT the tanned-vs-untanned attenuation paper. The
+> Matsuoka tanned-state validation uses a synthetic preconditioning protocol and
+> the <0.70 criterion has no confirmed local source. See `vitd_validation.py`.
 
 **Alpha sweep**: The optimal interval (21 days under efficiency framing,
 1 day under absolute framing) is **robust** across alpha = 0.01 to 0.40
@@ -105,25 +121,31 @@ Trade-off, not optimum.
 
 ## Open questions
 
-1. K_ATTEN calibration for FST V-VI. Young 2020 implies it should be lower
-   than the default 2.0; if so, sufficiency is more achievable than the
-   current model predicts.
-2. NB-UVB vs broadband UV conversion. The model is calibrated to broadband
-   per Webb 2018, so direct comparison to phototherapy studies (Bogh,
-   Karppinen) underpredicts in absolute terms.
-3. Baseline-dependent dose-response. Bogh 2010 confirms synthesis per SED is
-   inversely correlated with baseline D. The model doesn't yet incorporate this.
-4. SC thickening calibration. The model tracks SC, but de Boer 2025 supports
-   FST-stratified SC/MI behavior that is not yet quantitatively fit.
-5. Source/action-spectrum calibration. NB-UVB, broadband UVB, and solar
-   simulator comparisons should use explicit spectral calibration rather than a
-   single hardcoded multiplier.
-6. Datta 2017 half-life structure. The local full text supports a post-UVB
-   half-life near 89 days at high start levels, but also longer half-lives at
-   medium/low start levels.
-7. Validation thresholds. The July 2026 audit recommends replacing loose
-   qualitative checks with quantitative targets from Farrar 2013, Bogh 2012,
-   and related trial data.
+1. **K_ATTEN calibration [C5]**: Young 2020 (P9) shows the FST II:VI vitamin D
+   slope ratio is only about 1.3-1.4 (Arimed B 1.29, TL01 1.43). K_ATTEN=2.0
+   is a placeholder; a large multi-fold melanin-only penalty is unsupported by
+   current evidence. Do NOT present K_ATTEN=2.0 as a measured parameter.
+2. **Source / spectral calibration [C3]**: Young 2020 (P20) shows the standard
+   CIE previtamin-D3 action spectrum needs a 5 nm blue shift. Osmancevic 2009
+   (P18) shows broadband UVB can outperform NB-UVB per SED in psoriasis.
+   `E_source` must become a per-study calibration input, not a fixed multiplier.
+3. **Baseline-dependent dose-response [C4]**: Bogh 2011/P5 derives
+   `delta = 7.1 - 0.223*baseline + 11.0*ln(UVB_dose) + 5.5*ln(%BSA)` (R2=0.47).
+   The model captures the baseline direction via feedback; a full BSA term is
+   not yet incorporated.
+4. **SC thickening calibration [C8]**: SC(t) is active. De Boer 2025 supports
+   +23% (FP I-III) and +36% (FP IV-VI) SC thickening; current uniform SC
+   parameters are not FST-stratified and need individual-level data fitting.
+5. **Individual variability / M_baseline [C7]**: Datta 2019 (P13) reports a
+   2.9-139 nmol/L response range under identical UVB with <3% variance explained
+   by pigmentation. M_baseline_by_FST is a group-level prior only; genetics and
+   baseline serum D dominate individual outcomes.
+6. **Matsuoka local PDF mismatch [C6]**: The local file is not the
+   tanned-vs-untanned attenuation paper. Obtain 'Suntanning and Cutaneous
+   Synthesis of Vitamin D3' (Matsuoka et al., J Lab Clin Med 1990) to resolve.
+7. **Datta 2017 half-life structure**: Post-UVB half-life is ~89 days at high
+   start levels, but 148-199 days at medium/low start. A fixed 80-day constant
+   is approximate; state-dependent decay is the next mechanistic step.
 
 See `RESULTS.md` for model-run interpretation and
 `SCIENTIFIC_AUDIT_HANDOFF.md` for the dataset/literature audit.
