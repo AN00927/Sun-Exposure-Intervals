@@ -6,12 +6,14 @@ Validation and sanity check suite for vitd_model.
 Three categories:
 
 1. Sanity checks - basic numerical correctness
-   a. Effective decay half-life of D is 80 days (plasma 15 d per
-      Schoenmakers 2015 + adipose buffering per Prentice 2017;
-      see vitd_model.py docstring for derivation)
+   a. Effective decay half-life of D is approximately 80 days. Datta 2017
+      supports ~89 days in high-start post-UVB subjects, with longer
+      half-lives at medium/low start levels. The check is a parameter guard,
+      not proof that a fixed 80-day half-life is biologically universal.
    b. 1 SED bolus in untanned FST III produces ~1.17 nmol/L rise
       (recalibrated to A=2.353 with K_const=0.50, and D=25.0)
-   c. Photoadaptation: synthesis at high M is meaningfully reduced vs baseline M
+   c. Photoadaptation: synthesis at high M is meaningfully reduced vs baseline M.
+      Local evidence supports a broad 20-60% guard, not the older 40-75% range.
 
 2. Literature validation targets
    a. Matsuoka 1990 - same UVB dose gives reduced response in tanned skin.
@@ -67,10 +69,11 @@ from vitd_model import (ModelParams, synthesis_per_session, simulate,
 # ---------------------------------------------------------------------------
 def sanity_decay_halflife(verbose=True):
     """
-    D should halve in 80 days with no UV input.
-    Effective half-life including adipose buffering (Prentice 2017).
-    Plasma-alone half-life is ~15 days (Schoenmakers 2015) but real-world
-    intervention-study decline is materially slower.
+    Effective D half-life should remain in the evidence-supported order of
+    magnitude. Datta 2017 reports a mean 89-day half-life in high-start post-UVB
+    subjects and longer 148-199 day estimates in medium/low-start groups.
+    This check guards against accidentally reverting to a short plasma-only
+    half-life; it is not a biological validation of an exact 80-day constant.
     """
     p = ModelParams()
     result = simulate(fst=3, schedule=[], duration_days=100, params=p, D0=80.0)
@@ -78,10 +81,12 @@ def sanity_decay_halflife(verbose=True):
     t = result["t"]
     D_80 = np.interp(80.0, t, D)
     ratio = D_80 / 80.0
-    passed = abs(ratio - 0.5) < 0.02
+    inferred_half_life = np.log(2) / p.k_decay_D
+    passed = inferred_half_life >= 75.0 and abs(ratio - 0.5) < 0.02
     if verbose:
-        print(f"[Sanity 1] Effective decay half-life (80 d)")
+        print(f"[Sanity 1] Effective decay half-life guard")
         print(f"  D(t=0) = 80.0,  D(t=80) = {D_80:.2f}  (ratio {ratio:.3f}, target 0.500)")
+        print(f"  inferred model half-life = {inferred_half_life:.1f} d  (guard: >=75 d)")
         print(f"  {'PASS' if passed else 'FAIL'}")
     return passed
 
@@ -92,6 +97,11 @@ def sanity_single_bolus_FST_III(verbose=True):
     A=2.353 and K_const=0.50 were recalibrated together so that the baseline FST III
     constitutive factor and feedback factor at D=25.0 are preserved:
     delta-D = A * ln(2) * exp(-0.50 * 0.30) * (1 - 25.0/150.0).
+
+    Evidence caveat: this is a self-calibration check for the current per-SED
+    model unit. Bogh 2011/P5 shows strong exposed-BSA dependence, so this small
+    single-bolus target should not be compared directly to protocols exposing
+    6-24% BSA or more without an explicit BSA term.
     """
     p = ModelParams()
     fst = 3
@@ -108,7 +118,10 @@ def sanity_single_bolus_FST_III(verbose=True):
 def sanity_photoadaptation_reduction(verbose=True):
     """
     At M = 0.70 (well above FST III baseline of 0.30), synthesis should be
-    substantially less than at M = M_baseline.
+    substantially less than at M = M_baseline. The guard is deliberately broad:
+    de Boer 2025 supports photoadaptation by MED/MI/SC changes but not a direct
+    vitamin-D attenuation coefficient, while Young 2020 supports only modest
+    melanin-only attenuation.
     """
     p = ModelParams()
     fst = 3
@@ -116,11 +129,11 @@ def sanity_photoadaptation_reduction(verbose=True):
     d_untanned = synthesis_per_session(1.0, M_base, M_base, D=25.0, SC=0.0, params=p)
     d_tanned = synthesis_per_session(1.0, 0.70, M_base, D=25.0, SC=0.0, params=p)
     reduction = 1.0 - d_tanned / d_untanned
-    passed = 0.4 <= reduction <= 0.75
+    passed = 0.20 <= reduction <= 0.60
     if verbose:
         print(f"[Sanity 3] Photoadaptation reduction (FST III, M 0.30 -> 0.70)")
         print(f"  untanned synthesis: {d_untanned:.2f}  tanned synthesis: {d_tanned:.2f}")
-        print(f"  reduction = {100*reduction:.1f}%  (target 40-75%)")
+        print(f"  reduction = {100*reduction:.1f}%  (guard range 20-60%; direct D-synthesis attenuation remains undercalibrated)")
         print(f"  {'PASS' if passed else 'FAIL'}")
     return passed
 
@@ -221,6 +234,9 @@ def validate_farrar_2013(verbose=True):
     Unit conversion: 15.7 ng/mL * 2.496 = ~39.2 nmol/L final;
                      8.7 ng/mL * 2.496 = ~21.7 nmol/L rise.
     We simulate the >=1.95 SED group with 1.95 SED/session.
+    D0=30 nmol/L is a proxy within Farrar's reported baseline constraint
+    (all completers <20 ng/mL, i.e. <~50 nmol/L). Exact group baseline is not
+    extractable from the local summary alone, so this check asserts D0 < 50.
     Acceptance windows (broadband model approximation of Manchester winter
     31% BSA protocol; exact BSA/dose conversion not resolved locally):
       D_final in [25, 55] nmol/L   (observed ~39.2, wide band for broadband approx)
@@ -229,23 +245,26 @@ def validate_farrar_2013(verbose=True):
     """
     p = ModelParams()
     fst = 5
+    D0_PROXY = 30.0
     # Simulate the >=1.95 SED dose group: use 1.95 SED/session
     sched = []
     week_days = [0, 2, 4]
     for w in range(6):
         for d in week_days:
             sched.append((w * 7 + d, 1.95))
-    result = simulate(fst=fst, schedule=sched, duration_days=42, params=p, D0=30.0)
+    result = simulate(fst=fst, schedule=sched, duration_days=42, params=p, D0=D0_PROXY)
     D_final = result["D"][-1]
-    delta = D_final - 30.0
+    delta = D_final - D0_PROXY
     # [C2] Quantitative targets from Farrar 2013 (unit-converted)
     OBSERVED_FINAL_NM = 39.2   # nmol/L (15.7 ng/mL * 2.496)
     OBSERVED_DELTA_NM = 21.7   # nmol/L (8.7 ng/mL * 2.496)
     D_final_ok = 25.0 <= D_final <= 55.0
     delta_ok   = 10.0 <= delta  <= 35.0
-    passed = D_final_ok and delta_ok
+    baseline_ok = D0_PROXY < 50.0
+    passed = baseline_ok and D_final_ok and delta_ok
     if verbose:
-        print(f"[Lit 3] Farrar 2013 - FST V, 1.95 SED 3x/week x 6 weeks, baseline 30  [C2]")
+        print(f"[Lit 3] Farrar 2013 - FST V, 1.95 SED 3x/week x 6 weeks, baseline {D0_PROXY:.1f}  [C2]")
+        print(f"  Baseline proxy <50 nmol/L constraint: {'YES' if baseline_ok else 'NO'}")
         print(f"  D_final = {D_final:.1f} nmol/L  (observed ~{OBSERVED_FINAL_NM} nmol/L; target 25-55)")
         print(f"  delta   = {delta:.1f} nmol/L  (observed ~{OBSERVED_DELTA_NM} nmol/L; target 10-35)")
         print(f"  D_final in [25,55]: {'YES' if D_final_ok else 'NO'}   delta in [10,35]: {'YES' if delta_ok else 'NO'}")

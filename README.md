@@ -23,8 +23,9 @@ tanning rise rate is dose-dependent through a Hill-style alpha(UV) term.
 
 - **`vitd_model.py`** — Core three-state analytical model (D, M, and SC).
   All parameters carry literature citations in the module docstring.
-- **`vitd_validation.py`** — Six checks: three sanity (numerical correctness)
-  and three literature validation (Matsuoka, Bogh, Farrar).
+- **`vitd_validation.py`** — Eight checks: three sanity guards, four
+  literature/model validation checks (Matsuoka warning, Bogh, Farrar,
+  Bogh baseline/BSA), and one metric-ordering check.
 - **`vitd_analyses.py`** — Five analyses: alpha sweep, K_ATTEN sweep,
   beta sweep, two-framing schedule comparison, example trajectories.
 - **`run_all.py`** — Runs validation + all analyses, writes `RESULTS.md`.
@@ -33,8 +34,9 @@ tanning rise rate is dose-dependent through a Hill-style alpha(UV) term.
   future fixes, generated from local CSV/PDF analysis artifacts.
 - **`figs/`** — PNG plots from each analysis.
 - **`tables/`** — CSV outputs of every parameter sweep.
-- **`audit_outputs/`** — Generated dataset profiles, extracted PDF text, and
-  computed summary tables used by `SCIENTIFIC_AUDIT_HANDOFF.md`.
+- **`audit_outputs/`** — Generated dataset profiles, PDF inventories,
+  compact extraction snippets, and computed summary tables used by
+  `SCIENTIFIC_AUDIT_HANDOFF.md`.
 
 ## How to run
 
@@ -73,7 +75,7 @@ python3 run_all.py
 
 ## Headline results
 
-**Validation**: 6 / 7 checks pass (3 sanity + 4 literature). The model reproduces
+**Validation**: 7 / 8 checks pass (3 sanity + 4 literature/model checks + metric ordering). The model reproduces
 the 80-day effective D half-life, a recalibrated 1.17 nmol/L rise from 1 SED in
 untanned FST III, Matsuoka 1990 tanned-state attenuation (ratio ~0.67 after 2.5 SED
 preconditioning), Farrar 2013 FST V quantitative window, and baseline-dependent
