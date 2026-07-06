@@ -64,7 +64,8 @@ python3 run_all.py
   `alpha_by_FST = 0.0025` for FP I-III and `0.002` for FP IV-VI, with
   `alpha = 0.0025` retained as the fallback default.
 - Stratum-corneum thickening is modeled as `SC(t)` with 28-day half-life,
-  `alpha_SC = 0.005`, `SC_max = 0.50`, and attenuation coefficient `K_SC = 1.0`.
+  `alpha_SC = 0.005`, `SC_max = 0.30` (prior range 0.20–0.40, de Boer 2025 P2),
+  and attenuation coefficient `K_SC = 1.0`.
   The July 2026 audit found that this state is structurally present but still
   needs FST/source-specific calibration.
 - The Matsuoka 1990 tanned-state validation uses a 2.5 SED preconditioning
@@ -75,7 +76,7 @@ python3 run_all.py
 
 ## Headline results
 
-**Validation**: 7 / 8 checks pass (3 sanity + 4 literature/model checks + metric ordering). The model reproduces
+**Validation**: 8 / 9 checks pass (7 of 8 required + 1 warning-only). The model reproduces
 the 80-day effective D half-life, a recalibrated 1.17 nmol/L rise from 1 SED in
 untanned FST III, Matsuoka 1990 tanned-state attenuation (ratio ~0.67 after 2.5 SED
 preconditioning), Farrar 2013 FST V quantitative window, and baseline-dependent

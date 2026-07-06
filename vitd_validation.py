@@ -55,6 +55,115 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+
+# ---------------------------------------------------------------------------
+# Comparison utilities for validation targets
+# ---------------------------------------------------------------------------
+
+def check_exact_match(observed, expected, abs_tol=0.0):
+    """Exact-match comparison within absolute tolerance.
+
+    Parameters
+    ----------
+    observed : float
+        Model output value.
+    expected : float
+        Expected value from literature.
+    abs_tol : float
+        Absolute tolerance (inclusive).
+
+    Returns
+    -------
+    bool
+    """
+    return abs(observed - expected) <= abs_tol
+
+
+def check_percent_error(observed, expected, max_pct=10.0):
+    """Percent-error comparison.
+
+    Parameters
+    ----------
+    observed : float
+        Model output value.
+    expected : float
+        Expected value from literature.
+    max_pct : float
+        Maximum allowed percent error.
+
+    Returns
+    -------
+    bool
+    """
+    if expected == 0:
+        return observed == 0
+    pct = abs((observed - expected) / expected) * 100.0
+    return pct <= max_pct
+
+
+def check_in_range(value, lo, hi):
+    """Range check: *lo* <= *value* <= *hi* (inclusive).
+
+    Parameters
+    ----------
+    value : float
+    lo : float
+        Lower bound.
+    hi : float
+        Upper bound.
+
+    Returns
+    -------
+    bool
+    """
+    return lo <= value <= hi
+
+
+def check_qualitative_only(result):
+    """Qualitative-only pass/fail. Accepts a boolean directly.
+
+    Use when a validation target has no numeric uncertainty
+    (e.g. direction-of-effect checks).
+    """
+    return bool(result)
+
+
+def weighted_aggregate(results, weights=None):
+    """Compute weighted aggregate score from a dict of check results.
+
+    Parameters
+    ----------
+    results : dict
+        {name: bool} mapping check names to pass/fail.
+    weights : dict or None
+        {name: weight} mapping check names to numeric weights.
+        If None, all checks have equal weight.
+        Checks missing from *weights* default to weight 1.0.
+
+    Returns
+    -------
+    dict
+        {score: weighted pass fraction [0,1],
+         n_pass: int,
+         n_total: int}
+    """
+    n_total = len(results)
+    if n_total == 0:
+        return {"score": 0.0, "n_pass": 0, "n_total": 0}
+
+    total_weight = 0.0
+    weighted_pass = 0.0
+
+    for name, passed in results.items():
+        w = weights.get(name, 1.0) if weights else 1.0
+        total_weight += w
+        if passed:
+            weighted_pass += w
+
+    n_pass = sum(results.values())
+    score = weighted_pass / total_weight if total_weight > 0 else 0.0
+    return {"score": score, "n_pass": n_pass, "n_total": n_total}
+
 from vitd_model import (ModelParams, synthesis_per_session, simulate,
                          build_pulse_schedule, build_weekly_schedule,
                          gross_synth_per_SED, net_final_D_change_per_SED,
@@ -413,6 +522,32 @@ def validate_baseline_calibration_target(verbose=True):
     return passed
 
 
+# ---------------------------------------------------------------------------
+# How to add a new validation target
+#
+# 1. Define a validation function with signature:
+#        def my_new_check(verbose=True) -> bool
+#    - Return True if the model passes, False otherwise.
+#    - Use the comparison utilities above (check_exact_match,
+#      check_percent_error, check_in_range, check_qualitative_only)
+#      to keep target logic readable.
+#    - Hardcode the expected value, tolerance / bounds / direction
+#      directly in the function body so the target is self-documenting.
+#    - Print details when verbose=True; include the PASS/FAIL line.
+#
+# 2. Add a (name, fn, warning_only) tuple to the |checks| list below.
+#    - name: short human-readable label.
+#    - fn: the function from step 1.
+#    - warning_only: True if the check is advisory (does not count
+#      toward required pass/fail).
+#
+# 3. Run |python3 vitd_validation.py| to confirm registration.
+#
+# 4. If the check introduces a new literature source, add a paper
+#    summary card in SCIENTIFIC_AUDIT_HANDOFF.md (outside this file)
+#    and cross-reference the audit-change tag in the docstring.
+#
+# See existing checks for examples.
 # ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
