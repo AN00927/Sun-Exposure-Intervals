@@ -11,3 +11,4 @@ audit_new_paper_snippets.py
 audit_pdf_inventory.py
 nhanes_preprocessing.py
 SCIENTIFIC_AUDIT_HANDOFF.md
+extracted_texts
