@@ -201,7 +201,7 @@ class ModelParams:
         4: 5.0, 5: 8.0, 6: 10.0,
     })
     beta: float = np.log(2) / 56.0
-    K_const: float = 0.50
+    K_const: float = 0.33
     M_max: float = 0.95
     # [C5][C10-PRIOR] K_ATTEN is a COARSE PRIOR. Evidence (Young 2020 P9, Datta 2019 P13,
     # Bogh 2010 P36) supports only a ~1.3-1.4x FST II-VI synthesis ratio, not a large
@@ -230,12 +230,11 @@ class ModelParams:
     alpha_SC: float = 0.005
     SC_max: float = 0.30   # revised from 0.50; prior range 0.20-0.40 (P2)
     K_SC: float = 1.0
-    # [C7][C10-PRIOR] M_baseline_by_FST is a GROUP-LEVEL PRIOR only.
-    # Datta 2019 (P13): pigmentation explains <3% of individual UV-D3 response.
-    # Bogh 2010 (P36): matched-baseline dark/fair pairs show no significant delta diff.
-    # Do NOT use as a precise individual predictor or justify large FST penalties.
+    # [C7][C10-PRIOR] M_baseline_by_FST anchored to ITA_Unexposed means from
+    # trial CSVs (ArimedB trial data, N=48). Mapping: M = 1 - (ITA_U + 30) / 85.
+    # K_const recalculated to preserve Young 2020 FST II:VI ratio of ~1.36.
     M_baseline_by_FST: Dict[int, float] = field(default_factory=lambda: {
-        1: 0.10, 2: 0.20, 3: 0.30, 4: 0.38, 5: 0.65, 6: 0.80,
+        1: 0.0, 2: 0.07, 3: 0.21, 4: 0.44, 5: 0.78, 6: 1.00,
     })
 
     def M_baseline(self, fst: int) -> float:
