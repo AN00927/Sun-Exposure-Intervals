@@ -16,14 +16,10 @@ Three categories:
       Local evidence supports a broad 20-60% guard, not the older 40-75% range.
 
 2. Literature validation targets
-   a. Matsuoka 1990 - same UVB dose gives reduced response in tanned skin.
-      NOTE: The local PDF 'Matsuoka et al., 1990.pdf' is a sunscreen/body-region
-      paper (27 mJ/cm2 fixed dose, 27 FST III subjects), NOT the tanned-vs-untanned
-      Matsuoka 1990 paper cited for 51% tanning attenuation. The tanned-state
-      validation below uses a synthetic preconditioning protocol; the 51% attenuation
-      target has no confirmed local source. Obtain 'Suntanning and Cutaneous Synthesis
-      of Vitamin D3' (Matsuoka et al., 1990, J Lab Clin Med) to resolve this.
-      [C5] Marked as WARNING_ONLY because the correct local source is missing.
+   a. de Boer 2025 - photoadaptation direction check (replaces mis-sourced Matsuoka 1990).
+      Protocol: 0.8 SED 3x/week x 9 weeks on lower back, FST I-III. Checks direction
+      only: melanin increases, SC thickens, synthesis decreases. Quantitative MI comparison
+      is not possible (instrument-specific arbitrary units vs model's normalized 0-1 scale).
    b. Bogh 2012 - NB-UVB 3x/week for 6 weeks in FST III starting at 19.2 nmol/L
       produced a quantitative rise to 75.0 nmol/L (delta ~55.8 nmol/L).
       Validation is now QUANTITATIVE: model delta must be within ±15 nmol/L of
@@ -45,7 +41,7 @@ Audit change tags (July 2026 Scientific Audit):
   [C3] Source spectral calibration note       (High confidence)
   [C4] Baseline + BSA response check         (Moderate confidence)
   [C5] K_ATTEN documentation (see vitd_model.py)
-  [C6] Matsuoka local PDF mismatch warning   (High confidence)
+  [C6] Matsuoka test replaced by de Boer 2025 photoadaptation check (resolved)
   [C7] Datta 2019 individual-variability note (see vitd_model.py)
   [C8] SC state documentation fix            (see vitd_model.py)
 """
@@ -248,42 +244,47 @@ def sanity_photoadaptation_reduction(verbose=True):
 # ---------------------------------------------------------------------------
 # Literature validation
 # ---------------------------------------------------------------------------
-def validate_matsuoka_1990(verbose=True):
+def validate_photoadaptation_deBoer2025(verbose=True):
     """
-    Matsuoka 1990: same UVB dose gives reduced D response in tanned subjects.
-
-    [C6] CITATION WARNING: The local PDF 'Matsuoka et al., 1990.pdf' is a
-    sunscreen/body-region paper studying 27 FST III medical students at a fixed
-    27 mJ/cm2 suberythemic UVB dose. It is NOT the tanned-vs-untanned Matsuoka
-    paper traditionally cited for ~51% tanning attenuation. The 51% threshold
-    used here is from the uncited paper 'Suntanning and Cutaneous Synthesis of
-    Vitamin D3' (Matsuoka et al., J Lab Clin Med 1990); obtain that paper before
-    treating the <0.70 pass criterion as locally validated evidence.
-
-    Implementation: compare synthesis_per_session at M_baseline vs at
-    a tanned state representative of a multi-week pretanning regimen
-    (2.5 SED every 2 days for 4 weeks, a realistic summer tanning exposure).
-    Both melanin index and stratum corneum are updated.
+    de Boer 2025: 0.8 SED 3x/week x 9 weeks on lower back, FST I-III.
+    Melanin index increased 12%, SC thickness increased 34%, MED increased 50%.
+    
+    [Assumption] This test replaces the mis-sourced Matsuoka 1990 test.
+    The local 'Matsuoka et al., 1990.pdf' is a sunscreen/BSA paper, not the
+    tanned-vs-untanned paper. This test verifies direction + plausibility:
+    melanin should increase, SC should thicken, and synthesis should decrease
+    after photoadaptation.
+    
+    Quantitative MI comparison is not possible — de Boer 2025 uses instrument-
+    specific arbitrary melanin index units, not the model's normalized 0-1 scale.
     """
     p = ModelParams()
     fst = 3
     M_base = p.M_baseline(fst)
-    pre_sched = build_pulse_schedule(28, sed_per_session=2.5, interval_days=2)
-    pre = simulate(fst=fst, schedule=pre_sched, duration_days=28, params=p)
-    M_after = pre["M"][-1]
-    SC_after = pre["SC"][-1]
-    # Untanned response
-    d_untanned = synthesis_per_session(1.0, M_base, M_base, D=25.0, SC=0.0, params=p)
-    # Tanned response, using M_after and SC_after
-    d_tanned = synthesis_per_session(1.0, M_after, M_base, D=25.0, SC=SC_after, params=p)
-    ratio = d_tanned / d_untanned
-    passed = ratio < 0.70   # tanned response materially attenuated
+    
+    # de Boer 2025 protocol: 0.8 SED, 3x/week, 9 weeks
+    sched = build_weekly_schedule(63, 0.8, [0, 2, 4])
+    result = simulate(fst=fst, schedule=sched, duration_days=63, params=p)
+    M_after = result["M"][-1]
+    SC_after = result["SC"][-1]
+    
+    # Direction checks
+    melanin_increased = M_after > M_base
+    sc_increased = SC_after > 0.0
+    
+    # Synthesis attenuation: tanned vs untanned
+    d_untanned = synthesis_per_session(0.8, M_base, M_base, D=25.0, SC=0.0, params=p)
+    d_tanned = synthesis_per_session(0.8, M_after, M_base, D=25.0, SC=SC_after, params=p)
+    synthesis_decreased = d_tanned < d_untanned
+    
+    passed = melanin_increased and sc_increased and synthesis_decreased
     if verbose:
-        print(f"[Lit 1] Matsuoka 1990 - tanned synthesis attenuation (WARNING-ONLY)")
-        print(f"  [C6] WARNING: local PDF is sunscreen/BSA paper, not tanned-vs-untanned")
-        print(f"  After 4 wks pretan: M = {M_after:.3f}  SC = {SC_after:.3f}  (baseline M={M_base:.2f}, SC=0.0)")
-        print(f"  untanned delta-D = {d_untanned:.2f},  tanned delta-D = {d_tanned:.2f}")
-        print(f"  ratio = {ratio:.2f}  (expect well below 1.0, target <0.70; criterion unvalidated locally)")
+        print(f"[Lit 1] de Boer 2025 - photoadaptation direction (replaces Matsuoka 1990)")
+        print(f"  Protocol: 0.8 SED 3x/week x 9 weeks, FST III (de Boer 2025)")
+        print(f"  Baseline M={M_base:.3f}, After M={M_after:.3f}, increased: {'YES' if melanin_increased else 'NO'}")
+        print(f"  Baseline SC=0.0, After SC={SC_after:.4f}, increased: {'YES' if sc_increased else 'NO'}")
+        print(f"  Untanned delta-D={d_untanned:.3f}, Tanned delta-D={d_tanned:.3f}")
+        print(f"  Synthesis decreased after photoadaptation: {'YES' if synthesis_decreased else 'NO'}")
         print(f"  {'PASS' if passed else 'FAIL'}")
     return passed
 
@@ -556,7 +557,7 @@ def run_all(verbose=True):
         ("decay half-life",              sanity_decay_halflife, False),
         ("single bolus FST III",          sanity_single_bolus_FST_III, False),
         ("photoadaptation reduction",     sanity_photoadaptation_reduction, False),
-        ("Matsuoka 1990 [C6 warning]",    validate_matsuoka_1990, True),  # warning_only
+        ("de Boer 2025 photoadaptation [C6 replaced]", validate_photoadaptation_deBoer2025, True),  # warning_only
         ("Bogh 2012 [C1 quantitative]",   validate_bogh_2012, False),
         ("Farrar 2013 [C2 quantitative]", validate_farrar_2013, False),
         ("Bogh baseline+BSA [C4]",        validate_bogh_baseline_bsa, False),
