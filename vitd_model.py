@@ -188,7 +188,6 @@ def get_E_source(source_name: str) -> float:
 
 @dataclass
 class ModelParams:
-    k_decay_D: float = np.log(2) / 80.0
     A: float = 2.353
     alpha: float = 0.0025
     alpha_by_FST: Dict[int, float] = field(default_factory=lambda: {
@@ -254,6 +253,16 @@ class ModelParams:
         if b <= 0.0:
             return 0.0
         return (b / BSA_REF) ** BSA_EXP
+
+    @staticmethod
+    def k_decay_D(D: float) -> float:
+        """State-dependent D decay rate from Datta 2017 power-law fit.
+
+        t_half(D) = 2953 * D^(-0.72)  (Datta 2017, three-group data)
+        Returns k = ln(2) / t_half(D) in units of 1/days.
+        """
+        t_half = 2953.0 * D ** (-0.72)
+        return np.log(2.0) / t_half
 
 
 def synthesis_per_session(sed: float, M: float, M_baseline: float,
@@ -469,14 +478,14 @@ def simulate(fst: int,
                 t_steps = np.append(t_steps, end_t)
             for ti in t_steps:
                 delta_time = ti - current_t
-                Di = D * np.exp(-params.k_decay_D * delta_time)
+                Di = D * np.exp(-params.k_decay_D(D) * delta_time)
                 Mi = M_base + (M - M_base) * np.exp(-beta_eff * delta_time)
                 SCi = SC * np.exp(-beta_SC_eff * delta_time)
                 t_record.append(ti)
                 D_record.append(Di)
                 M_record.append(Mi)
                 SC_record.append(SCi)
-            D = D * np.exp(-params.k_decay_D * (end_t - current_t))
+            D = D * np.exp(-params.k_decay_D(D) * (end_t - current_t))
             M = M_base + (M - M_base) * np.exp(-beta_eff * (end_t - current_t))
             SC = SC * np.exp(-beta_SC_eff * (end_t - current_t))
             current_t = end_t

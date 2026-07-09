@@ -6,10 +6,10 @@ Validation and sanity check suite for vitd_model.
 Three categories:
 
 1. Sanity checks - basic numerical correctness
-   a. Effective decay half-life of D is approximately 80 days. Datta 2017
-      supports ~89 days in high-start post-UVB subjects, with longer
-      half-lives at medium/low start levels. The check is a parameter guard,
-      not proof that a fixed 80-day half-life is biologically universal.
+   a. D-dependent decay half-life (Datta 2017): half-life varies with serum
+      25(OH)D level via power-law fit t_half(D) = 2953 * D^(-0.72).
+      At high D (~132 nmol/L), half-life ~89 days; at low D (~43 nmol/L),
+      half-life ~199 days. Tests both endpoints within ±10%.
    b. 1 SED bolus in untanned FST III produces ~1.17 nmol/L rise
       (recalibrated to A=2.353 with K_const=0.50, and D=25.0)
    c. Photoadaptation: synthesis at high M is meaningfully reduced vs baseline M.
@@ -172,24 +172,44 @@ from vitd_model import (ModelParams, synthesis_per_session, simulate,
 # ---------------------------------------------------------------------------
 def sanity_decay_halflife(verbose=True):
     """
-    Effective D half-life should remain in the evidence-supported order of
-    magnitude. Datta 2017 reports a mean 89-day half-life in high-start post-UVB
-    subjects and longer 148-199 day estimates in medium/low-start groups.
-    This check guards against accidentally reverting to a short plasma-only
-    half-life; it is not a biological validation of an exact 80-day constant.
+    Datta 2017: state-dependent half-life from power-law fit.
+    At high D (~132 nmol/L), half-life ≈ 89 days.
+    At low D (~43 nmol/L), half-life ≈ 199 days.
+    Test both endpoints with ±10% tolerance.
     """
     p = ModelParams()
-    result = simulate(fst=3, schedule=[], duration_days=100, params=p, D0=80.0)
-    D = result["D"]
-    t = result["t"]
-    D_80 = np.interp(80.0, t, D)
-    ratio = D_80 / 80.0
-    inferred_half_life = np.log(2) / p.k_decay_D
-    passed = inferred_half_life >= 75.0 and abs(ratio - 0.5) < 0.02
+    tol = 0.10
+    
+    # Check half-life at high D
+    t_half_high = np.log(2) / p.k_decay_D(132.0)
+    high_ok = abs(t_half_high - 89.0) / 89.0 <= tol
+    
+    # Check half-life at medium D
+    t_half_med = np.log(2) / p.k_decay_D(65.0)
+    med_ok = abs(t_half_med - 148.0) / 148.0 <= tol
+    
+    # Check half-life at low D
+    t_half_low = np.log(2) / p.k_decay_D(43.0)
+    low_ok = abs(t_half_low - 199.0) / 199.0 <= tol
+    
+    # Simulate decay from 132 nmol/L for 89 days
+    result = simulate(fst=3, schedule=[], duration_days=89, params=p, D0=132.0)
+    D_89 = np.interp(89.0, result["t"], result["D"])
+    sim_high_ok = abs(D_89 / 132.0 - 0.5) < 0.06
+    
+    # Simulate decay from 43 nmol/L for 199 days
+    result = simulate(fst=3, schedule=[], duration_days=199, params=p, D0=43.0)
+    D_199 = np.interp(199.0, result["t"], result["D"])
+    sim_low_ok = abs(D_199 / 43.0 - 0.5) < 0.06
+    
+    passed = high_ok and med_ok and low_ok and sim_high_ok and sim_low_ok
     if verbose:
-        print(f"[Sanity 1] Effective decay half-life guard")
-        print(f"  D(t=0) = 80.0,  D(t=80) = {D_80:.2f}  (ratio {ratio:.3f}, target 0.500)")
-        print(f"  inferred model half-life = {inferred_half_life:.1f} d  (guard: >=75 d)")
+        print(f"[Sanity 1] D-dependent decay half-life (Datta 2017 power-law fit)")
+        print(f"  D=132: t_half={t_half_high:.1f}d (expected 89d, ±10%): {'OK' if high_ok else 'FAIL'}")
+        print(f"  D=65:  t_half={t_half_med:.1f}d (expected 148d, ±10%): {'OK' if med_ok else 'FAIL'}")
+        print(f"  D=43:  t_half={t_half_low:.1f}d (expected 199d, ±10%): {'OK' if low_ok else 'FAIL'}")
+        print(f"  Sim D=132->D(89)/D0={D_89/132.0:.3f} (target ~0.5): {'OK' if sim_high_ok else 'FAIL'}")
+        print(f"  Sim D=43->D(199)/D0={D_199/43.0:.3f} (target ~0.5): {'OK' if sim_low_ok else 'FAIL'}")
         print(f"  {'PASS' if passed else 'FAIL'}")
     return passed
 
