@@ -10,10 +10,12 @@ Three categories:
       25(OH)D level via power-law fit t_half(D) = 2953 * D^(-0.72).
       At high D (~132 nmol/L), half-life ~89 days; at low D (~43 nmol/L),
       half-life ~199 days. Tests both endpoints within ±10%.
-   b. 1 SED bolus in untanned FST III produces ~1.17 nmol/L rise
-      (recalibrated to A=2.353 with K_const=0.50, and D=25.0)
-   c. Photoadaptation: synthesis at high M is meaningfully reduced vs baseline M.
-      Local evidence supports a broad 20-60% guard, not the older 40-75% range.
+   b. 1 SED bolus in untanned FST III: computation-integrity check.
+      Expected delta = A * ln(2) * exp(-K_const * M_III) * (1 - D/D_max)
+      ≈ 1.27 nmol/L with A=2.353, K_const=0.33, M_III=0.21, ±2% tolerance.
+   c. Photoadaptation reduction (FST III, M 0.30 -> 0.70): Young 2020
+      supports small melanin effect. With K_ATTEN=0.37 and excess_M=0.49,
+      expected reduction ~17%, guard range 10-30%.
 
 2. Literature validation targets
    a. de Boer 2025 - photoadaptation direction check (replaces mis-sourced Matsuoka 1990).
@@ -216,24 +218,20 @@ def sanity_decay_halflife(verbose=True):
 
 def sanity_single_bolus_FST_III(verbose=True):
     """
-    1 SED bolus in untanned FST III should produce ~1.17 nmol/L rise starting from baseline D=25.0, SC=0.0.
-    A=2.353 and K_const=0.50 were recalibrated together so that the baseline FST III
-    constitutive factor and feedback factor at D=25.0 are preserved:
-    delta-D = A * ln(2) * exp(-0.50 * 0.30) * (1 - 25.0/150.0).
-
-    Evidence caveat: this is a self-calibration check for the current per-SED
-    model unit. Bogh 2011/P5 shows strong exposed-BSA dependence, so this small
-    single-bolus target should not be compared directly to protocols exposing
-    6-24% BSA or more without an explicit BSA term.
+    Computation-integrity check: single 1 SED bolus in untanned FST III with
+    A=2.353, K_const=0.33, M_III=0.21, feedback at D=25.
+    Expected delta = A * ln(2) * exp(-K_const * M_III) * (1 - D/D_max) ≈ 1.27.
+    ±2% tolerance for numerical stability.
     """
     p = ModelParams()
     fst = 3
     M_base = p.M_baseline(fst)
     delta = synthesis_per_session(1.0, M_base, M_base, D=25.0, SC=0.0, params=p)
-    passed = 1.0 <= delta <= 1.3
+    expected_delta = 2.353 * np.log(2) * np.exp(-0.33 * 0.21) * (1.0 - 25.0 / 150.0)
+    passed = check_percent_error(delta, expected_delta, max_pct=2.0)
     if verbose:
-        print(f"[Sanity 2] Single bolus, FST III, untanned")
-        print(f"  delta-D = {delta:.2f} nmol/L  (target range 1.0 - 1.3, A=2.353 K_const=0.50)")
+        print(f"[Sanity 2] Single bolus, FST III, untanned (computation-integrity check)")
+        print(f"  delta-D = {delta:.2f} nmol/L  (expected {expected_delta:.2f}, ±2%)")
         print(f"  {'PASS' if passed else 'FAIL'}")
     return passed
 
