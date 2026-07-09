@@ -252,11 +252,11 @@ def sanity_photoadaptation_reduction(verbose=True):
     d_untanned = synthesis_per_session(1.0, M_base, M_base, D=25.0, SC=0.0, params=p)
     d_tanned = synthesis_per_session(1.0, 0.70, M_base, D=25.0, SC=0.0, params=p)
     reduction = 1.0 - d_tanned / d_untanned
-    passed = 0.20 <= reduction <= 0.60
+    passed = 0.10 <= reduction <= 0.30
     if verbose:
         print(f"[Sanity 3] Photoadaptation reduction (FST III, M 0.30 -> 0.70)")
         print(f"  untanned synthesis: {d_untanned:.2f}  tanned synthesis: {d_tanned:.2f}")
-        print(f"  reduction = {100*reduction:.1f}%  (guard range 20-60%; direct D-synthesis attenuation remains undercalibrated)")
+        print(f"  reduction = {100*reduction:.1f}%  (guard range 10-30%; Young 2020 supports small melanin effect)")
         print(f"  {'PASS' if passed else 'FAIL'}")
     return passed
 

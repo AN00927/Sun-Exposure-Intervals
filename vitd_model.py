@@ -207,7 +207,7 @@ class ModelParams:
     # Bogh 2010 P36) supports only a ~1.3-1.4x FST II-VI synthesis ratio, not a large
     # multi-fold melanin penalty. Calibrate baseline 25(OH)D + BSA + source before
     # attributing residuals to pigmentation.
-    K_ATTEN: float = 2.0
+    K_ATTEN: float = 0.37
     D0_default: float = 25.0
     D_max: float = 150.0
     # [C2] E_source default corresponds to broadband solar reference (1.0).
