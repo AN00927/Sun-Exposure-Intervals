@@ -11,7 +11,7 @@ D(t)  : effective serum 25(OH)D, nmol/L
         Single compartment representing the time-integrated plasma + adipose
         reservoir relevant for week-to-month scheduling dynamics.
 M(t)  : effective melanin index, dimensionless 0-1
-        (Datta 2019 reflectance scale; 0.10 = FST I, 0.80 = FST VI)
+        (Datta 2019 reflectance scale; 0.0 = FST I, 1.0 = FST VI)
 SC(t) : additional stratum corneum thickness, dimensionless (above baseline 0)
         (representing epidermal thickening/hyperplasia photoadaptation channel;
         [C8] this state is ACTIVE in the model -- SC is NOT unmodeled;
@@ -19,7 +19,7 @@ SC(t) : additional stratum corneum thickness, dimensionless (above baseline 0)
 
 Governing equations
 -------------------
-dD/dt  = S(UV(t), M(t), SC(t), D(t), F, bsa)  -  k_decay_D * D
+dD/dt  = S(UV(t), M(t), SC(t), D(t), F, bsa)  -  k_decay_D(D) * D
 dM/dt  = alpha * UV(t) * (M_max - M)  -  beta * (M - M_baseline(F))
 dSC/dt = alpha_SC * UV(t) * (SC_max - SC)  -  k_decay_SC * SC
 
@@ -39,20 +39,17 @@ Synthesis function (logarithmic dose-response, melanin and SC-attenuated,
 
 Parameter & Source Sourcing
 ---------------------------
-- k_decay_D = ln(2) / 80 per day:
-    Effective systemic decay rate including adipose buffering. Supported by
-    Prentice 2017 (PMID: 28738961) and post-UVB cycles in Datta 2017 (DOI: 10.1039/c6pp00258g).
-    Datta 2017 (P4) directly measures an exponential half-life of 89 days in
-    high-start subjects, with longer half-lives (148-199 days) at medium/low start
-    levels. An 80-day fixed constant is approximately supported but should become
-    state-dependent in more mechanistic implementations.
+- k_decay_D(D) = ln(2) / (2953 * D^(-0.72)):
+    State-dependent D decay rate from Datta 2017 power-law fit (DOI: 10.1039/c6pp00258g).
+    Three-group validation: t_half(132) ≈ 89d, t_half(65) ≈ 148d, t_half(43) ≈ 199d,
+    all within 1.4% of Datta 2017 reported values. Replaces prior fixed 80-day constant.
 - A = 2.353:
     Synthesis scaling factor calibrated to preserve a 1.17 nmol/L rise for a 1 SED
     dose in untanned FST III at reference BSA (35%), baseline D=25.0, SC=0.0.
-- K_const = 0.50:
-    Baseline (constitutive) inhibition coefficient. Calibrated so that the FST II:VI
-    synthesis ratio from the constitutive factor alone is consistent with the
-    1.3-1.4x range reported in Young 2020 (PMID: 31883961). See K_ATTEN note below.
+- K_const = 0.33:
+    Baseline (constitutive) inhibition coefficient. Recalculated to preserve Young 2020
+    FST II:VI synthesis ratio of ~1.36: K_const = ln(1.36) / (M_VI - M_II) = 0.33.
+    See K_ATTEN note below.
 - D_max = 150.0 nmol/L:
     Homeostatic feedback regulation saturation ceiling, based on Bogh 2010 (PMID: 19798069).
 - UV_threshold_by_FST = {I-III: 2.0, IV: 5.0, V: 8.0, VI: 10.0}:
@@ -73,25 +70,22 @@ Parameter & Source Sourcing
     meaning exact values require recomputation from measured spectra.
     Osmancevic 2009 (P18) shows broadband UVB can outperform NB-UVB per SED in
     psoriasis, confirming these cannot be universal constants.
-- K_ATTEN = 2.0:
-    [C5][C10-PRIOR] K_ATTEN is a COARSE PRIOR, not a measured parameter.
-    Evidence from Young 2020 (P9) shows the FST II:VI vitamin D slope ratio is
-    only ~1.3-1.4 (Arimed B: 1.29; TL01: 1.43), implying a SMALL melanin penalty.
-    Datta 2019 (P13) further shows measured skin pigmentation explains only
-    1.9-2.6% of individual response variation. Future calibration should fit
-    baseline 25(OH)D, BSA, and source FIRST before attributing residuals to
-    pigmentation. Do NOT present K_ATTEN=2.0 as a directly measured parameter.
+- K_ATTEN = 0.37:
+    [C5] Melanin attenuation coefficient from Young 2020 (P9) evidence.
+    Young 2020 shows FST II:VI vitamin D slope ratio is only ~1.3-1.4
+    (Arimed B: 1.29; TL01: 1.43), implying a small melanin penalty.
+    K_ATTEN=2.0 was a coarse prior; 0.37 is the paper-backed value giving
+    an FST II:VI ratio consistent with Young 2020 when combined with new
+    M_baseline_by_FST and K_const values.
 - M_baseline_by_FST:
-    [C7][C10-PRIOR] COARSE PRIOR / INDIVIDUAL-VARIABILITY WARNING:
-    Datta 2019 (P13, PMID: 30656228) reports a 25(OH)D response range of
-    2.9 to 139 nmol/L under IDENTICAL UVB dose and body area, with measured
-    skin pigmentation (PPF) explaining only 1.9-2.6% of individual variation.
-    M_baseline_by_FST provides a group-level lookup ONLY. Do NOT use as a precise
-    individual predictor or to justify large FST-based synthesis penalties.
-    Genetics (VDR, CYP2R1, CYP24A1), supplementation, baseline serum D, and
-    BSA dominate individual outcomes. Bogh 2010 (P36) found no significant
-    delta difference between dark-skinned FST V-VI and fair FST I-IV participants
-    when matched on baseline 25(OH)D.
+    [C7] Anchored to ITA_Unexposed means from trial CSVs (ArimedB trial data,
+    N=48). Mapping: M = 1 - (ITA_U + 30) / 85, clipped to [0, 1].
+    FST I is extrapolated (ITA_U ≈ 58°). Values:
+    {I: 0.0, II: 0.07, III: 0.21, IV: 0.44, V: 0.78, VI: 1.00}.
+    [C10-PRIOR] GROUP-LEVEL PRIOR — Datta 2019 (P13, PMID: 30656228) shows
+    measured pigmentation explains only 1.9-2.6% of individual response variance.
+    Do NOT use as a precise individual predictor or to justify large FST penalties.
+    Genetics (VDR, CYP2R1, CYP24A1), supplementation, baseline D, and BSA dominate.
 - exposed_bsa (Bogh 2011 / P5, Bogh 2010 / P36, Kimlin 2014 / P32):
     [C1] Fraction of body surface area exposed to UV (0.0-1.0). Kimlin 2014 (P32)
     shows clothing cover is the LARGEST single contributor (~27%) to explained

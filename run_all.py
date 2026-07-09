@@ -92,9 +92,8 @@ def main():
     report.append("\n## 4. K_ATTEN sensitivity sweep\n")
     report.append(
         "\nVaries the melanin attenuation coefficient (K_ATTEN). The default value "
-        "of 2.0 is estimated, not measured. Young 2020 measured an overall vitamin D "
-        "inhibition factor of only 1.3-1.4x between FST II and FST VI, suggesting "
-        "K_ATTEN may be substantially lower.\n"
+        "is now 0.37 (paper-backed from Young 2020 FST II:VI ratio). The sweep "
+        "explores sensitivity around this value.\n"
     )
     report.append("\n```\n" + k_log + "\n```\n")
     report.append("\n![K_ATTEN sweep](figs/K_ATTEN_sweep.png)\n")
