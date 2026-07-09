@@ -21,9 +21,9 @@ tanning rise rate depends on dose through a Hill-style alpha(UV) term.
 
 - **`vitd_model.py`** — Core three-state analytical model (D, M, and SC).
   All parameters carry literature citations in the module docstring.
-- **`vitd_validation.py`** — Eight checks: three sanity guards, four
-  literature/model validation checks (Matsuoka warning, Bogh, Farrar,
-  Bogh baseline/BSA), and one metric-ordering check.
+- **`vitd_validation.py`** — Nine checks: three sanity guards, five
+  literature/model validation checks (de Boer 2025, Bogh, Farrar,
+  Bogh baseline/BSA, Karppinen 2017), and one metric-ordering check.
 - **`vitd_analyses.py`** — Five analyses: alpha sweep, K_ATTEN sweep,
   beta sweep, two-framing schedule comparison, example trajectories.
 - **`run_all.py`** — Runs validation + all analyses, writes `RESULTS.md`.
@@ -45,56 +45,35 @@ python3 run_all.py
 
 ## Current calibration
 
-- Effective serum 25(OH)D decay half-life is 80 days:
-  `k_decay_D = ln(2) / 80 ≈ 0.00866 day^-1`, reflecting systemic tissue and
-  adipose buffering instead of plasma-only decay. Datta 2017 is the direct
-  post-UVB citation for this value.
-- The synthesis coefficient is `A = 2.353`, preserving the
-  prior ~1.17 nmol/L rise from 1 SED in untanned FST III after adding the
-  constitutive baseline factor (`D_ss ∝ A / k_decay_D` no longer the only
-  calibration constraint).
-- `K_const = 0.50` adds a constitutive baseline synthesis penalty using
-  `exp(-K_const * M_baseline(F))`.
-- Baseline melanin by Fitzpatrick type: `1:0.10, 2:0.20, 3:0.30,
-  4:0.38, 5:0.65, 6:0.80`, matching the updated Datta 2019-style reflectance
-  mapping.
-- Photoadaptation rise rates are FST-stratified from de Boer 2025:
-  `alpha_by_FST = 0.0025` for FP I-III and `0.002` for FP IV-VI, with
-  `alpha = 0.0025` retained as the fallback default.
-- Stratum-corneum thickening is modeled as `SC(t)` with 28-day half-life,
-  `alpha_SC = 0.005`, `SC_max = 0.30` (prior range 0.20–0.40, de Boer 2025 P2),
-  and attenuation coefficient `K_SC = 1.0`.
-  The July 2026 audit found this state is structurally present but still
-  needs FST/source-specific calibration.
-- The Matsuoka 1990 tanned-state validation uses a 2.5 SED preconditioning
-  protocol every 2 days for 4 weeks, representing a realistic summer tanning
-  exposure instead of the prior 0.75 SED protocol. The local PDF named
-  `Matsuoka et al., 1990.pdf` is a different sunscreen/body-region paper, so
-  the tanned-state validation still needs the correct full-text source.
+- **D decay is state-dependent.** Half-life follows a power law fit to Datta
+  2017: `t_half(D) = 2953 * D^(-0.72)`. At high D (~132 nmol/L), half-life is
+  ~89 days. At low D (~43 nmol/L), half-life is ~199 days. Body preserves D
+  when levels are low and clears it faster when levels are high.
+- **Synthesis coefficient** `A = 2.353`. With current K_const and M_baseline,
+  1 SED in untanned FST III at D=25 produces ~1.27 nmol/L rise.
+- **K_const = 0.33** sets the constitutive melanin penalty so that the FST
+  II:VI synthesis ratio matches Young 2020 (~1.36×).
+- **M_baseline_by_FST** anchored to spectrometer measurements from trial
+  participants (ITA angle from ArimedB CSVs, N=48):
+  `1:0.0, 2:0.07, 3:0.21, 4:0.44, 5:0.78, 6:1.00`.
+- **K_ATTEN = 0.37** (was 2.0). Young 2020 shows melanin has a small effect
+  on D synthesis. The old 2.0 was a coarse prior with no paper support.
+- **Matsuoka test replaced** with de Boer 2025 photoadaptation check (the
+  local Matsuoka PDF was a sunscreen paper, not the tanned-vs-untanned paper).
+- All other parameters unchanged: `alpha_by_FST`, `SC`, `beta`, `E_source`,
+  `D_max`, `BSA`. See `vitd_model.py` docstring for full citations.
 
 ## Headline results
 
-**Validation**: 8 / 9 checks pass (7 of 8 required + 1 warning-only). The model reproduces
-the 80-day effective D half-life, a recalibrated 1.17 nmol/L rise from 1 SED in
-untanned FST III, Matsuoka 1990 tanned-state attenuation (ratio ~0.67 after 2.5 SED
-preconditioning), Farrar 2013 FST V quantitative window, and baseline-dependent
-synthesis direction (Bogh 2010/P5).
+**Validation**: 8/8 required + 1/1 warning checks pass. Key results:
 
-**Bogh 2012 fails under the new quantitative threshold**: the model predicts
-delta +30.8 nmol/L vs the observed +55.8 nmol/L (gap ~25 nmol/L). The old
-qualitative `delta > 5` criterion was hiding a real
-model underprediction. Closing the gap requires per-study spectral calibration
-(E_source tuning) before using this model for absolute NB-UVB predictions.
-
-> **July 2026 audit change [C1/C2]**: Bogh 2012 and Farrar 2013 thresholds are
-> quantitative. Bogh 2012 requires `|delta - 55.8| ≤ 15 nmol/L` instead of
-> `delta > 5`. Farrar 2013 requires D_final in [25, 55] nmol/L and delta in
-> [10, 35] nmol/L instead of `D_final < 68`.
-
-> **[C6] Matsuoka citation warning**: The local `Matsuoka et al., 1990.pdf` is a
-> sunscreen/body-region paper, not the tanned-vs-untanned attenuation paper. The
-> Matsuoka tanned-state validation uses a synthetic preconditioning protocol and
-> the <0.70 criterion has no confirmed local source. See `vitd_validation.py`.
+- **Bogh 2012**: model delta +41.6 vs observed +55.8 (within ±15 tolerance). The
+  ~14 nmol/L gap is expected — the study used FST I-III Danes, lighter than the
+  model's FST III default.
+- **Farrar 2013 FST V**: D_final and delta are in a plausible window.
+- **Bogh baseline/BSA**: direction check passes.
+- **de Boer 2025 photoadaptation**: melanin and SC respond in the right direction.
+- **Sanity checks**: single-bolus, ordering, and photoadaptation reduction all pass.
 
 **Alpha sweep**: The optimal interval (21 days under efficiency framing,
 1 day under absolute framing) holds across alpha = 0.01 to 0.40
@@ -105,14 +84,13 @@ uncertainty; this sweep shows otherwise.
 remain robust across melanin decay half-lives of 21-120 days. Beta shifts
 absolute D but does not change interval ranking.
 
-**K_ATTEN sweep**: Same robustness. Steady-state D ranges from ~47.5 to
-~60.5 nmol/L across K = 8.0 to 0.2 under daily dosing, but interval ranking
-does not change. Calibrating K_ATTEN matters for absolute-level predictions,
-not for scheduling conclusions.
+**K_ATTEN sweep**: Same robustness. K_ATTEN=0.37 (Young 2020-backed) is the
+default. Steady-state D is ~67 nmol/L under daily dosing (FST V). Interval
+ranking does not change with K_ATTEN.
 
 **Two-framing finding**: Under matched per-session dose (1 SED/session),
-- shortest interval (daily) wins absolute D (FST V: ~57, FST VI: ~54 nmol/L)
-- longest interval (every 21 days) wins efficiency (~0.90 vs ~0.82 nmol/L per SED)
+- shortest interval (daily) wins absolute D (FST V: ~72, FST VI: ~69 nmol/L)
+- longest interval (every 21 days) wins gross efficiency (~1.05 vs ~0.79 nmol/L per SED)
 
 UV is a constrained resource (skin cancer risk), so the efficiency framing
 carries more clinical weight. But sufficiency targets (50 nmol/L) require dose
@@ -120,31 +98,21 @@ density. You face a trade-off, not a single optimum.
 
 ## Open questions
 
-1. **K_ATTEN calibration [C5]**: Young 2020 (P9) shows the FST II:VI vitamin D
-   slope ratio is roughly 1.3-1.4 (Arimed B 1.29, TL01 1.43). K_ATTEN=2.0
-   is a placeholder; a large multi-fold melanin-only penalty is unsupported by
-   current evidence. Do not present K_ATTEN=2.0 as a measured parameter.
-2. **Source / spectral calibration [C3]**: Young 2020 (P20) shows the standard
+1. **Source / spectral calibration [C3]**: Young 2020 (P20) shows the standard
    CIE previtamin-D3 action spectrum needs a 5 nm blue shift. Osmancevic 2009
    (P18) shows broadband UVB can outperform NB-UVB per SED in psoriasis.
    `E_source` needs to be a per-study calibration input, not a fixed multiplier.
-3. **Baseline-dependent dose-response [C4]**: Bogh 2011/P5 derives
+2. **Baseline-dependent dose-response [C4]**: Bogh 2011/P5 derives
    `delta = 7.1 - 0.223*baseline + 11.0*ln(UVB_dose) + 5.5*ln(%BSA)` (R2=0.47).
    The model captures the baseline direction via feedback; a full BSA term is
    not incorporated.
-4. **SC thickening calibration [C8]**: SC(t) is active. De Boer 2025 supports
+3. **SC thickening calibration [C8]**: SC(t) is active. De Boer 2025 supports
    +23% (FP I-III) and +36% (FP IV-VI) SC thickening; current uniform SC
    parameters are not FST-stratified and require individual-level data fitting.
-5. **Individual variability / M_baseline [C7]**: Datta 2019 (P13) reports a
+4. **Individual variability / M_baseline [C7]**: Datta 2019 (P13) reports a
    2.9-139 nmol/L response range under identical UVB with <3% variance explained
    by pigmentation. M_baseline_by_FST is a group-level prior only; genetics and
    baseline serum D dominate individual outcomes.
-6. **Matsuoka local PDF mismatch [C6]**: The local file is not the
-   tanned-vs-untanned attenuation paper. Obtain 'Suntanning and Cutaneous
-   Synthesis of Vitamin D3' (Matsuoka et al., J Lab Clin Med 1990) to resolve.
-7. **Datta 2017 half-life structure**: Post-UVB half-life is ~89 days at high
-   start levels, but 148-199 days at medium/low start. A fixed 80-day constant
-   is approximate; state-dependent decay is the next mechanistic step.
 
 See `RESULTS.md` for model-run interpretation and
 `SCIENTIFIC_AUDIT_HANDOFF.md` for the dataset/literature audit.
