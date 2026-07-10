@@ -222,8 +222,29 @@ class ModelParams:
     # k_decay_SC, or K_SC without individual-level supplementary data.
     k_decay_SC: float = np.log(2) / 28.0
     alpha_SC: float = 0.005
-    SC_max: float = 0.30   # revised from 0.50; prior range 0.20-0.40 (P2)
+    SC_max: float = 0.30   # revised from 0.50; prior range 0.20-0.36 (P2, de Boer 2025)
     K_SC: float = 1.0
+    # [C7-SC-PRIOR] Evidence-based ranges for SC parameters.
+    # SC_max: de Boer 2025 (P2) reports +36% SC thickening in FP IV-VI after
+    #   9 weeks of 0.8 SED 3x/week. This sets the empirical ceiling.
+    #   Upper bound 0.36 replaces prior 0.40.
+    # alpha_SC: Rise rate constrained by de Boer 2025 protocol fit.
+    #   SC rose from 6.6 to 9.0 um (+36%) over 27 sessions in FP IV-VI.
+    # k_decay_SC: 21-28 day half-life. Pearse 1987 (P23) measured SC after
+    #   6 weeks of 3x/week UVB. Epidermal turnover literature: 26-28 days.
+    #   de Boer 2025 shows SC still rising at 9 weeks -> decay slower than rise.
+    # K_SC: Attenuation strength. Pearse 1987 did not measure vitamin D
+    #   attenuation directly. K_SC=1.0 gives exp(-0.30)=74% at SC_max.
+    #   Range 0.5-2.0 reflects uncertainty.
+    SC_PRIOR_RANGES = {
+        "SC_max": (0.20, 0.36),                                        # de Boer 2025
+        "alpha_SC": (0.003, 0.008),                                     # de Boer 2025
+        "k_decay_SC": (np.log(2) / 28, np.log(2) / 21),               # 21-28d half-life
+        "K_SC": (0.5, 2.0),                                             # Pearse 1987 direction
+    }
+    # TODO: Fit alpha_SC, k_decay_SC, K_SC to individual-level de Boer 2025
+    # supplementary data (SC thickness time-courses by FP group).
+    # Current values are literature-constrained priors, not fitted.
     # [C7][C10-PRIOR] M_baseline_by_FST anchored to ITA_Unexposed means from
     # trial CSVs (ArimedB trial data, N=48). Mapping: M = 1 - (ITA_U + 30) / 85.
     # K_const recalculated to preserve Young 2020 FST II:VI ratio of ~1.36.
