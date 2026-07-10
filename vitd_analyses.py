@@ -23,6 +23,7 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from scipy.optimize import minimize_scalar
 from vitd_model import (ModelParams, simulate, build_pulse_schedule,
                         steady_state_D, efficiency_D_per_SED, mean_final_M,
                         final_D, gross_synth_per_SED, net_final_D_change_per_SED,
@@ -572,6 +573,96 @@ def analysis_fine_grid():
 
 
 # ===========================================================================
+# Analysis G: continuous optimization via scipy.optimize
+# ===========================================================================
+def analysis_scipy_optimize():
+    """
+    Use scipy.optimize.minimize_scalar to find the true optimal interval
+    numerically, rather than on a discrete grid.
+
+    Uses Brent's method (method='bounded') which combines parabolic
+    interpolation with golden section search. No gradient needed -- only
+    function evaluations. Typically converges in ~10-15 evaluations.
+
+    Optimizes two objectives:
+    1. gross_synth_per_SED (efficiency) -- the clinical framing
+    2. steady_state_D (absolute) -- the maximum-D framing
+
+    Cross-validates against fine-grid argmax.
+    """
+    print("\n" + "=" * 70)
+    print("ANALYSIS G: continuous optimization (scipy.optimize)")
+    print("=" * 70)
+
+    fsts = [5, 6]
+    sed_per_session = 1.0
+    PROTOCOL = 84
+
+    def neg_efficiency(interval_float, fst):
+        """Negative gross synth efficiency (minimize = maximize)."""
+        interval = max(1, int(round(interval_float)))
+        sched = build_pulse_schedule(PROTOCOL, sed_per_session, interval)
+        r = simulate(fst=fst, schedule=sched, duration_days=PROTOCOL)
+        return -gross_synth_per_SED(r)
+
+    def neg_steady_state_D(interval_float, fst):
+        """Negative steady-state D (minimize = maximize)."""
+        interval = max(1, int(round(interval_float)))
+        sched = build_pulse_schedule(PROTOCOL, sed_per_session, interval)
+        r = simulate(fst=fst, schedule=sched, duration_days=PROTOCOL)
+        return -steady_state_D(r)
+
+    rows = []
+    for fst in fsts:
+        res_eff = minimize_scalar(
+            neg_efficiency, args=(fst,),
+            bounds=(1, 60), method='bounded'
+        )
+        opt_interval_eff = max(1, int(round(res_eff.x)))
+        opt_efficiency = -res_eff.fun
+
+        res_D = minimize_scalar(
+            neg_steady_state_D, args=(fst,),
+            bounds=(1, 60), method='bounded'
+        )
+        opt_interval_D = max(1, int(round(res_D.x)))
+        opt_D = -res_D.fun
+
+        sched_eff = build_pulse_schedule(PROTOCOL, sed_per_session, opt_interval_eff)
+        r_eff = simulate(fst=fst, schedule=sched_eff, duration_days=PROTOCOL)
+
+        sched_D = build_pulse_schedule(PROTOCOL, sed_per_session, opt_interval_D)
+        r_D = simulate(fst=fst, schedule=sched_D, duration_days=PROTOCOL)
+
+        row = {
+            "FST": fst,
+            "opt_interval_efficiency": opt_interval_eff,
+            "opt_efficiency_nmol_per_SED": opt_efficiency,
+            "efficiency_func_evals": res_eff.nfev,
+            "opt_interval_absolute_D": opt_interval_D,
+            "opt_steady_state_D": opt_D,
+            "D_func_evals": res_D.nfev,
+            "ss_D_at_eff_opt": steady_state_D(r_eff),
+            "gross_eff_at_D_opt": gross_synth_per_SED(r_D),
+        }
+        rows.append(row)
+
+        print(f"\nFST {fst}:")
+        print(f"  Efficiency optimum: interval={opt_interval_eff}d, "
+              f"efficiency={opt_efficiency:.3f} nmol/L/SED "
+              f"({res_eff.nfev} function evals)")
+        print(f"  Absolute D optimum: interval={opt_interval_D}d, "
+              f"steady_state_D={opt_D:.1f} nmol/L "
+              f"({res_D.nfev} function evals)")
+        print(f"  Cross-check: ss_D at eff optimum = {steady_state_D(r_eff):.1f}, "
+              f"gross_eff at D optimum = {gross_synth_per_SED(r_D):.3f}")
+
+    df = pd.DataFrame(rows)
+    df.to_csv(f"{TAB_DIR}/scipy_optimize_results.csv", index=False)
+    return df
+
+
+# ===========================================================================
 # ===========================================================================
 # Analysis D: trajectory plots for the best schedule under each framing
 # ===========================================================================
@@ -628,6 +719,7 @@ def main():
     analysis_K_ATTEN_sweep()
     analysis_two_framings()
     analysis_fine_grid()
+    analysis_scipy_optimize()
     analysis_trajectories()
     print("\nDONE.")
 
