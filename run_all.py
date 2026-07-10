@@ -44,6 +44,8 @@ def main():
     _, k_log = capture(vitd_analyses.analysis_K_ATTEN_sweep)
     _, beta_log = capture(vitd_analyses.analysis_beta_sweep)
     _, frame_log = capture(vitd_analyses.analysis_two_framings)
+    _, fine_log = capture(vitd_analyses.analysis_fine_grid)
+    _, scipy_log = capture(vitd_analyses.analysis_scipy_optimize)
     _, traj_log = capture(vitd_analyses.analysis_trajectories)
 
     # Echo to console
@@ -110,14 +112,29 @@ def main():
     report.append("\n```\n" + frame_log + "\n```\n")
     report.append("\n![two framings](figs/two_framings.png)\n")
 
-    report.append("\n## 6. Example trajectories\n")
+    report.append("\n## 6. Fine-grid interval sweep\n")
+    report.append(
+        "\nSweeps intervals from 1–35 days in 1-day steps to find the exact optimal "
+        "interval under each framing. Complements the coarse integer-interval analysis "
+        "in the two-framing comparison.\n"
+    )
+    report.append("\n```\n" + fine_log + "\n```\n")
+
+    report.append("\n## 7. Continuous optimization (scipy.optimize)\n")
+    report.append(
+        "\nUses scipy.optimize.minimize (Nelder-Mead) to find the continuous-valued "
+        "interval that maximizes per-SED efficiency, confirming the discrete sweep.\n"
+    )
+    report.append("\n```\n" + scipy_log + "\n```\n")
+
+    report.append("\n## 8. Example trajectories\n")
     report.append(
         "\nD(t) and M(t) under three representative schedules at fixed 1 SED per "
         "session. Shows the temporal dynamics directly.\n"
     )
     report.append("\n![trajectories](figs/trajectories.png)\n")
 
-    report.append("\n## 7. Interpretation\n")
+    report.append("\n## 9. Interpretation\n")
     report.append("""
 ### What the sweeps actually showed
 

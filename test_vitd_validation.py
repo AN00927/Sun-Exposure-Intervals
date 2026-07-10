@@ -193,7 +193,7 @@ class TestValidationStructure:
         from vitd_validation import run_all
         result = run_all(verbose=False)
         assert isinstance(result, dict)
-        assert len(result) == 9
+        assert len(result) == 10
 
     def test_each_check_returns_bool(self):
         from vitd_validation import (
@@ -206,6 +206,7 @@ class TestValidationStructure:
             validate_bogh_baseline_bsa,
             validate_metric_ordering,
             validate_baseline_calibration_target,
+            validate_sc_deBoer2025,
         )
         for fn in [
             sanity_decay_halflife,
@@ -217,6 +218,7 @@ class TestValidationStructure:
             validate_bogh_baseline_bsa,
             validate_metric_ordering,
             validate_baseline_calibration_target,
+            validate_sc_deBoer2025,
         ]:
             result = fn(verbose=False)
             assert isinstance(result, (bool, np.bool_)), f"{fn.__name__} returned {type(result)}"
@@ -232,6 +234,7 @@ class TestValidationStructure:
             validate_bogh_baseline_bsa,
             validate_metric_ordering,
             validate_baseline_calibration_target,
+            validate_sc_deBoer2025,
         )
         for fn in [
             sanity_decay_halflife,
@@ -243,6 +246,7 @@ class TestValidationStructure:
             validate_bogh_baseline_bsa,
             validate_metric_ordering,
             validate_baseline_calibration_target,
+            validate_sc_deBoer2025,
         ]:
             result_verbose = fn(verbose=True)
             result_quiet = fn(verbose=False)

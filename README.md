@@ -21,12 +21,14 @@ tanning rise rate depends on dose through a Hill-style alpha(UV) term.
 
 - **`vitd_model.py`** — Core three-state analytical model (D, M, and SC).
   All parameters carry literature citations in the module docstring.
-- **`vitd_validation.py`** — Nine checks: three sanity guards, five
+- **`vitd_validation.py`** — Ten checks: three sanity guards, five
   literature/model validation checks (de Boer 2025, Bogh, Farrar,
-  Bogh baseline/BSA, Karppinen 2017), and one metric-ordering check.
-- **`vitd_analyses.py`** — Five analyses: alpha sweep, K_ATTEN sweep,
-  beta sweep, two-framing schedule comparison, example trajectories.
-- **`run_all.py`** — Runs validation + all analyses, writes `RESULTS.md`.
+  Bogh baseline/BSA, Karppinen 2017), one metric-ordering check,
+  and one SC validation check (warning-only).
+- **`vitd_analyses.py`** — Seven analyses: alpha sweep, K_ATTEN sweep,
+  beta sweep, two-framing schedule comparison, fine-grid interval sweep,
+  scipy.optimize continuous optimization, example trajectories.
+- **`run_all.py`** — Runs validation + all 7 analyses, writes `RESULTS.md`.
 - **`RESULTS.md`** — Auto-generated summary with figures and interpretation.
 - **`SCIENTIFIC_AUDIT_HANDOFF.md`** — Dataset/paper synthesis and recommended
   future fixes, generated from local CSV/PDF analysis artifacts.
@@ -60,12 +62,14 @@ python3 run_all.py
   on D synthesis. The old 2.0 was a coarse prior with no paper support.
 - **Matsuoka test replaced** with de Boer 2025 photoadaptation check (the
   local Matsuoka PDF was a sunscreen paper, not the tanned-vs-untanned paper).
-- All other parameters unchanged: `alpha_by_FST`, `SC`, `beta`, `E_source`,
+- **SC parameters**: `SC_max = 0.30` (literature-constrained prior, range 0.20-0.36 (de Boer 2025)),
+  `alpha_SC = 0.005`, `k_decay_SC = ln(2)/28`, `K_SC = 1.0`. Not FST-stratified.
+- All other parameters unchanged: `alpha_by_FST`, `beta`, `E_source`,
   `D_max`, `BSA`. See `vitd_model.py` docstring for full citations.
 
 ## Headline results
 
-**Validation**: 8/8 required + 1/1 warning checks pass. Key results:
+**Validation**: 8/8 required + 2/2 warning-only checks pass. Key results:
 
 - **Bogh 2012**: model delta +41.6 vs observed +55.8 (within ±15 tolerance). The
   ~14 nmol/L gap is expected — the study used FST I-III Danes, lighter than the
@@ -95,6 +99,16 @@ ranking does not change with K_ATTEN.
 UV is a constrained resource (skin cancer risk), so the efficiency framing
 carries more clinical weight. But sufficiency targets (50 nmol/L) require dose
 density. You face a trade-off, not a single optimum.
+
+**Fine-grid sweep (1-30d, 1d steps)**: The coarse grid suggested 21d, but
+finer resolution pushes the efficiency optimum higher — to **27 days**
+(FST V: 1.057, FST VI: 0.984 nmol/L per SED).
+
+**scipy.optimize (continuous)**: Nelder-Mead optimization confirms the
+trend. Efficiency optimum at **~37 days** (1.060/0.986 nmol/L per SED).
+Absolute D optimum at **~2 days** (daily is optimal). The continuous and
+fine-grid results converge: sparser dosing is monotonically more efficient,
+limited only by the simulation horizon for state stabilization.
 
 ## Open questions
 
