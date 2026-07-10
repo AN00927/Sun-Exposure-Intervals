@@ -1,20 +1,19 @@
 """
 vitd_analyses.py
 ================
-Priority analyses for the vitamin D scheduling model, per HANDOFF_md.docx
-"What To Do Next" section:
+Analyses for the vitamin D scheduling model:
 
   A. alpha sensitivity sweep (photoadaptation rise rate, FST V & VI)
-     - This is the #1 priority per the handoff.
-  B. K_ATTEN sensitivity sweep (synthesis attenuation coefficient)
-     - #2 priority. Young 2020 implies K_ATTEN may be much lower than 2.0;
-       sweep tests how much this matters for scheduling.
-  C. Schedule comparison under TWO framings:
-     - Framing 1: Match cumulative SED, vary interval (current handoff approach)
-     - Framing 2: Match per-session dose, vary interval (clinically meaningful;
-                  treats UV as the constrained resource)
-  D. Two-framing summary plot - shows that the optimal interval flips
-     between framings (the central handoff finding).
+  B. K_ATTEN sensitivity synthesis attenuation coefficient)
+  C. Schedule comparison under TWO framings (matched SED vs matched dose)
+  D. Two-framing summary plot
+  E. beta sensitivity sweep (tanning decay rate)
+  F. Fine-grid interval sweep (1-30 days, 1-day steps)
+  G. scipy.optimize continuous interval optimization
+  H. Maximum interval for sufficiency (D_ss >= 50 nmol/L threshold)
+  I. Loading dose optimization (distribute UV budget across first 14 days)
+  J. Maintenance dose splitting (single vs split sessions)
+  K. Sun exposure scheduling (minutes of midday sun, no equipment)
 
 All outputs saved to ./figs/ as PNG and ./tables/ as CSV.
 """
@@ -663,6 +662,407 @@ def analysis_scipy_optimize():
 
 
 # ===========================================================================
+# Analysis H: maximum interval for sufficiency
+# ===========================================================================
+def analysis_max_interval_for_sufficiency():
+    """
+    Find the longest inter-session interval that maintains steady-state D >= 50
+    nmol/L under fixed 1 SED/session dosing.
+
+    For each FST (V, VI), scans intervals from 1 to 60 days. Reports the
+    threshold interval and plots D_ss vs interval with a sufficiency line.
+    """
+    print("\n" + "=" * 70)
+    print("ANALYSIS H: maximum interval for sufficiency")
+    print("=" * 70)
+    SED = 1.0
+    THRESHOLD = 50.0
+    rows = []
+    for fst in [5, 6]:
+        for interval in range(1, 61):
+            sched = build_pulse_schedule(PROTOCOL_DAYS, SED, interval)
+            r = simulate(fst=fst, schedule=sched, duration_days=PROTOCOL_DAYS)
+            d_ss = steady_state_D(r)
+            rows.append({
+                "FST": fst, "interval_days": interval,
+                "steady_state_D": d_ss,
+                "above_sufficiency": d_ss >= THRESHOLD,
+                "cumulative_SED": r["cumulative_SED"],
+            })
+    df = pd.DataFrame(rows)
+    df.to_csv(f"{TAB_DIR}/max_interval_sufficiency.csv", index=False)
+
+    for fst in [5, 6]:
+        sub = df[df["FST"] == fst]
+        passing = sub[sub["above_sufficiency"]]
+        if len(passing) > 0:
+            max_int = int(passing["interval_days"].max())
+            d_at_max = sub[sub["interval_days"] == max_int]["steady_state_D"].values[0]
+            print(f"  FST {fst}: max interval = {max_int}d "
+                  f"(D_ss = {d_at_max:.1f} nmol/L)")
+        else:
+            print(f"  FST {fst}: no interval 1-60d maintains sufficiency")
+
+    # Plot D_ss vs interval
+    fig, ax = plt.subplots(figsize=(9, 5))
+    for fst in [5, 6]:
+        sub = df[df["FST"] == fst]
+        ax.plot(sub["interval_days"], sub["steady_state_D"],
+                marker=".", markersize=3, label=f"FST {fst}")
+    ax.axhline(THRESHOLD, color="gray", linestyle="--", alpha=0.7,
+               label=f"{THRESHOLD} nmol/L sufficiency")
+    ax.set_xlabel("Inter-session interval (days)")
+    ax.set_ylabel("Steady-state 25(OH)D (nmol/L)")
+    ax.set_title("Maximum interval for sufficiency (1 SED/session)")
+    ax.legend()
+    ax.grid(alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(f"{FIG_DIR}/max_interval_sufficiency.png", dpi=130)
+    plt.close(fig)
+    print(f"  Saved {FIG_DIR}/max_interval_sufficiency.png")
+    return df
+
+
+# ===========================================================================
+# Analysis I: loading dose optimization
+# ===========================================================================
+def analysis_loading_dose():
+    """
+    Optimize how to distribute a UV budget across the first 14 days
+    (loading phase), with fixed maintenance (1 SED every 7 days from
+    day 15-84).
+
+    Tests budgets of 2-20 SED split across 1, 2, 3, 5, 7, or 14 sessions.
+    Compares D at day 14, D at day 84, and AUC above 50 nmol/L.
+    """
+    print("\n" + "=" * 70)
+    print("ANALYSIS I: loading dose optimization")
+    print("=" * 70)
+    LOADING_DAYS = 14
+    MAINT_START = 14
+    MAINT_INTERVAL = 7
+    MAINT_SED = 1.0
+    BUDGETS = [2, 5, 10, 15, 20]
+    DISTRIBUTIONS = [
+        (1,  [0]),
+        (2,  [0, 6]),
+        (3,  [0, 4, 8]),
+        (5,  [0, 1, 2, 3, 4]),
+        (7,  list(range(7))),
+        (14, list(range(14))),
+    ]
+    rows = []
+    for fst in [5, 6]:
+        for budget in BUDGETS:
+            for n_sessions, load_days in DISTRIBUTIONS:
+                sed_per = budget / n_sessions
+                # Build combined schedule: loading pulses + maintenance
+                sched = []
+                for day in load_days:
+                    sched.append((day, sed_per))
+                for day in range(MAINT_START, PROTOCOL_DAYS, MAINT_INTERVAL):
+                    sched.append((day, MAINT_SED))
+                sched.sort(key=lambda x: x[0])
+                r = simulate(fst=fst, schedule=sched, duration_days=PROTOCOL_DAYS)
+                # D at day 14: index 28 at 0.5-day steps
+                d14_idx = min(28, len(r["D"]) - 1)
+                d14 = r["D"][d14_idx]
+                auc_50 = auc_above_sufficiency_per_SED(r) * r["cumulative_SED"]
+                rows.append({
+                    "FST": fst, "budget_SED": budget,
+                    "n_loading_sessions": n_sessions,
+                    "sed_per_session": sed_per,
+                    "D_at_day14": d14,
+                    "final_D": final_D(r),
+                    "steady_state_D": steady_state_D(r),
+                    "AUC_above_50": auc_50,
+                    "cumulative_SED": r["cumulative_SED"],
+                    "efficiency": gross_synth_per_SED(r),
+                })
+    df = pd.DataFrame(rows)
+    df.to_csv(f"{TAB_DIR}/loading_dose_optimization.csv", index=False)
+
+    # Summary: best distribution per budget
+    print("\n  Best loading distribution by budget:")
+    for budget in BUDGETS:
+        for fst in [5, 6]:
+            sub = df[(df["FST"] == fst) & (df["budget_SED"] == budget)]
+            best = sub.loc[sub["D_at_day14"].idxmax()]
+            print(f"    FST {fst}, {budget} SED: "
+                  f"{int(best['n_loading_sessions'])} sessions × "
+                  f"{best['sed_per_session']:.1f} SED → "
+                  f"D(day14)={best['D_at_day14']:.1f}, "
+                  f"D(day84)={best['final_D']:.1f}")
+
+    # Plot: D at day 14 by distribution, grouped by budget
+    fig, axes = plt.subplots(1, len(BUDGETS), figsize=(3 * len(BUDGETS), 5),
+                             sharey=True)
+    for i, budget in enumerate(BUDGETS):
+        ax = axes[i]
+        sub = df[df["budget_SED"] == budget]
+        labels = [f"{int(n)}×" for n in sub["n_loading_sessions"].unique()]
+        x = np.arange(len(labels))
+        width = 0.35
+        for j, fst in enumerate([5, 6]):
+            fs = sub[sub["FST"] == fst].sort_values("n_loading_sessions")
+            vals = fs["D_at_day14"].values
+            ax.bar(x + j * width, vals, width, label=f"FST {fst}")
+        ax.axhline(50, color="gray", linestyle="--", alpha=0.5)
+        ax.set_xticks(x + width / 2)
+        ax.set_xticklabels(labels, rotation=45)
+        ax.set_title(f"{budget} SED")
+        if i == 0:
+            ax.set_ylabel("D at day 14 (nmol/L)")
+        ax.grid(alpha=0.3, axis="y")
+    axes[-1].legend()
+    fig.suptitle("Loading dose: D at day 14 by session count", fontsize=13)
+    fig.tight_layout()
+    fig.savefig(f"{FIG_DIR}/loading_dose_D_at_day14.png", dpi=130)
+    plt.close(fig)
+    print(f"\n  Saved {FIG_DIR}/loading_dose_D_at_day14.png")
+    return df
+
+
+# ===========================================================================
+# Analysis J: maintenance dose splitting
+# ===========================================================================
+def analysis_maintenance_split():
+    """
+    Compare single vs split maintenance doses at the same total UV rate.
+
+    Strategy A: 1 SED every T days (single session)
+    Strategy B: 0.5 SED every T/2 days (split sessions)
+
+    Tests T = 7, 14, 21 days for FST V and VI.
+    """
+    print("\n" + "=" * 70)
+    print("ANALYSIS J: maintenance dose splitting")
+    print("=" * 70)
+    INTERVALS = [7, 14, 21]
+    rows = []
+    for fst in [5, 6]:
+        for T in INTERVALS:
+            # Strategy A: 1 SED every T days
+            sched_a = build_pulse_schedule(PROTOCOL_DAYS, 1.0, T)
+            r_a = simulate(fst=fst, schedule=sched_a, duration_days=PROTOCOL_DAYS)
+            # Strategy B: 0.5 SED every T//2 days
+            sched_b = build_pulse_schedule(PROTOCOL_DAYS, 0.5, T // 2)
+            r_b = simulate(fst=fst, schedule=sched_b, duration_days=PROTOCOL_DAYS)
+            for label, sed, interval, r in [
+                ("single_1SED", 1.0, T, r_a),
+                ("split_0.5SED", 0.5, T // 2, r_b),
+            ]:
+                rows.append({
+                    "FST": fst, "interval_T": T,
+                    "strategy": label,
+                    "sed_per_session": sed,
+                    "actual_interval": interval,
+                    "steady_state_D": steady_state_D(r),
+                    "efficiency": gross_synth_per_SED(r),
+                    "AUC_above_50": auc_above_sufficiency_per_SED(r) * r["cumulative_SED"],
+                    "cumulative_SED": r["cumulative_SED"],
+                })
+    df = pd.DataFrame(rows)
+    df.to_csv(f"{TAB_DIR}/maintenance_split_comparison.csv", index=False)
+
+    # Print comparison
+    for fst in [5, 6]:
+        print(f"\n  FST {fst}:")
+        for T in INTERVALS:
+            sub = df[(df["FST"] == fst) & (df["interval_T"] == T)]
+            s = sub[sub["strategy"] == "single_1SED"].iloc[0]
+            sp = sub[sub["strategy"] == "split_0.5SED"].iloc[0]
+            winner = "single" if s["steady_state_D"] > sp["steady_state_D"] else "split"
+            print(f"    T={T:2d}d: single D_ss={s['steady_state_D']:.1f} | "
+                  f"split D_ss={sp['steady_state_D']:.1f} → {winner}")
+
+    # Plot: side-by-side bars
+    fig, ax = plt.subplots(figsize=(9, 5))
+    x = np.arange(len(INTERVALS))
+    width = 0.35
+    for j, fst in enumerate([5, 6]):
+        for k, strat in enumerate(["single_1SED", "split_0.5SED"]):
+            vals = []
+            for T in INTERVALS:
+                sub = df[(df["FST"] == fst) & (df["interval_T"] == T) &
+                         (df["strategy"] == strat)]
+                vals.append(sub["steady_state_D"].values[0])
+            offset = (j * 2 + k) * width / 2
+            ax.bar(x + offset, vals, width / 2,
+                   label=f"FST {fst} {'single' if strat == 'single_1SED' else 'split'}")
+    ax.set_xticks(x + width / 2)
+    ax.set_xticklabels([f"Every {T}d" for T in INTERVALS])
+    ax.set_ylabel("Steady-state 25(OH)D (nmol/L)")
+    ax.set_title("Maintenance: single vs split doses")
+    ax.legend()
+    ax.grid(alpha=0.3, axis="y")
+    fig.tight_layout()
+    fig.savefig(f"{FIG_DIR}/maintenance_split.png", dpi=130)
+    plt.close(fig)
+    print(f"\n  Saved {FIG_DIR}/maintenance_split.png")
+    return df
+
+
+# ===========================================================================
+# Analysis K: sun exposure scheduling (no equipment)
+# ===========================================================================
+def analysis_sun_exposure():
+    """
+    Practical sun exposure scheduling: how many minutes of midday sun,
+    how often, to maintain sufficiency?
+
+    Uses spring/fall moderate conditions (UV index ~5), arms + face exposure
+    (~30% BSA), E_source = 1.0 (broadband reference).
+    SED-per-minute conversion: ~6.7 min/SED (UV index 5, erythemal irradiance
+    ~0.25 W/m², 1 SED = 100 J/m²).
+
+    Two parts:
+    1. Practical schedule comparison (6 predefined strategies)
+    2. Daily minimum sweep (5-60 min/day in 5-min steps)
+    """
+    print("\n" + "=" * 70)
+    print("ANALYSIS K: sun exposure scheduling (no equipment)")
+    print("=" * 70)
+    MIN_PER_SED = 6.7
+    E_SOURCE_SUN = 1.0
+    BSA_SUN = 0.30
+
+    # Pre-defined practical schedules: (name, sessions_per_week, minutes_per_session)
+    PRACTICAL = [
+        ("daily_10min",       7, 10),
+        ("3xwk_20min",        3, 20),
+        ("2xwk_30min",        2, 30),
+        ("weekly_45min",      1, 45),
+        ("minimal_15min_3x",  3, 15),
+        ("ultra_10min_2x",    2, 10),
+    ]
+
+    rows = []
+    for fst in [5, 6]:
+        # Part 1: practical schedules
+        for name, sessions_per_week, minutes in PRACTICAL:
+            sed = minutes / MIN_PER_SED
+            interval = 7 // sessions_per_week
+            sched = build_pulse_schedule(PROTOCOL_DAYS, sed, interval)
+            r = simulate(fst=fst, schedule=sched, duration_days=PROTOCOL_DAYS,
+                         E_source_override=E_SOURCE_SUN,
+                         exposed_bsa_override=BSA_SUN)
+            d_ss = steady_state_D(r)
+            rows.append({
+                "FST": fst, "schedule": name, "category": "practical",
+                "sessions_per_week": sessions_per_week,
+                "sed_per_session": sed,
+                "minutes_per_session": minutes,
+                "minutes_per_week": minutes * sessions_per_week,
+                "weekly_SED": sed * sessions_per_week,
+                "steady_state_D": d_ss,
+                "above_sufficiency": d_ss >= 50.0,
+                "efficiency": gross_synth_per_SED(r),
+                "cumulative_SED": r["cumulative_SED"],
+            })
+
+        # Part 2: daily minimum sweep
+        for minutes in range(5, 65, 5):
+            sed = minutes / MIN_PER_SED
+            sched = build_pulse_schedule(PROTOCOL_DAYS, sed, 1)  # daily
+            r = simulate(fst=fst, schedule=sched, duration_days=PROTOCOL_DAYS,
+                         E_source_override=E_SOURCE_SUN,
+                         exposed_bsa_override=BSA_SUN)
+            d_ss = steady_state_D(r)
+            rows.append({
+                "FST": fst, "schedule": f"daily_{minutes}min", "category": "sweep",
+                "sessions_per_week": 7,
+                "sed_per_session": sed,
+                "minutes_per_session": minutes,
+                "minutes_per_week": minutes * 7,
+                "weekly_SED": sed * 7,
+                "steady_state_D": d_ss,
+                "above_sufficiency": d_ss >= 50.0,
+                "efficiency": gross_synth_per_SED(r),
+                "cumulative_SED": r["cumulative_SED"],
+            })
+
+    df = pd.DataFrame(rows)
+    df.to_csv(f"{TAB_DIR}/sun_exposure_schedules.csv", index=False)
+
+    # Print practical schedule summary
+    print("\n  Practical sun exposure schedules (spring/fall, arms+face):")
+    practical = df[df["category"] == "practical"]
+    for _, row in practical.iterrows():
+        status = "OK" if row["above_sufficiency"] else "BELOW"
+        print(f"    FST {row['FST']}: {row['schedule']:20s} "
+              f"{row['minutes_per_week']:4.0f} min/wk → D_ss={row['steady_state_D']:.1f} [{status}]")
+
+    # Find minimum daily minutes for sufficiency
+    print("\n  Minimum daily exposure for sufficiency:")
+    for fst in [5, 6]:
+        sub = df[(df["FST"] == fst) & (df["category"] == "sweep")]
+        passing = sub[sub["above_sufficiency"]]
+        if len(passing) > 0:
+            min_min = passing["minutes_per_session"].min()
+            d_at_min = passing[passing["minutes_per_session"] == min_min]["steady_state_D"].values[0]
+            print(f"    FST {fst}: {min_min:.0f} min/day "
+                  f"({min_min * 7:.0f} min/week, {min_min / 60:.1f} hr/day) → "
+                  f"D_ss={d_at_min:.1f} nmol/L")
+        else:
+            print(f"    FST {fst}: no duration 5-60 min/day maintains sufficiency")
+
+    # Plot: D_ss vs daily minutes
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    for col, fst in enumerate([5, 6]):
+        ax = axes[col]
+        sub = df[(df["FST"] == fst) & (df["category"] == "sweep")]
+        ax.plot(sub["minutes_per_session"], sub["steady_state_D"],
+                marker="o", markersize=4, label="Daily exposure")
+        ax.axhline(50, color="gray", linestyle="--", alpha=0.7,
+                   label="50 nmol/L sufficiency")
+        # Mark practical schedules
+        prac = df[(df["FST"] == fst) & (df["category"] == "practical")]
+        for _, row in prac.iterrows():
+            ax.plot(row["minutes_per_session"], row["steady_state_D"],
+                    marker="x", markersize=10, color="red")
+            ax.annotate(row["schedule"].replace("_", " "),
+                        (row["minutes_per_session"], row["steady_state_D"]),
+                        textcoords="offset points", xytext=(5, 5), fontsize=7)
+        ax.set_xlabel("Minutes per session")
+        ax.set_ylabel("Steady-state 25(OH)D (nmol/L)")
+        ax.set_title(f"FST {fst}")
+        ax.legend(fontsize=8)
+        ax.grid(alpha=0.3)
+    fig.suptitle("Sun exposure: minutes per session vs D_ss (spring/fall, arms+face)",
+                 fontsize=13)
+    fig.tight_layout()
+    fig.savefig(f"{FIG_DIR}/sun_exposure_minutes_vs_D.png", dpi=130)
+    plt.close(fig)
+    print(f"\n  Saved {FIG_DIR}/sun_exposure_minutes_vs_D.png")
+
+    # Plot: weekly minutes comparison
+    fig, ax = plt.subplots(figsize=(10, 5))
+    prac = df[df["category"] == "practical"]
+    x = np.arange(len(PRACTICAL))
+    width = 0.35
+    for j, fst in enumerate([5, 6]):
+        fs = prac[prac["FST"] == fst]
+        ax.bar(x + j * width, fs["minutes_per_week"].values, width,
+               label=f"FST {fst}", alpha=0.8)
+    ax.set_xticks(x + width / 2)
+    ax.set_xticklabels([p[0].replace("_", "\n") for p in PRACTICAL], fontsize=8)
+    ax.set_ylabel("Minutes per week")
+    ax.set_title("Weekly time commitment by schedule")
+    ax.legend()
+    ax.grid(alpha=0.3, axis="y")
+    fig.tight_layout()
+    fig.savefig(f"{FIG_DIR}/sun_exposure_weekly_minutes.png", dpi=130)
+    plt.close(fig)
+    print(f"  Saved {FIG_DIR}/sun_exposure_weekly_minutes.png")
+
+    print("\n  NOTE: Assumes spring/fall midday sun (UV index ~5). "
+          "Summer sun ~2x more efficient; winter ~0.5x.")
+    print("  Arms + face exposure (~30% BSA). More skin = less time needed.")
+    return df
+
+
+# ===========================================================================
 # ===========================================================================
 # Analysis D: trajectory plots for the best schedule under each framing
 # ===========================================================================
@@ -720,6 +1120,10 @@ def main():
     analysis_two_framings()
     analysis_fine_grid()
     analysis_scipy_optimize()
+    analysis_max_interval_for_sufficiency()
+    analysis_loading_dose()
+    analysis_maintenance_split()
+    analysis_sun_exposure()
     analysis_trajectories()
     print("\nDONE.")
 

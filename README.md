@@ -25,10 +25,12 @@ tanning rise rate depends on dose through a Hill-style alpha(UV) term.
   literature/model validation checks (de Boer 2025, Bogh, Farrar,
   Bogh baseline/BSA, Karppinen 2017), one metric-ordering check,
   and one SC validation check (warning-only).
-- **`vitd_analyses.py`** — Seven analyses: alpha sweep, K_ATTEN sweep,
+- **`vitd_analyses.py`** — Eleven analyses: alpha sweep, K_ATTEN sweep,
   beta sweep, two-framing schedule comparison, fine-grid interval sweep,
-  scipy.optimize continuous optimization, example trajectories.
-- **`run_all.py`** — Runs validation + all 7 analyses, writes `RESULTS.md`.
+  scipy.optimize continuous optimization, maximum interval for sufficiency,
+  loading dose optimization, maintenance dose splitting, sun exposure
+  scheduling, example trajectories.
+- **`run_all.py`** — Runs validation + all 11 analyses, writes `RESULTS.md`.
 - **`RESULTS.md`** — Auto-generated summary with figures and interpretation.
 - **`SCIENTIFIC_AUDIT_HANDOFF.md`** — Dataset/paper synthesis and recommended
   future fixes, generated from local CSV/PDF analysis artifacts.

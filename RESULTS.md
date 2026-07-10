@@ -286,13 +286,122 @@ FST 6:
 
 ```
 
-## 8. Example trajectories
+## 8. Maximum interval for sufficiency
+
+Finds the longest inter-session interval where steady-state D stays above 50 nmol/L under 1 SED/session dosing.
+
+```
+
+======================================================================
+ANALYSIS H: maximum interval for sufficiency
+======================================================================
+  FST 5: max interval = 1d (D_ss = 67.7 nmol/L)
+  FST 6: max interval = 1d (D_ss = 65.5 nmol/L)
+  Saved figs/max_interval_sufficiency.png
+
+```
+
+![max interval](figs/max_interval_sufficiency.png)
+
+## 9. Loading dose optimization
+
+For UV budgets of 2-20 SED in the first 14 days, tests splitting that budget across 1-14 sessions. After loading, all schedules switch to 1 SED every 7 days maintenance.
+
+```
+
+======================================================================
+ANALYSIS I: loading dose optimization
+======================================================================
+
+  Best loading distribution by budget:
+    FST 5, 2 SED: 7 sessions × 0.3 SED → D(day14)=26.9, D(day84)=31.2
+    FST 6, 2 SED: 7 sessions × 0.3 SED → D(day14)=26.8, D(day84)=30.5
+    FST 5, 5 SED: 7 sessions × 0.7 SED → D(day14)=29.8, D(day84)=33.0
+    FST 6, 5 SED: 7 sessions × 0.7 SED → D(day14)=29.4, D(day84)=32.2
+    FST 5, 10 SED: 7 sessions × 1.4 SED → D(day14)=33.2, D(day84)=35.1
+    FST 6, 10 SED: 7 sessions × 1.4 SED → D(day14)=32.6, D(day84)=34.2
+    FST 5, 15 SED: 7 sessions × 2.1 SED → D(day14)=35.6, D(day84)=36.6
+    FST 6, 15 SED: 7 sessions × 2.1 SED → D(day14)=34.8, D(day84)=35.6
+    FST 5, 20 SED: 7 sessions × 2.9 SED → D(day14)=37.4, D(day84)=37.7
+    FST 6, 20 SED: 7 sessions × 2.9 SED → D(day14)=36.6, D(day84)=36.7
+
+  Saved figs/loading_dose_D_at_day14.png
+
+```
+
+![loading dose](figs/loading_dose_D_at_day14.png)
+
+## 10. Maintenance dose splitting
+
+Compares 1 SED every T days vs 0.5 SED every T/2 days at the same total UV rate. Tests T = 7, 14, 21 days.
+
+```
+
+======================================================================
+ANALYSIS J: maintenance dose splitting
+======================================================================
+
+  FST 5:
+    T= 7d: single D_ss=30.5 | split D_ss=33.4 → split
+    T=14d: single D_ss=26.2 | split D_ss=26.9 → split
+    T=21d: single D_ss=24.7 | split D_ss=25.3 → split
+
+  FST 6:
+    T= 7d: single D_ss=29.9 | split D_ss=32.6 → split
+    T=14d: single D_ss=25.9 | split D_ss=26.5 → split
+    T=21d: single D_ss=24.4 | split D_ss=25.0 → split
+
+  Saved figs/maintenance_split.png
+
+```
+
+![maintenance split](figs/maintenance_split.png)
+
+## 11. Sun exposure scheduling (no equipment)
+
+Practical sun exposure scheduling: how many minutes of midday sun, how often, to maintain sufficiency? Uses spring/fall moderate conditions (UV index ~5), arms + face exposure (~30% BSA), E_source = 1.0.
+
+```
+
+======================================================================
+ANALYSIS K: sun exposure scheduling (no equipment)
+======================================================================
+
+  Practical sun exposure schedules (spring/fall, arms+face):
+    FST 5: daily_10min            70 min/wk → D_ss=74.0 [OK]
+    FST 5: 3xwk_20min             60 min/wk → D_ss=64.8 [OK]
+    FST 5: 2xwk_30min             60 min/wk → D_ss=58.8 [OK]
+    FST 5: weekly_45min           45 min/wk → D_ss=43.8 [BELOW]
+    FST 5: minimal_15min_3x       45 min/wk → D_ss=60.1 [OK]
+    FST 5: ultra_10min_2x         20 min/wk → D_ss=44.5 [BELOW]
+    FST 6: daily_10min            70 min/wk → D_ss=71.7 [OK]
+    FST 6: 3xwk_20min             60 min/wk → D_ss=62.8 [OK]
+    FST 6: 2xwk_30min             60 min/wk → D_ss=57.1 [OK]
+    FST 6: weekly_45min           45 min/wk → D_ss=42.6 [BELOW]
+    FST 6: minimal_15min_3x       45 min/wk → D_ss=58.2 [OK]
+    FST 6: ultra_10min_2x         20 min/wk → D_ss=43.1 [BELOW]
+
+  Minimum daily exposure for sufficiency:
+    FST 5: 5 min/day (35 min/week, 0.1 hr/day) → D_ss=58.8 nmol/L
+    FST 6: 5 min/day (35 min/week, 0.1 hr/day) → D_ss=56.8 nmol/L
+
+  Saved figs/sun_exposure_minutes_vs_D.png
+  Saved figs/sun_exposure_weekly_minutes.png
+
+  NOTE: Assumes spring/fall midday sun (UV index ~5). Summer sun ~2x more efficient; winter ~0.5x.
+  Arms + face exposure (~30% BSA). More skin = less time needed.
+
+```
+
+![sun exposure](figs/sun_exposure_minutes_vs_D.png)
+
+## 12. Example trajectories
 
 D(t) and M(t) under three representative schedules at fixed 1 SED per session. Shows the temporal dynamics directly.
 
 ![trajectories](figs/trajectories.png)
 
-## 9. Interpretation
+## 13. Interpretation
 
 ### What the sweeps actually showed
 

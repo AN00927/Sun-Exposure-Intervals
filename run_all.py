@@ -46,6 +46,10 @@ def main():
     _, frame_log = capture(vitd_analyses.analysis_two_framings)
     _, fine_log = capture(vitd_analyses.analysis_fine_grid)
     _, scipy_log = capture(vitd_analyses.analysis_scipy_optimize)
+    _, maxint_log = capture(vitd_analyses.analysis_max_interval_for_sufficiency)
+    _, load_log = capture(vitd_analyses.analysis_loading_dose)
+    _, split_log = capture(vitd_analyses.analysis_maintenance_split)
+    _, sun_log = capture(vitd_analyses.analysis_sun_exposure)
     _, traj_log = capture(vitd_analyses.analysis_trajectories)
 
     # Echo to console
@@ -54,6 +58,10 @@ def main():
     print(k_log)
     print(beta_log)
     print(frame_log)
+    print(maxint_log)
+    print(load_log)
+    print(split_log)
+    print(sun_log)
     print(traj_log)
 
     # 3. Markdown report
@@ -127,14 +135,48 @@ def main():
     )
     report.append("\n```\n" + scipy_log + "\n```\n")
 
-    report.append("\n## 8. Example trajectories\n")
+    report.append("\n## 8. Maximum interval for sufficiency\n")
+    report.append(
+        "\nFinds the longest inter-session interval where steady-state D stays "
+        "above 50 nmol/L under 1 SED/session dosing.\n"
+    )
+    report.append("\n```\n" + maxint_log + "\n```\n")
+    report.append("\n![max interval](figs/max_interval_sufficiency.png)\n")
+
+    report.append("\n## 9. Loading dose optimization\n")
+    report.append(
+        "\nFor UV budgets of 2-20 SED in the first 14 days, tests splitting "
+        "that budget across 1-14 sessions. After loading, all schedules switch "
+        "to 1 SED every 7 days maintenance.\n"
+    )
+    report.append("\n```\n" + load_log + "\n```\n")
+    report.append("\n![loading dose](figs/loading_dose_D_at_day14.png)\n")
+
+    report.append("\n## 10. Maintenance dose splitting\n")
+    report.append(
+        "\nCompares 1 SED every T days vs 0.5 SED every T/2 days at the same "
+        "total UV rate. Tests T = 7, 14, 21 days.\n"
+    )
+    report.append("\n```\n" + split_log + "\n```\n")
+    report.append("\n![maintenance split](figs/maintenance_split.png)\n")
+
+    report.append("\n## 11. Sun exposure scheduling (no equipment)\n")
+    report.append(
+        "\nPractical sun exposure scheduling: how many minutes of midday sun, "
+        "how often, to maintain sufficiency? Uses spring/fall moderate conditions "
+        "(UV index ~5), arms + face exposure (~30% BSA), E_source = 1.0.\n"
+    )
+    report.append("\n```\n" + sun_log + "\n```\n")
+    report.append("\n![sun exposure](figs/sun_exposure_minutes_vs_D.png)\n")
+
+    report.append("\n## 12. Example trajectories\n")
     report.append(
         "\nD(t) and M(t) under three representative schedules at fixed 1 SED per "
         "session. Shows the temporal dynamics directly.\n"
     )
     report.append("\n![trajectories](figs/trajectories.png)\n")
 
-    report.append("\n## 9. Interpretation\n")
+    report.append("\n## 13. Interpretation\n")
     report.append("""
 ### What the sweeps actually showed
 
