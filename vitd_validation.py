@@ -541,6 +541,53 @@ def validate_baseline_calibration_target(verbose=True):
     return passed
 
 
+def validate_sc_deBoer2025(verbose=True):
+    """
+    de Boer 2025 (P2): 0.8 SED 3x/week x 9 weeks on lower back.
+    SC thickness: FP I-III +23% (5.6->6.9 um), FP IV-VI +36% (6.6->9.0 um).
+    Melanin index: FP I-III +15%, FP IV-VI +9%.
+
+    This check verifies the model produces SC values in the plausible range
+    after the de Boer 2025 protocol. Warning-only -- SC parameters are priors.
+
+    [C7-SC-PRIOR] SC_max=0.30, alpha_SC=0.005, k_decay_SC=ln(2)/28, K_SC=1.0.
+    Target SC at week 9: FP I-III proxy (FST III) should be in [0.015, 0.05].
+    Target SC at week 9: FP IV-VI proxy (FST IV) should be in [0.025, 0.06].
+    """
+    p = ModelParams()
+    sched = build_weekly_schedule(63, 0.8, [0, 2, 4])
+
+    r3 = simulate(fst=3, schedule=sched, duration_days=63, params=p)
+    SC_III = float(np.mean(r3["SC"][-28:]))
+
+    r4 = simulate(fst=4, schedule=sched, duration_days=63, params=p)
+    SC_IV = float(np.mean(r4["SC"][-28:]))
+
+    SC_III_increased = SC_III > 0.0
+    SC_IV_increased = SC_IV > 0.0
+
+    SC_III_range_ok = 0.01 <= SC_III <= 0.08
+    SC_IV_range_ok = 0.02 <= SC_IV <= 0.12
+
+    SC_IV_ge_III = SC_IV >= SC_III * 0.8
+
+    passed = all([SC_III_increased, SC_IV_increased,
+                  SC_III_range_ok, SC_IV_range_ok, SC_IV_ge_III])
+
+    if verbose:
+        print(f"[SC Check] de Boer 2025 SC validation (warning-only)")
+        print(f"  Protocol: 0.8 SED 3x/week x 9 weeks")
+        print(f"  FST III (FP I-III proxy): SC={SC_III:.4f} "
+              f"(increased: {'YES' if SC_III_increased else 'NO'}, "
+              f"range [0.01,0.08]: {'OK' if SC_III_range_ok else 'OUT'})")
+        print(f"  FST IV  (FP IV-VI proxy): SC={SC_IV:.4f} "
+              f"(increased: {'YES' if SC_IV_increased else 'NO'}, "
+              f"range [0.02,0.12]: {'OK' if SC_IV_range_ok else 'OUT'})")
+        print(f"  SC_IV >= SC_III * 0.8: {'YES' if SC_IV_ge_III else 'NO'}")
+        print(f"  {'PASS' if passed else 'FAIL'} (warning-only)")
+    return passed
+
+
 # ---------------------------------------------------------------------------
 # How to add a new validation target
 #
@@ -576,6 +623,7 @@ def run_all(verbose=True):
         ("single bolus FST III",          sanity_single_bolus_FST_III, False),
         ("photoadaptation reduction",     sanity_photoadaptation_reduction, False),
         ("de Boer 2025 photoadaptation [C6 replaced]", validate_photoadaptation_deBoer2025, True),  # warning_only
+        ("SC de Boer 2025 [C7-SC warning]", validate_sc_deBoer2025, True),  # warning_only
         ("Bogh 2012 [C1 quantitative]",   validate_bogh_2012, False),
         ("Farrar 2013 [C2 quantitative]", validate_farrar_2013, False),
         ("Bogh baseline+BSA [C4]",        validate_bogh_baseline_bsa, False),
