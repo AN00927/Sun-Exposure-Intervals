@@ -498,6 +498,80 @@ def analysis_beta_sweep():
 
 
 # ===========================================================================
+# Analysis F: fine-grid interval sweep (1-30 days, every 1 day)
+# ===========================================================================
+def analysis_fine_grid():
+    """
+    Test every 1-day interval from 1 to 30 days (instead of the current
+    8-point coarse grid). Produces a high-resolution curve of efficiency
+    vs. interval for FST V and VI.
+
+    Fixed 1 SED per session, 84-day protocol. This identifies the exact
+    interval where the efficiency maximum sits.
+    """
+    print("\n" + "=" * 70)
+    print("ANALYSIS F: fine-grid interval sweep (1-30 days)")
+    print("=" * 70)
+    intervals = list(range(1, 31))
+    fsts = [5, 6]
+    sed_per_session = 1.0
+
+    rows = []
+    for fst in fsts:
+        for interval in intervals:
+            sched = build_pulse_schedule(PROTOCOL_DAYS, sed_per_session, interval)
+            r = simulate(fst=fst, schedule=sched, duration_days=PROTOCOL_DAYS)
+            rows.append({
+                "FST": fst,
+                "interval_days": interval,
+                "cumulative_SED": r["cumulative_SED"],
+                "steady_state_D": steady_state_D(r),
+                "final_D": final_D(r),
+                "final_M": mean_final_M(r),
+                "gross_synth_per_SED": gross_synth_per_SED(r),
+                "net_final_D_change_per_SED": net_final_D_change_per_SED(r),
+                "auc_above_baseline_per_SED": auc_above_baseline_per_SED(r),
+            })
+    df = pd.DataFrame(rows)
+    df.to_csv(f"{TAB_DIR}/fine_grid_sweep.csv", index=False)
+
+    # Plot: efficiency vs interval for both FSTs
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5), sharey=True)
+    for ax, fst in zip(axes, fsts):
+        sub = df[df["FST"] == fst]
+        ax.plot(sub["interval_days"], sub["gross_synth_per_SED"],
+                "o-", color="C0", label="gross synth efficiency")
+        ax.plot(sub["interval_days"], sub["net_final_D_change_per_SED"],
+                "s--", color="C1", label="net ΔD per SED")
+        # Mark the argmax
+        best_idx = sub["gross_synth_per_SED"].idxmax()
+        best = sub.loc[best_idx]
+        ax.plot(best["interval_days"], best["gross_synth_per_SED"],
+                "r*", markersize=18, markeredgecolor="white",
+                label=f"optimal: {int(best['interval_days'])}d")
+        ax.set_xlabel("inter-session interval (days)")
+        ax.set_ylabel("nmol/L per SED")
+        ax.set_title(f"FST {['I','II','III','IV','V','VI'][fst-1]}")
+        ax.legend(loc="best", fontsize=9)
+        ax.grid(alpha=0.3)
+    fig.suptitle("Fine-grid sweep: efficiency vs interval (1 SED/session)",
+                 fontsize=13)
+    fig.tight_layout()
+    fig.savefig(f"{FIG_DIR}/fine_grid_efficiency.png", dpi=130)
+    plt.close(fig)
+
+    # Summary print
+    print("\nFine-grid optimal interval (efficiency framing):")
+    for fst in fsts:
+        sub = df[df["FST"] == fst]
+        best = sub.loc[sub["gross_synth_per_SED"].idxmax()]
+        print(f"  FST {fst}: optimal interval = {int(best['interval_days'])}d "
+              f"(gross_eff {best['gross_synth_per_SED']:.3f}, "
+              f"ss_D {best['steady_state_D']:.1f})")
+    return df
+
+
+# ===========================================================================
 # ===========================================================================
 # Analysis D: trajectory plots for the best schedule under each framing
 # ===========================================================================
@@ -553,6 +627,7 @@ def main():
     analysis_alpha_sweep()
     analysis_K_ATTEN_sweep()
     analysis_two_framings()
+    analysis_fine_grid()
     analysis_trajectories()
     print("\nDONE.")
 
