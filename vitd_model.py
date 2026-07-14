@@ -46,6 +46,10 @@ Parameter & Source Sourcing
 - A = 2.353:
     Synthesis scaling factor calibrated to preserve a 1.17 nmol/L rise for a 1 SED
     dose in untanned FST III at reference BSA (35%), baseline D=25.0, SC=0.0.
+    NOTE: Young 2021 PNAS reports fair-skin slopes of 2.0-5.0 nmol/L per SED
+    at 85% BSA. Model at 85% BSA predicts ~1.85 — low end but order-of-magnitude
+    consistent. If A were recalibrated to midpoint (~3.5), absolute D predictions
+    would shift ~50% upward; scheduling rankings would be unchanged.
 - K_const = 0.33:
     Baseline (constitutive) inhibition coefficient. Recalculated to preserve Young 2020
     FST II:VI synthesis ratio of ~1.36: K_const = ln(1.36) / (M_VI - M_II) = 0.33.
@@ -77,6 +81,9 @@ Parameter & Source Sourcing
     K_ATTEN=2.0 was a coarse prior; 0.37 is the paper-backed value giving
     an FST II:VI ratio consistent with Young 2020 when combined with new
     M_baseline_by_FST and K_const values.
+    July 2026 Consensus search confirmed: Matsuoka 1990 remains the ONLY direct
+    within-subject tanning-attenuation study. Neville 2020 explicitly states the
+    field still lacks this data. No independent replication exists.
 - M_baseline_by_FST:
     [C7] Anchored to ITA_Unexposed means from trial CSVs (ArimedB trial data,
     N=48). Mapping: M = 1 - (ITA_U + 30) / 85, clipped to [0, 1].
@@ -86,6 +93,8 @@ Parameter & Source Sourcing
     measured pigmentation explains only 1.9-2.6% of individual response variance.
     Do NOT use as a precise individual predictor or to justify large FST penalties.
     Genetics (VDR, CYP2R1, CYP24A1), supplementation, baseline D, and BSA dominate.
+    WARNING: FST V (0.78) and VI (1.00) are group-level priors with NO direct
+    melanin-index validation from published data. Do not use as individual predictors.
 - exposed_bsa (Bogh 2011 / P5, Bogh 2010 / P36, Kimlin 2014 / P32):
     [C1] Fraction of body surface area exposed to UV (0.0-1.0). Kimlin 2014 (P32)
     shows clothing cover is the LARGEST single contributor (~27%) to explained
@@ -94,6 +103,38 @@ Parameter & Source Sourcing
     Matsuoka 1990 (P8) shows a plateau above ~33% BSA. All validation scenarios
     must specify exposed_bsa explicitly; use BSA_REF=0.35 as the reference.
     Clothing cover = 1 - exposed_bsa.
+
+    # -------------------------------------------------------------------------
+    # PARAMETER EVIDENCE STATUS (updated from Consensus literature search, July 2026)
+    # -------------------------------------------------------------------------
+    # Gap 1 — M_baseline FST V/VI:
+    #   Current values: {V: 0.78, VI: 1.00} (ITA_Unexposed means, ArimedB N=48)
+    #   Literature support: WILKES 2015 gives MI>750->FST VI on Mexameter (partial).
+    #   ALALUF 2001 gives quantitative melanin in FST V/VI but not as a baseline MI table.
+    #   No paper provides separate untanned FST V and FST VI baseline MI means.
+    #   Status: COARSE PRIOR — awaiting de Boer 2025 individual-level data.
+    #
+    # Gap 2 — K_ATTEN:
+    #   Current value: 0.37
+    #   Literature support: MATSUOKA 1990 (within-subject, 51% attenuation) — only source.
+    #   NEVILLE 2020 confirms field still lacks tanning-effect data.
+    #   MARKIEWICZ 2020: tanning may be redistribution, not pure synthesis.
+    #   Status: SINGLE-SOURCE PRIOR — no independent replication.
+    #
+    # Gap 3 — A (synthesis rate):
+    #   Current value: 2.353 (calibrated to 1.17 nmol/L per 1 SED at FST III, D=25)
+    #   Literature support: YOUNG 2021 gives fair-skin slopes ~2.0-5.0 nmol/L/SED.
+    #   WEBB 2021 confirms logarithmic form; BORECKA 2024 and CHALCRAFT 2020 provide
+    #   partial low-dose response data in light skin.
+    #   Status: ORDER-OF-MAGNITUDE CONSISTENT — exact value is BSA/feedback-normalized.
+    #
+    # Gap 4 — K_const:
+    #   Current value: 0.33 (from Young 2020 FST II:VI ratio ~1.36)
+    #   Literature support: YOUNG 2020 (direct, inhibition factor 1.3-1.4).
+    #   LIBON 2013 (directional: FST VI no significant D rise vs FST II-III significant).
+    #   ARMAS 2007 (80% variation from dose + skin tone).
+    #   Status: ONE DIRECT + TWO PARTIAL CHECKS — directionally confirmed.
+    # -------------------------------------------------------------------------
 
 Future covariates (not yet in core model; add when matching dataset available):
     [C9] Total cholesterol / 7-DHC precursor status: Bogh 2010 (P36) found total
