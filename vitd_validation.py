@@ -49,9 +49,6 @@ Audit change tags (July 2026 Scientific Audit):
 """
 
 import numpy as np
-import sys
-import os
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 
 # ---------------------------------------------------------------------------
@@ -165,7 +162,7 @@ def weighted_aggregate(results, weights=None):
 from vitd_model import (ModelParams, synthesis_per_session, simulate,
                          build_pulse_schedule, build_weekly_schedule,
                          gross_synth_per_SED, net_final_D_change_per_SED,
-                         auc_D_per_SED, auc_above_baseline_per_SED,
+                         auc_above_baseline_per_SED,
                          auc_above_sufficiency_per_SED)
 
 

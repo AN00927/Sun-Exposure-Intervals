@@ -637,19 +637,19 @@ def net_final_D_change_per_SED(result, D0=None):
     return (result["D"][-1] - D0) / total_sed
 
 
+def _trapz(y, x):
+    if hasattr(np, 'trapezoid'):
+        return np.trapezoid(y, x)
+    return np.trapz(y, x)
+
+
 def auc_D_per_SED(result):
     t = result["t"]
     D = result["D"]
     total_sed = result["cumulative_SED"]
-    if total_sed <= 0:
+    if total_sed <= 0 or len(t) < 2:
         return 0.0
-    if len(t) < 2:
-        return 0.0
-    if hasattr(np, 'trapezoid'):
-        auc = np.trapezoid(D, t)
-    else:
-        auc = np.trapz(D, t)
-    return float(auc) / total_sed
+    return float(_trapz(D, t)) / total_sed
 
 
 def auc_above_baseline_per_SED(result, D0=None):
@@ -658,46 +658,31 @@ def auc_above_baseline_per_SED(result, D0=None):
     t = result["t"]
     D = result["D"]
     total_sed = result["cumulative_SED"]
-    if total_sed <= 0:
-        return 0.0
-    if len(t) < 2:
+    if total_sed <= 0 or len(t) < 2:
         return 0.0
     y = np.maximum(0.0, D - D0)
-    if hasattr(np, 'trapezoid'):
-        auc = np.trapezoid(y, t)
-    else:
-        auc = np.trapz(y, t)
-    return float(auc) / total_sed
+    return float(_trapz(y, t)) / total_sed
 
 
 def auc_above_sufficiency_per_SED(result, threshold_nmol_L=50.0):
     t = result["t"]
     D = result["D"]
     total_sed = result["cumulative_SED"]
-    if total_sed <= 0:
-        return 0.0
-    if len(t) < 2:
+    if total_sed <= 0 or len(t) < 2:
         return 0.0
     if np.max(D) <= threshold_nmol_L:
         return 0.0
     y = np.maximum(0.0, D - threshold_nmol_L)
-    if hasattr(np, 'trapezoid'):
-        auc = np.trapezoid(y, t)
-    else:
-        auc = np.trapz(y, t)
-    return float(auc) / total_sed
+    return float(_trapz(y, t)) / total_sed
 
 
-def mean_final_M(result, window_days=28):
-    t = result["t"]; M = result["M"]
+def mean_final_value(result, key, window_days=28):
+    t = result["t"]; vals = result[key]
     mask = t >= t[-1] - window_days
-    return float(np.mean(M[mask]))
+    return float(np.mean(vals[mask]))
 
-
-def mean_final_SC(result, window_days=28):
-    t = result["t"]; SC = result["SC"]
-    mask = t >= t[-1] - window_days
-    return float(np.mean(SC[mask]))
+mean_final_M = lambda r, w=28: mean_final_value(r, "M", w)
+mean_final_SC = lambda r, w=28: mean_final_value(r, "SC", w)
 
 
 def final_D(result):

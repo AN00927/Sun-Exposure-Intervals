@@ -6,13 +6,8 @@ End-to-end run: validation + all priority analyses + summary report.
 Usage:  python3 run_all.py
 """
 
-import os
-import sys
 from io import StringIO
 from contextlib import redirect_stdout
-
-# Make sure we can import the sibling modules
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import vitd_validation
 from vitd_validation import validate_metric_ordering
@@ -22,11 +17,11 @@ import vitd_analyses
 REPORT_PATH = "RESULTS.md"
 
 
-def capture(fn, *args, **kwargs):
+def capture_log(fn, *args, **kwargs):
     buf = StringIO()
     with redirect_stdout(buf):
-        out = fn(*args, **kwargs)
-    return out, buf.getvalue()
+        fn(*args, **kwargs)
+    return buf.getvalue()
 
 
 def main():
@@ -35,22 +30,30 @@ def main():
     print("=" * 70)
 
     # 1. Validation
-    val_results, val_log = capture(vitd_validation.run_all)
-    # Explicitly call the new validation check
-    _, _ = capture(validate_metric_ordering)
+    buf = StringIO()
+    with redirect_stdout(buf):
+        val_results = vitd_validation.run_all()
+    val_log = buf.getvalue()
+    validate_metric_ordering()
 
     # 2. Analyses
-    _, alpha_log = capture(vitd_analyses.analysis_alpha_sweep)
-    _, k_log = capture(vitd_analyses.analysis_K_ATTEN_sweep)
-    _, beta_log = capture(vitd_analyses.analysis_beta_sweep)
-    _, frame_log = capture(vitd_analyses.analysis_two_framings)
-    _, fine_log = capture(vitd_analyses.analysis_fine_grid)
-    _, scipy_log = capture(vitd_analyses.analysis_scipy_optimize)
-    _, maxint_log = capture(vitd_analyses.analysis_max_interval_for_sufficiency)
-    _, load_log = capture(vitd_analyses.analysis_loading_dose)
-    _, split_log = capture(vitd_analyses.analysis_maintenance_split)
-    _, sun_log = capture(vitd_analyses.analysis_sun_exposure)
-    _, traj_log = capture(vitd_analyses.analysis_trajectories)
+    analyses = [
+        vitd_analyses.analysis_alpha_sweep,
+        vitd_analyses.analysis_K_ATTEN_sweep,
+        vitd_analyses.analysis_beta_sweep,
+        vitd_analyses.analysis_two_framings,
+        vitd_analyses.analysis_fine_grid,
+        vitd_analyses.analysis_scipy_optimize,
+        vitd_analyses.analysis_max_interval_for_sufficiency,
+        vitd_analyses.analysis_loading_dose,
+        vitd_analyses.analysis_maintenance_split,
+        vitd_analyses.analysis_sun_exposure,
+        vitd_analyses.analysis_trajectories,
+    ]
+    alpha_log, k_log, beta_log, frame_log, fine_log, scipy_log, \
+        maxint_log, load_log, split_log, sun_log, traj_log = [
+            capture_log(fn) for fn in analyses
+        ]
 
     # Echo to console
     print(val_log)

@@ -23,11 +23,11 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize_scalar
-from vitd_model import (ModelParams, simulate, build_pulse_schedule,
-                        steady_state_D, efficiency_D_per_SED, mean_final_M,
-                        final_D, gross_synth_per_SED, net_final_D_change_per_SED,
-                        auc_D_per_SED, auc_above_baseline_per_SED,
-                        auc_above_sufficiency_per_SED)
+from vitd_model import (simulate, build_pulse_schedule,
+                         steady_state_D, mean_final_M,
+                         final_D, gross_synth_per_SED, net_final_D_change_per_SED,
+                         auc_D_per_SED, auc_above_baseline_per_SED,
+                         auc_above_sufficiency_per_SED)
 
 FIG_DIR = "figs"
 TAB_DIR = "tables"
