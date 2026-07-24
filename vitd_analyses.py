@@ -27,7 +27,31 @@ from vitd_model import (simulate, build_pulse_schedule,
                          steady_state_D, mean_final_M,
                          final_D, gross_synth_per_SED, net_final_D_change_per_SED,
                          auc_D_per_SED, auc_above_baseline_per_SED,
-                         auc_above_sufficiency_per_SED)
+auc_above_sufficiency_per_SED)
+
+def print_safety_summary(safety_log, label=""):
+    """Print a one-line safety summary from a simulate() safety_log."""
+    if not safety_log:
+        print(f"  Safety{label}: no safety data")
+        return
+    max_frac = 0.0
+    max_sed = 0.0
+    for _t, s in safety_log:
+        frac = s.get("fraction_med", 0)
+        med = s.get("individual_med_sed", 1.0)
+        sed = frac * med
+        if frac > max_frac:
+            max_frac = frac
+            max_sed = sed
+    total_sed = sum(
+        s.get("fraction_med", 0) * s.get("individual_med_sed", 1.0)
+        for _t, s in safety_log
+    )
+    n_sessions = len(safety_log)
+    marker = " *** OVERDOSE ***" if max_frac > 1.0 else ""
+    print(f"  Safety{label}: max single dose = {max_frac:.1%} MED "
+          f"({max_sed:.2f} SED), cumulative = {total_sed:.1f} SED "
+          f"over {n_sessions} sessions{marker}")
 
 FIG_DIR = "figs"
 TAB_DIR = "tables"
@@ -288,7 +312,7 @@ def analysis_two_framings():
             n_sessions = (PROTOCOL_DAYS + interval - 1) // interval
             sed_per_f1 = TOTAL_SED / n_sessions
             sched1 = build_pulse_schedule(PROTOCOL_DAYS, sed_per_f1, interval)
-            r1 = simulate(fst=fst, schedule=sched1, duration_days=PROTOCOL_DAYS)
+            r1 = simulate(fst=fst, schedule=sched1, duration_days=PROTOCOL_DAYS, dose_framing="matched_cumulative_SED")
             rows_f1.append({
                 "FST": fst,
                 "interval_days": interval,
@@ -306,7 +330,7 @@ def analysis_two_framings():
             })
             # Framing 2: matched per-session dose
             sched2 = build_pulse_schedule(PROTOCOL_DAYS, 1.0, interval)
-            r2 = simulate(fst=fst, schedule=sched2, duration_days=PROTOCOL_DAYS)
+            r2 = simulate(fst=fst, schedule=sched2, duration_days=PROTOCOL_DAYS, dose_framing="fixed_per_session_SED")
             rows_f2.append({
                 "FST": fst,
                 "interval_days": interval,
@@ -385,6 +409,17 @@ def analysis_two_framings():
     print(df1.to_string(index=False, float_format=lambda x: f"{x:.2f}"))
     print("\nFraming 2 (matched 1 SED per session):")
     print(df2.to_string(index=False, float_format=lambda x: f"{x:.2f}"))
+    max_int = max(INTERVALS_DAYS)
+    n_s = (PROTOCOL_DAYS + max_int - 1) // max_int
+    sed_f1 = TOTAL_SED / n_s
+    sched = build_pulse_schedule(PROTOCOL_DAYS, sed_f1, max_int)
+    r1_safe = simulate(fst=fsts[0], schedule=sched, duration_days=PROTOCOL_DAYS)
+    print_safety_summary(r1_safe.get("safety_log", []),
+        f" [FST {fsts[0]}, framing 1, {max_int}d interval, {sed_f1:.1f} SED/session]")
+    sched2 = build_pulse_schedule(PROTOCOL_DAYS, 1.0, max_int)
+    r2_safe = simulate(fst=fsts[0], schedule=sched2, duration_days=PROTOCOL_DAYS)
+    print_safety_summary(r2_safe.get("safety_log", []),
+        f" [FST {fsts[0]}, framing 2, {max_int}d interval, 1.0 SED/session]")
     return df1, df2
 
 
@@ -820,6 +855,12 @@ def analysis_loading_dose():
     fig.savefig(f"{FIG_DIR}/loading_dose_D_at_day14.png", dpi=130)
     plt.close(fig)
     print(f"\n  Saved {FIG_DIR}/loading_dose_D_at_day14.png")
+
+    max_budget = max(BUDGETS)
+    sched_max = [(0, max_budget)] + build_pulse_schedule(PROTOCOL_DAYS, 1.0, 7)
+    r_safe = simulate(fst=5, schedule=sched_max, duration_days=PROTOCOL_DAYS)
+    print_safety_summary(r_safe.get("safety_log", []),
+        f" [FST 5, {max_budget} SED loading in 1 session]")
     return df
 
 
@@ -845,12 +886,14 @@ def analysis_maintenance_split():
             # Strategy A: 1 SED every T days
             sched_a = build_pulse_schedule(PROTOCOL_DAYS, 1.0, T)
             r_a = simulate(fst=fst, schedule=sched_a, duration_days=PROTOCOL_DAYS)
-            # Strategy B: 0.5 SED every T//2 days
-            sched_b = build_pulse_schedule(PROTOCOL_DAYS, 0.5, T // 2)
+            # Strategy B: split dose, equal total SED rate
+            split_interval = max(1, T // 2)
+            sed_split = split_interval / T
+            sched_b = build_pulse_schedule(PROTOCOL_DAYS, sed_split, split_interval)
             r_b = simulate(fst=fst, schedule=sched_b, duration_days=PROTOCOL_DAYS)
             for label, sed, interval, r in [
                 ("single_1SED", 1.0, T, r_a),
-                ("split_0.5SED", 0.5, T // 2, r_b),
+                ("split_{:.3f}SED".format(sed_split), sed_split, split_interval, r_b),
             ]:
                 rows.append({
                     "FST": fst, "interval_T": T,
@@ -900,6 +943,11 @@ def analysis_maintenance_split():
     fig.savefig(f"{FIG_DIR}/maintenance_split.png", dpi=130)
     plt.close(fig)
     print(f"\n  Saved {FIG_DIR}/maintenance_split.png")
+
+    sched_a = build_pulse_schedule(PROTOCOL_DAYS, 1.0, 7)
+    r_a_safe = simulate(fst=5, schedule=sched_a, duration_days=PROTOCOL_DAYS)
+    print_safety_summary(r_a_safe.get("safety_log", []),
+        f" [FST 5, single 1 SED every 7d]")
     return df
 
 
@@ -942,7 +990,8 @@ def analysis_sun_exposure():
         # Part 1: practical schedules
         for name, sessions_per_week, minutes in PRACTICAL:
             sed = minutes / MIN_PER_SED
-            interval = 7 // sessions_per_week
+            interval = max(1, int(round(7 / sessions_per_week)))
+            actual_sessions_per_week = 7 / interval
             sched = build_pulse_schedule(PROTOCOL_DAYS, sed, interval)
             r = simulate(fst=fst, schedule=sched, duration_days=PROTOCOL_DAYS,
                          E_source_override=E_SOURCE_SUN,
@@ -951,6 +1000,7 @@ def analysis_sun_exposure():
             rows.append({
                 "FST": fst, "schedule": name, "category": "practical",
                 "sessions_per_week": sessions_per_week,
+                "actual_sessions_per_week": actual_sessions_per_week,
                 "sed_per_session": sed,
                 "minutes_per_session": minutes,
                 "minutes_per_week": minutes * sessions_per_week,
@@ -991,6 +1041,7 @@ def analysis_sun_exposure():
     for _, row in practical.iterrows():
         status = "OK" if row["above_sufficiency"] else "BELOW"
         print(f"    FST {row['FST']}: {row['schedule']:20s} "
+              f"{row['sessions_per_week']}/wk (actual {row['actual_sessions_per_week']:.2f}/wk) "
               f"{row['minutes_per_week']:4.0f} min/wk → D_ss={row['steady_state_D']:.1f} [{status}]")
 
     # Find minimum daily minutes for sufficiency
@@ -1055,6 +1106,14 @@ def analysis_sun_exposure():
     fig.savefig(f"{FIG_DIR}/sun_exposure_weekly_minutes.png", dpi=130)
     plt.close(fig)
     print(f"  Saved {FIG_DIR}/sun_exposure_weekly_minutes.png")
+
+    r_safe = simulate(fst=5,
+        schedule=build_pulse_schedule(PROTOCOL_DAYS, 45/MIN_PER_SED, 7),
+        duration_days=PROTOCOL_DAYS,
+        E_source_override=E_SOURCE_SUN,
+        exposed_bsa_override=BSA_SUN)
+    print_safety_summary(r_safe.get("safety_log", []),
+        f" [FST 5, weekly 45 min sun]")
 
     print("\n  NOTE: Assumes spring/fall midday sun (UV index ~5). "
           "Summer sun ~2x more efficient; winter ~0.5x.")

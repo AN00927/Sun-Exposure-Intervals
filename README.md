@@ -71,7 +71,7 @@ python3 run_all.py
 
 ## Headline results
 
-**Validation**: 8/8 required + 2/2 warning-only checks pass. Key results:
+**Validation**: 8/8 required checks pass, 1/2 warning-only checks pass (SC de Boer 2025 is a known failure pending individual-level calibration data). Key results:
 
 - **Bogh 2012**: model delta +41.6 vs observed +55.8 (within ±15 tolerance). The
   ~14 nmol/L gap is expected — the study used FST I-III Danes, lighter than the

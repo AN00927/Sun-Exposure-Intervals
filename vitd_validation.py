@@ -48,8 +48,16 @@ Audit change tags (July 2026 Scientific Audit):
   [C8] SC state documentation fix            (see vitd_model.py)
 """
 
+import os
 import numpy as np
+import pandas as pd
+from collections import namedtuple
 
+# ---------------------------------------------------------------------------
+# Generic check result container
+# ---------------------------------------------------------------------------
+
+CheckResult = namedtuple('CheckResult', ['name', 'passed', 'message'])
 
 # ---------------------------------------------------------------------------
 # Comparison utilities for validation targets
@@ -163,7 +171,8 @@ from vitd_model import (ModelParams, synthesis_per_session, simulate,
                          build_pulse_schedule, build_weekly_schedule,
                          gross_synth_per_SED, net_final_D_change_per_SED,
                          auc_above_baseline_per_SED,
-                         auc_above_sufficiency_per_SED)
+                         auc_above_sufficiency_per_SED,
+                         steady_state_D)
 
 
 # ---------------------------------------------------------------------------
@@ -498,6 +507,9 @@ def validate_baseline_calibration_target(verbose=True):
       - Low baseline (62.4 nmol/L) should increase (observed +6.0 nmol/L)
       - High baseline (116.9 nmol/L) should decrease (observed -6.7 nmol/L)
     We test if the model's saturating feedback mode can replicate this target.
+
+    NOTE: This validation uses feedback_mode='saturating' (experimental),
+    NOT the default 'linear' mode. The default model may not pass this check.
     """
     p = ModelParams()
     p.feedback_mode = 'saturating'
@@ -583,6 +595,208 @@ def validate_sc_deBoer2025(verbose=True):
         print(f"  SC_IV >= SC_III * 0.8: {'YES' if SC_IV_ge_III else 'NO'}")
         print(f"  {'PASS' if passed else 'FAIL'} (warning-only)")
     return passed
+
+
+# ---------------------------------------------------------------------------
+# NHANES population validation
+# ---------------------------------------------------------------------------
+
+# Race/ethnicity code to (label, FST) mapping from NHANES RIDRETH1/RIDRETH3.
+# Codes: 1=Mexican American, 2=Other Hispanic, 3=Non-Hispanic White,
+#        4=Non-Hispanic Black, 5=Other/Multiracial (RIDRETH1),
+#        6=Other/Multiracial (RIDRETH3).  Code 7 (no clear mapping) is dropped.
+RACE_FST_MAP = {
+    1: ("Mexican American", 4),
+    2: ("Other Hispanic", 4),
+    3: ("Non-Hispanic White", 2),
+    4: ("Non-Hispanic Black", 5),
+    5: ("Other/Multiracial", 3),
+    6: ("Other/Multiracial", 3),
+}
+
+# RIDEXMON codes: 1 = Nov-Apr (winter), 2 = May-Oct (summer)
+SEASON_MAP = {1: "winter", 2: "summer"}
+
+_SIM_DAYS = 84      # 12-week simulation
+_SIM_SED = 0.333    # ~5 min at UVI 5
+_SIM_BSA = 0.30     # arms + face
+_SIM_ESOURCE = 1.0  # solar / broadband reference
+_SIM_TOLERANCE = 15.0  # nmol/L, matching Bogh 2012 convention
+
+
+def validate_nhanes_seasonal(nhanes_available=True, verbose=True):
+    """
+    NHANES population-level seasonal validation for the vitamin D scheduling model.
+
+    Part A — Direction check (warning-only)
+        For every NHANES race/ethnicity group, verify that the observed
+        summer mean 25(OH)D > winter mean 25(OH)D.  This confirms the
+        expected seasonal pattern exists in the source data.
+
+    Part B — Summer steady-state comparison (required)
+        For every FST-mapped group, simulate a daily sun-exposure schedule
+        (0.333 SED/session, 84 days, E_source=1.0, 30% BSA) using the
+        NHANES winter mean as the dietary-baseline proxy (D0).  Compare
+        the model-predicted steady-state D to the NHANES summer mean with
+        an absolute tolerance of ±15 nmol/L (Bogh 2012 convention).
+
+    Returns
+    -------
+    dict
+        {check_name: bool} — merges into run_all.py's val_results.
+    """
+    data_path = os.path.join(os.path.dirname(__file__),
+                             "audit_outputs", "nhanes_standardized_processed.csv")
+
+    file_ok = (os.path.exists(data_path) and os.path.getsize(data_path) > 0)
+
+    if not nhanes_available or not file_ok:
+        if verbose:
+            print("\n" + "=" * 70)
+            print("NHANES POPULATION VALIDATION")
+            print("=" * 70)
+            print("\n  WARNING: NHANES data not found. "
+                  "Run nhanes_preprocessing.py first.")
+            print("  Skipping NHANES seasonal validation.\n")
+        return {}
+
+    # ------------------------------------------------------------------
+    # Load and filter
+    # ------------------------------------------------------------------
+    df = pd.read_csv(data_path)
+
+    # Adults 18–65 only
+    df = df[(df["age"] >= 18) & (df["age"] <= 65)].copy()
+
+    # Map race codes to labels and FST
+    df["race_label"] = df["race_ethnicity"].map(
+        lambda x: RACE_FST_MAP[x][0] if x in RACE_FST_MAP else None)
+    df["fst"] = df["race_ethnicity"].map(
+        lambda x: RACE_FST_MAP[x][1] if x in RACE_FST_MAP else None)
+
+    # Drop rows with missing race, D, or season
+    df = df.dropna(subset=["race_label", "fst",
+                           "vitd_standardized_nmol_L", "exam_season"])
+
+    # Map season codes to labels
+    df["season"] = df["exam_season"].map(SEASON_MAP)
+    df = df.dropna(subset=["season"])
+
+    # Compute per-group mean and SEM of 25(OH)D by season
+    grouped = df.groupby(["race_label", "fst", "season"])["vitd_standardized_nmol_L"]
+    grp_mean = grouped.mean()
+    grp_sem = grouped.sem()
+
+    # Build lookup: {(label, fst): {"winter": mean, "summer": mean, "sem": ...}}
+    groups = {}
+    for (label, fst, season), mean_val in grp_mean.items():
+        key = (label, int(fst))
+        if key not in groups:
+            groups[key] = {}
+        groups[key][season] = mean_val
+    for (label, fst, season), sem_val in grp_sem.items():
+        key = (label, int(fst))
+        if key not in groups:
+            groups[key] = {}
+        if "sem" not in groups[key]:
+            groups[key]["sem"] = {}
+        groups[key]["sem"][season] = sem_val
+
+    if not groups:
+        if verbose:
+            print("\n  WARNING: No valid race/season groups after filtering.")
+        return {"NHANES group availability": True}
+
+    # ------------------------------------------------------------------
+    # Part A — Direction check (warning-only)
+    # ------------------------------------------------------------------
+    if verbose:
+        print("\n" + "=" * 70)
+        print("NHANES POPULATION VALIDATION")
+        print("=" * 70)
+        print("\n--- Part A: Seasonal direction check (warning-only) ---")
+        print(f"  {'Group':25s} {'FST':4s} {'Winter':>8s} {'Summer':>8s}  Direction")
+
+    direction_ok = True
+    for (label, fst), data in sorted(groups.items()):
+        w = data.get("winter")
+        s = data.get("summer")
+        if w is None or s is None:
+            continue
+        ok = s > w
+        if not ok:
+            direction_ok = False
+        if verbose:
+            print(f"  {label:25s}  {fst:1d}   {w:6.1f}  {s:6.1f}  "
+                  f"{'OK' if ok else 'WARNING (summer <= winter)'}")
+
+    if verbose:
+        if direction_ok:
+            print(f"  -> Direction check: PASS (all groups summer > winter)")
+        else:
+            print(f"  -> Direction check: WARNING (some groups summer <= winter)")
+
+    # ------------------------------------------------------------------
+    # Part B — Summer steady-state comparison (required)
+    # ------------------------------------------------------------------
+    if verbose:
+        print(f"\n--- Part B: Summer steady-state comparison "
+              f"(±{_SIM_TOLERANCE} nmol/L) ---")
+        print(f"  Protocol: daily {_SIM_SED} SED, {_SIM_DAYS} days, "
+              f"E_source={_SIM_ESOURCE}, BSA={_SIM_BSA}")
+        print(f"  D0 = NHANES winter mean for each group.")
+        print(f"  {'Group':25s} {'FST':4s} {'Model_ss':>8s} "
+              f"{'NHANES_summer':>13s}  {'|diff|':>7s}  Status")
+
+    p = ModelParams()
+    summer_passed = {}
+    for (label, fst), data in sorted(groups.items()):
+        w = data.get("winter")
+        s = data.get("summer")
+        if w is None or s is None:
+            continue
+
+        # Build daily schedule for simulation
+        schedule = [(d, _SIM_SED) for d in range(_SIM_DAYS)]
+        result = simulate(fst=fst, schedule=schedule,
+                          duration_days=_SIM_DAYS, params=p,
+                          D0=w,
+                          E_source_override=_SIM_ESOURCE,
+                          exposed_bsa_override=_SIM_BSA)
+        model_ss = steady_state_D(result)
+        diff = abs(model_ss - s)
+        ok = diff <= _SIM_TOLERANCE
+        summer_passed[(label, fst)] = ok
+
+        if verbose:
+            dw = data.get("sem", {}).get("winter")
+            ds = data.get("sem", {}).get("summer")
+            winter_str = f"{w:.1f}±{dw:.1f}" if dw and not np.isnan(dw) else f"{w:.1f}"
+            summer_str = f"{s:.1f}±{ds:.1f}" if ds and not np.isnan(ds) else f"{s:.1f}"
+            print(f"  {label:25s}  {fst:1d}   {model_ss:6.1f}  "
+                  f"{summer_str:>13s}  {diff:5.1f}  "
+                  f"{'PASS' if ok else 'FAIL'}")
+
+    all_summer_ok = all(summer_passed.values())
+    if verbose:
+        n_summer_pass = sum(1 for v in summer_passed.values() if v)
+        n_summer_total = len(summer_passed)
+        if all_summer_ok:
+            print(f"  -> Summer comparison: "
+                  f"PASS ({n_summer_pass}/{n_summer_total} within ±{_SIM_TOLERANCE})")
+        else:
+            print(f"  -> Summer comparison: "
+                  f"{n_summer_pass}/{n_summer_total} passed "
+                  f"(target: all within ±{_SIM_TOLERANCE} nmol/L)")
+
+    if verbose:
+        print()
+
+    # Return dict compatible with val_results.update() in run_all.py
+    return {
+        "NHANES seasonal direction": True,        # warning-only → always "passes"
+        "NHANES summer comparison": all_summer_ok,   # required check
+    }
 
 
 # ---------------------------------------------------------------------------

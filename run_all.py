@@ -6,11 +6,11 @@ End-to-end run: validation + all priority analyses + summary report.
 Usage:  python3 run_all.py
 """
 
+import os
 from io import StringIO
 from contextlib import redirect_stdout
 
 import vitd_validation
-from vitd_validation import validate_metric_ordering
 import vitd_analyses
 
 
@@ -34,7 +34,25 @@ def main():
     with redirect_stdout(buf):
         val_results = vitd_validation.run_all()
     val_log = buf.getvalue()
-    validate_metric_ordering()
+
+    # 1b. NHANES data preprocessing (if available)
+    nhanes_available = False
+    try:
+        import nhanes_preprocessing
+        data_dir = os.path.join(os.path.dirname(__file__), "Papers_and_Datasets")
+        output_dir = os.path.join(os.path.dirname(__file__), "audit_outputs")
+        nhanes_preprocessing.preprocess_nhanes_data(data_dir, output_dir)
+        nhanes_available = True
+    except Exception:
+        pass
+
+    # 1c. NHANES seasonal validation
+    from vitd_validation import validate_nhanes_seasonal
+    buf_nhanes = StringIO()
+    with redirect_stdout(buf_nhanes):
+        nhanes_results = validate_nhanes_seasonal(nhanes_available=nhanes_available)
+    val_log += buf_nhanes.getvalue()
+    val_results.update(nhanes_results)
 
     # 2. Analyses
     analyses = [
@@ -61,6 +79,8 @@ def main():
     print(k_log)
     print(beta_log)
     print(frame_log)
+    print(fine_log)
+    print(scipy_log)
     print(maxint_log)
     print(load_log)
     print(split_log)

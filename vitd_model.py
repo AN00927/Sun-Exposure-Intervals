@@ -472,7 +472,7 @@ def simulate(fst: int,
              alpha_SC_override: float = None,
              K_SC_override: float = None,
              exposed_bsa_override: float = None,
-             dose_framing: str = "fixed_per_session_SED") -> Dict:
+              dose_framing: str = "unspecified") -> Dict:
     """Simulate vitamin D dynamics under a UV pulse schedule.
 
     Parameters
@@ -586,6 +586,7 @@ def simulate(fst: int,
     _VALID_FRAMINGS = {
         "fixed_absolute_SED", "fixed_cumulative_SED",
         "fixed_per_session_SED", "fixed_fractional_MED",
+        "unspecified",
     }
     if dose_framing not in _VALID_FRAMINGS:
         import warnings
