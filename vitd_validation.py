@@ -614,8 +614,8 @@ RACE_FST_MAP = {
     2: ("Other Hispanic", 4),
     3: ("Non-Hispanic White", 2),
     4: ("Non-Hispanic Black", 5),
-    5: ("Other/Multiracial", 3),
-    6: ("Other/Multiracial", 3),
+     5: ("Other/Multiracial", 3),
+     6: ("Non-Hispanic Asian", 4),
 }
 
 # RIDEXMON codes: 1 = Nov-Apr (winter), 2 = May-Oct (summer)
@@ -744,6 +744,9 @@ def validate_nhanes_seasonal(nhanes_available=True, verbose=True):
     # ------------------------------------------------------------------
     # Part B — Summer steady-state comparison (required)
     # ------------------------------------------------------------------
+    # [C1-BSA] If residuals correlate with BMI/weight, this would indicate
+    # incomplete BSA modeling (exposed_bsa vs total_bsa). Current model uses
+    # a fixed exposed_bsa=0.30 for all subjects.
     if verbose:
         print(f"\n--- Part B: Summer steady-state comparison "
               f"(±{_SIM_TOLERANCE} nmol/L) ---")
@@ -755,6 +758,7 @@ def validate_nhanes_seasonal(nhanes_available=True, verbose=True):
 
     p = ModelParams()
     summer_passed = {}
+    model_ss_map = {}
     for (label, fst), data in sorted(groups.items()):
         w = data.get("winter")
         s = data.get("summer")
@@ -769,6 +773,7 @@ def validate_nhanes_seasonal(nhanes_available=True, verbose=True):
                           E_source_override=_SIM_ESOURCE,
                           exposed_bsa_override=_SIM_BSA)
         model_ss = steady_state_D(result)
+        model_ss_map[(label, fst)] = model_ss
         diff = abs(model_ss - s)
         ok = diff <= _SIM_TOLERANCE
         summer_passed[(label, fst)] = ok
@@ -794,6 +799,33 @@ def validate_nhanes_seasonal(nhanes_available=True, verbose=True):
                   f"{n_summer_pass}/{n_summer_total} passed "
                   f"(target: all within ±{_SIM_TOLERANCE} nmol/L)")
 
+    # ------------------------------------------------------------------
+    # Part C — Dietary source residual stratification (if available)
+    # ------------------------------------------------------------------
+    if "dietary_source_flag" in df.columns:
+        summer_df = df[df["season"] == "summer"].copy()
+        for (label, fst_val), ss_val in model_ss_map.items():
+            mask = (summer_df["race_label"] == label) & (summer_df["fst"] == fst_val)
+            summer_df.loc[mask, "model_ss"] = ss_val
+        summer_df = summer_df.dropna(subset=["model_ss", "vitd_standardized_nmol_L", "dietary_source_flag"])
+        if len(summer_df) > 0:
+            summer_df.loc[:, "residual"] = summer_df["model_ss"] - summer_df["vitd_standardized_nmol_L"]
+            total_n = len(summer_df)
+            if verbose:
+                print(f"\n--- Part C: Dietary source residual stratification ---")
+                print(f"  {'Flag':20s} {'n':>6s} {'Fraction':>9s}  {'Mean resid':>10s} {'Std resid':>10s}")
+            for flag, grp in sorted(summer_df.groupby("dietary_source_flag")):
+                n = len(grp)
+                frac = n / total_n * 100
+                mean_res = grp["residual"].mean()
+                std_res = grp["residual"].std()
+                if verbose:
+                    print(f"  {flag:20s} {n:6d} {frac:7.2f}%  {mean_res:8.2f}  {std_res:8.2f}")
+            if verbose:
+                total_mean = summer_df["residual"].mean()
+                total_std = summer_df["residual"].std()
+                print(f"  {'Total':20s} {total_n:6d} {'100.00%':>9s}  {total_mean:8.2f}  {total_std:8.2f}")
+
     if verbose:
         print()
 
@@ -802,6 +834,91 @@ def validate_nhanes_seasonal(nhanes_available=True, verbose=True):
         "NHANES seasonal direction": True,        # warning-only → always "passes"
         "NHANES summer comparison": all_summer_ok,   # required check
     }
+
+
+def validate_katten_seasonal_amplitude(verbose=True):
+    """
+    Validate K_ATTEN seasonal amplitude ratio (NH White : NH Black).
+
+    Reads audit_outputs/seasonality_by_cycle_race.csv and compares the
+    observed seasonal amplitude ratio (NH White FST=2 : NH Black FST=5)
+    against the model-predicted ratio.
+
+    For each cycle and group:
+      Winter: D0 = min_season_mean
+      Summer: simulate daily 0.333 SED x 84 days, E_source=1.0, BSA=0.30
+      Model amplitude = steady_state_D - D0
+
+    The model ratio must be within +/-50% of the observed ratio.
+    """
+    data_path = os.path.join(os.path.dirname(__file__),
+                             "audit_outputs", "seasonality_by_cycle_race.csv")
+    if not os.path.exists(data_path):
+        if verbose:
+            print(f"\n[K_ATTEN seasonal amplitude] Data file not found. SKIP.")
+        return False
+
+    df = pd.read_csv(data_path)
+    df = df[df["race_ethnicity_code"].isin([3, 4])].copy()
+
+    code_to_fst = {3: 2, 4: 5}
+    code_to_label = {3: "NH White", 4: "NH Black"}
+    df.loc[:, "fst"] = df["race_ethnicity_code"].map(code_to_fst)
+    df.loc[:, "label"] = df["race_ethnicity_code"].map(code_to_label)
+
+    p = ModelParams()
+    schedule = [(d, _SIM_SED) for d in range(_SIM_DAYS)]
+
+    model_amps = {3: [], 4: []}
+    obs_amps = {3: [], 4: []}
+
+    for _, row in df.iterrows():
+        code = int(row["race_ethnicity_code"])
+        fst = code_to_fst[code]
+        D0 = row["min_season_mean"]
+        obs_amp = row["amplitude_mean_25ohd"]
+        obs_amps[code].append(obs_amp)
+
+        result = simulate(fst=fst, schedule=schedule,
+                          duration_days=_SIM_DAYS, params=p,
+                          D0=D0,
+                          E_source_override=_SIM_ESOURCE,
+                          exposed_bsa_override=_SIM_BSA)
+        ss = steady_state_D(result)
+        model_amp = ss - D0
+        model_amps[code].append(model_amp)
+
+    obs_mean_white = np.mean(obs_amps[3])
+    obs_mean_black = np.mean(obs_amps[4])
+    obs_ratio = obs_mean_white / obs_mean_black if obs_mean_black > 0 else np.nan
+
+    mod_mean_white = np.mean(model_amps[3])
+    mod_mean_black = np.mean(model_amps[4])
+    mod_ratio = mod_mean_white / mod_mean_black if mod_mean_black > 0 else np.nan
+
+    if obs_ratio > 0 and mod_ratio > 0:
+        pct_diff = (mod_ratio - obs_ratio) / obs_ratio * 100
+        passed = abs(pct_diff) <= 50.0
+    else:
+        passed = False
+        pct_diff = 0.0
+
+    if verbose:
+        print(f"\n[K_ATTEN seasonal amplitude] NH White vs NH Black seasonal rise")
+        print(f"  Protocol: daily {_SIM_SED} SED x {_SIM_DAYS}d, "
+              f"E_source={_SIM_ESOURCE}, BSA={_SIM_BSA}")
+        print(f"  NH White (FST=2, code 3): "
+              f"observed amplitude = {obs_mean_white:.2f}, "
+              f"model amplitude = {mod_mean_white:.2f}")
+        print(f"  NH Black (FST=5, code 4): "
+              f"observed amplitude = {obs_mean_black:.2f}, "
+              f"model amplitude = {mod_mean_black:.2f}")
+        print(f"  Observed ratio (White/Black): {obs_ratio:.3f}")
+        print(f"  Model ratio (White/Black):    {mod_ratio:.3f}")
+        print(f"  Difference: {pct_diff:+.1f}% (target: within +/-50%)")
+        print(f"  {'PASS' if passed else 'FAIL'}")
+
+    return passed
 
 
 # ---------------------------------------------------------------------------
@@ -845,6 +962,7 @@ def run_all(verbose=True):
         ("Bogh baseline+BSA [C4]",        validate_bogh_baseline_bsa, False),
         ("baseline calibration target [C3-feedback]", validate_baseline_calibration_target, False),
         ("metric ordering and sanity",    validate_metric_ordering, False),
+        ("K_ATTEN seasonal amplitude",    validate_katten_seasonal_amplitude, False),
     ]
     
     results = {}

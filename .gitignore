@@ -19,3 +19,13 @@ docs/superpowers/plans/2026-07-09-model-recalibration.md
 figs/*.png
 tables/*.csv
 docs/MEETING_WALKTHROUGH.md
+audit_prompts/final_merge_agent.md
+audit_prompts/orchestrator_A_uv_equations.md
+audit_prompts/orchestrator_B_skin_biology.md
+audit_prompts/orchestrator_C_kinetics_halflife.md
+audit_prompts/orchestrator_D_population_nhanes.md
+audit_prompts/orchestrator_E_stratum_corneum.md
+audit_prompts/orchestrator_F_summary_factcheck.md
+audit_prompts/README.md
+audit_prompts/SUB_AGENT_HYPER_PROMPT.md
+docs/superpowers/plans/2026-07-26-raw-data-implementation.md
