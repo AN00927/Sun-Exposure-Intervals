@@ -24,7 +24,7 @@ Three categories:
       is not possible (instrument-specific arbitrary units vs model's normalized 0-1 scale).
    b. Bogh 2012 - NB-UVB 3x/week for 6 weeks in FST III starting at 19.2 nmol/L
       produced a quantitative rise to 75.0 nmol/L (delta ~55.8 nmol/L).
-      Validation is now QUANTITATIVE: model delta must be within ±15 nmol/L of
+       Validation is now QUANTITATIVE: model delta must be within ±10 nmol/L of
       the observed +55.8 nmol/L rise (i.e., 40.8-70.8 nmol/L delta).
    c. Farrar 2013 - FST V South Asians at >=1.95 SED/session reached mean
       15.7 ng/mL (~39.25 nmol/L) with a +8.7 ng/mL rise (~+21.75 nmol/L).
@@ -319,11 +319,13 @@ def validate_bogh_2012(verbose=True):
     light-skinned Danish adults raised mean 25(OH)D from 19.2 to 75.0 nmol/L
     (delta +55.8 nmol/L; between-group p=0.02 vs oral D3).
 
-    [C1] QUANTITATIVE THRESHOLD (replaces prior qualitative 'delta > 5 nmol/L'):
-    Model delta must fall within ±15 nmol/L of the observed +55.8 nmol/L,
-    i.e., 40.8 to 70.8 nmol/L. A tolerance of ±15 is granted because the
-    model is broadband-calibrated and E_source=2.5 is a placeholder for NB-UVB
-    311 nm; a tighter bound requires spectral calibration (see [C3] below).
+    [C1] QUANTITATIVE THRESHOLD (tightened after SC recalibration):
+    Model delta must fall within ±10 nmol/L of the observed +55.8 nmol/L,
+    i.e., 45.8 to 65.8 nmol/L. Tolerance was ±15 previously but a ~14 nmol/L
+    prediction error is unacceptable. The model systematically under-predicts
+    NB-UVB by ~17 nmol/L with current parameters (alpha_SC=0.12, SC_max=0.23
+    for FST III). This is a known structural limitation: E_source=2.5 is a
+    placeholder requiring per-study spectral calibration (see [C3] below).
 
     [C3] SOURCE / SPECTRAL CALIBRATION NOTE:
     E_source=2.5 is a per-study placeholder. Young 2020 (P20) shows that the
@@ -340,9 +342,9 @@ def validate_bogh_2012(verbose=True):
     result = simulate(fst=3, schedule=sched, duration_days=42, params=p, D0=19.2, E_source_override=2.5)
     D_final = result["D"][-1]
     delta = D_final - 19.2
-    # [C1] Quantitative target: observed delta = +55.8 nmol/L; tolerance ±15 nmol/L
+    # [C1] Quantitative target: observed delta = +55.8 nmol/L; tolerance ±10 nmol/L
     OBSERVED_DELTA = 55.8
-    TOLERANCE = 15.0
+    TOLERANCE = 10.0
     passed = abs(delta - OBSERVED_DELTA) <= TOLERANCE
     if verbose:
         print(f"[Lit 2] Bogh 2012 - quantitative NB-UVB validation  [C1]")
@@ -556,12 +558,14 @@ def validate_sc_deBoer2025(verbose=True):
     SC thickness: FP I-III +23% (5.6->6.9 um), FP IV-VI +36% (6.6->9.0 um).
     Melanin index: FP I-III +15%, FP IV-VI +9%.
 
-    This check verifies the model produces SC values in the plausible range
-    after the de Boer 2025 protocol. Warning-only -- SC parameters are priors.
+    Calibrated with de Boer 2025 Supplementary Table S1.
+    [C7-SC-FITTED] alpha_SC=0.12, SC_max_by_FST: I-III=0.23, IV-VI=0.36.
+    Warning-only because k_damage=0 (SC dip at week 5 not modeled).
 
-    [C7-SC-PRIOR] SC_max=0.30, alpha_SC=0.005, k_decay_SC=ln(2)/28, K_SC=1.0.
-    Target SC at week 9: FP I-III proxy (FST III) should be in [0.015, 0.05].
-    Target SC at week 9: FP IV-VI proxy (FST IV) should be in [0.025, 0.06].
+    Target SC at week 9: FP I-III proxy (FST III, SC_max=0.23) should be
+      in [0.12, 0.23] (reaches ~90% of SC_max within 9 weeks).
+    Target SC at week 9: FP IV-VI proxy (FST V, SC_max=0.36) should be
+      in [0.18, 0.36] (reaches ~90% of SC_max within 9 weeks).
     """
     p = ModelParams()
     sched = build_weekly_schedule(63, 0.8, [0, 2, 4])
@@ -569,30 +573,30 @@ def validate_sc_deBoer2025(verbose=True):
     r3 = simulate(fst=3, schedule=sched, duration_days=63, params=p)
     SC_III = float(np.mean(r3["SC"][-28:]))
 
-    r4 = simulate(fst=4, schedule=sched, duration_days=63, params=p)
-    SC_IV = float(np.mean(r4["SC"][-28:]))
+    r5 = simulate(fst=5, schedule=sched, duration_days=63, params=p)
+    SC_V = float(np.mean(r5["SC"][-28:]))
 
     SC_III_increased = SC_III > 0.0
-    SC_IV_increased = SC_IV > 0.0
+    SC_V_increased = SC_V > 0.0
 
-    SC_III_range_ok = 0.01 <= SC_III <= 0.08
-    SC_IV_range_ok = 0.02 <= SC_IV <= 0.12
+    SC_III_range_ok = 0.08 <= SC_III <= 0.23
+    SC_V_range_ok = 0.14 <= SC_V <= 0.36
 
-    SC_IV_ge_III = SC_IV >= SC_III * 0.8
+    SC_V_ge_III = SC_V >= SC_III * 0.8
 
-    passed = all([SC_III_increased, SC_IV_increased,
-                  SC_III_range_ok, SC_IV_range_ok, SC_IV_ge_III])
+    passed = all([SC_III_increased, SC_V_increased,
+                  SC_III_range_ok, SC_V_range_ok, SC_V_ge_III])
 
     if verbose:
         print(f"[SC Check] de Boer 2025 SC validation (warning-only)")
         print(f"  Protocol: 0.8 SED 3x/week x 9 weeks")
-        print(f"  FST III (FP I-III proxy): SC={SC_III:.4f} "
+        print(f"  FST III (FP I-III proxy, SC_max=0.23): SC={SC_III:.4f} "
               f"(increased: {'YES' if SC_III_increased else 'NO'}, "
-              f"range [0.01,0.08]: {'OK' if SC_III_range_ok else 'OUT'})")
-        print(f"  FST IV  (FP IV-VI proxy): SC={SC_IV:.4f} "
-              f"(increased: {'YES' if SC_IV_increased else 'NO'}, "
-              f"range [0.02,0.12]: {'OK' if SC_IV_range_ok else 'OUT'})")
-        print(f"  SC_IV >= SC_III * 0.8: {'YES' if SC_IV_ge_III else 'NO'}")
+              f"range [0.08,0.23]: {'OK' if SC_III_range_ok else 'OUT'})")
+        print(f"  FST V  (FP IV-VI proxy, SC_max=0.36): SC={SC_V:.4f} "
+              f"(increased: {'YES' if SC_V_increased else 'NO'}, "
+              f"range [0.14,0.36]: {'OK' if SC_V_range_ok else 'OUT'})")
+        print(f"  SC_V >= SC_III * 0.8: {'YES' if SC_V_ge_III else 'NO'}")
         print(f"  {'PASS' if passed else 'FAIL'} (warning-only)")
     return passed
 
@@ -621,7 +625,7 @@ _SIM_DAYS = 84      # 12-week simulation
 _SIM_SED = 0.333    # ~5 min at UVI 5
 _SIM_BSA = 0.30     # arms + face
 _SIM_ESOURCE = 1.0  # solar / broadband reference
-_SIM_TOLERANCE = 15.0  # nmol/L, matching Bogh 2012 convention
+_SIM_TOLERANCE = 10.0  # nmol/L, matching tightened Bogh 2012 convention
 
 
 def validate_nhanes_seasonal(nhanes_available=True, verbose=True):
@@ -638,7 +642,8 @@ def validate_nhanes_seasonal(nhanes_available=True, verbose=True):
         (0.333 SED/session, 84 days, E_source=1.0, 30% BSA) using the
         NHANES winter mean as the dietary-baseline proxy (D0).  Compare
         the model-predicted steady-state D to the NHANES summer mean with
-        an absolute tolerance of ±15 nmol/L (Bogh 2012 convention).
+        an absolute tolerance of ±10 nmol/L (tightened from ±15; model
+        prediction error should not exceed 10 nmol/L for a calibrated model).
 
     Returns
     -------

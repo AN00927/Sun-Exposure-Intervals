@@ -26,8 +26,9 @@ from scipy.optimize import minimize_scalar
 from vitd_model import (simulate, build_pulse_schedule,
                          steady_state_D, mean_final_M,
                          final_D, gross_synth_per_SED, net_final_D_change_per_SED,
-                         auc_D_per_SED, auc_above_baseline_per_SED,
-auc_above_sufficiency_per_SED)
+                          auc_D_per_SED, auc_above_baseline_per_SED,
+                          auc_above_sufficiency_per_SED,
+                          auc_deficit)
 
 def print_safety_summary(safety_log, label=""):
     """Print a one-line safety summary from a simulate() safety_log."""
@@ -566,6 +567,8 @@ def analysis_fine_grid():
                 "gross_synth_per_SED": gross_synth_per_SED(r),
                 "net_final_D_change_per_SED": net_final_D_change_per_SED(r),
                 "auc_above_baseline_per_SED": auc_above_baseline_per_SED(r),
+                "auc_deficit_30": auc_deficit(r["D"], r["t"], 30.0),
+                "auc_deficit_50": auc_deficit(r["D"], r["t"], 50.0),
             })
     df = pd.DataFrame(rows)
     df.to_csv(f"{TAB_DIR}/fine_grid_sweep.csv", index=False)
@@ -603,6 +606,14 @@ def analysis_fine_grid():
         print(f"  FST {fst}: optimal interval = {int(best['interval_days'])}d "
               f"(gross_eff {best['gross_synth_per_SED']:.3f}, "
               f"ss_D {best['steady_state_D']:.1f})")
+
+    sub = df[df["FST"] == 5]
+    if sub.shape[0] > 0:
+        best_row = sub.loc[sub["gross_synth_per_SED"].idxmax()]
+        best_sched = build_pulse_schedule(PROTOCOL_DAYS, sed_per_session, int(best_row["interval_days"]))
+        r_best = simulate(fst=5, schedule=best_sched, duration_days=PROTOCOL_DAYS)
+        print_safety_summary(r_best.get("safety_log", []),
+                             f" [Best: FST 5, every {best_row['interval_days']}d, {sed_per_session} SED]")
     return df
 
 
@@ -690,6 +701,8 @@ def analysis_scipy_optimize():
               f"({res_D.nfev} function evals)")
         print(f"  Cross-check: ss_D at eff optimum = {steady_state_D(r_eff):.1f}, "
               f"gross_eff at D optimum = {gross_synth_per_SED(r_D):.3f}")
+        print(f"  AUC deficit at 50 nmol/L for optimal schedule: {auc_deficit(r_eff['D'], r_eff['t'], 50.0):.1f}")
+        print(f"  AUC deficit at 30 nmol/L for optimal schedule: {auc_deficit(r_eff['D'], r_eff['t'], 30.0):.1f}")
 
     df = pd.DataFrame(rows)
     df.to_csv(f"{TAB_DIR}/scipy_optimize_results.csv", index=False)
@@ -723,6 +736,8 @@ def analysis_max_interval_for_sufficiency():
                 "steady_state_D": d_ss,
                 "above_sufficiency": d_ss >= THRESHOLD,
                 "cumulative_SED": r["cumulative_SED"],
+                "auc_deficit_30": auc_deficit(r["D"], r["t"], 30.0),
+                "auc_deficit_50": auc_deficit(r["D"], r["t"], 50.0),
             })
     df = pd.DataFrame(rows)
     df.to_csv(f"{TAB_DIR}/max_interval_sufficiency.csv", index=False)
@@ -861,6 +876,12 @@ def analysis_loading_dose():
     r_safe = simulate(fst=5, schedule=sched_max, duration_days=PROTOCOL_DAYS)
     print_safety_summary(r_safe.get("safety_log", []),
         f" [FST 5, {max_budget} SED loading in 1 session]")
+
+    r_safe = simulate(fst=5,
+        schedule=build_pulse_schedule(PROTOCOL_DAYS, 2.0, 1),
+        duration_days=PROTOCOL_DAYS)
+    print_safety_summary(r_safe.get("safety_log", []),
+        f" [FST 5, 2 SED daily — aggressive loading]")
     return df
 
 
@@ -893,7 +914,7 @@ def analysis_maintenance_split():
             r_b = simulate(fst=fst, schedule=sched_b, duration_days=PROTOCOL_DAYS)
             for label, sed, interval, r in [
                 ("single_1SED", 1.0, T, r_a),
-                ("split_{:.3f}SED".format(sed_split), sed_split, split_interval, r_b),
+                ("split_0.5SED", sed_split, split_interval, r_b),
             ]:
                 rows.append({
                     "FST": fst, "interval_T": T,
@@ -1166,6 +1187,12 @@ def analysis_trajectories():
     fig.savefig(f"{FIG_DIR}/trajectories.png", dpi=130)
     plt.close(fig)
     print(f"  Saved {FIG_DIR}/trajectories.png")
+
+    r_safe = simulate(fst=5,
+        schedule=build_pulse_schedule(PROTOCOL_DAYS, 1.0, 7),
+        duration_days=PROTOCOL_DAYS)
+    print_safety_summary(r_safe.get("safety_log", []),
+        f" [FST 5, 1 SED every 7d — trajectory reference]")
 
 
 # ===========================================================================

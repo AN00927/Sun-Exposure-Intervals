@@ -12,6 +12,7 @@ from contextlib import redirect_stdout
 
 import vitd_validation
 import vitd_analyses
+from vitd_optimization import analysis_constant_sessions
 
 
 REPORT_PATH = "RESULTS.md"
@@ -67,9 +68,10 @@ def main():
         vitd_analyses.analysis_maintenance_split,
         vitd_analyses.analysis_sun_exposure,
         vitd_analyses.analysis_trajectories,
+        analysis_constant_sessions,
     ]
     alpha_log, k_log, beta_log, frame_log, fine_log, scipy_log, \
-        maxint_log, load_log, split_log, sun_log, traj_log = [
+        maxint_log, load_log, split_log, sun_log, traj_log, const_log = [
             capture_log(fn) for fn in analyses
         ]
 
@@ -86,6 +88,7 @@ def main():
     print(split_log)
     print(sun_log)
     print(traj_log)
+    print(const_log)
 
     # 3. Markdown report
     n_pass = sum(val_results.values())
@@ -199,7 +202,14 @@ def main():
     )
     report.append("\n![trajectories](figs/trajectories.png)\n")
 
-    report.append("\n## 13. Interpretation\n")
+    report.append("\n## 13. Constant-sessions analysis\n")
+    report.append(
+        "\n15 sessions over 84 days, varying spacing patterns ranked by AUC deficiency "
+        "below 50 nmol/L + safety sidecar.\n"
+    )
+    report.append("\n```\n" + const_log + "\n```\n")
+
+    report.append("\n## 14. Interpretation\n")
     report.append("""
 ### What the sweeps actually showed
 

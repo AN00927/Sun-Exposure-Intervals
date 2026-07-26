@@ -21,7 +21,7 @@ Governing equations
 -------------------
 dD/dt  = S(UV(t), M(t), SC(t), D(t), F, bsa)  -  k_decay_D(D) * D
 dM/dt  = alpha * UV(t) * (M_max - M)  -  beta * (M - M_baseline(F))
-dSC/dt = alpha_SC * UV(t) * (SC_max - SC)  -  k_decay_SC * SC
+dSC/dt = alpha_SC * UV(t) * (SC_max - SC)  -  k_decay_SC * SC  -  k_damage * UV(t) * SC
 
 Synthesis function (logarithmic dose-response, melanin and SC-attenuated,
                     BSA-scaled, feedback-inhibited):
@@ -258,34 +258,49 @@ class ModelParams:
     feedback_power: float = 1.0
     D_half_feedback: float = 50.0
     # Stratum corneum thickening state parameters
-    # [C7-SC] SC_max is a PRIOR (0.20-0.40); de Boer 2025 (P2) reports +23% (FP I-III)
-    # and +36% (FP IV-VI). Default set to midpoint 0.30. Do not tighten alpha_SC,
-    # k_decay_SC, or K_SC without individual-level supplementary data.
+    # [C7-SC] Recalibrated from de Boer 2025 Supplementary Table S1:
+    #   FP I-III: SC 5.6->6.9 um (+23% -> SC_max=0.23)
+    #   FP IV-VI: SC 6.6->9.0 um (+36% -> SC_max=0.36)
+    # alpha_SC=0.12 calibrated so SC reaches ~90% of SC_max within
+    # 27 sessions (0.8 SED 3x/week, de Boer protocol).
+    # k_decay_SC remains at 28d half-life (epidermal turnover literature).
+    # k_damage (UV-driven desquamation) fits the week-5 SC dip only
+    # weakly from 3 group-mean timepoints; kept at 0.0 until individual-
+    # level data is available for joint fitting.
     k_decay_SC: float = np.log(2) / 28.0
-    alpha_SC: float = 0.005
-    SC_max: float = 0.30   # revised from 0.50; prior range 0.20-0.36 (P2, de Boer 2025)
+    alpha_SC: float = 0.12
+    SC_max: float = 0.30
+    SC_max_by_FST: Dict[int, float] = field(default_factory=lambda: {
+        1: 0.23, 2: 0.23, 3: 0.23,
+        4: 0.36, 5: 0.36, 6: 0.36,
+    })
     K_SC: float = 1.0
-    # [C7-SC-PRIOR] Evidence-based ranges for SC parameters.
-    # SC_max: de Boer 2025 (P2) reports +36% SC thickening in FP IV-VI after
-    #   9 weeks of 0.8 SED 3x/week. This sets the empirical ceiling.
-    #   Upper bound 0.36 replaces prior 0.40.
-    # alpha_SC: Rise rate constrained by de Boer 2025 protocol fit.
-    #   SC rose from 6.6 to 9.0 um (+36%) over 27 sessions in FP IV-VI.
+    k_damage: float = 0.0
+    # [C7-SC-FITTED] Evidence-based ranges for SC parameters.
+    # SC_max: de Boer 2025 (P2) reports +23% (FP I-III) and +36% (FP IV-VI).
+    #   Default 0.30 is the midpoint; use SC_max_by_FST for per-FST values.
+    # alpha_SC: Fitted to de Boer 2025. SC reaches ~90% of SC_max within
+    #   9 weeks (0.8 SED 3x/week). Prior range 0.003-0.008 was too low.
+    #   Experimental range: 0.08-0.20 (fitting uncertainty from 3 timepoints).
+    #   Default 0.12 is the mid-range fitted value.
     # k_decay_SC: 21-28 day half-life. Pearse 1987 (P23) measured SC after
     #   6 weeks of 3x/week UVB. Epidermal turnover literature: 26-28 days.
     #   de Boer 2025 shows SC still rising at 9 weeks -> decay slower than rise.
     # K_SC: Attenuation strength. Pearse 1987 did not measure vitamin D
     #   attenuation directly. K_SC=1.0 gives exp(-0.30)=74% at SC_max.
     #   Range 0.5-2.0 reflects uncertainty.
+    # k_damage: de Boer 2025 shows SC dip at week 5 (~4.3 um, -35% from
+    #   baseline 6.6 um in FP IV-VI). Single k_damage cannot fit both dip
+    #   and recovery — likely requires time-varying or UV-penetration-dependent
+    #   formulation. Default 0.0 preserves monotonic SC; dip is a known
+    #   model limitation.
     SC_PRIOR_RANGES = {
-        "SC_max": (0.20, 0.36),                                        # de Boer 2025
-        "alpha_SC": (0.003, 0.008),                                     # de Boer 2025
-        "k_decay_SC": (np.log(2) / 28, np.log(2) / 21),               # 21-28d half-life
-        "K_SC": (0.5, 2.0),                                             # Pearse 1987 direction
+        "SC_max": (0.20, 0.40),
+        "alpha_SC": (0.08, 0.20),
+        "k_decay_SC": (np.log(2) / 28, np.log(2) / 21),
+        "K_SC": (0.5, 2.0),
+        "k_damage": (0.0, 0.15),
     }
-    # TODO: Fit alpha_SC, k_decay_SC, K_SC to individual-level de Boer 2025
-    # supplementary data (SC thickness time-courses by FP group).
-    # Current values are literature-constrained priors, not fitted.
     # [C7][C10-PRIOR] M_baseline_by_FST anchored to ITA_Unexposed means from
     # trial CSVs (ArimedB trial data, N=48). Mapping: M = 1 - (ITA_U + 30) / 85.
     # K_const recalculated to preserve Young 2020 FST II:VI ratio of ~1.36.
@@ -470,9 +485,11 @@ def simulate(fst: int,
              D_max_override: float = None,
              k_decay_SC_override: float = None,
              alpha_SC_override: float = None,
-             K_SC_override: float = None,
-             exposed_bsa_override: float = None,
-              dose_framing: str = "unspecified") -> Dict:
+              K_SC_override: float = None,
+              k_damage_override: float = None,
+              SC_max_override: float = None,
+              exposed_bsa_override: float = None,
+               dose_framing: str = "unspecified") -> Dict:
     """Simulate vitamin D dynamics under a UV pulse schedule.
 
     Parameters
@@ -504,6 +521,9 @@ def simulate(fst: int,
     beta_SC_eff = params.k_decay_SC if k_decay_SC_override is None else k_decay_SC_override
     alpha_SC_eff = params.alpha_SC if alpha_SC_override is None else alpha_SC_override
     K_SC_eff = params.K_SC if K_SC_override is None else K_SC_override
+    k_damage_eff = params.k_damage if k_damage_override is None else k_damage_override
+    SC_max_eff = (params.SC_max_by_FST.get(fst, params.SC_max)
+                  if SC_max_override is None else SC_max_override)
 
     D = params.D0_default if D0 is None else D0
     M = M_base if M0 is None else M0
@@ -556,6 +576,10 @@ def simulate(fst: int,
                                              K_SC_override=K_SC_eff,
                                              exposed_bsa_override=exposed_bsa_override)
             D = D + delta_D
+            # Apply genotype A_offset (from vitd_genetics.py presets) — additive offset
+            # to per-session synthesis, independent of D feedback.
+            if hasattr(params, '_genotype_A_offset'):
+                D = D + params._genotype_A_offset
             if alpha_override is not None:
                 alpha_p = alpha_override
             else:
@@ -564,7 +588,8 @@ def simulate(fst: int,
                 hill_factor = sed**2 / (sed**2 + UV_thresh_p**2)
                 alpha_p = alpha_p + (params.alpha_max - alpha_p) * hill_factor
             M = params.M_max - (params.M_max - M) * np.exp(-alpha_p * sed)
-            SC = params.SC_max - (params.SC_max - SC) * np.exp(-alpha_SC_eff * sed)
+            SC = SC * np.exp(-k_damage_eff * sed)
+            SC = SC_max_eff - (SC_max_eff - SC) * np.exp(-alpha_SC_eff * sed)
             
             # [C6-safety] Calculate rolling 7-day cumulative SED (including current pulse)
             rolling_7d_sed = sed + sum(
@@ -675,6 +700,30 @@ def auc_above_sufficiency_per_SED(result, threshold_nmol_L=50.0):
         return 0.0
     y = np.maximum(0.0, D - threshold_nmol_L)
     return float(_trapz(y, t)) / total_sed
+
+
+def auc_deficit(D, t, threshold):
+    """Time-integrated deficiency below threshold.
+
+    deficit = ∫ max(0, threshold - D(t)) dt  over the full time course.
+    Units: nmol/L · days.
+
+    Parameters
+    ----------
+    D : np.ndarray
+        Serum 25(OH)D time series.
+    t : np.ndarray
+        Time points in days (same length as D).
+    threshold : float
+        Deficiency threshold in nmol/L (e.g., 30 or 50).
+
+    Returns
+    -------
+    float
+        Area under the curve where D < threshold (nmol/L·days).
+    """
+    y = np.maximum(0.0, threshold - D)
+    return float(_trapz(y, t))
 
 
 def mean_final_value(result, key, window_days=28):

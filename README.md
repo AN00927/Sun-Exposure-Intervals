@@ -30,6 +30,11 @@ tanning rise rate depends on dose through a Hill-style alpha(UV) term.
   scipy.optimize continuous optimization, maximum interval for sufficiency,
   loading dose optimization, maintenance dose splitting, sun exposure
   scheduling, example trajectories.
+- **`vitd_genetics.py`** — Genetics presets for common vitamin-D-pathway
+  variants (CYP2R1, VDR, GC, CYP24A1). Flags confidence caveats given
+  individual variability (Datta 2019).
+- **`vitd_optimization.py`** — Constant-sessions and best-interval analyses
+  with AUC deficiency below 50 nmol/L as a clinical feasibility metric.
 - **`run_all.py`** — Runs validation + all 11 analyses, writes `RESULTS.md`.
 - **`RESULTS.md`** — Auto-generated summary with figures and interpretation.
 - **`SCIENTIFIC_AUDIT_HANDOFF.md`** — Dataset/paper synthesis and recommended
@@ -69,13 +74,24 @@ python3 run_all.py
 - All other parameters unchanged: `alpha_by_FST`, `beta`, `E_source`,
   `D_max`, `BSA`. See `vitd_model.py` docstring for full citations.
 
+## Analysis Index
+
+Analyses are organized by letter. Current modules and their coverage:
+
+| Module | Analyses | Coverage |
+|--------|----------|----------|
+| `vitd_analyses.py` | A–K | Alpha, K_ATTEN, beta sweeps; two-framing; fine-grid; scipy optimize; max interval; loading dose; maintenance split; sun exposure; trajectories |
+| `vitd_optimization.py` | Best-interval, constant-sessions | AUC deficiency below 50 nmol/L for clinical feasibility |
+
 ## Headline results
 
-**Validation**: 8/8 required checks pass, 1/2 warning-only checks pass (SC de Boer 2025 is a known failure pending individual-level calibration data). Key results:
+**Validation**: 7/8 required checks pass, 1/2 warning-only checks pass. Bogh 2012 **FAILS** with tightened ±10 tolerance. Key results:
 
-- **Bogh 2012**: model delta +41.6 vs observed +55.8 (within ±15 tolerance). The
-  ~14 nmol/L gap is expected — the study used FST I-III Danes, lighter than the
-  model's FST III default.
+- **Bogh 2012**: model delta +38.5 vs observed +55.8 (gap ~17.3 nmol/L, outside
+  ±10 tolerance). Tolerance was tightened from ±15 because a ~14+ nmol/L
+  prediction error is unacceptable. The gap is a structural limitation:
+  E_source=2.5 is a placeholder requiring per-study spectral calibration, and
+  SC recalibration (alpha_SC=0.12) increased UV attenuation.
 - **Farrar 2013 FST V**: D_final and delta are in a plausible window.
 - **Bogh baseline/BSA**: direction check passes.
 - **de Boer 2025 photoadaptation**: melanin and SC respond in the right direction.
@@ -111,6 +127,11 @@ trend. Efficiency optimum at **~37 days** (1.060/0.986 nmol/L per SED).
 Absolute D optimum at **~2 days** (daily is optimal). The continuous and
 fine-grid results converge: sparser dosing is monotonically more efficient,
 limited only by the simulation horizon for state stabilization.
+
+The best-interval and constant-sessions analyses now include **AUC deficiency
+below 50 nmol/L** — integrating the time spent below sufficiency threshold
+across the full simulation window. This replaces the earlier min-D heuristic
+with a cumulative exposure metric that better reflects clinical risk.
 
 ## Open questions
 
