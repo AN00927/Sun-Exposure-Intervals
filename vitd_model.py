@@ -23,16 +23,17 @@ dD/dt  = S(UV(t), M(t), SC(t), D(t), F, bsa)  -  k_decay_D(D) * D
 dM/dt  = alpha * UV(t) * (M_max - M)  -  beta * (M - M_baseline(F))
 dSC/dt = alpha_SC * UV(t) * (SC_max - SC)  -  k_decay_SC * SC  -  k_damage * UV(t) * SC
 
-Synthesis function (logarithmic dose-response, melanin and SC-attenuated,
+Synthesis function (logarithmic dose-response in effective D3-weighted dose SED * E_source,
+                    Webb 2021 form Δ = c * ln(SED * VDE) + b, melanin and SC-attenuated,
                     BSA-scaled, feedback-inhibited):
-    S(UV, M, SC, D, F, bsa) = A * ln(1 + UV) *
+    S(UV, M, SC, D, F, bsa) = A * ln(1 + UV * E_source) *
                               bsa_factor(bsa) *
                               exp(-K_const * M_baseline(F)) *
                               exp(-K_ATTEN * max(0, M - M_baseline(F))) *
-                              exp(-K_SC * SC) * E_source * max(0, 1 - D / D_max)
+                              exp(-K_SC * SC) * max(0, 1 - D / D_max)
 
     bsa_factor(bsa) = (bsa / BSA_REF) ** BSA_EXP
-        where BSA_REF = 0.35 (reference exposed fraction, Bogh 2011 P5 baseline),
+        where BSA_REF = 0.35 (Farrar 2013 (35% BSA); note Bogh 2011 used 6-24% BSA),
         BSA_EXP = 0.50 (sub-linear scaling; P5 ln-BSA coefficient supports
         diminishing returns above ~35% BSA; Matsuoka 1990 P8 shows plateau above 33%).
         Default bsa = BSA_REF so existing scenarios are unchanged (factor = 1.0).
@@ -41,10 +42,11 @@ Parameter & Source Sourcing
 ---------------------------
 - k_decay_D(D) = ln(2) / (2953 * D^(-0.72)):
     State-dependent D decay rate from Datta 2017 power-law fit (DOI: 10.1039/c6pp00258g).
+    # Power-law fitted to Datta 2017 three-group data (89d, 148d, 199d)
     Three-group validation: t_half(132) ≈ 89d, t_half(65) ≈ 148d, t_half(43) ≈ 199d,
     all within 1.4% of Datta 2017 reported values. Replaces prior fixed 80-day constant.
 - A = 2.353:
-    Synthesis scaling factor calibrated to preserve a 1.17 nmol/L rise for a 1 SED
+    Synthesis scaling factor calibrated to preserve a 1.27 nmol/L rise for a 1 SED
     dose in untanned FST III at reference BSA (35%), baseline D=25.0, SC=0.0.
     NOTE: Young 2021 PNAS reports fair-skin slopes of 2.0-5.0 nmol/L per SED
     at 85% BSA. Model at 85% BSA predicts ~1.85 — low end but order-of-magnitude
@@ -55,9 +57,9 @@ Parameter & Source Sourcing
     FST II:VI synthesis ratio of ~1.36: K_const = ln(1.36) / (M_VI - M_II) = 0.33.
     See K_ATTEN note below.
 - D_max = 150.0 nmol/L:
-    Homeostatic feedback regulation saturation ceiling, based on Bogh 2010 (PMID: 19798069).
-- UV_threshold_by_FST = {I-III: 2.0, IV: 5.0, V: 8.0, VI: 10.0}:
-    Fitzpatrick-stratified minimal melanogenesis thresholds, based on Ravnbak 2008 (PMID: 18480919).
+    Homeostatic feedback regulation saturation ceiling (WARNING: ORIGIN UNCONFIRMED — not found in Bogh 2010; PMID 19812604 max was 116 nmol/L). Corrected PMID 19798069 -> 19812604.
+- UV_halfmax_by_FST = {I-III: 2.0, IV: 5.0, V: 8.0, VI: 10.0}:
+    Hill saturation constant for melanin induction kinetics (Ravnbak 2008 Table IV post-adaptation multi-exposure MMD, PMID: 18480919).
 - Stratum Corneum (SC) Thickening:
     [C8] SC(t) IS modeled as an active state variable. Documents or comments
     saying 'SC not modeled' are incorrect and have been corrected.
@@ -70,8 +72,8 @@ Parameter & Source Sourcing
     [C3] E_source must be a per-study calibration input, NOT a fixed multiplier.
     The SOURCE_CALIBRATION_TABLE below provides evidence-derived starting priors
     from Webb 2021 (P21) and Grigalavicius 2015 (P35). These are priors only;
-    Young 2020 (P20) shows the CIE action spectrum needs a ~5 nm blue shift,
-    meaning exact values require recomputation from measured spectra.
+    Young 2021 PNAS (P20) shows the CIE previtamin-D3 action spectrum needs a ~5 nm
+    blue shift, meaning exact values require recomputation from measured spectra.
     Osmancevic 2009 (P18) shows broadband UVB can outperform NB-UVB per SED in
     psoriasis, confirming these cannot be universal constants.
 - K_ATTEN = 0.37:
@@ -82,15 +84,17 @@ Parameter & Source Sourcing
     an FST II:VI ratio consistent with Young 2020 when combined with new
     M_baseline_by_FST and K_const values.
     July 2026 Consensus search confirmed: Matsuoka 1990 remains the ONLY direct
-    within-subject tanning-attenuation study. Neville 2020 explicitly states the
-    field still lacks this data. No independent replication exists.
+    within-subject tanning-attenuation study. Note local PDF is JAAD 1990 (sunscreen/BSA);
+    the 51% tanning attenuation figure is from J Lab Clin Med 1990 (PMID 2165512, missing from repo).
+    Neville 2020 explicitly states the field still lacks this data. No independent replication exists.
 - M_baseline_by_FST:
     [C7] Anchored to ITA_Unexposed means from trial CSVs (ArimedB trial data,
-    N=48). Mapping: M = 1 - (ITA_U + 30) / 85, clipped to [0, 1].
+    N=44). Mapping: M = 1 - (ITA_U + 30) / 85, clipped to [0, 1].
     FST I is extrapolated (ITA_U ≈ 58°). Values:
     {I: 0.0, II: 0.07, III: 0.21, IV: 0.44, V: 0.78, VI: 1.00}.
     [C10-PRIOR] GROUP-LEVEL PRIOR — Datta 2019 (P13, PMID: 30656228) shows
-    measured pigmentation explains only 1.9-2.6% of individual response variance.
+    measured pigmentation explains only 1.9-2.6% of individual response variance
+    (note Datta 2019 studied pigment SNPs: ASIP, SLC24A4, SLC45A2, not VDR/CYP2R1/CYP24A1).
     Do NOT use as a precise individual predictor or to justify large FST penalties.
     Genetics (VDR, CYP2R1, CYP24A1), supplementation, baseline D, and BSA dominate.
     WARNING: FST V (0.78) and VI (1.00) are group-level priors with NO direct
@@ -108,7 +112,7 @@ Parameter & Source Sourcing
     # PARAMETER EVIDENCE STATUS (updated from Consensus literature search, July 2026)
     # -------------------------------------------------------------------------
     # Gap 1 — M_baseline FST V/VI:
-    #   Current values: {V: 0.78, VI: 1.00} (ITA_Unexposed means, ArimedB N=48)
+    #   Current values: {V: 0.78, VI: 1.00} (ITA_Unexposed means, ArimedB N=44)
     #   Literature support: WILKES 2015 gives MI>750->FST VI on Mexameter (partial).
     #   ALALUF 2001 gives quantitative melanin in FST V/VI but not as a baseline MI table.
     #   No paper provides separate untanned FST V and FST VI baseline MI means.
@@ -116,7 +120,7 @@ Parameter & Source Sourcing
     #
     # Gap 2 — K_ATTEN:
     #   Current value: 0.37
-    #   Literature support: MATSUOKA 1990 (within-subject, 51% attenuation) — only source.
+    #   Literature support: MATSUOKA 1990 (J Lab Clin Med 1990, PMID 2165512, missing from repo; local PDF is JAAD 1990 sunscreen/BSA; within-subject, 51% attenuation) — only source.
     #   NEVILLE 2020 confirms field still lacks tanning-effect data.
     #   MARKIEWICZ 2020: tanning may be redistribution, not pure synthesis.
     #   Status: SINGLE-SOURCE PRIOR — no independent replication.
@@ -147,7 +151,7 @@ Dose framing modes (label all scenario outputs):
     [C4] Fixed cumulative SED: total UV budget is split across sessions.
     [C4] Fixed per-session SED: 1 SED/session; cumulative varies with frequency.
     [C4] Fixed fractional MED: each session is N% of the individual MED.
-    P24 (Felton/Rhodes 2018) shows fractional-MED dosing removes the apparent
+    P24 (Shih/Farrar/Rhodes 2018) shows fractional-MED dosing removes the apparent
     skin-type effect for acute 25(OH)D gain. P22/P3 show fixed absolute SED can
     leave South Asian/FST V participants below sufficiency. Do NOT treat these
     framings as interchangeable in output reports.
@@ -179,7 +183,7 @@ from typing import Dict, List, Optional, Tuple
 # Evidence-derived D3-effective dose weighting factors per UV source.
 # Sources: Webb 2021 (P21), Grigalavicius 2015 (P35).
 # IMPORTANT: Treat these as priors until recalculated from measured spectra.
-# Young 2020 (P20) shows the CIE previtamin-D3 action spectrum needs a ~5 nm
+# Young 2021 PNAS (P20) shows the CIE previtamin-D3 action spectrum needs a ~5 nm
 # blue shift, which will change all of these values. Osmancevic 2009 (P18)
 # shows broadband UVB can outperform NB-UVB per SED in psoriasis patients,
 # confirming source-specific variation cannot be collapsed to a single constant.
@@ -194,11 +198,11 @@ SOURCE_CALIBRATION_TABLE: Dict[str, Tuple[float, float, float]] = {
     "tl12_bb_uvb":    (1.24, 1.23, 1.25),  # P21/P35 agree
     "uv6_broadband":  (1.54, 1.54, 1.55),  # P21/P35 agree
     "arimed_b":       (1.83, 1.83, 1.83),  # P21 only
-    "sunbed_uvb":     (1.18, 1.18, 1.18),  # P21 only (low-UVB tanning lamp)
+    "sunbed_uvb":     (1.18, 1.18, 1.18),  # P35 (Grigalavicius 2015 Table 2); P21 Wolff Life Sun = 1.85
 }
 
 # Reference exposed BSA fraction for synthesis normalization.
-# Bogh 2011 (P5) range was 6-24%; Farrar 2013 used 35%; this is our reference.
+# Farrar 2013 (35% BSA); note Bogh 2011 used 6-24% BSA.
 BSA_REF: float = 0.35
 # Sub-linear BSA scaling exponent (P5 ln-BSA term; plateau evidence from P8)
 BSA_EXP: float = 0.50
@@ -230,8 +234,9 @@ class ModelParams:
         4: 0.002,  5: 0.002,  6: 0.002,
     })
     alpha_max: float = 0.02
-    UV_threshold: float = 2.0
-    UV_threshold_by_FST: Dict[int, float] = field(default_factory=lambda: {
+    # Hill saturation constant for melanin induction kinetics (Ravnbak 2008 Table IV post-adaptation multi-exposure MMD)
+    UV_halfmax: float = 2.0
+    UV_halfmax_by_FST: Dict[int, float] = field(default_factory=lambda: {
         1: 2.0, 2: 2.0, 3: 2.0,
         4: 5.0, 5: 8.0, 6: 10.0,
     })
@@ -244,7 +249,10 @@ class ModelParams:
     # attributing residuals to pigmentation.
     K_ATTEN: float = 0.37
     D0_default: float = 25.0
+    # WARNING: ORIGIN UNCONFIRMED — not found in Bogh 2010 (PMID 19812604 max was 116 nmol/L)
     D_max: float = 150.0
+    # Daily dietary Vitamin D intake in micrograms (ug/day)
+    dietary_D_daily_ug: float = 0.0
     # [C2] E_source default corresponds to broadband solar reference (1.0).
     # Use SOURCE_CALIBRATION_TABLE and get_E_source() instead of hardcoding.
     E_source: float = 1.0
@@ -302,11 +310,22 @@ class ModelParams:
         "k_damage": (0.0, 0.15),
     }
     # [C7][C10-PRIOR] M_baseline_by_FST anchored to ITA_Unexposed means from
-    # trial CSVs (ArimedB trial data, N=48). Mapping: M = 1 - (ITA_U + 30) / 85.
+    # trial CSVs (ArimedB trial data, N=44). Mapping: M = 1 - (ITA_U + 30) / 85.
     # K_const recalculated to preserve Young 2020 FST II:VI ratio of ~1.36.
+    # Documented as rounded group priors.
     M_baseline_by_FST: Dict[int, float] = field(default_factory=lambda: {
         1: 0.0, 2: 0.07, 3: 0.21, 4: 0.44, 5: 0.78, 6: 1.00,
     })
+
+    @property
+    def UV_threshold(self) -> float:
+        """Backwards compatibility alias for UV_halfmax."""
+        return self.UV_halfmax
+
+    @property
+    def UV_threshold_by_FST(self) -> Dict[int, float]:
+        """Backwards compatibility alias for UV_halfmax_by_FST."""
+        return self.UV_halfmax_by_FST
 
     def M_baseline(self, fst: int) -> float:
         return self.M_baseline_by_FST[fst]
@@ -328,7 +347,8 @@ class ModelParams:
     def k_decay_D(D: float) -> float:
         """State-dependent D decay rate from Datta 2017 power-law fit.
 
-        t_half(D) = 2953 * D^(-0.72)  (Datta 2017, three-group data)
+        # Power-law fitted to Datta 2017 three-group data (89d, 148d, 199d)
+        t_half(D) = 2953 * D^(-0.72)
         Returns k = ln(2) / t_half(D) in units of 1/days.
         """
         t_half = 2953.0 * D ** (-0.72)
@@ -347,6 +367,9 @@ def synthesis_per_session(sed: float, M: float, M_baseline: float,
                           K_SC_override: float = None,
                           exposed_bsa_override: float = None) -> float:
     """Compute per-session vitamin D synthesis (nmol/L).
+
+    Aligns logarithmic dose-response with Webb 2021 formulation:
+    delta = c * ln(SED * VDE) + b, using effective D3-weighted dose (sed * E_source).
 
     [C1] exposed_bsa_override: override exposed BSA fraction for this session.
     [C2] E_source_override: per-study spectral weighting (use SOURCE_CALIBRATION_TABLE).
@@ -381,15 +404,15 @@ def synthesis_per_session(sed: float, M: float, M_baseline: float,
     else:
         feedback_factor = max(0.0, 1.0 - D / D_max_use)
 
-    return (A_use * np.log(1.0 + sed) * bsa_f *
+    return (A_use * np.log(1.0 + sed * E_use) * bsa_f *
             constitutive_factor * facultative_factor * sc_factor *
-            E_use * feedback_factor)
+            feedback_factor)
 
 
 def compute_safety_sidecar(sed: float, fst: int, accumulated_sed_7d: float = 0.0) -> Dict:
     """[C6-safety] Safety sidecar to assess DNA damage / CPD risk.
 
-    P22 (Rhodes 2017) and P24 (Felton/Rhodes 2018) show that cyclobutane pyrimidine
+    P22 (Rhodes 2017) and P24 (Shih/Farrar/Rhodes 2018) show that cyclobutane pyrimidine
     dimers (CPD) and DNA damage occur concurrently with vitamin D synthesis even
     at suberythemal doses, and that basal-layer CPD clearance and risk differ
     strongly by FST.
@@ -398,8 +421,8 @@ def compute_safety_sidecar(sed: float, fst: int, accumulated_sed_7d: float = 0.0
     session SED, FST, and recent 7-day cumulative UV dose.
     """
     # 1. Estimate individual MED in SED
-    # FST MED values from Felton 2018 (P24): FST I-II ~2-3 SED, FST V ~10 SED, FST VI ~15 SED
-    med_by_fst = {1: 2.1, 2: 2.5, 3: 3.5, 4: 5.5, 5: 10.5, 6: 15.2}
+    # FST MED values from Shih/Farrar/Rhodes 2018 (P24): FST I-II ~2-3 SED, FST V ~10 SED, FST VI ~15 SED
+    med_by_fst = {1: 2.1, 2: 2.6, 3: 3.2, 4: 5.6, 5: 7.5, 6: 15.2}
     med = med_by_fst.get(fst, 3.5)
 
     fraction_med = sed / med
@@ -505,7 +528,7 @@ def simulate(fst: int,
           'fixed_per_session_SED'- per-session SED is constant; cumulative varies (default)
           'fixed_fractional_MED' - each session is a fraction of the individual MED
         This label is stored in the result dict to document scenario provenance.
-        P24 (Felton/Rhodes 2018): fractional-MED dosing removes apparent skin-type
+        P24 (Shih/Farrar/Rhodes 2018): fractional-MED dosing removes apparent skin-type
         effect; P22/P3: fixed absolute SED can leave FST V deficient. Never treat
         framings as interchangeable in output reports.
     """
@@ -553,6 +576,8 @@ def simulate(fst: int,
                 t_steps = np.append(t_steps, end_t)
             for ti in t_steps:
                 delta_time = ti - current_t
+                if params.dietary_D_daily_ug > 0:
+                    D += params.dietary_D_daily_ug * 0.07 * delta_time
                 Di = D * np.exp(-params.k_decay_D(D) * delta_time)
                 Mi = M_base + (M - M_base) * np.exp(-beta_eff * delta_time)
                 SCi = SC * np.exp(-beta_SC_eff * delta_time)
@@ -560,9 +585,12 @@ def simulate(fst: int,
                 D_record.append(Di)
                 M_record.append(Mi)
                 SC_record.append(SCi)
-            D = D * np.exp(-params.k_decay_D(D) * (end_t - current_t))
-            M = M_base + (M - M_base) * np.exp(-beta_eff * (end_t - current_t))
-            SC = SC * np.exp(-beta_SC_eff * (end_t - current_t))
+            delta_step = end_t - current_t
+            if params.dietary_D_daily_ug > 0:
+                D += params.dietary_D_daily_ug * 0.07 * delta_step
+            D = D * np.exp(-params.k_decay_D(D) * delta_step)
+            M = M_base + (M - M_base) * np.exp(-beta_eff * delta_step)
+            SC = SC * np.exp(-beta_SC_eff * delta_step)
             current_t = end_t
 
         if (pulse_idx < len(pulse_days)
@@ -584,8 +612,8 @@ def simulate(fst: int,
                 alpha_p = alpha_override
             else:
                 alpha_p = params.alpha_by_FST.get(fst, params.alpha)
-                UV_thresh_p = params.UV_threshold_by_FST.get(fst, params.UV_threshold)
-                hill_factor = sed**2 / (sed**2 + UV_thresh_p**2)
+                UV_halfmax_p = params.UV_halfmax_by_FST.get(fst, params.UV_halfmax)
+                hill_factor = sed**2 / (sed**2 + UV_halfmax_p**2)
                 alpha_p = alpha_p + (params.alpha_max - alpha_p) * hill_factor
             M = params.M_max - (params.M_max - M) * np.exp(-alpha_p * sed)
             SC = SC * np.exp(-k_damage_eff * sed)

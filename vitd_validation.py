@@ -7,7 +7,8 @@ Three categories:
 
 1. Sanity checks - basic numerical correctness
    a. D-dependent decay half-life (Datta 2017): half-life varies with serum
-      25(OH)D level via power-law fit t_half(D) = 2953 * D^(-0.72).
+      25(OH)D level via power-law fit t_half(D) = 2953 * D^(-0.72)
+      (# Power-law fitted to Datta 2017 three-group data).
       At high D (~132 nmol/L), half-life ~89 days; at low D (~43 nmol/L),
       half-life ~199 days. Tests both endpoints within ±10%.
    b. 1 SED bolus in untanned FST III: computation-integrity check.
@@ -181,6 +182,7 @@ from vitd_model import (ModelParams, synthesis_per_session, simulate,
 def sanity_decay_halflife(verbose=True):
     """
     Datta 2017: state-dependent half-life from power-law fit.
+    # Power-law fitted to Datta 2017 three-group data
     At high D (~132 nmol/L), half-life ≈ 89 days.
     At low D (~43 nmol/L), half-life ≈ 199 days.
     Test both endpoints with ±10% tolerance.
@@ -328,19 +330,29 @@ def validate_bogh_2012(verbose=True):
     placeholder requiring per-study spectral calibration (see [C3] below).
 
     [C3] SOURCE / SPECTRAL CALIBRATION NOTE:
-    E_source=2.5 is a per-study placeholder. Young 2020 (P20) shows that the
+    E_source=2.5 is a per-study placeholder. Young 2021 PNAS (P20) shows that the
     standard CIE previtamin-D3 action spectrum does not collapse polychromatic
     responses to a common regression and a 5 nm blue shift gives a better fit.
     Osmancevic 2009 (P18) shows broadband UVB can produce larger D rises than
-    NB-UVB in psoriasis cohorts despite lower physical SED. Source handling must
+    NB-UVB in psoriasis cohorts despite lower physical J/cm². Source handling must
     become a first-class per-study calibration input, not a fixed multiplier.
     E_source_override should be treated as a study-specific parameter, not a
     general NB-UVB conversion constant.
     """
     p = ModelParams()
-    sched = build_weekly_schedule(42, 1.0, [0, 2, 4])
-    result = simulate(fst=3, schedule=sched, duration_days=42, params=p, D0=19.2, E_source_override=2.5)
-    D_final = result["D"][-1]
+    # Escalating physical dose schedule: 18 sessions (3x/week x 6 weeks)
+    # Starts at 0.36 J/cm², increases +15% every second session, capped at 1.20 J/cm²
+    session_days = [w * 7 + d for w in range(6) for d in [0, 2, 4]]
+    sched = [(session_days[i], min(1.20, 0.36 * (1.15 ** (i // 2)))) for i in range(18)]
+
+    # Account for cohort FST distribution (31% FST II, 12.5% FST III, 44% FST IV, 12.5% FST VI)
+    fst_dist = [(2, 0.31), (3, 0.125), (4, 0.44), (6, 0.125)]
+
+    weighted_D_final = sum(
+        weight * simulate(fst=fst, schedule=sched, duration_days=42, params=p, D0=19.2, E_source_override=2.5)["D"][-1]
+        for fst, weight in fst_dist
+    )
+    D_final = weighted_D_final
     delta = D_final - 19.2
     # [C1] Quantitative target: observed delta = +55.8 nmol/L; tolerance ±10 nmol/L
     OBSERVED_DELTA = 55.8
@@ -534,8 +546,8 @@ def validate_baseline_calibration_target(verbose=True):
     
     # Check if they are within loose target ranges matching P33 (observed +6.0 and -6.7)
     # Low baseline change in [0.5, 10.0]
-    # High baseline change in [-15.0, -1.0]
-    passed_bounds = (0.5 <= change_low <= 10.0) and (-15.0 <= change_high <= -1.0)
+    # High baseline change in [-10.3, -3.0]
+    passed_bounds = (0.5 <= change_low <= 10.0) and (-10.3 <= change_high <= -3.0)
     passed = passed_direction and passed_bounds
     
     if verbose:
@@ -672,6 +684,7 @@ def validate_nhanes_seasonal(nhanes_available=True, verbose=True):
 
     # Adults 18–65 only
     df = df[(df["age"] >= 18) & (df["age"] <= 65)].copy()
+    df = df[df["vitd_standardized_nmol_L"] > 0].copy()
 
     # Map race codes to labels and FST
     df["race_label"] = df["race_ethnicity"].map(
@@ -679,18 +692,20 @@ def validate_nhanes_seasonal(nhanes_available=True, verbose=True):
     df["fst"] = df["race_ethnicity"].map(
         lambda x: RACE_FST_MAP[x][1] if x in RACE_FST_MAP else None)
 
-    # Drop rows with missing race, D, or season
+    # Drop rows with missing race, D, season, or weight
     df = df.dropna(subset=["race_label", "fst",
-                           "vitd_standardized_nmol_L", "exam_season"])
+                           "vitd_standardized_nmol_L", "exam_season", "wtmec2yr"])
 
     # Map season codes to labels
     df["season"] = df["exam_season"].map(SEASON_MAP)
     df = df.dropna(subset=["season"])
 
     # Compute per-group mean and SEM of 25(OH)D by season
-    grouped = df.groupby(["race_label", "fst", "season"])["vitd_standardized_nmol_L"]
-    grp_mean = grouped.mean()
-    grp_sem = grouped.sem()
+    grouped = df.groupby(["race_label", "fst", "season"])
+    def weighted_mean_25ohd(g):
+        return np.average(g["vitd_standardized_nmol_L"], weights=g["wtmec2yr"])
+    grp_mean = grouped.apply(weighted_mean_25ohd)
+    grp_sem = df.groupby(["race_label", "fst", "season"])["vitd_standardized_nmol_L"].sem()
 
     # Build lookup: {(label, fst): {"winter": mean, "summer": mean, "sem": ...}}
     groups = {}
@@ -921,6 +936,40 @@ def validate_katten_seasonal_amplitude(verbose=True):
     return passed
 
 
+def validate_kift_2013_south_asian(verbose=True):
+    """
+    Kift 2013: UK South Asian adults (FST V) receiving naturalistic UK summer exposure.
+    Protocol: ~14% BSA exposed (face + hands/forearms), ~1.0 SED/week (0.333 SED 3x/week)
+    for 12 weeks (84 days), baseline 22.5 nmol/L.
+
+    Target:
+      - Baseline ~22.5 nmol/L
+      - D_final in range [20.0, 40.0] nmol/L
+      - delta in range [0.0, 15.0] nmol/L
+    """
+    p = ModelParams()
+    fst = 5
+    D0 = 22.5
+    sched = [(d, 0.333) for d in range(84) if d % 7 in [0, 2, 4]]
+    result = simulate(fst=fst, schedule=sched, duration_days=84, params=p, D0=D0,
+                      exposed_bsa_override=0.14, E_source_override=1.0)
+    D_final = result["D"][-1]
+    delta = D_final - D0
+
+    D_final_ok = 20.0 <= D_final <= 40.0
+    delta_ok = 0.0 <= delta <= 15.0
+    passed = D_final_ok and delta_ok
+
+    if verbose:
+        print(f"[Lit 6] Kift 2013 - UK South Asian naturalistic exposure (FST V)")
+        print(f"  Protocol: ~1.0 SED/wk (0.333 SED 3x/wk) x 12 weeks, FST V, BSA=0.14, baseline {D0:.1f} nmol/L")
+        print(f"  Model D_final = {D_final:.1f} nmol/L (delta = +{delta:.1f} nmol/L)")
+        print(f"  Target bounds: D_final in [20, 40]: {'YES' if D_final_ok else 'NO'}, delta in [0, 15]: {'YES' if delta_ok else 'NO'}")
+        print(f"  {'PASS' if passed else 'FAIL'}")
+
+    return passed
+
+
 # ---------------------------------------------------------------------------
 # How to add a new validation target
 #
@@ -963,6 +1012,7 @@ def run_all(verbose=True):
         ("baseline calibration target [C3-feedback]", validate_baseline_calibration_target, False),
         ("metric ordering and sanity",    validate_metric_ordering, False),
         ("K_ATTEN seasonal amplitude",    validate_katten_seasonal_amplitude, False),
+        ("Kift 2013 South Asian",         validate_kift_2013_south_asian, False),
     ]
     
     results = {}
