@@ -1,0 +1,29 @@
+1. J Lab Clin Med. 1990 Jul;116(1):87-90.
+
+Suntanning and cutaneous synthesis of vitamin D3.
+
+Matsuoka LY(1), Wortsman J, Hollis BW.
+
+Author information:
+(1)Department of Dermatology, Jefferson Medical College, Philadelphia, PA 19107.
+
+Skin tanning is the melanization of the epidermis induced by excessive sunlight 
+exposure. Since melanin absorbs preferentially the wavelengths around 300 nm and 
+the cutaneous synthesis of vitamin D3 is stimulated by the same wavelengths (290 
+to 320 nm, ultraviolet light B [UVB]), we investigated the effect of tanning on 
+vitamin D3 formation. Vitamin D3 and 25 hydroxyvitamin D (25-OH-D) serum levels 
+were measured during midwinter (untanned state) in seven healthy subjects. Blood 
+was obtained immediately before whole body exposure to UVB in a phototherapy 
+unit, and again 24 hours later. The study was repeated in the same subjects 
+during midsummer (tanned state) using the same UVB dose. Serum vitamin D3 
+increased in the untanned state from 1.7 +/- 0.4 ng/ml (mean +/- SE) to 11 +/- 
+1.5 ng/ml following UVB (p less than 0.001). In the tanned state, basal serum 
+vitamin D3 was significantly higher: 9.6 +/- 2.8 ng/ml (p less than 0.04 basal 
+untanned versus basal tanned), and exhibited minimal rise after UVB to 14.3 +/- 
+4.1 ng/ml (p greater than 0.1 for tanned basal versus post UVB tanned). Tanning 
+was also associated with significantly higher serum 25-OH-D levels: 22.5 +/- 2.9 
+ng/ml (untanned) versus 36.9 +/- 4.7 ng/ml (tanned) (p less than 0.02). Thus 
+excessive solar exposure produces, besides erythema and tanning, the resetting 
+of the vitamin D3 synthetic mechanism with blunting of the response to UVB.
+
+PMID: 2165512 [Indexed for MEDLINE]

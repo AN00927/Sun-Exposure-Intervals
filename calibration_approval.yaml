@@ -1,0 +1,27 @@
+human_approved: false
+approved_by: NEEDS_VERIFICATION
+approval_date: NEEDS_VERIFICATION
+
+allowed_calibration_parameters: []
+
+calibration_set: []
+
+validation_set: []
+
+notes: |
+  Calibration is not authorized until human_approved is true.
+  Bogh 2012 source data must be verified before calibration.
+  Young 2020 is calibration-check-only, not independent validation.
+
+  Current validation status: 7/9 required checks pass.
+  Bogh 2012: FAILS (model delta +38.5 vs target +55.8 ± 10 nmol/L).
+    Root cause: E_source=2.5 placeholder + SC attenuation.
+    Best achievable with spectral weighting: A03 (CIE vitD) error 1.86 nmol/L.
+  Young 2020: PASS (calibration check only, ratio 1.47 vs target 1.29-1.43).
+  NHANES: FAILS (unweighted means, zero inclusion — proposed fix pending approval).
+
+  Unresolved blockers:
+  - PHASE5_CALIBRATION_NOT_APPROVED: Calibration proposal requires human approval.
+  - NHANES survey weighting fix requires human approval.
+  - D_max = 150.0 origin unconfirmed.
+  - K_ATTEN single-source prior (Matsuoka 1990 J Lab Clin Med, missing from repo).

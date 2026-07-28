@@ -1,0 +1,10 @@
+dataset: NHANES_seasonal
+
+use_status: EXPLORATORY_ONLY
+
+reason_invalid: |
+  NHANES seasonal amplitude reflects behavior, clothing, latitude,
+  supplement use, self-reported race, and baseline differences.
+  It is not a controlled physiological validation of K_ATTEN.
+
+verification_status: NOT_APPLICABLE

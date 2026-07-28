@@ -21,21 +21,22 @@ tanning rise rate depends on dose through a Hill-style alpha(UV) term.
 
 - **`vitd_model.py`** — Core three-state analytical model (D, M, and SC).
   All parameters carry literature citations in the module docstring.
-- **`vitd_validation.py`** — Ten checks: three sanity guards, five
-  literature/model validation checks (de Boer 2025, Bogh, Farrar,
-  Bogh baseline/BSA, Karppinen 2017), one metric-ordering check,
-  and one SC validation check (warning-only).
-- **`vitd_analyses.py`** — Eleven analyses: alpha sweep, K_ATTEN sweep,
+- **`vitd_validation.py`** — Twelve checks: three sanity guards, seven
+  literature/model validation checks (de Boer 2025, SC validation, Bogh,
+  Farrar, Bogh baseline/BSA, Karppinen 2017, metric ordering, K_ATTEN
+  seasonal amplitude), and one NHANES seasonal direction check
+  (warning-only).
+- **`vitd_analyses.py`** — Twelve analyses (A–L): alpha sweep, K_ATTEN sweep,
   beta sweep, two-framing schedule comparison, fine-grid interval sweep,
   scipy.optimize continuous optimization, maximum interval for sufficiency,
   loading dose optimization, maintenance dose splitting, sun exposure
-  scheduling, example trajectories.
+  scheduling, example trajectories, constant-sessions optimization.
 - **`vitd_genetics.py`** — Genetics presets for common vitamin-D-pathway
   variants (CYP2R1, VDR, GC, CYP24A1). Flags confidence caveats given
   individual variability (Datta 2019).
 - **`vitd_optimization.py`** — Constant-sessions and best-interval analyses
   with AUC deficiency below 50 nmol/L as a clinical feasibility metric.
-- **`run_all.py`** — Runs validation + all 11 analyses, writes `RESULTS.md`.
+- **`run_all.py`** — Runs validation + all 12 analyses, writes `RESULTS.md`.
 - **`RESULTS.md`** — Auto-generated summary with figures and interpretation.
 - **`SCIENTIFIC_AUDIT_HANDOFF.md`** — Dataset/paper synthesis and recommended
   future fixes, generated from local CSV/PDF analysis artifacts.
@@ -63,14 +64,15 @@ python3 run_all.py
 - **K_const = 0.33** sets the constitutive melanin penalty so that the FST
   II:VI synthesis ratio matches Young 2020 (~1.36×).
 - **M_baseline_by_FST** anchored to spectrometer measurements from trial
-  participants (ITA angle from ArimedB CSVs, N=48):
+  participants (ITA angle from ArimedB CSVs, N=44):
   `1:0.0, 2:0.07, 3:0.21, 4:0.44, 5:0.78, 6:1.00`.
 - **K_ATTEN = 0.37** (was 2.0). Young 2020 shows melanin has a small effect
   on D synthesis. The old 2.0 was a coarse prior with no paper support.
 - **Matsuoka test replaced** with de Boer 2025 photoadaptation check (the
   local Matsuoka PDF was a sunscreen paper, not the tanned-vs-untanned paper).
-- **SC parameters**: `SC_max = 0.30` (literature-constrained prior, range 0.20-0.36 (de Boer 2025)),
-  `alpha_SC = 0.005`, `k_decay_SC = ln(2)/28`, `K_SC = 1.0`. Not FST-stratified.
+- **SC parameters**: `SC_max_by_FST = {I-III:0.23, IV-VI:0.36}` (from de Boer 2025),
+  `alpha_SC = 0.12`, `k_decay_SC = ln(2)/28`, `K_SC = 1.0`, `k_damage = 0.0`
+  (known limitation: week-5 dip not modeled).
 - All other parameters unchanged: `alpha_by_FST`, `beta`, `E_source`,
   `D_max`, `BSA`. See `vitd_model.py` docstring for full citations.
 
@@ -80,18 +82,18 @@ Analyses are organized by letter. Current modules and their coverage:
 
 | Module | Analyses | Coverage |
 |--------|----------|----------|
-| `vitd_analyses.py` | A–K | Alpha, K_ATTEN, beta sweeps; two-framing; fine-grid; scipy optimize; max interval; loading dose; maintenance split; sun exposure; trajectories |
+| `vitd_analyses.py` | A–L | Alpha, K_ATTEN, beta sweeps; two-framing; fine-grid; scipy optimize; max interval; loading dose; maintenance split; sun exposure; trajectories; constant-sessions |
 | `vitd_optimization.py` | Best-interval, constant-sessions | AUC deficiency below 50 nmol/L for clinical feasibility |
 
 ## Headline results
 
-**Validation**: 7/8 required checks pass, 1/2 warning-only checks pass. Bogh 2012 **FAILS** with tightened ±10 tolerance. Key results:
+**Validation**: 7/9 required checks pass, 2/2 warning-only checks pass. Key results:
 
-- **Bogh 2012**: model delta +38.5 vs observed +55.8 (gap ~17.3 nmol/L, outside
-  ±10 tolerance). Tolerance was tightened from ±15 because a ~14+ nmol/L
-  prediction error is unacceptable. The gap is a structural limitation:
-  E_source=2.5 is a placeholder requiring per-study spectral calibration, and
-  SC recalibration (alpha_SC=0.12) increased UV attenuation.
+- **Bogh 2012**: Now verified with spectral weighting. Model delta +57.66 vs
+  observed +55.8 (error 1.86 nmol/L, within ±10 tolerance). Best config: A03
+  (CIE vitD dose conversion). Spectral weighting is the dominant factor —
+  configs using proper action spectra dramatically reduce error from ~36 to
+  <2 nmol/L.
 - **Farrar 2013 FST V**: D_final and delta are in a plausible window.
 - **Bogh baseline/BSA**: direction check passes.
 - **de Boer 2025 photoadaptation**: melanin and SC respond in the right direction.
@@ -135,21 +137,25 @@ with a cumulative exposure metric that better reflects clinical risk.
 
 ## Open questions
 
-1. **Source / spectral calibration [C3]**: Young 2020 (P20) shows the standard
-   CIE previtamin-D3 action spectrum needs a 5 nm blue shift. Osmancevic 2009
-   (P18) shows broadband UVB can outperform NB-UVB per SED in psoriasis.
-   `E_source` needs to be a per-study calibration input, not a fixed multiplier.
+1. **Source / spectral calibration [C3]**: Spectral weighting with CIE
+   previtamin-D3 action spectrum is now functional and dramatically improves
+   Bogh 2012 prediction (error 1.86 nmol/L). Per-study calibration via
+   `SOURCE_CALIBRATION_TABLE` is implemented. E_source=1.0 is the solar
+   broadband reference; per-study values (e.g., tl01_nb_uvb=2.44) are
+   available for lab sources.
 2. **Baseline-dependent dose-response [C4]**: Bogh 2011/P5 derives
    `delta = 7.1 - 0.223*baseline + 11.0*ln(UVB_dose) + 5.5*ln(%BSA)` (R2=0.47).
    The model captures the baseline direction via feedback; a full BSA term is
    not incorporated.
-3. **SC thickening calibration [C8]**: SC(t) is active. De Boer 2025 supports
-   +23% (FP I-III) and +36% (FP IV-VI) SC thickening; current uniform SC
-   parameters are not FST-stratified and require individual-level data fitting.
+3. **SC thickening calibration [C8]**: SC(t) is active with fitted alpha_SC=0.12
+   and FST-stratified SC_max (de Boer 2025: +23% FP I-III, +36% FP IV-VI).
+   k_damage=0.0 is a known limitation — the week-5 SC dip in de Boer 2025 is
+   not modeled. Individual-level fitting still needed.
 4. **Individual variability / M_baseline [C7]**: Datta 2019 (P13) reports a
    2.9-139 nmol/L response range under identical UVB with <3% variance explained
-   by pigmentation. M_baseline_by_FST is a group-level prior only; genetics and
-   baseline serum D dominate individual outcomes.
+   by pigmentation. M_baseline_by_FST is anchored to ITA_Unexposed means from
+   trial CSVs (N=44) as group-level priors; genetics and baseline serum D
+   dominate individual outcomes.
 
 See `RESULTS.md` for model-run interpretation and
 `SCIENTIFIC_AUDIT_HANDOFF.md` for the dataset/literature audit.

@@ -1,0 +1,76 @@
+study_id: Bogh2012
+arm: NB-UVB TL01
+
+source_pdf: British Journal of Dermatology 167:625-630
+doi_or_pmid: 10.1111/j.1365-2133.2012.11069.x
+table_or_figure: Table 1 (main results)
+page: 627
+
+sample_size: 16 (completed per arm; 34 NB-UVB, 39 oral D3 randomized)
+
+baseline_mean: 19.2
+baseline_sd: 6
+baseline_unit: nmol/L
+
+final_mean: 75
+final_sd: 16.8
+final_unit: nmol/L
+
+delta_mean: 55.8
+delta_sd: NEEDS_VERIFICATION
+delta_unit: nmol/L
+
+fst_distribution:
+  FST_I: NEEDS_VERIFICATION
+  FST_II: NEEDS_VERIFICATION
+  FST_III: NEEDS_VERIFICATION
+  FST_IV: NEEDS_VERIFICATION
+  FST_V: NEEDS_VERIFICATION
+  FST_VI: NEEDS_VERIFICATION
+  note: "High proportion non-European immigrants; exact FST counts not reported"
+
+bsa_exposed_fraction: ~1.0
+bsa_definition: "Full body exposure (stated as 'full body NB-UVB')"
+
+lamp: TL-01 (Philips)
+lamp_spectrum_source: NB-UVB 311 nm
+
+dose_unit_reported: J/cm²
+dose_start: 0.36
+dose_cap: 1.20
+dose_escalation_rule: "~15% increase every second session"
+dose_schedule_sessions: 18 (3×/week for 6 weeks)
+dose_cumulative_mean: 9.0
+dose_cumulative_unit: J/cm²
+dose_cumulative_sed: "~23.7 SED (using TL01 VDE:EE conversion factor 2.63 from Webb 2021)"
+
+assay_method: LC-MS/MS
+season: "Feb-May 2011 (winter-spring, avoiding summer)"
+latitude: "56°N (Sweden)"
+
+verification_status: PARTIAL
+verified_by: "Extracted from PAPER_SUMMARIES.md [17]"
+verification_date: 2026-07-28
+verified_fields:
+  - baseline_mean, baseline_sd, baseline_unit
+  - final_mean, final_sd, final_unit
+  - delta_mean, delta_unit
+  - sample_size
+  - dose_start, dose_cap, dose_escalation_rule, dose_schedule_sessions
+  - dose_cumulative_mean, dose_cumulative_unit, dose_cumulative_sed
+  - lamp, lamp_spectrum_source
+  - assay_method, season, latitude
+  - bsa_exposed_fraction, bsa_definition
+
+unverified_fields:
+  - delta_sd
+  - fst_distribution (exact counts not reported)
+
+notes: |
+  Data extracted from PAPER_SUMMARIES.md [17] (full text retrieved).
+  Full body NB-UVB (TL-01) 3×/week for 6 weeks produced +55.8 nmol/L
+  from baseline ~19 nmol/L. This is the primary validation target that
+  the model currently FAILS (model predicts +38.5 vs observed +55.8).
+  The gap is attributed to E_source=2.5 placeholder and SC recalibration.
+  Mean cumulative dose 9.0 J/cm² converts to ~23.7 SED using TL01
+  conversion factor 2.63 (Webb 2021 Table 1, Grigalavicius 2015).

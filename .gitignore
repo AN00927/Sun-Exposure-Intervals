@@ -2,6 +2,15 @@ __pycache__/
 *.pyc
 ANTIGRAVITY.md
 Papers_and_Datasets/prompt_B_filled.md
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.superpowers/sdd/
+docs
 
 # Generated audit extraction artifacts. Keep PDFs and summarized audit outputs,
 # but do not commit full-text paper extracts.
@@ -52,3 +61,17 @@ audit_outputs/task_D.md
 audit_outputs/task_E.md
 audit_outputs/task_F.md
 audit_prompts/remediation_orchestrator_prompt.md
+assumption register.md
+knownissues.md
+extractyoung2020.pi.md
+calibrationapproval.yaml
+agentstate.yaml
+testdoseconversion.pi
+source request.md
+audit_extraction_summary.md
+TestValidationSuiteIntegrity.py
+ValidateNameSeasonalInvalid.py
+CalibrationOnProposal.md
+ValidationReport.md
+Bogh2012_DEBUG_PROJECTOR
+Young2020Check.csv

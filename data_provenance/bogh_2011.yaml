@@ -1,0 +1,39 @@
+study_id: Bogh2011
+full_citation: "Bogh MKB, Schmedes AV, Philipsen PA, Thieden E, Wulf HC. Interdependence between body surface area and ultraviolet B dose in vitamin D production: a randomized controlled trial. British Journal of Dermatology. 2011;164:163-169."
+
+source_pdf: British Journal of Dermatology 164:163-169
+doi_or_pmid: 10.1111/j.1365-2133.2010.10082.x
+table_or_figure: Table 2 (regression model)
+page: 166
+
+sample_size: 92
+
+bsa_equation: "delta_25OHD = 7.1 - 0.223*baseline + 11.0*ln(UVB_dose) + 5.5*ln(BSA_pct)"
+bsa_term_coefficient: 5.5
+bsa_log_base: "natural log (ln)"
+bsa_units: "delta in nmol/L, baseline in nmol/L, UVB_dose in SED, BSA_pct in percent"
+dose_term_coefficient: 11.0
+dose_term_log_base: "natural log (ln)"
+intercept: 7.1
+baseline_coefficient: -0.223
+baseline_coefficient_p: 0.000024
+baseline_r_squared: 0.313
+full_model_r_squared: 0.47
+response_variable: "delta_25(OH)D in nmol/L"
+
+verification_status: PARTIAL
+verified_by: "Extracted from PAPER_SUMMARIES.md [14]"
+verification_date: 2026-07-28
+
+notes: |
+  Data extracted from PAPER_SUMMARIES.md [14] (full text retrieved).
+  The complete model equation is:
+  delta = 7.1 - 0.223*baseline + 11.0*ln(UVB_dose) + 5.5*ln(BSA_pct)
+  R² = 0.47
+
+  Key findings:
+  - Baseline 25(OH)D negatively predicts delta (higher baseline = lower response)
+  - BSA and UVB dose effects are logarithmic
+  - At 3.0 SED, increasing BSA from 6% to 24% gives no additional response (saturation)
+  - Study used Philips TL12 tubes (280-360 nm, broadband UVB)
+  - 4 exposures at 2-3 day intervals, randomized 3×3 factorial: BSA (6%, 12%, 24%) × dose (0.75, 1.5, 3.0 SED)

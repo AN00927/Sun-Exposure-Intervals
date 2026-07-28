@@ -1,0 +1,58 @@
+study_id: Young2020
+full_citation: "Young AR, Morgan KA, Ho T-W, Ojimba N, Harrison GI, Lawrence KP, Jakharia-Shah N, Wulf HC, Cruickshank JK, Philipsen PA. Melanin has a small inhibitory effect on cutaneous vitamin D synthesis: a comparison of extreme phenotypes. Journal of Investigative Dermatology. 2020;140:1418-1426.e1."
+
+source_pdf: Journal of Investigative Dermatology 140:1418-1426
+doi_or_pmid: 10.1016/j.jid.2019.11.019
+table_or_figure: Tables 1-2 (slope data)
+page: 1421-1422
+
+sample_size: 102 (44 Arimed B irradiated + 20 control; 38 TL01 irradiated + 10 control)
+
+fst_ii_slope: "Reference (not numerically reported; used as comparator)"
+fst_vi_slope: "Significantly less steep than FST II (P=8.33×10⁻⁹ for TL01; P≤0.005 for Arimed B)"
+fst_ii_to_vi_ratio_low: 1.29
+fst_ii_to_vi_ratio_high: 1.43
+fst_ii_to_vi_ratio_low_source: "Arimed B (2 SED/exposure, 10 SED cumulative)"
+fst_ii_to_vi_ratio_high_source: "TL01 (1.5 SED/exposure, 7.5 SED cumulative)"
+melanin_inhibition_factor: "1.3-1.4 (range across lamp sources)"
+lamp_sources: "Arimed B (solar simulator, 2 SED/exposure); TL01 (NB-UVB, 1.5 SED/exposure)"
+bsa_exposed: "85% BSA"
+exposures: "5 UVR exposures at 3-4 day intervals"
+
+ethnicity_ratios:
+  white_european_vs_indian_subcontinent: 1.33
+  white_european_vs_african: 1.18
+
+ita_correlation: "r = -0.903 (protected), -0.902 (exposed), P=4.47×10⁻²²"
+
+verification_status: PARTIAL
+verified_by: "Extracted from PAPER_SUMMARIES.md [10]"
+verification_date: 2026-07-28
+verified_fields:
+  - fst_ii_to_vi_ratio_low, fst_ii_to_vi_ratio_high
+  - melanin_inhibition_factor
+  - lamp_sources
+  - bsa_exposed
+  - ethnicity_ratios
+  - ita_correlation
+
+unverified_fields:
+  - fst_ii_slope (absolute slope values not reported; only ratios)
+  - fst_vi_slope (absolute slope values not reported; only ratios)
+
+notes: |
+  Data extracted from PAPER_SUMMARIES.md [10] (full text retrieved).
+  CRITICAL for K_ATTEN calibration: measured melanin vitamin D inhibition
+  factor (MDIF) between FST II and VI is only ~1.3-1.4, NOT 2.0.
+
+  Key results:
+  - Arimed B: FST II vs VI ratio = 1.29
+  - TL01: FST II vs VI ratio = 1.43
+  - Combined MDIF: ~1.3-1.4
+
+  This paper fundamentally challenges K_ATTEN=2.0. The measured MDIF
+  of ~1.3-1.4 means melanin's inhibitory effect on vitamin D synthesis
+  is small compared to its effect on erythema (8-10× protection).
+
+  Absolute slopes (nmol/L per SED) are not reported in the summary;
+  only ratios between FST groups are provided.

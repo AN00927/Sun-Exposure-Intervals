@@ -316,7 +316,17 @@ def validate_photoadaptation_deBoer2025(verbose=True):
 
 
 def validate_bogh_2012(verbose=True):
+    # STATUS: DEBUGGING_TARGET
+    # Bogh 2012 is not an independent validation pass.
+    # Do not tune E_source, D_max, BSA, or clearance to force this test to pass.
     """
+    Bogh 2012 NB-UVB debug target.
+
+    STATUS: DEBUGGING_TARGET
+    This study is used for debugging and possible calibration only.
+    It must not be reported as an independent validation pass until structural
+    and source-data verification are complete.
+
     Bogh 2012: full-body NB-UVB 3x/week for 6 weeks (18 sessions) in
     light-skinned Danish adults raised mean 25(OH)D from 19.2 to 75.0 nmol/L
     (delta +55.8 nmol/L; between-group p=0.02 vs oral D3).
@@ -852,6 +862,9 @@ def validate_nhanes_seasonal(nhanes_available=True, verbose=True):
 
 
 def validate_katten_seasonal_amplitude(verbose=True):
+    # STATUS: EXPLORATORY_ONLY
+    # Invalid as physiological validation of K_ATTEN.
+    # Retained only for future behavioral modeling.
     """
     Validate K_ATTEN seasonal amplitude ratio (NH White : NH Black).
 

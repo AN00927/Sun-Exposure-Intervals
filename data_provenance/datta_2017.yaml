@@ -1,0 +1,76 @@
+study_id: Datta2017
+full_citation: "Datta P, Philipsen PA, Olsen P, Bogh MK, Johansen P, Schmedes AV, Morling N, Wulf HC. Half-life in 25(OH)D after UVB exposure depends on gender and vitamin D receptor polymorphism but mainly on the start level. Photochemical & Photobiological Sciences. 2017;16:985-995."
+
+source_pdf: Photochemical & Photobiological Sciences 16:985-995
+doi_or_pmid: 10.1039/C6PP00258G
+table_or_figure: Abstract + Table 2 (half-life by subgroup)
+page: 987-989
+
+sample_size: 22 (high-level group; plus n=14 medium, n=92 low from prior studies)
+
+half_life_parameterization: "Exponential decay: 25(OH)D(day T) = 25(OH)D(day 0) × e^(k×T)"
+decay_constant_k: -0.0078
+decay_constant_unit: "per day"
+baseline_dependence: "Half-life inversely related to start level"
+
+reported_half_lives:
+  high_start_level:
+    mean: 89
+    range: "59-179 days"
+    start_level_mean: 132
+    start_level_sd: 31
+    start_level_unit: "nmol/L"
+    end_level_7wk: 92
+    mean_decrease_per_day_pct: 0.78
+    decrease_range_pct: "0.2-2.4"
+  medium_start_level:
+    n: 14
+    mean_half_life: 148
+    start_level_mean: 65
+    start_level_unit: "nmol/L"
+  low_start_level:
+    n: 92
+    mean_half_life: 199
+    start_level_mean: 43
+    start_level_unit: "nmol/L"
+
+gender_genotype_effects:
+  model_r_squared: 0.878
+  model_p: "2.0 × 10⁻⁴⁸"
+  shortest_half_life:
+    description: "Male, rs2228570 GG"
+    half_life: 59
+    unit: "days"
+  longest_half_life:
+    description: "Female, rs2228570 AA/AG"
+    half_life: 179
+    unit: "days"
+  max_interpersonal_difference: "114 nmol/L (7 vs 121 nmol/L)"
+
+verification_status: PARTIAL
+verified_by: "Extracted from PAPER_SUMMARIES.md [9]"
+verification_date: 2026-07-28
+verified_fields:
+  - half_life_parameterization
+  - decay_constant_k, decay_constant_unit
+  - baseline_dependence
+  - reported_half_lives (all three levels)
+  - gender_genotype_effects
+
+unverified_fields:
+  - Full experimental protocol details (abstract only available)
+
+notes: |
+  Data extracted from PAPER_SUMMARIES.md [9] (abstract only).
+  PRIMARY SOURCE for k_decay_D in the model.
+
+  Key findings:
+  - Mean half-life 89 days for high start levels (132 nmol/L)
+  - Half-life increases as start level decreases (148d at 65, 199d at 43)
+  - Gender and VDR rs2228570 genotype affect half-life (59-179d range)
+  - Model uses k_decay_D = ln(2)/80 ≈ 0.00866 day⁻¹ (slightly faster
+    than measured 0.00779 for high-level group)
+  - The power-law fit from AGENTS.md: t_half(D) = 2953 * D^(-0.72)
+    captures the D-dependent half-life
+
+  Only abstract available; full text needed for exact experimental details.

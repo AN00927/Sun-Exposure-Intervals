@@ -1,0 +1,88 @@
+plan_name: vitd_debug_revised
+branch: vitd-debug-revised
+current_phase: 6
+parameters_locked: true
+calibration_allowed: false
+validation_pass_claims_allowed: false
+
+phase_status:
+  phase_0_freeze_and_document: COMPLETE
+  phase_1_verify_source_data: COMPLETE
+  phase_2_dose_conversion_and_schedule: COMPLETE
+  phase_3_ablation_study: COMPLETE
+  phase_4_test_suite_cleanup: COMPLETE
+  phase_5_calibration_proposal: COMPLETE
+  phase_6_final_report: COMPLETE
+
+blockers:
+  - id: PHASE5_CALIBRATION_NOT_APPROVED
+    phase: 5
+    message: "Calibration proposal (BSA=0.90, best ablation config) requires human approval before use."
+    blocking: true
+  - id: NHANES_SURVEY_WEIGHTING
+    phase: 6
+    message: "NHANES validation uses unweighted means and zero inclusion (violates CDC NCHS P27). Proposed fix pending human approval."
+    blocking: false
+  - id: D_MAX_ORIGIN_UNCONFIRMED
+    phase: 6
+    message: "D_max = 150.0 nmol/L origin unconfirmed. Not found in Bogh 2010 (PMID 19812604 max was 116 nmol/L). Previous citation was wrong PMID."
+    blocking: false
+
+human_approvals:
+  phase_3_ablation_reviewed: true
+  phase_5_calibration_approved: false
+  nhanes_weighting_fix: false
+
+resolved:
+  - id: BOGH2012_SOURCE_UNVERIFIED
+    phase: 1
+    message: "Bogh 2012 source data now verified. Trial protocol and results confirmed in PAPER_SUMMARIES.md."
+  - id: PHASE3_REQUIRES_HUMAN_REVIEW
+    phase: 3
+    message: "Ablation study completed (23 configs). Phase 3 marked COMPLETE."
+  - id: SPECTRUM_FILES_EMPTY
+    phase: 2
+    message: "Spectrum CSVs now populated with data. Dose conversion module works. Ablation configs A02-A04, A13-A20 now run with spectral weighting."
+  - id: YOUNG2020_PNAS_EXTRACTED_CSV
+    phase: 1
+    message: "Trial_Young2020_PNAS_SerumD_UVR.csv is populated and parses to 75 rows from PNAS 202015867.xlsx."
+  - id: MATSUOKA_PDF_IDENTITY
+    phase: 1
+    message: "Local Matsuoka 1990 PDF confirmed as JAAD 1990 (sunscreen/BSA), NOT tanning attenuation. 51% attenuation from J Lab Clin Med 1990 (PMID 2165512), missing from repo."
+  - id: SUNBED_UVB_MISATTRIBUTION
+    phase: 6
+    message: "sunbed_uvb E_source = 1.18 corrected: from Grigalavicius 2015 (P35), NOT Webb 2021 (P21 Wolff = 1.85)."
+  - id: MED_VALUES_INCORRECT
+    phase: 6
+    message: "MED values corrected per Shih/Farrar/Rhodes 2018: FST III 3.5->3.2, FST V 10.5->7.5 SED."
+  - id: UV_THRESHOLD_NAMING
+    phase: 6
+    message: "UV_threshold_by_FST renamed to UV_halfmax_by_FST. Clarified as Hill function half-max, NOT clinical MMD."
+  - id: AGENTS_MD_SC_MAX_FST4
+    phase: 6
+    message: "AGENTS.md SC_max_by_FST FST4 corrected from 0.30 to 0.36 (de Boer 2025 FP IV-VI pooling)."
+  - id: PARAMETER_CHANGES_EMPTY
+    phase: 6
+    message: "PARAMETER_CHANGES.md populated with 14 parameter changes from Scientific Audit."
+  - id: ASSUMPTION_REGISTER_INCOMPLETE
+    phase: 6
+    message: "ASSUMPTION_REGISTER.md expanded from 5 to 21 assumptions with verified/corrected/clarified statuses."
+
+current_validation:
+  total_required_checks: 9
+  passing_checks: 7
+  warning_only_checks: 2
+  status: "7/9 required checks pass"
+  failing_checks:
+    - name: "Bogh 2012 quantitative validation"
+      reason: "Model delta +38.5 vs target +55.8 ± 10 nmol/L (E_source placeholder + SC attenuation)"
+    - name: "NHANES seasonal amplitude"
+      reason: "Unweighted means, zero inclusion (CDC NCHS P27 violation); proposed fix pending approval"
+
+key_findings:
+  - "Spectral weighting is the dominant factor for dose conversion accuracy (reduces error from ~36 to <2 nmol/L)"
+  - "K_ATTEN = 0.37 is a single-source prior (Matsuoka 1990 J Lab Clin Med, PMID 2165512, missing from repo)"
+  - "D_max = 150.0 origin unconfirmed (not in Bogh 2010, wrong PMID cited previously)"
+  - "M_baseline_by_FST are group-level priors; Datta 2019 shows pigmentation explains only 1.9-2.6% of individual variance"
+  - "ArimedB II:VI ratio from raw OLS regression (1.02-1.18) differs from paper's 1.29 (possible ANCOVA methodology)"
+  - "de Boer 2025 SC calibration fitted to only 3 timepoints; k_damage=0 (SC dip at week 5 not modeled)"
