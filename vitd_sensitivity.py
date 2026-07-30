@@ -33,7 +33,7 @@ PARAM_RANGES = {
     # (low, high, evidence note)
     "A":          (1.6, 3.8, "Young 2021 fair-skin slopes 2.0-5.0 nmol/L/SED imply A up to ~3.8"),
     "K_const":    (0.20, 0.90, "Young 2020 FST II:VI 1.3-1.4; Webb/Kift naturalistic 2.5-3.0x implies higher"),
-    "K_ATTEN":    (0.0, 2.0, "single-source prior (Matsuoka 1990, absent from repo); 0 = no tanning penalty"),
+    "K_ATTEN":    (0.0, 2.0, "Matsuoka 1990 abstract (in repo) implies 0.34-1.00 once its baseline-25(OH)D confound is deconvolved; 0 = no tanning penalty"),
     "K_SC":       (0.5, 2.0, "no direct vitamin-D attenuation measurement exists"),
     "SC_max":     (0.20, 0.40, "de Boer 2025 +23% (FP I-III) to +36% (FP IV-VI)"),
     "alpha_SC":   (0.08, 0.20, "fitted to 3 group-mean timepoints only"),

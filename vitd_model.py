@@ -85,7 +85,10 @@ Parameter & Source Sourcing
     M_baseline_by_FST and K_const values.
     July 2026 Consensus search confirmed: Matsuoka 1990 remains the ONLY direct
     within-subject tanning-attenuation study. Note local PDF is JAAD 1990 (sunscreen/BSA);
-    the 51% tanning attenuation figure is from J Lab Clin Med 1990 (PMID 2165512, missing from repo).
+    the 51% tanning attenuation figure is from J Lab Clin Med 1990 (PMID 2165512),
+    whose ABSTRACT is in Papers_and_Datasets/ and contains the full group-mean data.
+    That 51% is confounded by a baseline 25(OH)D difference; see
+    vitd_calibration/matsuoka1990_check.py for the deconvolution.
     Neville 2020 explicitly states the field still lacks this data. No independent replication exists.
 - M_baseline_by_FST:
     [C7] Anchored to ITA_Unexposed means from trial CSVs (ArimedB trial data,
@@ -120,7 +123,11 @@ Parameter & Source Sourcing
     #
     # Gap 2 — K_ATTEN:
     #   Current value: 0.37
-    #   Literature support: MATSUOKA 1990 (J Lab Clin Med 1990, PMID 2165512, missing from repo; local PDF is JAAD 1990 sunscreen/BSA; within-subject, 51% attenuation) — only source.
+    #   Literature support: MATSUOKA 1990 (J Lab Clin Med, PMID 2165512; abstract IS
+    #   in the repo -- local PDF is a DIFFERENT paper, JAAD 1990 sunscreen/BSA).
+    #   Within-subject n=7. Naive 51% attenuation is confounded by a 64% higher
+    #   tanned baseline 25(OH)D; deconvolved melanin-only effect implies
+    #   K_ATTEN 0.34-1.00 by feedback form. Only source; no replication.
     #   NEVILLE 2020 confirms field still lacks tanning-effect data.
     #   MARKIEWICZ 2020: tanning may be redistribution, not pure synthesis.
     #   Status: SINGLE-SOURCE PRIOR — no independent replication.
