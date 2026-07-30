@@ -186,10 +186,19 @@ class TestValidationStructure:
     """Verify the checks list and validation function signatures."""
 
     def test_run_all_returns_dict_with_all_checks(self):
+        """run_all must return a named boolean verdict for every check.
+
+        Asserts structure, not a hardcoded count -- the previous `== 10`
+        silently went stale as checks were added (actual was 12) and failed
+        for a reason unrelated to any check's correctness.
+        """
         from vitd_validation import run_all
         result = run_all(verbose=False)
         assert isinstance(result, dict)
-        assert len(result) == 10
+        assert len(result) >= 10, "checks should not silently disappear"
+        for name, verdict in result.items():
+            assert isinstance(name, str) and name
+            assert bool(verdict) in (True, False)
 
     def test_each_check_returns_bool(self):
         from vitd_validation import (

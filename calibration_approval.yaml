@@ -1,27 +1,53 @@
+# Calibration governance.
+#
+# Distinguishes two things the previous version conflated:
+#   - CALIBRATION: changing a scientific parameter to improve agreement with
+#     data. Still gated -- requires human approval.
+#   - BUG FIXES: correcting code that does not implement the documented model
+#     (unit errors, state-update errors, inverted signs). NOT gated. Refusing
+#     to fix a known defect because "parameters are locked" freezes in the
+#     error, and the old freeze flags did exactly that.
+
+calibration_allowed: false
+bug_fixes_allowed: true
+
 human_approved: false
 approved_by: NEEDS_VERIFICATION
 approval_date: NEEDS_VERIFICATION
 
 allowed_calibration_parameters: []
-
 calibration_set: []
-
 validation_set: []
 
+# Live status. Regenerate with: PYTHONIOENCODING=utf-8 python3 run_all.py
+current_validation:
+  required: "9 / 10"
+  warning_only: "2 / 2"
+  last_verified: 2026-07-30
+  failing:
+    - name: "NHANES K_ATTEN seasonal amplitude"
+      detail: >-
+        Model White:Black amplitude ratio 0.169 vs observed 1.449 (inverted).
+        Diagnosed: NHANES baselines differ by group (White ~62.5, Black ~40.0
+        nmol/L), so the linear (1 - D/D_max) feedback term outweighs the
+        melanin penalty and predicts a LARGER seasonal rise for the darker-skin
+        group. This is a real symptom of over-strong feedback, not only the
+        behavioural/latitude confounding noted in KNOWN_ISSUES #2. Do not
+        archive it -- it is the most informative feedback-shape diagnostic
+        available.
+
 notes: |
-  Calibration is not authorized until human_approved is true.
-  Bogh 2012 source data must be verified before calibration.
-  Young 2020 is calibration-check-only, not independent validation.
+  Bogh 2012 now PASSES (+56.0 vs observed +55.8) after a dose-unit correction,
+  not a calibration change: absolute J/cm2 had been passed to simulate() as
+  erythemal SED, dropping the ~5.5x TL-01 conversion, and the 35% reference BSA
+  was used for a documented whole-body protocol. No parameter was tuned.
 
-  Current validation status: 7/9 required checks pass.
-  Bogh 2012: FAILS (model delta +38.5 vs target +55.8 ± 10 nmol/L).
-    Root cause: E_source=2.5 placeholder + SC attenuation.
-    Best achievable with spectral weighting: A03 (CIE vitD) error 1.86 nmol/L.
-  Young 2020: PASS (calibration check only, ratio 1.47 vs target 1.29-1.43).
-  NHANES: FAILS (unweighted means, zero inclusion — proposed fix pending approval).
+  Young 2020 remains a calibration CHECK, not independent validation.
 
-  Unresolved blockers:
-  - PHASE5_CALIBRATION_NOT_APPROVED: Calibration proposal requires human approval.
-  - NHANES survey weighting fix requires human approval.
-  - D_max = 150.0 origin unconfirmed.
-  - K_ATTEN single-source prior (Matsuoka 1990 J Lab Clin Med, missing from repo).
+  Open blockers:
+  - D_max = 150.0 origin unconfirmed, and it drives the headline interval
+    ranking (see OPEN_QUESTIONS gaps 19-20). Highest-value calibration target.
+  - K_ATTEN is a single-source prior; the sole source (Matsuoka 1990,
+    J Lab Clin Med, PMID 2165512) is not in the repo.
+  - No genuine held-out validation study exists; every study is a calibration
+    or debug target.

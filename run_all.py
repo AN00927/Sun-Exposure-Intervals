@@ -25,6 +25,91 @@ def capture_log(fn, *args, **kwargs):
     return buf.getvalue()
 
 
+def _report_decision_problems():
+    """Print the three decision problems people actually face."""
+    from vitd_objectives import (optimal_spacing_fixed_sessions,
+                                 deficiency_vs_risk_frontier,
+                                 minutes_for_target)
+
+    print("=" * 74)
+    print("Q1. FIXED SESSION BUDGET: 'I can get outside N times in 12 weeks'")
+    print("=" * 74)
+    print("Cumulative UV is IDENTICAL across every candidate spacing, so no")
+    print("spacing can win by simply dosing less.\n")
+    for fst, sed in ((5, 1.0), (5, 3.0), (6, 3.0)):
+        print(f"  FST {fst}, {sed} SED/session, 84-day horizon, baseline 25 nmol/L:")
+        print(f"    {'sessions':>8} {'best gap':>9} {'mean D':>8} {'final D':>8} "
+              f"{'min D':>7} {'d<50':>6} {'melanoma':>9}")
+        for n in (6, 12, 18, 24, 36):
+            r = optimal_spacing_fixed_sessions(fst=fst, n_sessions=n,
+                                               sed_per_session=sed,
+                                               objective="auc_deficit_50")
+            b = r["best"]
+            if b is None:
+                continue
+            # Show the spread across spacings so it is visible whether the
+            # objective can actually discriminate, or whether every spacing
+            # ties (which happens when the target is unreachable at this dose).
+            spread = (max(row["mean_D"] for row in r["table"])
+                      - min(row["mean_D"] for row in r["table"]))
+            print(f"    {n:>8} {b['gap_days']:>8}d {b['mean_D']:>8.1f} "
+                  f"{b['final_D']:>8.1f} {b['min_D']:>7.1f} "
+                  f"{b['days_below_50']:>6.0f} {b['intermittent_index']:>9.3f}"
+                  f"   (mean D spread across spacings: {spread:.1f})")
+        print()
+
+    print("=" * 74)
+    print("Q2. STAY SUFFICIENT AT LEAST CANCER RISK (Pareto frontier)")
+    print("=" * 74)
+    print("SCC tracks cumulative dose; melanoma/BCC track intermittent bursts")
+    print("(Elwood 1997, Leiter 2009). Both are reported.\n")
+    for fst in (2, 5):
+        fr = deficiency_vs_risk_frontier(fst=fst, horizon_days=365)
+        print(f"  FST {fst}, 1-year horizon, target 50 nmol/L:")
+        cs = fr["cheapest_sufficient"]
+        if cs:
+            print(f"    Lowest-risk schedule that stays sufficient: "
+                  f"{cs['sed_per_session']} SED every {cs['interval_days']}d "
+                  f"({cs['n_sessions']} sessions, {cs['total_sed']:.0f} SED total)")
+            print(f"      mean D {cs['mean_D']:.1f}, days below 50: "
+                  f"{cs['days_below_target']:.0f}, SCC idx {cs['scc_index']:.2f}, "
+                  f"melanoma idx {cs['intermittent_index']:.3f}, "
+                  f"burn fraction {cs['burn_fraction']:.0%}")
+        else:
+            print("    No schedule on the grid keeps this skin type sufficient.")
+        print(f"    Pareto frontier ({len(fr['frontier'])} nondominated points):")
+        print(f"      {'SED':>5} {'interval':>9} {'d<50':>7} {'SCC':>7} {'melanoma':>9}")
+        for p in fr["frontier"][:8]:
+            print(f"      {p['sed_per_session']:>5.2f} {p['interval_days']:>8}d "
+                  f"{p['days_below_target']:>7.0f} {p['scc_index']:>7.2f} "
+                  f"{p['intermittent_index']:>9.3f}")
+        print()
+
+    print("=" * 74)
+    print("Q3. MINUTES OF SUN PER DAY")
+    print("=" * 74)
+    print("UV Index -> personal erythemal dose, with the horizontal-to-body")
+    print("geometry correction applied. 'would burn' flags unusable advice.\n")
+    print(f"  {'FST':>4} {'UVI':>5} {'BSA':>6} {'target':>7} {'minutes':>9} "
+          f"{'%MED':>6} {'burn':>6}")
+    for uvi, bsa, label in ((3.5, 0.35, "UK Mar-Sep avg"),
+                            (7.0, 0.35, "UK midsummer"),
+                            (7.0, 0.10, "hands+face only")):
+        for fst in (2, 5, 6):
+            for target in (50.0, 85.8):
+                r = minutes_for_target(fst=fst, uv_index=uvi, exposed_bsa=bsa,
+                                       frequency_per_week=7.0, target=target,
+                                       horizon_days=150, max_minutes=600.0)
+                mins = f"{r['minutes']:.0f}" if r["reachable"] else "n/a"
+                pmed = f"{100*r['fraction_med']:.0f}%" if r["reachable"] else "-"
+                burn = ("YES" if r["would_burn"] else "no") if r["reachable"] else "-"
+                print(f"  {fst:>4} {uvi:>5.1f} {bsa:>6.2f} {target:>7.1f} "
+                      f"{mins:>9} {pmed:>6} {burn:>6}   {label}")
+    print()
+    print("  'n/a' means the target is unreachable at <=600 min/day -- reported")
+    print("  rather than silently returning the search bound.")
+
+
 def main():
     print("=" * 70)
     print("Vitamin D scheduling model: full pipeline")
@@ -209,81 +294,127 @@ def main():
     )
     report.append("\n```\n" + const_log + "\n```\n")
 
-    report.append("\n## 14. Interpretation\n")
+    # ---- Decision problems, held-out benchmark, and uncertainty -------------
+    # These are the sections to read first. The sweeps above optimise
+    # gross_synth_per_SED, which has no interior optimum (see the warning at the
+    # top of this report); everything below is posed as a real decision.
+    import vitd_objectives
+    import vitd_benchmark_webbkift
+    import vitd_sensitivity
+
+    obj_log = capture_log(_report_decision_problems)
+    bench_log = capture_log(vitd_benchmark_webbkift.run)
+    sens_log = capture_log(vitd_sensitivity.run)
+    print(obj_log)
+    print(bench_log)
+    print(sens_log)
+
+    report.append("\n## 14. Decision problems (recommended objectives)\n")
+    report.append(
+        "\nThe sweeps above maximise `gross_synth_per_SED`, which rises "
+        "monotonically as dosing approaches zero and whose reported optima end "
+        "*below* their starting 25(OH)D. These are the same questions posed so "
+        "that cumulative UV is held fixed, or so that cancer risk is scored "
+        "alongside the vitamin D outcome.\n"
+    )
+    report.append("\n```\n" + obj_log + "\n```\n")
+
+    report.append("\n## 15. Held-out external benchmark (Webb/Kift 2018)\n")
+    report.append(
+        "\nNothing in this repository is calibrated to this study. Every other "
+        "check in the validation suite is a calibration or debug target, so this "
+        "is the only out-of-sample evidence available.\n"
+    )
+    report.append("\n```\n" + bench_log + "\n```\n")
+
+    report.append("\n## 16. Sensitivity, identifiability, and uncertainty\n")
+    report.append(
+        "\nWhich parameters actually drive results, which pairs cannot be "
+        "separated by the current data, and what the headline numbers look like "
+        "as intervals rather than point estimates.\n"
+    )
+    report.append("\n```\n" + sens_log + "\n```\n")
+
+    report.append("\n## 17. Interpretation\n")
     report.append("""
-### What the sweeps actually showed
+### Read the decision-problem sections first
 
-The **alpha sweep** (Priority 1 completed in Session 2) demonstrates that the optimal interval is
-**robust across the full alpha range** (0.01 to 0.40). For both FST V and FST VI,
-the every-21-day schedule maximizes per-SED efficiency at every alpha value, and the
-daily schedule maximizes absolute steady-state D at every alpha value. The handoff
-flagged alpha as a potential source of uncertainty that could change the scheduling
-conclusion. **It does not.** The ranking is preserved.
+Sections 2-13 sweep `gross_synth_per_SED`. That metric has **no interior
+optimum**: it rises monotonically as dosing approaches zero, and its reported
+"optima" (21-30 d, and ~59 d under continuous optimisation) end *below* the
+starting 25(OH)D -- a net loss of vitamin D scored as maximal efficiency. The
+apparent optimum drifts upward with the search bound, which is the signature of
+a monotone objective rather than a peak.
 
-The **K_ATTEN sweep** shows the same robustness. K_ATTEN moves the **magnitude** of
-steady-state D substantially (from ~60.5 nmol/L at K=0.2 down to ~47.5 at K=8 under daily
-dosing, FST V) but **does not change which interval wins**. So if Young 2020 is right
-and K_ATTEN should be lower than 2.0, the model predicts FST V-VI can actually reach
-sufficiency at daily 1 SED dosing - which is consistent with the broader literature
-showing the FST penalty is smaller than older textbook claims.
+Ablation shows why: setting `K_ATTEN = 0` changes the interval ranking by ~0.3%,
+and setting `K_ATTEN = 0` *and* `K_SC = 0` leaves it intact. The ordering comes
+from the `(1 - D/D_max)` feedback term, not from photoadaptation. Sparse dosing
+keeps mean D low, so each pulse meets less inhibition.
 
-The **beta sweep** (Analysis E, NEW) tests the tanning decay rate over half-lives of
-21–120 days, covering the full range compatible with Ravnbak 2008 (PMID 18480919),
-which measured UVB tanning fade of 4–5 months in Scandinavians and Indians/Pakistanis.
-The prior citation for beta (Tadokoro 2005) was incorrect — that paper only measures
-0–7 days post-exposure and does not report a decay timescale. The model's default
-56-day half-life is within the plausible range. The scheduling decision is **robust
-to beta** across the full 21–120 day sweep: 21-day interval always wins on efficiency,
-daily always wins on absolute D. Absolute D varies by only ~10% across the sweep
-(FST V daily: ~83 nmol/L at t1/2=21d vs ~74 nmol/L at t1/2=120d) — far smaller
-than the effect of K_ATTEN calibration.
+Under `net_final_D_change_per_SED` the optimum is **2-4 days**, and Monte Carlo
+over the documented prior ranges puts it at 2-4 days in 86% of draws
+(section 16). That is the number to quote.
 
-### The two-framing finding
+### What the sweeps do legitimately show
 
-Under matched per-session dose (Framing 2), the two framings of the research
-question give opposite answers:
-- **Maximize absolute D**: shortest interval wins (daily, ~57 nmol/L for FST V, ~54 for FST VI).
-- **Maximize D per SED**: longest interval wins (21-day, efficiency ~0.90 vs ~0.82 at daily).
+The interval ranking is robust to `alpha` (0.01-0.40), `beta` (21-120 d
+half-life), and `K_ATTEN`. This is a real robustness result, but the reason is
+not reassuring: those three parameters barely participate in the model at all.
+At 1 SED/session the melanin state moves only +0.019 over 84 days. Section 16
+quantifies this -- `A` swings steady-state D by 36% across its plausible range
+while `K_ATTEN` swings it by 0.3%, despite `K_ATTEN` carrying the longer
+citation trail.
 
-This is biologically meaningful because UV exposure carries DNA-damage costs. In
-realistic clinical settings UV is the constrained resource, and Framing 2's efficiency
-metric is the one that matters. The model predicts that for darker-skinned individuals
-who want to reach sufficiency, **dose density beats spacing** despite the photoadaptation
-penalty - because the logarithmic dose-response curve plus 80-day-effective-D-half-life
-makes frequent small doses more cumulative than the photoadaptation penalty erodes.
+### Identifiability
 
-### Divergence of Gross vs. Net Efficiency
+Three parameter pairs are jointly unidentifiable from the current data
+(>99% of the response surface explained by a single linear combination):
+`alpha_SC ~ SC_max`, `K_const ~ K_ATTEN`, and `K_ATTEN ~ K_SC`. Only their
+combinations are constrained. Reporting either member of such a pair as a
+separately calibrated value overstates what the data support -- melanin and
+stratum corneum are both `exp(-k * saturating state)` terms driven by the same
+UV input, so they trade off along a ridge.
 
-We introduced net clinical efficiency metrics (`net_final_D_change_per_SED`, `auc_D_per_SED`, `auc_above_baseline_per_SED`, and `auc_above_sufficiency_per_SED`) to complement the traditional gross synthesis efficiency (`gross_synth_per_SED`).
+### The one out-of-sample test currently fails
 
-For sparse schedules (such as the 21-day interval), the gross synthesis efficiency remains high because each individual pulse produces significant D synthesis on a receptive, low-melanin skin state. However, the net final D change per SED diverges significantly and can even become negative, because the long periods between pulses allow serum D to decay back to or below baseline. Thus, while a sparse schedule appears optimal under the gross synthesis efficiency framing, it is less effective at maintaining an elevated net serum D level. This divergence highlights that gross synthesis performance does not necessarily equate to net clinical benefit.
+Webb/Kift 2018 report that skin type V needs 2.5-3.0x the dose of white
+Caucasians for an equivalent 25(OH)D rise. The model gives 1.40x (section 15).
+`K_const` is calibrated to Young 2020's FST II:VI ratio of 1.3-1.4, which is a
+per-unit-dose ratio at *matched BSA under lamps*; Webb/Kift's 2.5-3.0x is a
+whole-body naturalistic response. These measure different quantities, and the
+model currently only reproduces the former. The required-minutes ratio (1.77 vs
+2.78) passes a looser +/-40% band. This is the clearest evidence that the
+skin-type penalty is under-modelled for real-world use.
 
-### What needs better data
+### Skin cancer is now scored, not just flagged
 
-- **K_ATTEN calibration in FST V-VI** is still the largest unresolved uncertainty for
-  the absolute-level predictions. The sensitivity sweep shows it doesn't matter for the
-  scheduling decision but it matters a lot for whether the predicted level clears the
-  50 nmol/L sufficiency threshold.
-- **Alpha calibration in FST V-VI** is, per this analysis, lower priority than the
-  handoff suggested. The scheduling decision is robust.
-- The **NB-UVB vs broadband UV conversion** matters for cross-validation against
-  phototherapy studies (Bogh 2012, Karppinen 2016). Adding an explicit per-source
-  vitamin-D-effective conversion would let the model validate quantitatively against
-  more datasets.
+The risk model separates the two epidemiologically distinct pathways: SCC tracks
+**cumulative** dose, while melanoma and BCC track **intermittent** intensity
+(Elwood 1997: intermittent OR 1.71, heavy occupational OR 0.86 -- i.e.
+*protective*; Leiter 2009; Calzavara-Pinton 2015). The scheduling consequence is
+the opposite of naive dose-minimisation: at a fixed total UV budget, many small
+sub-erythemal sessions carry far less melanoma/BCC risk than a few large ones.
+Frequent-and-small beats rare-and-large, and this now agrees with the vitamin D
+objective rather than opposing it.
 
-### Datasets that could improve calibration
+### What still needs better data
 
-- **NHANES 2011-2018** (Subramanian 2024, Schleicher 2016): seasonal 25(OH)D
-  stratified by race/ethnicity. Best for population-level seasonal amplitude.
-- **Datta 2019**: 40 subjects, 9 weeks of identical weekly UVB, weekly serum
-  25(OH)D draws. Includes FST V-VI subjects, but full-text access is still
-  needed to verify the exact reflectance-derived M_baseline values.
-- **Psoriasis NB-UVB phototherapy registries**: dose-tracked longitudinal 25(OH)D
-  in darker-skinned patients undergoing repeated UVB treatment. Would directly
-  test Framing 2 predictions.
+- **The skin-type penalty for whole-body naturalistic exposure** (the Webb/Kift
+  gap above) is the highest-value calibration target.
+- **`D_max`** drives the headline result and has unconfirmed origin. The
+  mechanistic alternative (`feedback_mode='biphasic'`, inflection ~56 nmol/L
+  from Comms Med 2025) is implemented but not yet the default.
+- **Matsuoka 1990 (J Lab Clin Med, PMID 2165512)** is the sole source for
+  `K_ATTEN` and is absent from the repository.
+- **de Boer 2025 individual-level SC/MI trajectories** would break the
+  `alpha_SC ~ SC_max` and `K_ATTEN ~ K_SC` ridges.
+- **Ambient-to-personal UV dosimetry** for upright activity: the 0.55 geometry
+  factor is a mid-range prior and directly scales every minutes recommendation.
 """)
 
-    with open(REPORT_PATH, "w") as f:
+    # encoding is explicit: the report contains non-ASCII (arrows, mu, +/-) and
+    # Windows would otherwise default to cp1252 and crash on write.
+    with open(REPORT_PATH, "w", encoding="utf-8") as f:
         f.write("".join(report))
 
     print(f"\nReport written to {REPORT_PATH}")

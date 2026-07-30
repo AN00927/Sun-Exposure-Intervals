@@ -36,45 +36,62 @@ tanning rise rate depends on dose through a Hill-style alpha(UV) term.
   individual variability (Datta 2019).
 - **`vitd_optimization.py`** — Constant-sessions and best-interval analyses
   with AUC deficiency below 50 nmol/L as a clinical feasibility metric.
+- **`vitd_physiology.py`** — Mechanistic sub-models: body-weight volumetric
+  dilution, previtamin-D3 photodegradation, biphasic 25-hydroxylation, and the
+  quantitative skin-cancer risk model. All opt-in and separately ablatable.
+- **`vitd_objectives.py`** — The three decision problems people actually face
+  (fixed session budget, deficiency-vs-cancer Pareto frontier, minutes of sun).
+  **Start here** rather than with the parameter sweeps.
+- **`vitd_benchmark_webbkift.py`** — Held-out external benchmark. Nothing in the
+  repo is calibrated to it; the model currently fails its dose-ratio check.
+- **`vitd_sensitivity.py`** — Which parameters matter, which pairs are
+  unidentifiable, and headline numbers as intervals rather than point estimates.
+- **`PAPER_REQUESTS.md`** — Sources not in the repo that would improve accuracy,
+  ranked, with what to extract from each and what it would change.
+- **`vitd_dose_conversion.py`** — Spectral weighting: physical dose → effective
+  dose via lamp and action spectra.
+- **`vitd_protocols/`** — Published trial protocols, including the Bogh 2012
+  dose schedule and its J/cm² → erythemal SED conversion.
 - **`run_all.py`** — Runs validation + all 12 analyses, writes `RESULTS.md`.
 - **`RESULTS.md`** — Auto-generated summary with figures and interpretation.
-- **`SCIENTIFIC_AUDIT_HANDOFF.md`** — Dataset/paper synthesis and recommended
-  future fixes, generated from local CSV/PDF analysis artifacts.
-- **`figs/`** — PNG plots from each analysis.
-- **`tables/`** — CSV outputs of every parameter sweep.
-- **`audit_outputs/`** — Generated dataset profiles, PDF inventories,
-  compact extraction snippets, and computed summary tables used by
-  `SCIENTIFIC_AUDIT_HANDOFF.md`.
+- **`KNOWN_ISSUES.md`** — Current defects, caveats, and resolved-with-caveat items.
+- **`OPEN_QUESTIONS.md`** — Dataset provenance cards, open data gaps, unresolved
+  conflicts. (Replaces the retired `SCIENTIFIC_AUDIT_HANDOFF.md`.)
+- **`PAPER_SUMMARIES.md`** — Per-paper evidence cards (46 papers).
+- **`ASSUMPTION_REGISTER.md`**, **`PARAMETER_CHANGES.md`** — What we assume and
+  what changed, with sources.
+- **`figs/`**, **`tables/`** — Generated plots and sweep CSVs. Tracked
+  deliberately so each commit records what the model produced.
+- **`audit_outputs/`** — Generated dataset profiles, PDF inventories, and
+  extraction snippets.
 
 ## How to run
 
 ```bash
-pip install numpy scipy pandas matplotlib
-python3 run_all.py
+pip install numpy scipy pandas matplotlib pytest
+PYTHONIOENCODING=utf-8 python3 run_all.py   # full pipeline, rewrites RESULTS.md
+python3 -m pytest                           # 129 tests
 ```
+
+`PYTHONIOENCODING=utf-8` matters on Windows: the report contains non-ASCII
+characters that crash the default cp1252 codec.
 
 ## Current calibration
 
-- **D decay is state-dependent.** Half-life follows a power law fit to Datta
-  2017: `t_half(D) = 2953 * D^(-0.72)`. At high D (~132 nmol/L), half-life is
-  ~89 days. At low D (~43 nmol/L), half-life is ~199 days. Body preserves D
-  when levels are low and clears it faster when levels are high.
-- **Synthesis coefficient** `A = 2.353`. With current K_const and M_baseline,
-  1 SED in untanned FST III at D=25 produces ~1.27 nmol/L rise.
-- **K_const = 0.33** sets the constitutive melanin penalty so that the FST
-  II:VI synthesis ratio matches Young 2020 (~1.36×).
-- **M_baseline_by_FST** anchored to spectrometer measurements from trial
-  participants (ITA angle from ArimedB CSVs, N=44):
-  `1:0.0, 2:0.07, 3:0.21, 4:0.44, 5:0.78, 6:1.00`.
-- **K_ATTEN = 0.37** (was 2.0). Young 2020 shows melanin has a small effect
-  on D synthesis. The old 2.0 was a coarse prior with no paper support.
-- **Matsuoka test replaced** with de Boer 2025 photoadaptation check (the
-  local Matsuoka PDF was a sunscreen paper, not the tanned-vs-untanned paper).
-- **SC parameters**: `SC_max_by_FST = {I-III:0.23, IV-VI:0.36}` (from de Boer 2025),
-  `alpha_SC = 0.12`, `k_decay_SC = ln(2)/28`, `K_SC = 1.0`, `k_damage = 0.0`
-  (known limitation: week-5 dip not modeled).
-- All other parameters unchanged: `alpha_by_FST`, `beta`, `E_source`,
-  `D_max`, `BSA`. See `vitd_model.py` docstring for full citations.
+Parameter values and their citations live in **one** place: the `vitd_model.py`
+module docstring. They are deliberately not restated here — nine separate
+restatements of `K_ATTEN` across the docs is how the numbers drifted out of sync
+in the first place.
+
+Structural points worth knowing before reading results:
+
+- **D decay is state-dependent** (Datta 2017 power law), so 25(OH)D does *not*
+  halve in one nominal half-life — clearance slows as D falls. The analytic
+  solution is in `tests/test_model_invariants.py`.
+- **Melanin has a small effect** on synthesis, per Young 2020 (FST II:VI ratio
+  ~1.3-1.4). Do not expect pigmentation to dominate model behaviour; it does not.
+- **The `(1 - D/D_max)` feedback term dominates** scheduling behaviour, and
+  `D_max = 150` is the least-supported number in the model. See KNOWN_ISSUES #3.
 
 ## Analysis Index
 
@@ -87,62 +104,122 @@ Analyses are organized by letter. Current modules and their coverage:
 
 ## Headline results
 
-**Validation**: 7/9 required checks pass, 2/2 warning-only checks pass. Key results:
+**Validation**: 9/10 required checks pass, 2/2 warning-only checks pass
+(last verified 2026-07-30; regenerate with
+`PYTHONIOENCODING=utf-8 python3 run_all.py`). Key results:
 
-- **Bogh 2012**: Now verified with spectral weighting. Model delta +57.66 vs
-  observed +55.8 (error 1.86 nmol/L, within ±10 tolerance). Best config: A03
-  (CIE vitD dose conversion). Spectral weighting is the dominant factor —
-  configs using proper action spectra dramatically reduce error from ~36 to
-  <2 nmol/L.
+- **Bogh 2012**: Passes. Model delta **+56.0** vs observed **+55.8**
+  (error 0.2 nmol/L, tolerance ±10). This was previously recorded as a
+  structural failure; the cause was a dose-unit error — absolute J/cm² was
+  passed to `simulate()` as erythemal SED, omitting the ~5.5× TL-01
+  conversion, and the 35% reference BSA was used for a whole-body protocol.
+  **No parameter was tuned.** See KNOWN_ISSUES #1.
 - **Farrar 2013 FST V**: D_final and delta are in a plausible window.
 - **Bogh baseline/BSA**: direction check passes.
 - **de Boer 2025 photoadaptation**: melanin and SC respond in the right direction.
 - **Sanity checks**: single-bolus, ordering, and photoadaptation reduction all pass.
 
-**Alpha sweep**: The optimal interval (21 days under efficiency framing,
-1 day under absolute framing) holds across alpha = 0.01 to 0.40
-for both FST V and VI. The handoff flagged alpha as the largest scheduling
-uncertainty; this sweep shows otherwise.
+### Read this before quoting any "optimal interval"
 
-**Beta sweep**: The 21-day efficiency optimum and daily absolute-D optimum
-remain robust across melanin decay half-lives of 21-120 days. Beta shifts
-absolute D but does not change interval ranking.
+The per-SED efficiency optimum reported below is **a property of the feedback
+term, not of photoadaptation**, and it is not a usable clinical
+recommendation. Three findings from ablation:
 
-**K_ATTEN sweep**: Same robustness. K_ATTEN=0.37 (Young 2020-backed) is the
-default. Steady-state D is ~67 nmol/L under daily dosing (FST V). Interval
-ranking does not change with K_ATTEN.
+1. Setting `K_ATTEN = 0` (no melanin attenuation) changes the interval ranking
+   by ~0.3%. Setting `K_ATTEN = 0` *and* `K_SC = 0` leaves the ranking intact.
+   The ordering comes from `(1 - D/D_max)`: sparse dosing keeps mean D low, so
+   each pulse meets less inhibition.
+2. `gross_synth_per_SED` therefore has **no interior optimum**. It increases
+   monotonically as dosing approaches zero (21 d → 1.027, 42 d → 1.049,
+   60 d → 1.056 nmol/L per SED for FST V).
+3. At the reported optima, final D is *below* the starting baseline. FST V at
+   1 SED every 21 d ends at 24.0 nmol/L from a 25.0 start — **a net loss** of
+   vitamin D, scored as maximally "efficient."
+
+Using `net_final_D_change_per_SED` instead — already implemented in
+`vitd_model.py` — gives a genuine interior optimum at **~3 days** (+0.525
+nmol/L per SED for FST V). Monte Carlo over all documented prior ranges puts the
+optimum at **2-4 days in 86% of draws** (`vitd_sensitivity.py`), so that answer
+is robust to parameter uncertainty in a way the 21-37 day figure never was.
+
+Better still, don't optimise a per-SED ratio at all. `vitd_objectives.py` poses
+the same questions with cumulative UV **held fixed**, so no schedule can win by
+dosing less:
+
+| Question | Function |
+|---|---|
+| "I can get outside N times in 12 weeks — when?" | `optimal_spacing_fixed_sessions` |
+| "Stay sufficient at least cancer risk" | `deficiency_vs_risk_frontier` |
+| "How many minutes of sun, for my skin type?" | `minutes_for_target` |
+
+### Sensitivity: the best-documented parameter barely matters
+
+Across each parameter's full plausible range, swing in steady-state 25(OH)D:
+
+| parameter | swing | note |
+|---|---|---|
+| `A` | **36%** | synthesis scale |
+| `K_const` | 19% | constitutive pigment penalty |
+| `K_SC` | 10% | stratum corneum |
+| `D_max` | 8% | *origin unconfirmed* |
+| `K_ATTEN` | **0.3%** | longest citation trail in the repo |
+
+`K_ATTEN` has the most documentation, the most caveats, and the least influence.
+Three pairs — `alpha_SC~SC_max`, `K_const~K_ATTEN`, `K_ATTEN~K_SC` — are jointly
+**unidentifiable** (>99% of the response surface on a single ridge), so only
+their combinations are constrained by current data.
+
+### Skin cancer is scored, not just flagged
+
+SCC tracks **cumulative** dose; melanoma and BCC track **intermittent** bursts
+(Elwood 1997: intermittent OR 1.71, heavy occupational OR 0.86 — *protective*).
+At a fixed UV budget, splitting 52 SED into weekly 1-SED sessions instead of two
+26-SED holidays leaves SCC risk identical and cuts the melanoma/BCC index
+**~680×**. Frequent-and-small beats rare-and-large — and for once this agrees
+with the vitamin D objective instead of opposing it.
+
+### The held-out benchmark fails
+
+Webb/Kift 2018 report FST V needing 2.5-3.0× the dose of white Caucasians; the
+model gives **1.40×**. `K_const` is calibrated to Young 2020's lamp-based,
+matched-BSA ratio of 1.3-1.4, which is a different quantity from a whole-body
+naturalistic response. Every real-world minutes recommendation for darker skin
+is therefore optimistic. This is the highest-value calibration target in the
+repo (`OPEN_QUESTIONS.md` gaps 22-23).
+
+### Sweep results (efficiency framing, for reference)
+
+**Alpha sweep**: The optimal interval (21 d under efficiency framing, 1 d under
+absolute framing) holds across alpha = 0.01 to 0.40 for FST V and VI — because
+melanin barely participates (see above), not because alpha is well constrained.
+At 1 SED/session, M moves only +0.019 over 84 days.
+
+**Beta sweep**: Robust across melanin decay half-lives of 21-120 days. Beta
+shifts absolute D but does not change interval ranking.
+
+**K_ATTEN sweep**: Same robustness, for the same reason.
 
 **Two-framing finding**: Under matched per-session dose (1 SED/session),
-- shortest interval (daily) wins absolute D (FST V: ~72, FST VI: ~69 nmol/L)
-- longest interval (every 21 days) wins gross efficiency (~1.05 vs ~0.79 nmol/L per SED)
+daily dosing wins absolute D and sparse dosing wins gross efficiency. The
+trade-off is real; the specific sparse optimum is not.
 
-UV is a constrained resource (skin cancer risk), so the efficiency framing
-carries more clinical weight. But sufficiency targets (50 nmol/L) require dose
-density. You face a trade-off, not a single optimum.
+**Fine-grid (1-30 d) and scipy.optimize**: efficiency optima at 30 d and ~59 d
+respectively, drifting upward with the search bound — the signature of a
+monotone objective, not a peak. Absolute-D optimum ~2 d.
 
-**Fine-grid sweep (1-30d, 1d steps)**: The coarse grid suggested 21d, but
-finer resolution pushes the efficiency optimum higher — to **27 days**
-(FST V: 1.057, FST VI: 0.984 nmol/L per SED).
-
-**scipy.optimize (continuous)**: Nelder-Mead optimization confirms the
-trend. Efficiency optimum at **~37 days** (1.060/0.986 nmol/L per SED).
-Absolute D optimum at **~2 days** (daily is optimal). The continuous and
-fine-grid results converge: sparser dosing is monotonically more efficient,
-limited only by the simulation horizon for state stabilization.
-
-The best-interval and constant-sessions analyses now include **AUC deficiency
-below 50 nmol/L** — integrating the time spent below sufficiency threshold
-across the full simulation window. This replaces the earlier min-D heuristic
-with a cumulative exposure metric that better reflects clinical risk.
+Best-interval and constant-sessions analyses report **AUC deficiency below
+50 nmol/L**, which — unlike per-SED efficiency — penalises the net-loss
+schedules above.
 
 ## Open questions
 
-1. **Source / spectral calibration [C3]**: Spectral weighting with CIE
-   previtamin-D3 action spectrum is now functional and dramatically improves
-   Bogh 2012 prediction (error 1.86 nmol/L). Per-study calibration via
-   `SOURCE_CALIBRATION_TABLE` is implemented. E_source=1.0 is the solar
-   broadband reference; per-study values (e.g., tl01_nb_uvb=2.44) are
-   available for lab sources.
+1. **Source / dose-unit calibration**: Per-study calibration via
+   `SOURCE_CALIBRATION_TABLE` is implemented; `E_source=1.0` is the solar
+   broadband reference and per-study values (e.g. `tl01_nb_uvb=2.44`) cover lab
+   sources. The remaining risk is *unit* handling upstream of `E_source`, which
+   is what broke Bogh 2012: physical J/cm² must be converted to erythemal SED
+   before it reaches `simulate()`. Lloyd 2004 found TL-01 cabinet calibration
+   varies ±60% between departments, so lab-source doses carry ~2× uncertainty.
 2. **Baseline-dependent dose-response [C4]**: Bogh 2011/P5 derives
    `delta = 7.1 - 0.223*baseline + 11.0*ln(UVB_dose) + 5.5*ln(%BSA)` (R2=0.47).
    The model captures the baseline direction via feedback; a full BSA term is
@@ -157,5 +234,7 @@ with a cumulative exposure metric that better reflects clinical risk.
    trial CSVs (N=44) as group-level priors; genetics and baseline serum D
    dominate individual outcomes.
 
-See `RESULTS.md` for model-run interpretation and
-`SCIENTIFIC_AUDIT_HANDOFF.md` for the dataset/literature audit.
+See `RESULTS.md` for model-run interpretation, `OPEN_QUESTIONS.md` for the
+dataset provenance cards and the full list of open gaps, `KNOWN_ISSUES.md` for
+current defects and caveats, and `PAPER_SUMMARIES.md` for per-paper evidence
+cards.

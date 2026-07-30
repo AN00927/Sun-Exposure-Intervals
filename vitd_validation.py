@@ -173,7 +173,8 @@ from vitd_model import (ModelParams, synthesis_per_session, simulate,
                          gross_synth_per_SED, net_final_D_change_per_SED,
                          auc_above_baseline_per_SED,
                          auc_above_sufficiency_per_SED,
-                         steady_state_D)
+                         steady_state_D, get_E_source)
+from vitd_protocols.bogh2012 import bogh2012_session_doses_sed
 
 
 # ---------------------------------------------------------------------------
@@ -183,43 +184,58 @@ def sanity_decay_halflife(verbose=True):
     """
     Datta 2017: state-dependent half-life from power-law fit.
     # Power-law fitted to Datta 2017 three-group data
-    At high D (~132 nmol/L), half-life ≈ 89 days.
-    At low D (~43 nmol/L), half-life ≈ 199 days.
-    Test both endpoints with ±10% tolerance.
+    At high D (~132 nmol/L), instantaneous half-life ≈ 89 days.
+    At low D (~43 nmol/L), instantaneous half-life ≈ 199 days.
+    Test all three anchor points with ±10% tolerance.
+
+    The simulator is then checked against the ANALYTIC solution of the ODE
+    rather than against a fixed-k exponential. With k(D) = ln2*D^0.72/2953,
+    dD/dt = -c*D^1.72 (c = ln2/2953) integrates to
+        D(t) = [D0^-0.72 + 0.72*c*t]^(-1/0.72)
+    A state-dependent-clearance model does NOT halve in one instantaneous
+    half-life: as D falls, clearance slows, so decay lags a fixed-k
+    exponential (D(89)/D0 = 0.566, not 0.500, from D0=132). Asserting 0.500
+    here would encode the fixed-k assumption the model explicitly rejects.
     """
     p = ModelParams()
     tol = 0.10
-    
-    # Check half-life at high D
+
+    # Instantaneous half-life at each Datta 2017 group mean
     t_half_high = np.log(2) / p.k_decay_D(132.0)
     high_ok = abs(t_half_high - 89.0) / 89.0 <= tol
-    
-    # Check half-life at medium D
+
     t_half_med = np.log(2) / p.k_decay_D(65.0)
     med_ok = abs(t_half_med - 148.0) / 148.0 <= tol
-    
-    # Check half-life at low D
+
     t_half_low = np.log(2) / p.k_decay_D(43.0)
     low_ok = abs(t_half_low - 199.0) / 199.0 <= tol
-    
-    # Simulate decay from 132 nmol/L for 89 days
+
+    def _exact_decay(D0, t):
+        """Analytic solution of dD/dt = -k(D)*D for the power-law k(D)."""
+        c = np.log(2.0) / 2953.0
+        return (D0 ** -0.72 + 0.72 * c * t) ** (-1.0 / 0.72)
+
+    # Simulator must reproduce the analytic ODE solution to within 1%
     result = simulate(fst=3, schedule=[], duration_days=89, params=p, D0=132.0)
     D_89 = np.interp(89.0, result["t"], result["D"])
-    sim_high_ok = abs(D_89 / 132.0 - 0.5) < 0.06
-    
-    # Simulate decay from 43 nmol/L for 199 days
+    exact_89 = _exact_decay(132.0, 89.0)
+    sim_high_ok = abs(D_89 - exact_89) / exact_89 <= 0.01
+
     result = simulate(fst=3, schedule=[], duration_days=199, params=p, D0=43.0)
     D_199 = np.interp(199.0, result["t"], result["D"])
-    sim_low_ok = abs(D_199 / 43.0 - 0.5) < 0.06
-    
+    exact_199 = _exact_decay(43.0, 199.0)
+    sim_low_ok = abs(D_199 - exact_199) / exact_199 <= 0.01
+
     passed = high_ok and med_ok and low_ok and sim_high_ok and sim_low_ok
     if verbose:
         print(f"[Sanity 1] D-dependent decay half-life (Datta 2017 power-law fit)")
         print(f"  D=132: t_half={t_half_high:.1f}d (expected 89d, ±10%): {'OK' if high_ok else 'FAIL'}")
         print(f"  D=65:  t_half={t_half_med:.1f}d (expected 148d, ±10%): {'OK' if med_ok else 'FAIL'}")
         print(f"  D=43:  t_half={t_half_low:.1f}d (expected 199d, ±10%): {'OK' if low_ok else 'FAIL'}")
-        print(f"  Sim D=132->D(89)/D0={D_89/132.0:.3f} (target ~0.5): {'OK' if sim_high_ok else 'FAIL'}")
-        print(f"  Sim D=43->D(199)/D0={D_199/43.0:.3f} (target ~0.5): {'OK' if sim_low_ok else 'FAIL'}")
+        print(f"  Sim vs analytic ODE, D0=132 @89d:  {D_89:.3f} vs {exact_89:.3f} "
+              f"(±1%): {'OK' if sim_high_ok else 'FAIL'}")
+        print(f"  Sim vs analytic ODE, D0=43 @199d:  {D_199:.3f} vs {exact_199:.3f} "
+              f"(±1%): {'OK' if sim_low_ok else 'FAIL'}")
         print(f"  {'PASS' if passed else 'FAIL'}")
     return passed
 
@@ -350,19 +366,32 @@ def validate_bogh_2012(verbose=True):
     general NB-UVB conversion constant.
     """
     p = ModelParams()
-    # Escalating physical dose schedule: 18 sessions (3x/week x 6 weeks)
-    # Starts at 0.36 J/cm², increases +15% every second session, capped at 1.20 J/cm²
+    # Escalating dose schedule: 18 sessions (3x/week x 6 weeks), converted from
+    # absolute J/cm2 to CIE erythemal SED via the Rodriguez-Granados 2017
+    # TL-01 factor (1 J/cm2 -> 5.5 SED) and normalized to the reported
+    # cumulative 9.0 J/cm2. simulate() expects erythemal SED; E_source then
+    # maps erythemal SED -> vitamin-D-effective dose.
     session_days = [w * 7 + d for w in range(6) for d in [0, 2, 4]]
-    sched = [(session_days[i], min(1.20, 0.36 * (1.15 ** (i // 2)))) for i in range(18)]
+    session_sed = bogh2012_session_doses_sed(n_sessions=18)
+    sched = list(zip(session_days, session_sed))
 
     # Account for cohort FST distribution (31% FST II, 12.5% FST III, 44% FST IV, 12.5% FST VI)
     fst_dist = [(2, 0.31), (3, 0.125), (4, 0.44), (6, 0.125)]
 
-    weighted_D_final = sum(
-        weight * simulate(fst=fst, schedule=sched, duration_days=42, params=p, D0=19.2, E_source_override=2.5)["D"][-1]
+    # Bogh 2012 was whole-body NB-UVB (~90% BSA, ASSUMPTION_REGISTER A2), not
+    # the 35% BSA reference. Both the source conversion and the exposed area
+    # are study facts, not free parameters.
+    E_SOURCE_TL01 = get_E_source("tl01_nb_uvb")
+    EXPOSED_BSA = 0.90
+
+    D_final = sum(
+        weight * simulate(fst=fst, schedule=sched, duration_days=42, params=p,
+                          D0=19.2,
+                          E_source_override=E_SOURCE_TL01,
+                          exposed_bsa_override=EXPOSED_BSA,
+                          dose_framing="fixed_absolute_SED")["D"][-1]
         for fst, weight in fst_dist
     )
-    D_final = weighted_D_final
     delta = D_final - 19.2
     # [C1] Quantitative target: observed delta = +55.8 nmol/L; tolerance ±10 nmol/L
     OBSERVED_DELTA = 55.8
@@ -370,7 +399,9 @@ def validate_bogh_2012(verbose=True):
     passed = abs(delta - OBSERVED_DELTA) <= TOLERANCE
     if verbose:
         print(f"[Lit 2] Bogh 2012 - quantitative NB-UVB validation  [C1]")
-        print(f"  Protocol: 1 SED 3x/week x 6 weeks, FST III, baseline 19.2, E_source=2.5")
+        print(f"  Protocol: 18 sessions 3x/week x 6 weeks, cohort FST mix, baseline 19.2")
+        print(f"  Dose: 9.0 J/cm2 cumulative -> {sum(session_sed):.1f} erythemal SED "
+              f"(TL-01 x5.5), E_source={E_SOURCE_TL01}, BSA={EXPOSED_BSA}")
         print(f"  Model D_final = {D_final:.1f} nmol/L (delta = +{delta:.1f})")
         print(f"  Study observed: 19.2 -> 75.0 nmol/L, delta +{OBSERVED_DELTA} nmol/L")
         print(f"  Acceptance: |delta - {OBSERVED_DELTA}| <= {TOLERANCE} nmol/L  (range {OBSERVED_DELTA-TOLERANCE:.1f}-{OBSERVED_DELTA+TOLERANCE:.1f})")
@@ -1005,7 +1036,7 @@ def validate_kift_2013_south_asian(verbose=True):
 # 3. Run |python3 vitd_validation.py| to confirm registration.
 #
 # 4. If the check introduces a new literature source, add a paper
-#    summary card in SCIENTIFIC_AUDIT_HANDOFF.md (outside this file)
+#    summary card in PAPER_SUMMARIES.md / OPEN_QUESTIONS.md (outside this file)
 #    and cross-reference the audit-change tag in the docstring.
 #
 # See existing checks for examples.

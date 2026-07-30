@@ -176,6 +176,11 @@ import numpy as np
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
+from vitd_physiology import (body_weight_dilution_factor,
+                             photodegradation_factor,
+                             hydroxylation_efficiency,
+                             cancer_risk)
+
 
 # ---------------------------------------------------------------------------
 # [C2] Source/Spectrum Calibration Table
@@ -200,6 +205,16 @@ SOURCE_CALIBRATION_TABLE: Dict[str, Tuple[float, float, float]] = {
     "arimed_b":       (1.83, 1.83, 1.83),  # P21 only
     "sunbed_uvb":     (1.18, 1.18, 1.18),  # P35 (Grigalavicius 2015 Table 2); P21 Wolff Life Sun = 1.85
 }
+
+# Dietary intake conversion: nmol/L of 25(OH)D added per ug/day of vitamin D3,
+# per day of intake. This is an INPUT-RATE coefficient, not a steady-state
+# response -- the steady state emerges from this source balanced against
+# k_decay_D(D). Cashman 2008/2011 dose-response trials give roughly
+# +1.5-2.0 nmol/L steady-state per ug/day of D3; with the Datta 2017
+# state-dependent clearance in this model, 0.07 reproduces that band
+# (25 ug/day -> ~140 nmol/L over a year with no UV, no baseline intake).
+# [PRIOR] Not independently fitted; revisit if a dietary-only cohort is added.
+DIETARY_UG_TO_NMOL_PER_L: float = 0.07
 
 # Reference exposed BSA fraction for synthesis normalization.
 # Farrar 2013 (35% BSA); note Bogh 2011 used 6-24% BSA.
@@ -242,6 +257,20 @@ class ModelParams:
     })
     beta: float = np.log(2) / 56.0
     K_const: float = 0.33
+    # Facultative (tanning) headroom above constitutive pigmentation, on the
+    # normalized 0-1 melanin scale. The absolute ceiling for a given FST is
+    # M_baseline(FST) + M_TAN_HEADROOM, capped at 1.0 -- see M_ceiling().
+    #
+    # A single global M_max was wrong: M_max=0.95 sat BELOW
+    # M_baseline_by_FST[6]=1.00, so the saturating pulse update
+    #     M <- M_max - (M_max - M) * exp(-alpha * sed)
+    # DECREASED melanin for FST VI (UV made the skin lighter). FST V/VI is the
+    # target population for this project, so that inversion mattered.
+    # Headroom 0.20 keeps FST I-III behaviour close to the old global 0.95
+    # ceiling while making tanning monotone for every FST.
+    # [PRIOR] Magnitude is not separately identified; Ravnbak 2008 reports
+    # facultative MI gains but on instrument-specific units.
+    M_TAN_HEADROOM: float = 0.20
     M_max: float = 0.95
     # [C5][C10-PRIOR] K_ATTEN is a COARSE PRIOR. Evidence (Young 2020 P9, Datta 2019 P13,
     # Bogh 2010 P36) supports only a ~1.3-1.4x FST II-VI synthesis ratio, not a large
@@ -261,10 +290,39 @@ class ModelParams:
     # Default is BSA_REF so all existing scenarios are unchanged (BSA factor = 1.0).
     exposed_bsa: float = BSA_REF
     # [C3-feedback] Baseline feedback parameters
-    # feedback_mode can be 'linear', 'power', or 'saturating'
+    # feedback_mode can be 'linear', 'power', 'saturating', or 'biphasic'.
+    # 'biphasic' is the mechanistically preferred option (see vitd_physiology):
+    # 25-hydroxylation efficiency falls above a ~56 nmol/L inflection rather
+    # than synthesis stopping at a hard D_max ceiling. Default stays 'linear'
+    # so historical results remain reproducible; flip it deliberately.
     feedback_mode: str = "linear"
     feedback_power: float = 1.0
     D_half_feedback: float = 50.0
+
+    # ---- Mechanistic extensions (July 2026 literature pass) -----------------
+    # All default OFF/neutral so every one is separately ablatable and existing
+    # scenarios are bit-identical unless explicitly enabled.
+    #
+    # Body weight for volumetric dilution (Drincic 2012: hyperbolic in total
+    # body WEIGHT, not BMI, and not sequestration). None disables the term.
+    body_weight_kg: Optional[float] = None
+    # Previtamin-D3 photodegradation plateau (Holick 1981, van Dijk 2016).
+    # This is the mechanism that makes dose-splitting genuinely better, as
+    # opposed to the feedback artifact in OPEN_QUESTIONS gap 19.
+    use_photodegradation: bool = False
+    # Cutaneous D3 -> serum 25(OH)D transit delay. Without this, UV synthesis
+    # appears in serum 25(OH)D instantaneously, which is wrong on exactly the
+    # timescale this project optimises over (1-3 day intervals).
+    # Two serial steps, lumped into one first-order transfer:
+    #   previtamin-D3 -> D3   thermal isomerisation, ~80% complete in 8 h
+    #   D3 -> 25(OH)D         hepatic CYP2R1; serum D3 half-life ~4 h, but
+    #                         appearance of 25(OH)D peaks over ~1-2 days
+    # t_half = 1.0 day is the lumped transfer half-life. [PRIOR] No study
+    # reports this as a fitted rate constant; it is inferred from the 8 h
+    # isomerisation plus the ~4 h D3 half-life and the observation that serum
+    # 25(OH)D is typically sampled 24 h post-exposure.
+    use_transit_delay: bool = False
+    transit_half_life_days: float = 1.0
     # Stratum corneum thickening state parameters
     # [C7-SC] Recalibrated from de Boer 2025 Supplementary Table S1:
     #   FP I-III: SC 5.6->6.9 um (+23% -> SC_max=0.23)
@@ -317,18 +375,24 @@ class ModelParams:
         1: 0.0, 2: 0.07, 3: 0.21, 4: 0.44, 5: 0.78, 6: 1.00,
     })
 
-    @property
-    def UV_threshold(self) -> float:
-        """Backwards compatibility alias for UV_halfmax."""
-        return self.UV_halfmax
-
-    @property
-    def UV_threshold_by_FST(self) -> Dict[int, float]:
-        """Backwards compatibility alias for UV_halfmax_by_FST."""
-        return self.UV_halfmax_by_FST
-
     def M_baseline(self, fst: int) -> float:
         return self.M_baseline_by_FST[fst]
+
+    def M_ceiling(self, fst: int) -> float:
+        """Maximum attainable melanin index for this FST (fully tanned).
+
+        Always M_baseline(fst) + M_TAN_HEADROOM, so UV exposure increases
+        melanin for EVERY FST. Deliberately NOT capped at 1.0: 1.0 is the
+        *constitutive* FST VI reference on the Datta 2019 reflectance scale,
+        not a physical ceiling. FST VI does undergo facultative melanogenesis,
+        so a fully tanned FST VI sits above untanned FST VI (M = 1.20 here).
+        Capping at 1.0 would silently make tanning a no-op for FST VI --
+        different from the old inversion bug, but equally wrong.
+
+        Synthesis attenuation stays well-behaved above 1.0: only the
+        difference (M - M_baseline) enters exp(-K_ATTEN * excess_M).
+        """
+        return self.M_baseline(fst) + self.M_TAN_HEADROOM
 
     def bsa_factor(self, bsa: Optional[float] = None) -> float:
         """[C1] Sub-linear BSA scaling factor relative to BSA_REF.
@@ -401,12 +465,27 @@ def synthesis_per_session(sed: float, M: float, M_baseline: float,
         # saturating feedback: exp(-decay * D) where decay = ln(2) / D_half_feedback
         decay = np.log(2.0) / getattr(params, 'D_half_feedback', 50.0)
         feedback_factor = np.exp(-decay * D)
+    elif f_mode == 'biphasic':
+        # Mechanistic: 25-hydroxylation efficiency, inflection ~56 nmol/L
+        # (Comms Med 2025). Never exactly zero -- cutaneous synthesis does not
+        # stop outright at any serum level.
+        feedback_factor = hydroxylation_efficiency(D)
     else:
         feedback_factor = max(0.0, 1.0 - D / D_max_use)
 
+    # Previtamin-D3 photostationary plateau: per-session yield saturates in
+    # absolute terms, so one large session cannot substitute for several small
+    # ones (Holick 1981 plateau at 10-15% of 7-DHC; van Dijk 2016).
+    photo_f = (photodegradation_factor(sed * E_use)
+               if getattr(params, 'use_photodegradation', False) else 1.0)
+
+    # Volumetric dilution: the same cutaneous input raises serum 25(OH)D less
+    # in a larger body (Drincic 2012, hyperbolic in total body weight).
+    weight_f = body_weight_dilution_factor(getattr(params, 'body_weight_kg', None))
+
     return (A_use * np.log(1.0 + sed * E_use) * bsa_f *
             constitutive_factor * facultative_factor * sc_factor *
-            feedback_factor)
+            feedback_factor * photo_f * weight_f)
 
 
 def compute_safety_sidecar(sed: float, fst: int, accumulated_sed_7d: float = 0.0) -> Dict:
@@ -511,6 +590,7 @@ def simulate(fst: int,
               K_SC_override: float = None,
               k_damage_override: float = None,
               SC_max_override: float = None,
+              M_max_override: float = None,
               exposed_bsa_override: float = None,
                dose_framing: str = "unspecified") -> Dict:
     """Simulate vitamin D dynamics under a UV pulse schedule.
@@ -547,10 +627,17 @@ def simulate(fst: int,
     k_damage_eff = params.k_damage if k_damage_override is None else k_damage_override
     SC_max_eff = (params.SC_max_by_FST.get(fst, params.SC_max)
                   if SC_max_override is None else SC_max_override)
+    # Per-FST melanin ceiling; always above M_base so tanning is monotone.
+    M_ceil = params.M_ceiling(fst) if M_max_override is None else M_max_override
 
     D = params.D0_default if D0 is None else D0
     M = M_base if M0 is None else M0
     SC = SC0
+    # Cutaneous/circulating D3 awaiting 25-hydroxylation, in nmol/L of
+    # eventual 25(OH)D equivalent. Zero unless use_transit_delay is on.
+    D3_pool = 0.0
+    k_transit = (np.log(2.0) / params.transit_half_life_days
+                 if getattr(params, 'use_transit_delay', False) else 0.0)
 
     schedule = sorted(schedule, key=lambda x: x[0])
     pulse_days = [p[0] for p in schedule]
@@ -570,27 +657,41 @@ def simulate(fst: int,
         end_t = min(next_t, duration_days)
 
         if end_t > current_t:
+            # March the state forward in dt-sized sub-steps, advancing current_t
+            # each iteration. The recorded samples ARE the state trajectory --
+            # there is no separate "big step" to the interval end, which would
+            # double-count the dietary input and decay from a stale origin.
             dt = 0.5
             t_steps = np.arange(current_t + dt, end_t, dt)
             if len(t_steps) == 0 or t_steps[-1] < end_t:
                 t_steps = np.append(t_steps, end_t)
             for ti in t_steps:
                 delta_time = ti - current_t
+                # Dietary input is a zero-order source over the sub-step, applied
+                # before decay so it is subject to clearance like synthesised D.
                 if params.dietary_D_daily_ug > 0:
-                    D += params.dietary_D_daily_ug * 0.07 * delta_time
-                Di = D * np.exp(-params.k_decay_D(D) * delta_time)
-                Mi = M_base + (M - M_base) * np.exp(-beta_eff * delta_time)
-                SCi = SC * np.exp(-beta_SC_eff * delta_time)
+                    # Volumetric dilution applies to oral D3 exactly as it does
+                    # to cutaneous D3 -- it is a distribution-volume effect, not
+                    # a skin effect (Drincic 2012; Ekwaru 2014 dose-response).
+                    D += (params.dietary_D_daily_ug * DIETARY_UG_TO_NMOL_PER_L
+                          * body_weight_dilution_factor(
+                              getattr(params, 'body_weight_kg', None))
+                          * delta_time)
+                # Transit: D3 pool drains into the 25(OH)D compartment.
+                # Applied before decay so newly arrived D3 is subject to
+                # clearance over the remainder of the sub-step.
+                if k_transit > 0.0 and D3_pool > 0.0:
+                    transferred = D3_pool * (1.0 - np.exp(-k_transit * delta_time))
+                    D += transferred
+                    D3_pool -= transferred
+                D = D * np.exp(-params.k_decay_D(D) * delta_time)
+                M = M_base + (M - M_base) * np.exp(-beta_eff * delta_time)
+                SC = SC * np.exp(-beta_SC_eff * delta_time)
+                current_t = ti
                 t_record.append(ti)
-                D_record.append(Di)
-                M_record.append(Mi)
-                SC_record.append(SCi)
-            delta_step = end_t - current_t
-            if params.dietary_D_daily_ug > 0:
-                D += params.dietary_D_daily_ug * 0.07 * delta_step
-            D = D * np.exp(-params.k_decay_D(D) * delta_step)
-            M = M_base + (M - M_base) * np.exp(-beta_eff * delta_step)
-            SC = SC * np.exp(-beta_SC_eff * delta_step)
+                D_record.append(D)
+                M_record.append(M)
+                SC_record.append(SC)
             current_t = end_t
 
         if (pulse_idx < len(pulse_days)
@@ -603,7 +704,12 @@ def simulate(fst: int,
                                              D_max_override=D_max_eff,
                                              K_SC_override=K_SC_eff,
                                              exposed_bsa_override=exposed_bsa_override)
-            D = D + delta_D
+            if k_transit > 0.0:
+                # Route synthesis through the skin/serum D3 reservoir instead of
+                # crediting serum 25(OH)D instantaneously.
+                D3_pool += delta_D
+            else:
+                D = D + delta_D
             # Apply genotype A_offset (from vitd_genetics.py presets) — additive offset
             # to per-session synthesis, independent of D feedback.
             if hasattr(params, '_genotype_A_offset'):
@@ -615,7 +721,7 @@ def simulate(fst: int,
                 UV_halfmax_p = params.UV_halfmax_by_FST.get(fst, params.UV_halfmax)
                 hill_factor = sed**2 / (sed**2 + UV_halfmax_p**2)
                 alpha_p = alpha_p + (params.alpha_max - alpha_p) * hill_factor
-            M = params.M_max - (params.M_max - M) * np.exp(-alpha_p * sed)
+            M = M_ceil - (M_ceil - M) * np.exp(-alpha_p * sed)
             SC = SC * np.exp(-k_damage_eff * sed)
             SC = SC_max_eff - (SC_max_eff - SC) * np.exp(-alpha_SC_eff * sed)
             
@@ -636,6 +742,13 @@ def simulate(fst: int,
             SC_record.append(SC)
             pulse_idx += 1
 
+    # Quantitative skin-cancer risk for the whole schedule. Unlike the
+    # per-session qualitative sidecar, this separates the two epidemiologically
+    # distinct pathways: SCC tracks CUMULATIVE dose, while BCC and melanoma
+    # track INTERMITTENT intensity (Elwood 1997: intermittent OR 1.71, heavy
+    # occupational OR 0.86 i.e. protective; Leiter 2009; Calzavara-Pinton 2015).
+    risk = cancer_risk([s for _, s in schedule], fst)
+
     _VALID_FRAMINGS = {
         "fixed_absolute_SED", "fixed_cumulative_SED",
         "fixed_per_session_SED", "fixed_fractional_MED",
@@ -654,7 +767,9 @@ def simulate(fst: int,
         "M": np.array(M_record),
         "SC": np.array(SC_record),
         "synthesis_log": synthesis_log,
-        "safety_log": safety_log,            # [C6-safety]
+        "safety_log": safety_log,            # [C6-safety] per-session qualitative flags
+        "cancer_risk": risk,                 # schedule-level quantitative indices
+        "D3_pool_final": D3_pool,            # un-hydroxylated D3 still in transit
         "cumulative_SED": cumulative_SED,
         "fst": fst,
         "params": params,

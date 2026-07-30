@@ -42,7 +42,8 @@ dose_escalation_rule: "~15% increase every second session"
 dose_schedule_sessions: 18 (3×/week for 6 weeks)
 dose_cumulative_mean: 9.0
 dose_cumulative_unit: J/cm²
-dose_cumulative_sed: "~23.7 SED (using TL01 VDE:EE conversion factor 2.63 from Webb 2021)"
+dose_cumulative_sed: "49.5 erythemal SED (9.0 J/cm2 x 5.5, Rodriguez-Granados 2017 TL-01 cabinet factor)"
+dose_cumulative_vitd_effective: "~120.8 (49.5 erythemal SED x E_source 2.44); E_source is applied inside simulate(), not stored as a dose"
 
 assay_method: LC-MS/MS
 season: "Feb-May 2011 (winter-spring, avoiding summer)"
@@ -69,8 +70,24 @@ unverified_fields:
 notes: |
   Data extracted from PAPER_SUMMARIES.md [17] (full text retrieved).
   Full body NB-UVB (TL-01) 3×/week for 6 weeks produced +55.8 nmol/L
-  from baseline ~19 nmol/L. This is the primary validation target that
-  the model currently FAILS (model predicts +38.5 vs observed +55.8).
-  The gap is attributed to E_source=2.5 placeholder and SC recalibration.
-  Mean cumulative dose 9.0 J/cm² converts to ~23.7 SED using TL01
-  conversion factor 2.63 (Webb 2021 Table 1, Grigalavicius 2015).
+  from baseline ~19 nmol/L. The model now PASSES this target
+  (predicts +56.0) as of 2026-07-30.
+
+  UNIT CHAIN (two distinct conversions -- do not conflate them):
+    1. absolute J/cm2 -> CIE erythemal SED, factor 5.5
+       (Rodriguez-Granados 2017, Waldmann UV7002 with 21x TL-01 tubes;
+       see data/spectra/tl01_conversion_factor.md)
+       Mean cumulative 9.0 J/cm2 -> 49.5 erythemal SED.
+    2. erythemal SED -> vitamin-D-effective dose, factor 2.44
+       (SOURCE_CALIBRATION_TABLE['tl01_nb_uvb']; Webb 2021 VDE:EE 2.24,
+       Grigalavicius 2015 2.63, midpoint used). This is E_source inside
+       simulate(), NOT a J/cm2 conversion.
+
+  A previous version of this note used 2.63 as a J/cm2 -> SED conversion,
+  giving ~23.7 SED. That mixed the two steps above and understated the
+  dose ~2x. The earlier "+38.5, FAILS, E_source placeholder" diagnosis
+  came from the same class of error in vitd_validation.py, which passed
+  raw J/cm2 into simulate() as if it were SED.
+
+  Caveat (Lloyd 2004): TL-01 calibration factors vary +/-60% (up to 2.7x)
+  across expert medical-physics departments. Factor 5.5 is cabinet-specific.

@@ -1,77 +1,33 @@
+# -----------------------------------------------------------------------------
+# Ignore policy
+# -----------------------------------------------------------------------------
+# Generated model outputs (figs/, tables/, audit_outputs/, reports/, RESULTS.md)
+# are DELIBERATELY TRACKED. They are the reviewable record of what the model
+# produced at each commit, which matters more here than a clean `git status`
+# after a run. Regenerate with `python3 run_all.py`.
+#
+# Only genuinely machine-local or bulk-derived files belong below.
+# -----------------------------------------------------------------------------
+
+# Python
 __pycache__/
 *.pyc
-ANTIGRAVITY.md
-Papers_and_Datasets/prompt_B_filled.md
-.venv/
-__pycache__/
-*.pyc
-.pytest_cache/
 *.egg-info/
 dist/
 build/
-.superpowers/sdd/
-docs
-
-# Generated audit extraction artifacts. Keep PDFs and summarized audit outputs,
-# but do not commit full-text paper extracts.
-audit_outputs/extracted_text/
-HANDOFF.md
-audit_new_paper_snippets.py
-audit_pdf_inventory.py
-nhanes_preprocessing.py
-SCIENTIFIC_AUDIT_HANDOFF.md
-extracted_texts
-MEETING_ROADMAP.md
-.superpowers/sdd/progress.md
-docs/superpowers/plans/2026-07-09-model-recalibration.md
 .pytest_cache/
-figs/*.png
-tables/*.csv
-docs/MEETING_WALKTHROUGH.md
-audit_prompts/final_merge_agent.md
-audit_prompts/orchestrator_A_uv_equations.md
-audit_prompts/orchestrator_B_skin_biology.md
-audit_prompts/orchestrator_C_kinetics_halflife.md
-audit_prompts/orchestrator_D_population_nhanes.md
-audit_prompts/orchestrator_E_stratum_corneum.md
-audit_prompts/orchestrator_F_summary_factcheck.md
-audit_prompts/README.md
-audit_prompts/SUB_AGENT_HYPER_PROMPT.md
-docs/superpowers/plans/2026-07-26-raw-data-implementation.md
-audit_outputs/C4_bogh2012_audit.md
-audit_outputs/MASTER_DISCREPANCY_REPORT.md
-audit_outputs/REMEDIATION_WALKTHROUGH.md
-audit_outputs/section_A_uv_equations.md
-audit_outputs/section_B_skin_biology.md
-audit_outputs/section_C_kinetics.md
-audit_outputs/section_D_population.md
-audit_outputs/section_E_stratum_corneum.md
-audit_outputs/section_F_summaries.md
-audit_outputs/sub_agent_f4_report.md
-audit_outputs/subagent_C1_datta2017_audit.md
-audit_outputs/subagent_C2_carpenter_audit.md
-audit_outputs/subagent_C3_nbuvb_course_audit.md
-audit_outputs/subagent_c5_vahavihu2010_audit.md
-audit_outputs/subagent_C6_osmancevic2009_audit.md
-audit_outputs/subagent_c7_le2016_audit.md
-audit_outputs/task_A.md
-audit_outputs/task_B.md
-audit_outputs/task_C.md
-audit_outputs/task_D.md
-audit_outputs/task_E.md
-audit_outputs/task_F.md
-audit_prompts/remediation_orchestrator_prompt.md
-assumption register.md
-knownissues.md
-extractyoung2020.pi.md
-calibrationapproval.yaml
-agentstate.yaml
-testdoseconversion.pi
-source request.md
-audit_extraction_summary.md
-TestValidationSuiteIntegrity.py
-ValidateNameSeasonalInvalid.py
-CalibrationOnProposal.md
-ValidationReport.md
-Bogh2012_DEBUG_PROJECTOR
-Young2020Check.csv
+
+# Virtualenvs
+.venv/
+venv/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+
+# Bulk PDF full-text extracts: large, regenerable, and derived from the
+# tracked PDFs in Papers_and_Datasets/. Summarized snippets under
+# audit_outputs/ ARE tracked.
+audit_outputs/extracted_text/
+extracted_texts/
