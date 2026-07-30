@@ -104,7 +104,7 @@ class TestMelaninMonotonicity:
 class TestBoghDoseUnits:
 
     def test_session_doses_in_sed_reproduce_reported_cumulative(self):
-        from vitd_protocols.bogh2012 import (
+        from vitd_protocols import (
             bogh2012_session_doses_sed,
             BOGH2012_REPORTED_CUMULATIVE_J_PER_CM2,
             TL01_J_PER_CM2_TO_ERYTHEMAL_SED,
@@ -116,7 +116,7 @@ class TestBoghDoseUnits:
 
     def test_sed_doses_exceed_raw_j_per_cm2(self):
         """Guards the exact bug: SED must not equal the J/cm2 number."""
-        from vitd_protocols.bogh2012 import (bogh2012_session_doses,
+        from vitd_protocols import (bogh2012_session_doses,
                                              bogh2012_session_doses_sed)
         raw = bogh2012_session_doses(n_sessions=18)
         sed = bogh2012_session_doses_sed(n_sessions=18)
@@ -125,7 +125,7 @@ class TestBoghDoseUnits:
         )
 
     def test_doses_escalate_then_plateau(self):
-        from vitd_protocols.bogh2012 import bogh2012_session_doses_sed
+        from vitd_protocols import bogh2012_session_doses_sed
         sed = bogh2012_session_doses_sed(n_sessions=18)
         assert sed == sorted(sed), "escalating protocol must be non-decreasing"
         assert sed[-1] > sed[0]

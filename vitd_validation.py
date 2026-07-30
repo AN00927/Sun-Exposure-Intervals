@@ -174,7 +174,7 @@ from vitd_model import (ModelParams, synthesis_per_session, simulate,
                          auc_above_baseline_per_SED,
                          auc_above_sufficiency_per_SED,
                          steady_state_D, get_E_source)
-from vitd_protocols.bogh2012 import bogh2012_session_doses_sed
+from vitd_protocols import bogh2012_session_doses_sed
 
 
 # ---------------------------------------------------------------------------
@@ -613,7 +613,8 @@ def validate_sc_deBoer2025(verbose=True):
 
     Calibrated with de Boer 2025 Supplementary Table S1.
     [C7-SC-FITTED] alpha_SC=0.12, SC_max_by_FST: I-III=0.23, IV-VI=0.36.
-    Warning-only because k_damage=0 (SC dip at week 5 not modeled).
+    Warning-only because k_damage=0. The week-5 dip is representable (SC is
+    two-process) but unidentifiable from three group medians.
 
     Target SC at week 9: FP I-III proxy (FST III, SC_max=0.23) should be
       in [0.12, 0.23] (reaches ~90% of SC_max within 9 weeks).
@@ -640,9 +641,19 @@ def validate_sc_deBoer2025(verbose=True):
     passed = all([SC_III_increased, SC_V_increased,
                   SC_III_range_ok, SC_V_range_ok, SC_V_ge_III])
 
+    # Shape check against the actual visit structure. Table S1 measures at
+    # T0 = 0, T1 = 5 weeks (day 35), T2 = 9 weeks (day 63), and reports SC
+    # thickness 5.8 -> 4.3 -> 7.5 um for all FPs: a ~26% dip BELOW baseline
+    # before overshooting. The model cannot reproduce that with k_damage = 0,
+    # which is deliberate -- the parameter is not identifiable from three group
+    # medians (scripts/fit_sc_deboer2025.py). Reported, not asserted.
+    sc_t1 = float(np.interp(35.0, r3["t"], r3["SC"]))
+    sc_t2 = float(np.interp(63.0, r3["t"], r3["SC"]))
+    obs_t1_rel, obs_t2_rel = 4.3 / 5.8 - 1.0, 7.5 / 5.8 - 1.0
+
     if verbose:
         print(f"[SC Check] de Boer 2025 SC validation (warning-only)")
-        print(f"  Protocol: 0.8 SED 3x/week x 9 weeks")
+        print(f"  Protocol: 0.8 SED 3x/week x 9 weeks (T1 = 35 d, T2 = 63 d)")
         print(f"  FST III (FP I-III proxy, SC_max=0.23): SC={SC_III:.4f} "
               f"(increased: {'YES' if SC_III_increased else 'NO'}, "
               f"range [0.08,0.23]: {'OK' if SC_III_range_ok else 'OUT'})")
@@ -650,6 +661,12 @@ def validate_sc_deBoer2025(verbose=True):
               f"(increased: {'YES' if SC_V_increased else 'NO'}, "
               f"range [0.14,0.36]: {'OK' if SC_V_range_ok else 'OUT'})")
         print(f"  SC_V >= SC_III * 0.8: {'YES' if SC_V_ge_III else 'NO'}")
+        print(f"  SHAPE (reported, not asserted): model T1={sc_t1:+.3f} "
+              f"T2={sc_t2:+.3f} vs observed {obs_t1_rel:+.3f} / {obs_t2_rel:+.3f}")
+        print(f"    Observed SC dips ~26% BELOW baseline at week 5. Model cannot")
+        print(f"    reproduce that at k_damage=0.0, which is deliberate: the")
+        print(f"    parameter is unidentifiable from 3 group medians. See")
+        print(f"    scripts/fit_sc_deboer2025.py and OPEN_QUESTIONS gap 27.")
         print(f"  {'PASS' if passed else 'FAIL'} (warning-only)")
     return passed
 
@@ -1036,7 +1053,7 @@ def validate_kift_2013_south_asian(verbose=True):
 # 3. Run |python3 vitd_validation.py| to confirm registration.
 #
 # 4. If the check introduces a new literature source, add a paper
-#    summary card in PAPER_SUMMARIES.md / OPEN_QUESTIONS.md (outside this file)
+#    summary card in MODEL_AND_EVIDENCE.md (outside this file)
 #    and cross-reference the audit-change tag in the docstring.
 #
 # See existing checks for examples.

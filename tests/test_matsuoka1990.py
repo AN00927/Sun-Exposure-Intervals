@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 from vitd_model import ModelParams
-from vitd_calibration.matsuoka1990_check import (
+from vitd_calibration import (
     derive_K_ATTEN, run,
     UNTANNED_RISE, TANNED_RISE, NAIVE_ATTENUATION,
     UNTANNED_25OHD, TANNED_25OHD,

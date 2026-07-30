@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 from vitd_model import (ModelParams, simulate, build_pulse_schedule,
-                        synthesis_per_session)
+                        build_weekly_schedule, synthesis_per_session)
 from vitd_physiology import (body_weight_dilution_factor,
                              photodegradation_factor,
                              hydroxylation_efficiency,
@@ -213,3 +213,87 @@ class TestBackwardCompatibility:
         r = simulate(fst=5, schedule=build_pulse_schedule(84, 1.0, 1),
                      duration_days=84, params=ModelParams(), D0=25.0)
         assert r["D"][-1] == pytest.approx(63.75, abs=0.5)
+
+
+class TestTwoProcessSC:
+    """de Boer 2025 Supp Table S1: SC falls ~26% BELOW baseline at week 5
+    (5.8 -> 4.3 -> 7.5 um) before overshooting at week 9.
+
+    The old single multiplicative form (`SC *= exp(-k_damage*sed)`) could only
+    shrink SC toward zero, so no k_damage could ever reproduce that. These tests
+    lock in the corrected structure -- and lock in that k_damage stays 0.0,
+    because fixing the structure did NOT make the parameter identifiable.
+    """
+
+    def test_k_damage_still_zero_by_default(self):
+        """Structure was fixed; the parameter is still unidentifiable from
+        three group medians. See scripts/fit_sc_deboer2025.py."""
+        assert ModelParams().k_damage == 0.0
+
+    def test_default_SC_trajectory_unchanged(self):
+        """Backward compatibility: at k_damage=0 the two-process form must
+        reproduce the old single-process numbers exactly."""
+        p = ModelParams()
+        r = simulate(fst=3, schedule=build_weekly_schedule(63, 0.8, [0, 2, 4]),
+                     duration_days=63, params=p, D0=25.0)
+        assert r["SC"][-1] == pytest.approx(0.1360, abs=1e-3)
+
+    def test_SC_can_go_below_baseline(self):
+        """The capability the old parameterisation lacked entirely."""
+        p = ModelParams()
+        p.k_damage = 0.10
+        r = simulate(fst=3, schedule=build_weekly_schedule(63, 0.8, [0, 2, 4]),
+                     duration_days=63, params=p, D0=25.0)
+        assert r["SC"].min() < 0.0
+
+    def test_old_form_could_not_go_below_zero(self):
+        """Guards the diagnosis: a multiplicative damage term is sign-preserving,
+        so it can only ever shrink a non-negative SC toward zero."""
+        sc = 0.2
+        for _ in range(200):
+            sc = sc * np.exp(-0.5 * 0.8)
+        assert sc > 0.0
+
+    def test_components_exposed_and_consistent(self):
+        p = ModelParams()
+        p.k_damage = 0.05
+        r = simulate(fst=3, schedule=build_weekly_schedule(63, 0.8, [0, 2, 4]),
+                     duration_days=63, params=p, D0=25.0)
+        assert r["SC"][-1] == pytest.approx(
+            r["SC_build_final"] - r["SC_damage_final"], abs=1e-9)
+
+    def test_more_damage_lowers_net_SC(self):
+        finals = []
+        for kd in (0.0, 0.05, 0.10, 0.20):
+            p = ModelParams()
+            p.k_damage = kd
+            r = simulate(fst=3, schedule=build_weekly_schedule(63, 0.8, [0, 2, 4]),
+                         duration_days=63, params=p, D0=25.0)
+            finals.append(r["SC"][-1])
+        assert finals == sorted(finals, reverse=True)
+
+    def test_damage_repairs_when_dosing_stops(self):
+        """Acute damage must clear on a days timescale once UV stops."""
+        p = ModelParams()
+        p.k_damage = 0.10
+        sched = build_weekly_schedule(21, 0.8, [0, 2, 4])
+        r = simulate(fst=3, schedule=sched, duration_days=120, params=p, D0=25.0)
+        assert r["SC_damage_final"] < 1e-3
+
+    def test_fit_script_reports_structural_failure(self):
+        """The fit is expected to FAIL. If it ever starts passing, either the
+        model gained a mechanism or someone widened the tolerance -- both need
+        a human look."""
+        from scripts.fit_sc_deboer2025 import run as fit_run
+        out = fit_run(verbose=False)
+        assert out["any_acceptable"] is False
+        for f in out["fits"].values():
+            assert f["relative_rmse"] > 0.5
+
+    def test_fractional_med_insult_falls(self):
+        """Constant 0.8 SED against a rising MED means the relative insult
+        declines ~23-36% over the study."""
+        from scripts.fit_sc_deboer2025 import fractional_med_trend
+        fr = fractional_med_trend(verbose=False)
+        for stratum, (f0, f1, f2) in fr.items():
+            assert f2 < f0, stratum

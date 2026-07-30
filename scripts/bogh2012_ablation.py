@@ -1,8 +1,13 @@
 """
 Bogh 2012 Ablation Study — Phase 3 Debug Run
 
-Runs 21 ablation configurations (A00–A20) against the Bogh 2012 NB-UVB protocol
-to isolate which model factors contribute to the ~17 nmol/L prediction gap.
+Runs 21 ablation configurations (A00-A20) against the Bogh 2012 NB-UVB protocol.
+Originally used to isolate which model factors contributed to a prediction gap;
+that gap was a dose-unit error (absolute J/cm2 passed as erythemal SED, and 35%
+BSA used for a whole-body protocol), not a physiological one. Once units and
+BSA are corrected, the default SOURCE_CALIBRATION_TABLE value (tl01_nb_uvb=2.44)
+gives error 0.2 nmol/L with no search. Retained as a sensitivity tool; per-config
+error figures from historical runs are not reproducible and should not be cited.
 
 STATUS: PROVISIONAL — requires human review before calibration.
 """
@@ -20,11 +25,11 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from vitd_model import ModelParams, simulate, build_pulse_schedule
-from vitd_protocols.bogh2012 import bogh2012_session_doses
+from vitd_protocols import bogh2012_session_doses
 from vitd_dose_conversion import convert_bogh_dose_to_effective_units
 
 
-GIT_HASH = "be4fe9c"
+GIT_HASH = "620e428"
 MODEL_VERSION = "debug_rev1"
 STUDY_ID = "Bogh2012"
 BASELINE_D = 19.2

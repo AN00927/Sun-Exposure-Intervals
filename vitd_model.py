@@ -61,9 +61,34 @@ Parameter & Source Sourcing
 - UV_halfmax_by_FST = {I-III: 2.0, IV: 5.0, V: 8.0, VI: 10.0}:
     Hill saturation constant for melanin induction kinetics (Ravnbak 2008 Table IV post-adaptation multi-exposure MMD, PMID: 18480919).
 - Stratum Corneum (SC) Thickening:
-    [C8] SC(t) IS modeled as an active state variable. Documents or comments
-    saying 'SC not modeled' are incorrect and have been corrected.
-    Decay k_decay_SC (28-day half-life), rise alpha_SC = 0.005.
+    SC(t) is an active state variable, implemented as TWO processes whose
+    difference is the net state:
+        SC = SC_build - SC_damage
+    SC_build  : slow hyperplasia toward SC_max, regressing at epidermal
+                turnover rate (k_decay_SC, ~28 d half-life)
+    SC_damage : fast UV-driven barrier disruption, additive per SED
+                (k_damage), repairing on a days timescale (k_repair_SC)
+    The difference may be NEGATIVE. de Boer 2025 Supp Table S1 shows SC
+    thickness 5.8 -> 4.3 -> 7.5 um at T0 / 5 wk / 9 wk: it falls ~26% BELOW
+    baseline before overshooting. The previous single multiplicative form
+    (`SC *= exp(-k_damage*sed)`) could only shrink SC toward zero, so no
+    k_damage could reproduce that. k_damage was pinned at 0.0 for this
+    structural reason, which earlier docs misdiagnosed as missing data.
+
+    k_damage REMAINS 0.0 by default. Fixing the structure did not make the
+    parameter identifiable: with two informative timepoints and no error bars,
+    the best achievable fit still misses by 71-75% of signal amplitude
+    (`scripts/fit_sc_deboer2025.py`). The data need an ACCELERATING response
+    under constant dosing, which no saturating or cascade process produces.
+    Do not fit k_damage until individual-level trajectories are available.
+
+    [PREMISE WARNING] K_SC attenuates synthesis as exp(-K_SC * SC), i.e. as
+    added optical path length through a thicker barrier. de Boer attribute the
+    SC change to EDEMA, not acanthosis, and in the same table epidermal
+    thickness is flat (108.6 -> 109.4 um, p = 0.718). Fluid is not extra
+    corneocyte layers. Treat SC as an EMPIRICAL photoadaptation channel, not a
+    validated optical mechanism -- and note K_ATTEN ~ K_SC is jointly
+    unidentifiable anyway (vitd_sensitivity.py). See OPEN_QUESTIONS gap 28.
     [C7-SC] SC_max = 0.30 is a PRIOR, not a calibrated constant. De Boer 2025
     (P2) supports an SC thickening range of +23% (FP I-III) to +36% (FP IV-VI);
     evidence-based prior is 0.20-0.40. Do NOT tighten alpha_SC, k_decay_SC, or
@@ -88,7 +113,7 @@ Parameter & Source Sourcing
     the 51% tanning attenuation figure is from J Lab Clin Med 1990 (PMID 2165512),
     whose ABSTRACT is in Papers_and_Datasets/ and contains the full group-mean data.
     That 51% is confounded by a baseline 25(OH)D difference; see
-    vitd_calibration/matsuoka1990_check.py for the deconvolution.
+    vitd_calibration.py for the deconvolution.
     Neville 2020 explicitly states the field still lacks this data. No independent replication exists.
 - M_baseline_by_FST:
     [C7] Anchored to ITA_Unexposed means from trial CSVs (ArimedB trial data,
@@ -348,7 +373,19 @@ class ModelParams:
         4: 0.36, 5: 0.36, 6: 0.36,
     })
     K_SC: float = 1.0
+    # UV-driven acute barrier disruption, per SED. Now ADDITIVE (subtracted from
+    # the hyperplasia term) so net SC can fall BELOW baseline, which de Boer 2025
+    # Supp Table S1 shows it does: SC thickness 5.8 -> 4.3 -> 7.5 um at
+    # T0 / 5 wk / 9 wk. The old multiplicative form could only shrink SC toward
+    # zero, so no value of k_damage could fit the dip -- it was pinned at 0.0 for
+    # a structural reason that was misdiagnosed as missing data.
     k_damage: float = 0.0
+    # Repair rate of acute damage, 1/day. Barrier recovery after UV is a
+    # days-scale process, much faster than the ~28 d epidermal turnover that
+    # governs regression of hyperplasia. 7-day half-life.
+    # [PRIOR] Not separately measured by de Boer; set so the T1 dip recovers by
+    # T2 under continued dosing.
+    k_repair_SC: float = np.log(2) / 7.0
     # [C7-SC-FITTED] Evidence-based ranges for SC parameters.
     # SC_max: de Boer 2025 (P2) reports +23% (FP I-III) and +36% (FP IV-VI).
     #   Default 0.30 is the midpoint; use SC_max_by_FST for per-FST values.
@@ -362,11 +399,16 @@ class ModelParams:
     # K_SC: Attenuation strength. Pearse 1987 did not measure vitamin D
     #   attenuation directly. K_SC=1.0 gives exp(-0.30)=74% at SC_max.
     #   Range 0.5-2.0 reflects uncertainty.
-    # k_damage: de Boer 2025 shows SC dip at week 5 (~4.3 um, -35% from
-    #   baseline 6.6 um in FP IV-VI). Single k_damage cannot fit both dip
-    #   and recovery — likely requires time-varying or UV-penetration-dependent
-    #   formulation. Default 0.0 preserves monotonic SC; dip is a known
-    #   model limitation.
+    # k_damage: de Boer 2025 Supp Table S1 shows SC dipping BELOW baseline at
+    #   week 5 (5.8 -> 4.3 -> 7.5 um, all FPs) then overshooting at week 9.
+    #   The state is now two-process so a below-baseline dip is representable,
+    #   but the parameter is still NOT identifiable from three group medians:
+    #   best achievable fit misses by 71-75% of signal amplitude across every
+    #   phototype stratum, with alpha_SC pinned at its search bound. The data
+    #   demand an ACCELERATING response under constant dosing; saturating and
+    #   cascade forms both decelerate, and MED-coupling (the fractional-MED
+    #   insult does fall ~33% as MED rises 5.3 -> 7.9 SED) is ~87 d too slow.
+    #   Default 0.0. Run scripts/fit_sc_deboer2025.py before changing it.
     SC_PRIOR_RANGES = {
         "SC_max": (0.20, 0.40),
         "alpha_SC": (0.08, 0.20),
@@ -596,6 +638,7 @@ def simulate(fst: int,
              alpha_SC_override: float = None,
               K_SC_override: float = None,
               k_damage_override: float = None,
+              k_repair_SC_override: float = None,
               SC_max_override: float = None,
               M_max_override: float = None,
               exposed_bsa_override: float = None,
@@ -645,6 +688,12 @@ def simulate(fst: int,
     D3_pool = 0.0
     k_transit = (np.log(2.0) / params.transit_half_life_days
                  if getattr(params, 'use_transit_delay', False) else 0.0)
+    # Two-process SC: net SC = SC_build - SC_damage. SC0 seeds the build term so
+    # that a caller passing SC0 gets the old behaviour when k_damage = 0.
+    SC_build = SC0
+    SC_damage = 0.0
+    k_repair_eff = (params.k_repair_SC if k_repair_SC_override is None
+                    else k_repair_SC_override)
 
     schedule = sorted(schedule, key=lambda x: x[0])
     pulse_days = [p[0] for p in schedule]
@@ -693,7 +742,11 @@ def simulate(fst: int,
                     D3_pool -= transferred
                 D = D * np.exp(-params.k_decay_D(D) * delta_time)
                 M = M_base + (M - M_base) * np.exp(-beta_eff * delta_time)
-                SC = SC * np.exp(-beta_SC_eff * delta_time)
+                # Hyperplasia regresses at epidermal-turnover rate; acute damage
+                # repairs faster (barrier recovery is days, not weeks).
+                SC_build = SC_build * np.exp(-beta_SC_eff * delta_time)
+                SC_damage = SC_damage * np.exp(-k_repair_eff * delta_time)
+                SC = SC_build - SC_damage
                 current_t = ti
                 t_record.append(ti)
                 D_record.append(D)
@@ -729,8 +782,16 @@ def simulate(fst: int,
                 hill_factor = sed**2 / (sed**2 + UV_halfmax_p**2)
                 alpha_p = alpha_p + (params.alpha_max - alpha_p) * hill_factor
             M = M_ceil - (M_ceil - M) * np.exp(-alpha_p * sed)
-            SC = SC * np.exp(-k_damage_eff * sed)
-            SC = SC_max_eff - (SC_max_eff - SC) * np.exp(-alpha_SC_eff * sed)
+            # Two-process stratum corneum (de Boer 2025 Supp Table S1).
+            # SC_build : slow hyperplasia toward SC_max (saturating, as before)
+            # SC_damage: fast UV-driven barrier disruption, ADDITIVE and
+            #            subtracted, so net SC can go BELOW baseline.
+            # The old single multiplicative `SC *= exp(-k_damage*sed)` could only
+            # shrink SC toward 0 and so could never reproduce the observed dip;
+            # k_damage was pinned at 0.0 for that reason, not for lack of data.
+            SC_build = SC_max_eff - (SC_max_eff - SC_build) * np.exp(-alpha_SC_eff * sed)
+            SC_damage = SC_damage + k_damage_eff * sed
+            SC = SC_build - SC_damage
             
             # [C6-safety] Calculate rolling 7-day cumulative SED (including current pulse)
             rolling_7d_sed = sed + sum(
@@ -777,6 +838,8 @@ def simulate(fst: int,
         "safety_log": safety_log,            # [C6-safety] per-session qualitative flags
         "cancer_risk": risk,                 # schedule-level quantitative indices
         "D3_pool_final": D3_pool,            # un-hydroxylated D3 still in transit
+        "SC_build_final": SC_build,          # hyperplasia component
+        "SC_damage_final": SC_damage,        # acute barrier-disruption component
         "cumulative_SED": cumulative_SED,
         "fst": fst,
         "params": params,

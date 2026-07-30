@@ -129,7 +129,7 @@ def analysis_constant_sessions():
     sed_per_session_default = 1.0
     params = ModelParams()
 
-    # Placeholder annotation per AGENTS.md
+    # Placeholder annotation — see OPEN_WORK.md known issue #12
     E_source_note = "E_source=2.5 (NB-UVB 311 nm placeholder)"
     print(f"\n  {E_source_note}")
     print(f"  WARNING: E_source=2.5 is a placeholder. Per-study calibration")

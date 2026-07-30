@@ -31,7 +31,6 @@ def test_nhanes_invalid_test_exists():
 
 
 def test_young2020_check_exists():
-    """Verify the Young 2020 calibration check module exists."""
-    assert os.path.exists("vitd_calibration/young2020_check.py"), (
-        "Young 2020 calibration check not found"
-    )
+    """Verify the Young 2020 calibration check function is importable and runnable."""
+    from vitd_calibration import young2020_calibration_check
+    assert callable(young2020_calibration_check)
