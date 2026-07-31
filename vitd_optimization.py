@@ -15,7 +15,7 @@ import pandas as pd
 from typing import List, Tuple, Iterator, Optional
 from vitd_model import (
     simulate, build_pulse_schedule, steady_state_D,
-    auc_deficit, gross_synth_per_SED, net_final_D_change_per_SED,
+    auc_deficit, net_final_D_change_per_SED,
     ModelParams,
 )
 
@@ -103,7 +103,6 @@ def evaluate_schedule(
         "max_D": float(np.max(D)),
         "cumulative_SED": result["cumulative_SED"],
         "n_sessions": len(schedule),
-        "gross_synth_per_SED": gross_synth_per_SED(result),
         "net_final_D_change_per_SED": net_final_D_change_per_SED(result, D0),
         "max_pct_MED": max_frac * 100,
         "max_rolling_7d_SED": max_rolling_7d,
@@ -115,9 +114,9 @@ def evaluate_schedule(
 def analysis_constant_sessions():
     """Sweep session counts 1-52 over 365 days with fixed total SED, uniform spacing.
 
-    For each session count, evaluates max-D, AUC deficiency, gross synthesis
-    efficiency, and net D change per SED. Flags schedules with rolling 7d SED > 5
-    as requiring UV safety review.
+    For each session count, evaluates max-D, AUC deficiency, and net D change
+    per SED. Flags schedules with rolling 7d SED > 5 as requiring UV safety
+    review.
     """
     print("\n" + "=" * 70)
     print("ANALYSIS L: constant-sessions optimization sweep")
@@ -167,20 +166,18 @@ def analysis_constant_sessions():
     print(f"    Interval:        {best['interval_days']:.1f} days")
     print(f"    Max D:           {best['max_D']:.1f} nmol/L")
     print(f"    AUC deficit @50: {best['auc_deficit_50']:.1f} nmol/L·days")
-    print(f"    Gross eff:       {best['gross_synth_per_SED']:.3f} nmol/L/SED")
     print(f"    Net ΔD/SED:      {best['net_final_D_change_per_SED']:.3f} nmol/L/SED")
 
     # Print table
     print(f"\n  {'N':>3s} {'SED/sesh':>9s} {'Interval':>9s} {'Max D':>7s} "
-          f"{'Deficit@50':>11s} {'GrossEff':>9s} {'NetΔD/SED':>10s} "
+          f"{'Deficit@50':>11s} {'NetΔD/SED':>10s} "
           f"{'Roll7d':>7s} {'Flag':>20s}")
-    print(f"  {'-'*3} {'-'*9} {'-'*9} {'-'*7} {'-'*11} {'-'*9} {'-'*10} "
+    print(f"  {'-'*3} {'-'*9} {'-'*9} {'-'*7} {'-'*11} {'-'*10} "
           f"{'-'*7} {'-'*20}")
     for _, row in df.iterrows():
         print(f"  {int(row['N_sessions']):3d} {row['sed_per_session']:>8.3f} "
               f"{row['interval_days']:>8.1f}  {row['max_D']:>6.1f}  "
               f"{row['auc_deficit_50']:>10.1f}  "
-              f"{row['gross_synth_per_SED']:>8.3f}  "
               f"{row['net_final_D_change_per_SED']:>9.3f}  "
               f"{row['max_rolling_7d_SED']:>6.1f}  "
               f"{row['uv_safety_flag']:>20s}")

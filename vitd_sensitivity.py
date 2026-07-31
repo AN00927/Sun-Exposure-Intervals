@@ -23,8 +23,7 @@ from __future__ import annotations
 import numpy as np
 
 from vitd_model import (ModelParams, simulate, build_pulse_schedule,
-                        steady_state_D, net_final_D_change_per_SED,
-                        gross_synth_per_SED)
+                        steady_state_D, net_final_D_change_per_SED)
 
 # Documented plausible ranges. Sources are in the vitd_model.py docstring and
 # ModelParams.SC_PRIOR_RANGES; ranges here are deliberately WIDE where the
@@ -55,7 +54,6 @@ def _outputs(result, D0: float = 25.0) -> dict:
         "steady_state_D": steady_state_D(result),
         "final_D": float(result["D"][-1]),
         "net_per_SED": net_final_D_change_per_SED(result, D0),
-        "gross_per_SED": gross_synth_per_SED(result),
     }
 
 

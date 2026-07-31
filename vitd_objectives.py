@@ -5,11 +5,12 @@ Decision problems people actually face, replacing "maximise nmol/L per SED".
 
 Why this module exists
 ----------------------
-The project's earlier headline metric (`gross_synth_per_SED`) has no interior
-optimum: it rises monotonically as dosing approaches zero, and its reported
-"optima" sit at schedules that END BELOW their starting 25(OH)D. It was also
-shown by ablation to be driven by the `(1 - D/D_max)` feedback term rather than
-by photoadaptation. See OPEN_QUESTIONS gap 19.
+The project's earlier headline metric -- the retired per-SED efficiency
+metric, removed from `vitd_model.py` on 2026-07-31 -- had no interior optimum:
+it rose monotonically as dosing approaches zero, and its reported "optima" sat
+at schedules that END BELOW their starting 25(OH)D. It was also shown by
+ablation to be driven by the `(1 - D/D_max)` feedback term rather than by
+photoadaptation. See OPEN_QUESTIONS gap 19.
 
 The objectives here are posed the way a person or clinician would pose them:
 
@@ -54,10 +55,10 @@ def optimal_spacing_fixed_sessions(fst: int,
                                    objective: str = "mean_D") -> dict:
     """Best spacing for a FIXED number of sessions over a fixed horizon.
 
-    This is the honest version of the interval question. Because the number of
-    sessions and the dose per session are both fixed, cumulative UV is
-    IDENTICAL across all candidate spacings -- so the comparison cannot be won
-    by simply dosing less. Any difference is real schedule structure.
+    Because the number of sessions and the dose per session are both fixed,
+    cumulative UV is IDENTICAL across all candidate spacings -- so the
+    comparison cannot be won by simply dosing less. Any difference is real
+    schedule structure.
 
     Parameters
     ----------

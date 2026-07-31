@@ -59,10 +59,9 @@ class TestPhotodegradation:
         assert all(a > b for a, b in zip(vals, vals[1:]))
 
     def test_absolute_yield_saturates(self):
-        """The point of the mechanism: total per-session yield must plateau."""
+        """Total per-session yield must plateau."""
         yields = [s * photodegradation_factor(s) for s in [1, 10, 100, 1000]]
         assert all(a < b for a, b in zip(yields, yields[1:])), "still monotone"
-        # but growth must decelerate hard -- 100x dose gives < 10x yield
         assert yields[-1] / yields[0] < 10.0
 
     def test_splitting_a_budget_beats_one_session(self):
@@ -176,7 +175,6 @@ class TestCancerRisk:
         r = cancer_risk([2.0] * 365, 5)
         expected = np.sqrt(r["scc_index"] * r["intermittent_index"])
         assert r["combined_index"] == pytest.approx(expected)
-        # and it must sit between the two, not be dominated by the larger
         lo, hi = sorted([r["scc_index"], r["intermittent_index"]])
         assert lo <= r["combined_index"] <= hi
 

@@ -121,7 +121,6 @@ def preprocess_nhanes_data(data_dir: str, output_dir: str):
         # 3. Extract and Harmonize Vitamin D (25(OH)D)
         # P27: use LC-MS/MS equivalent values.
         # Original RIA variable in 2001-2006 cycles is LBXVID (or LBDVIDUS in nmol/L).
-        # We need to look for the appropriate column and apply regression if 2001-2006.
         vitd_raw_col = None
         for col in ["LBDVIDUS", "LBDVIDMS", "LBXVIDMS", "LBXVID"]:
             if col in df_vitd.columns:

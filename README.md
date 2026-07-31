@@ -58,34 +58,58 @@ Structural points worth knowing before reading results:
 
 The per-SED efficiency optimum reported below is **a property of the feedback
 term, not of photoadaptation**, and it is not a usable clinical
-recommendation. Three findings from ablation:
+recommendation. Findings 1-3 come from ablation, 4-5 from the
+2026-07-31 metric and parameter sweeps:
 
 1. Setting `K_ATTEN = 0` (no melanin attenuation) changes the interval ranking
    by ~0.3%. Setting `K_ATTEN = 0` *and* `K_SC = 0` leaves the ranking intact.
    The ordering comes from `(1 - D/D_max)`: sparse dosing keeps mean D low, so
    each pulse meets less inhibition.
-2. `gross_synth_per_SED` therefore has **no interior optimum**. It increases
+2. `gross_synth_per_SED` (removed from the code on 2026-07-31) therefore has **no interior optimum**. It increases
    monotonically as dosing approaches zero (21 d → 1.027, 42 d → 1.049,
    60 d → 1.056 nmol/L per SED for FST V).
 3. At the reported optima, final D is *below* the starting baseline. FST V at
    1 SED every 21 d ends at 24.0 nmol/L from a 25.0 start — **a net loss** of
    vitamin D, scored as maximally "efficient."
 
-Using `net_final_D_change_per_SED` instead — already implemented in
-`vitd_model.py` — gives a genuine interior optimum at **~3 days** (+0.525
-nmol/L per SED for FST V). Monte Carlo over all documented prior ranges puts the
-optimum at **2-4 days in 86% of draws** (`vitd_sensitivity.py`), so that answer
-is robust to parameter uncertainty in a way the 21-37 day figure never was.
+`net_final_D_change_per_SED` does have an interior optimum at **~3 days**
+(+0.525 nmol/L per SED for FST V), and Monte Carlo over the documented prior
+ranges puts it at 2-4 days in 86% of draws (`vitd_sensitivity.py`). Earlier
+revisions of this file called that answer "robust to parameter uncertainty in a
+way the 21-37 day figure never was." **That framing was too generous, and two
+2026-07-31 results retire it.**
 
-Better still, don't optimise a per-SED ratio at all. `vitd_objectives.py` poses
-the same questions with cumulative UV **held fixed**, so no schedule can win by
-dosing less:
+4. `gross_synth_per_SED` (removed from the code on 2026-07-31) does not merely lack an interior optimum. It ranks
+   schedules in near-exact *opposition* to health outcomes: Spearman rho
+   **−0.999** against mean 25(OH)D and **−0.999** against time-integrated
+   deficiency below 50 nmol/L. Maximising it means minimising vitamin D.
+   Two further pairs are degenerate: `mean_D` ~ `auc_deficit_50` at rho
+   **+1.000**, and `auc_D_per_SED` (removed from the code on 2026-07-31) ~ `final_D` at rho **−1.000**
+   (`scripts/metric_redundancy.py`).
+5. `net_final_D_change_per_SED` is still a per-SED ratio, and inherits the same
+   defect in weaker form. Hold cumulative UV **exactly** fixed and the optimum
+   collapses to **1 day** for all 14 limiting parameters at every value in
+   their prior ranges, with a 200-draw Monte Carlo 90% interval of [1, 1] days
+   (`scripts/parameter_optima.py`). The 3-day figure is contingent on the
+   denominator, not a physiological finding.
+
+So don't optimise a per-SED ratio at all. Two families of question survive.
+
+Cumulative UV **held fixed**, so no schedule wins by dosing less
+(`vitd_objectives.py`):
 
 | Question | Function |
 |---|---|
 | "I can get outside N times in 12 weeks — when?" | `optimal_spacing_fixed_sessions` |
 | "Stay sufficient at least cancer risk" | `deficiency_vs_risk_frontier` |
 | "How many minutes of sun, for my skin type?" | `minutes_for_target` |
+
+Session count **minimised** subject to sufficiency and a burn cap
+(`scripts/skin_type_breakdown.py`, formalised in `PROBLEM_STATEMENT.md` §3.3).
+This is the only framing here that yields a defensible multi-day interval:
+adding a 120-minute session-length constraint puts every skin type at **3-4
+days**, and the binding constraint switches from erythema to available daylight
+at FST IV.
 
 ## Results, open questions, and evidence
 

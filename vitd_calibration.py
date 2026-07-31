@@ -199,10 +199,6 @@ def run(verbose: bool = True) -> dict:
 # ===========================================================================
 #
 # STATUS: CALIBRATION_CHECK_ONLY -- not independent validation.
-#
-# This check tests whether the model's FST II:VI synthesis ratio is
-# consistent with Young 2020 observations. If K_ATTEN was derived from
-# Young 2020, this is a calibration check, not independent validation.
 
 def young2020_calibration_check():
     """
@@ -211,7 +207,6 @@ def young2020_calibration_check():
     Young 2020 reports FST II:VI vitamin D slope ratios of approximately
     1.29-1.43 (Arimed B: 1.29, TL01: 1.43).
 
-    If the model's ratio falls within this range, it passes the calibration check.
     However, this is NOT independent validation if K_ATTEN was derived from Young 2020.
     """
     try:
@@ -261,8 +256,7 @@ def young2020_calibration_check():
     else:
         result_status = "CALIBRATION_CHECK_FAIL"
 
-    # Check provenance: parse the merged data_provenance.yaml and look up the
-    # Young2020 study's verification_status. (Previously this substring-matched
+    # (Previously this substring-matched
     # "verification_status: VERIFIED" against a hard-coded per-study YAML path;
     # merging the per-study files without this fix would have made the check
     # silently degrade to UNVERIFIED regardless of the actual status, since a

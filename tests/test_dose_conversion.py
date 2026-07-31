@@ -12,10 +12,8 @@ def test_effective_j_per_m2_to_sed():
 def test_physical_to_j_per_m2_conversion():
     """1 J/cm2 = 10000 J/m2. Uses flat action spectrum of weight 1.0 and normalized flat lamp spectrum."""
     from vitd_dose_conversion import physical_dose_to_effective_j_per_m2, normalize_spectrum
-    # Create a flat lamp spectrum (5nm steps, 280-320nm)
     wl = list(range(280, 321, 5))
     spectrum = pd.DataFrame({"wavelength_nm": wl, "weight": [1.0] * len(wl)})
-    # Flat action spectrum
     action = pd.DataFrame({"wavelength_nm": wl, "weight": [1.0] * len(wl)})
     result = physical_dose_to_effective_j_per_m2(1.0, spectrum, action)
     # With flat normalized spectrum and flat action=1.0, weighting sum = 1.0

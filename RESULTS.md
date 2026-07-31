@@ -84,10 +84,6 @@ VALIDATION SUITE
   PASS
 
 [New Check] Metric ordering and sanity assertions
-  Sparse schedule (10.5 SED every 21d):
-    gross_synth_per_SED:        0.2916
-    net_final_D_change_per_SED: 0.0911
-    Gross >= Net: YES
   Mild schedule (0.1 SED every 7d, D0=25.0):
     auc_above_sufficiency (threshold 50): 0.0000 (target: 0.0)
     AUC above sufficiency = 0: YES
@@ -166,27 +162,25 @@ Varies the photoadaptation rise rate (alpha) and checks whether the optimal inte
 ANALYSIS A: alpha sensitivity sweep
 ======================================================================
 
-Optimal interval by alpha (efficiency framing, fixed 1 SED/session):
+Optimal interval by alpha (steady-state 25(OH)D framing, fixed 1 SED/session):
 
 FST 5:
-  alpha=0.010:  optimal interval = 21d (gross_eff 1.03, net_eff -0.23, ss D 24.6)
-  alpha=0.025:  optimal interval = 21d (gross_eff 1.02, net_eff -0.23, ss D 24.6)
-  alpha=0.050:  optimal interval = 21d (gross_eff 1.02, net_eff -0.23, ss D 24.6)
-  alpha=0.100:  optimal interval = 21d (gross_eff 1.02, net_eff -0.23, ss D 24.6)
-  alpha=0.200:  optimal interval = 21d (gross_eff 1.01, net_eff -0.24, ss D 24.6)
-  alpha=0.400:  optimal interval = 21d (gross_eff 1.01, net_eff -0.25, ss D 24.6)
+  alpha=0.010:  optimal interval = 1d (ss D 59.8, net_eff 0.46)
+  alpha=0.025:  optimal interval = 1d (ss D 59.4, net_eff 0.45)
+  alpha=0.050:  optimal interval = 1d (ss D 59.0, net_eff 0.45)
+  alpha=0.100:  optimal interval = 1d (ss D 58.6, net_eff 0.44)
+  alpha=0.200:  optimal interval = 1d (ss D 58.4, net_eff 0.44)
+  alpha=0.400:  optimal interval = 1d (ss D 58.3, net_eff 0.44)
 
 FST 6:
-  alpha=0.010:  optimal interval = 21d (gross_eff 0.95, net_eff -0.29, ss D 24.4)
-  alpha=0.025:  optimal interval = 21d (gross_eff 0.95, net_eff -0.29, ss D 24.4)
-  alpha=0.050:  optimal interval = 21d (gross_eff 0.95, net_eff -0.29, ss D 24.4)
-  alpha=0.100:  optimal interval = 21d (gross_eff 0.95, net_eff -0.29, ss D 24.4)
-  alpha=0.200:  optimal interval = 21d (gross_eff 0.94, net_eff -0.30, ss D 24.4)
-  alpha=0.400:  optimal interval = 21d (gross_eff 0.94, net_eff -0.30, ss D 24.4)
+  alpha=0.010:  optimal interval = 1d (ss D 57.7, net_eff 0.43)
+  alpha=0.025:  optimal interval = 1d (ss D 57.3, net_eff 0.42)
+  alpha=0.050:  optimal interval = 1d (ss D 56.9, net_eff 0.42)
+  alpha=0.100:  optimal interval = 1d (ss D 56.6, net_eff 0.42)
+  alpha=0.200:  optimal interval = 1d (ss D 56.4, net_eff 0.41)
+  alpha=0.400:  optimal interval = 1d (ss D 56.3, net_eff 0.41)
 
 ```
-
-![alpha sweep, efficiency](figs/alpha_sweep_efficiency.png)
 
 ![alpha sweep, absolute D](figs/alpha_sweep_absolute_D.png)
 
@@ -200,21 +194,21 @@ Varies beta (tanning decay rate). Ravnbak et al. 2008 (PMID 18480919) measured U
 ANALYSIS E: beta sensitivity sweep (tanning decay rate)
 ======================================================================
 
-Optimal interval by beta half-life (efficiency framing, fixed 1 SED/session):
+Optimal interval by beta half-life (steady-state 25(OH)D framing, fixed 1 SED/session):
 
 FST 5:
-  t1/2= 21d:  opt-eff interval=21d (gross_eff 1.03, net_eff -0.23); opt-D interval=1d (D 60.2)
-  t1/2= 30d:  opt-eff interval=21d (gross_eff 1.03, net_eff -0.23); opt-D interval=1d (D 60.2)
-  t1/2= 56d:  opt-eff interval=21d (gross_eff 1.03, net_eff -0.23); opt-D interval=1d (D 60.2)
-  t1/2= 80d:  opt-eff interval=21d (gross_eff 1.03, net_eff -0.23); opt-D interval=1d (D 60.2)
-  t1/2=120d:  opt-eff interval=21d (gross_eff 1.03, net_eff -0.23); opt-D interval=1d (D 60.2)
+  t1/2= 21d:  opt interval=1d (D 60.2, net_eff 0.46)
+  t1/2= 30d:  opt interval=1d (D 60.2, net_eff 0.46)
+  t1/2= 56d:  opt interval=1d (D 60.2, net_eff 0.46)
+  t1/2= 80d:  opt interval=1d (D 60.2, net_eff 0.46)
+  t1/2=120d:  opt interval=1d (D 60.2, net_eff 0.46)
 
 FST 6:
-  t1/2= 21d:  opt-eff interval=21d (gross_eff 0.96, net_eff -0.29); opt-D interval=1d (D 58.1)
-  t1/2= 30d:  opt-eff interval=21d (gross_eff 0.96, net_eff -0.29); opt-D interval=1d (D 58.1)
-  t1/2= 56d:  opt-eff interval=21d (gross_eff 0.96, net_eff -0.29); opt-D interval=1d (D 58.1)
-  t1/2= 80d:  opt-eff interval=21d (gross_eff 0.96, net_eff -0.29); opt-D interval=1d (D 58.1)
-  t1/2=120d:  opt-eff interval=21d (gross_eff 0.96, net_eff -0.29); opt-D interval=1d (D 58.1)
+  t1/2= 21d:  opt interval=1d (D 58.1, net_eff 0.44)
+  t1/2= 30d:  opt interval=1d (D 58.1, net_eff 0.44)
+  t1/2= 56d:  opt interval=1d (D 58.1, net_eff 0.43)
+  t1/2= 80d:  opt interval=1d (D 58.1, net_eff 0.43)
+  t1/2=120d:  opt interval=1d (D 58.1, net_eff 0.43)
 
 ```
 
@@ -230,23 +224,23 @@ Varies the melanin attenuation coefficient (K_ATTEN). The default value is now 0
 ANALYSIS B: K_ATTEN sensitivity sweep
 ======================================================================
 
-Optimal interval by K_ATTEN (efficiency framing):
+Optimal interval by K_ATTEN (steady-state 25(OH)D framing):
 
 FST 5:
-  K=0.2:  opt-eff interval=21d (gross_eff 1.03, net_eff -0.23); opt-D interval=1d (D 60.3)
-  K=0.5:  opt-eff interval=21d (gross_eff 1.03, net_eff -0.23); opt-D interval=1d (D 60.1)
-  K=1.0:  opt-eff interval=21d (gross_eff 1.03, net_eff -0.23); opt-D interval=1d (D 60.0)
-  K=2.0:  opt-eff interval=21d (gross_eff 1.03, net_eff -0.23); opt-D interval=1d (D 59.6)
-  K=4.0:  opt-eff interval=21d (gross_eff 1.02, net_eff -0.23); opt-D interval=1d (D 58.9)
-  K=8.0:  opt-eff interval=21d (gross_eff 1.02, net_eff -0.23); opt-D interval=1d (D 57.5)
+  K=0.2:  opt interval=1d (D 60.3, net_eff 0.46)
+  K=0.5:  opt interval=1d (D 60.1, net_eff 0.46)
+  K=1.0:  opt interval=1d (D 60.0, net_eff 0.46)
+  K=2.0:  opt interval=1d (D 59.6, net_eff 0.45)
+  K=4.0:  opt interval=1d (D 58.9, net_eff 0.44)
+  K=8.0:  opt interval=1d (D 57.5, net_eff 0.42)
 
 FST 6:
-  K=0.2:  opt-eff interval=21d (gross_eff 0.96, net_eff -0.29); opt-D interval=1d (D 58.1)
-  K=0.5:  opt-eff interval=21d (gross_eff 0.96, net_eff -0.29); opt-D interval=1d (D 58.0)
-  K=1.0:  opt-eff interval=21d (gross_eff 0.95, net_eff -0.29); opt-D interval=1d (D 57.9)
-  K=2.0:  opt-eff interval=21d (gross_eff 0.95, net_eff -0.29); opt-D interval=1d (D 57.5)
-  K=4.0:  opt-eff interval=21d (gross_eff 0.95, net_eff -0.29); opt-D interval=1d (D 56.9)
-  K=8.0:  opt-eff interval=21d (gross_eff 0.95, net_eff -0.29); opt-D interval=1d (D 55.6)
+  K=0.2:  opt interval=1d (D 58.1, net_eff 0.44)
+  K=0.5:  opt interval=1d (D 58.0, net_eff 0.43)
+  K=1.0:  opt interval=1d (D 57.9, net_eff 0.43)
+  K=2.0:  opt interval=1d (D 57.5, net_eff 0.43)
+  K=4.0:  opt interval=1d (D 56.9, net_eff 0.42)
+  K=8.0:  opt interval=1d (D 55.6, net_eff 0.40)
 
 ```
 
@@ -266,42 +260,42 @@ ANALYSIS C: two-framing schedule comparison
 ======================================================================
 
 Framing 1 (matched cumulative SED = 42):
- FST  interval_days  sed_per_session  n_sessions  cumulative_SED  steady_state_D  final_D  final_M  gross_synth_per_SED  net_final_D_change_per_SED  auc_D_per_SED  auc_above_baseline_per_SED  auc_above_sufficiency_per_SED
-   5              1             0.50          84           42.00           47.72    50.35     0.79                 0.88                        0.60          80.19                       30.19                           0.02
-   5              2             1.00          42           42.00           44.63    46.79     0.79                 0.77                        0.52          76.15                       26.15                           0.00
-   5              3             1.50          28           42.00           42.41    44.18     0.79                 0.69                        0.46          73.28                       23.28                           0.00
-   5              5             2.47          17           42.00           39.29    40.70     0.80                 0.58                        0.37          69.28                       19.28                           0.00
-   5              7             3.50          12           42.00           37.30    38.08     0.80                 0.51                        0.31          66.84                       16.84                           0.00
-   5             10             4.67           9           42.00           34.92    36.31     0.81                 0.45                        0.27          63.87                       13.87                           0.00
-   5             14             7.00           6           42.00           33.43    33.27     0.82                 0.37                        0.20          62.13                       12.13                           0.00
-   5             21            10.50           4           42.00           31.34    30.84     0.83                 0.30                        0.14          59.92                        9.92                           0.00
-   6              1             0.50          84           42.00           46.15    48.64     1.01                 0.82                        0.56          78.03                       28.03                           0.00
-   6              2             1.00          42           42.00           43.21    45.24     1.01                 0.72                        0.48          74.22                       24.22                           0.00
-   6              3             1.50          28           42.00           41.10    42.77     1.01                 0.65                        0.42          71.51                       21.51                           0.00
-   6              5             2.47          17           42.00           38.16    39.47     1.01                 0.55                        0.34          67.74                       17.74                           0.00
-   6              7             3.50          12           42.00           36.29    36.99     1.02                 0.48                        0.29          65.45                       15.45                           0.00
-   6             10             4.67           9           42.00           34.05    35.33     1.02                 0.42                        0.25          62.66                       12.66                           0.00
-   6             14             7.00           6           42.00           32.65    32.47     1.03                 0.35                        0.18          61.03                       11.03                           0.00
-   6             21            10.50           4           42.00           30.68    30.18     1.05                 0.28                        0.12          58.95                        8.95                           0.00
+ FST  interval_days  sed_per_session  n_sessions  cumulative_SED  steady_state_D  final_D  final_M  net_final_D_change_per_SED  auc_above_baseline_per_SED  auc_above_sufficiency_per_SED
+   5              1             0.50          84           42.00           47.72    50.35     0.79                        0.60                       30.19                           0.02
+   5              2             1.00          42           42.00           44.63    46.79     0.79                        0.52                       26.15                           0.00
+   5              3             1.50          28           42.00           42.41    44.18     0.79                        0.46                       23.28                           0.00
+   5              5             2.47          17           42.00           39.29    40.70     0.80                        0.37                       19.28                           0.00
+   5              7             3.50          12           42.00           37.30    38.08     0.80                        0.31                       16.84                           0.00
+   5             10             4.67           9           42.00           34.92    36.31     0.81                        0.27                       13.87                           0.00
+   5             14             7.00           6           42.00           33.43    33.27     0.82                        0.20                       12.13                           0.00
+   5             21            10.50           4           42.00           31.34    30.84     0.83                        0.14                        9.92                           0.00
+   6              1             0.50          84           42.00           46.15    48.64     1.01                        0.56                       28.03                           0.00
+   6              2             1.00          42           42.00           43.21    45.24     1.01                        0.48                       24.22                           0.00
+   6              3             1.50          28           42.00           41.10    42.77     1.01                        0.42                       21.51                           0.00
+   6              5             2.47          17           42.00           38.16    39.47     1.01                        0.34                       17.74                           0.00
+   6              7             3.50          12           42.00           36.29    36.99     1.02                        0.29                       15.45                           0.00
+   6             10             4.67           9           42.00           34.05    35.33     1.02                        0.25                       12.66                           0.00
+   6             14             7.00           6           42.00           32.65    32.47     1.03                        0.18                       11.03                           0.00
+   6             21            10.50           4           42.00           30.68    30.18     1.05                        0.12                        8.95                           0.00
 
 Framing 2 (matched 1 SED per session):
- FST  interval_days  sed_per_session  n_sessions  cumulative_SED  steady_state_D  final_D  final_M  gross_synth_per_SED  net_final_D_change_per_SED  auc_D_per_SED  auc_above_baseline_per_SED  auc_above_sufficiency_per_SED
-   5              1             1.00          84           84.00           60.19    63.75     0.80                 0.66                        0.46          48.79                       23.79                           3.97
-   5              2             1.00          42           42.00           44.63    46.79     0.79                 0.77                        0.52          76.15                       26.15                           0.00
-   5              3             1.00          28           28.00           38.32    39.71     0.79                 0.83                        0.53         101.56                       26.56                           0.00
-   5              5             1.00          17           17.00           32.60    33.36     0.78                 0.90                        0.49         148.66                       25.13                           0.00
-   5              7             1.00          12           12.00           29.85    30.06     0.78                 0.94                        0.42         198.16                       23.16                           0.00
-   5             10             1.00           9            9.00           27.66    28.06     0.78                 0.97                        0.34         251.14                       17.81                           0.00
-   5             14             1.00           6            6.00           26.09    25.69     0.78                 1.00                        0.12         362.63                       12.63                           0.00
-   5             21             1.00           4            4.00           24.64    24.09     0.78                 1.03                       -0.23         525.79                        4.28                           0.00
-   6              1             1.00          84           84.00           58.07    61.52     1.02                 0.62                        0.43          47.28                       22.28                           2.98
-   6              2             1.00          42           42.00           43.21    45.24     1.01                 0.72                        0.48          74.22                       24.22                           0.00
-   6              3             1.00          28           28.00           37.24    38.53     1.01                 0.78                        0.48          99.39                       24.39                           0.00
-   6              5             1.00          17           17.00           31.86    32.54     1.00                 0.84                        0.44         146.23                       22.70                           0.00
-   6              7             1.00          12           12.00           29.28    29.44     1.00                 0.88                        0.37         195.53                       20.53                           0.00
-   6             10             1.00           9            9.00           27.23    27.57     1.00                 0.91                        0.29         248.49                       15.16                           0.00
-   6             14             1.00           6            6.00           25.77    25.35     1.00                 0.93                        0.06         359.59                        9.59                           0.00
-   6             21             1.00           4            4.00           24.41    23.86     1.00                 0.96                       -0.29         522.47                        3.04                           0.00
+ FST  interval_days  sed_per_session  n_sessions  cumulative_SED  steady_state_D  final_D  final_M  net_final_D_change_per_SED  auc_above_baseline_per_SED  auc_above_sufficiency_per_SED
+   5              1             1.00          84           84.00           60.19    63.75     0.80                        0.46                       23.79                           3.97
+   5              2             1.00          42           42.00           44.63    46.79     0.79                        0.52                       26.15                           0.00
+   5              3             1.00          28           28.00           38.32    39.71     0.79                        0.53                       26.56                           0.00
+   5              5             1.00          17           17.00           32.60    33.36     0.78                        0.49                       25.13                           0.00
+   5              7             1.00          12           12.00           29.85    30.06     0.78                        0.42                       23.16                           0.00
+   5             10             1.00           9            9.00           27.66    28.06     0.78                        0.34                       17.81                           0.00
+   5             14             1.00           6            6.00           26.09    25.69     0.78                        0.12                       12.63                           0.00
+   5             21             1.00           4            4.00           24.64    24.09     0.78                       -0.23                        4.28                           0.00
+   6              1             1.00          84           84.00           58.07    61.52     1.02                        0.43                       22.28                           2.98
+   6              2             1.00          42           42.00           43.21    45.24     1.01                        0.48                       24.22                           0.00
+   6              3             1.00          28           28.00           37.24    38.53     1.01                        0.48                       24.39                           0.00
+   6              5             1.00          17           17.00           31.86    32.54     1.00                        0.44                       22.70                           0.00
+   6              7             1.00          12           12.00           29.28    29.44     1.00                        0.37                       20.53                           0.00
+   6             10             1.00           9            9.00           27.23    27.57     1.00                        0.29                       15.16                           0.00
+   6             14             1.00           6            6.00           25.77    25.35     1.00                        0.06                        9.59                           0.00
+   6             21             1.00           4            4.00           24.41    23.86     1.00                       -0.29                        3.04                           0.00
   Safety [FST 5, framing 1, 21d interval, 10.5 SED/session]: max single dose = 140.0% MED (10.50 SED), cumulative = 42.0 SED over 4 sessions *** OVERDOSE ***
   Safety [FST 5, framing 2, 21d interval, 1.0 SED/session]: max single dose = 13.3% MED (1.00 SED), cumulative = 4.0 SED over 4 sessions
 
@@ -319,16 +313,16 @@ Sweeps intervals from 1–35 days in 1-day steps to find the exact optimal inter
 ANALYSIS F: fine-grid interval sweep (1-30 days)
 ======================================================================
 
-Fine-grid optimal interval (efficiency framing):
-  FST 5: optimal interval = 30d (gross_eff 1.040, ss_D 23.9)
-  FST 6: optimal interval = 30d (gross_eff 0.968, ss_D 23.7)
-  Safety [Best: FST 5, every 30.0d, 1.0 SED]: max single dose = 13.3% MED (1.00 SED), cumulative = 3.0 SED over 3 sessions
+Fine-grid optimal interval (steady-state 25(OH)D framing):
+  FST 5: optimal interval = 1d (ss_D 60.2, net_eff 0.461)
+  FST 6: optimal interval = 1d (ss_D 58.1, net_eff 0.435)
+  Safety [Best: FST 5, every 1.0d, 1.0 SED]: max single dose = 13.3% MED (1.00 SED), cumulative = 84.0 SED over 84 sessions
 
 ```
 
 ## 7. Continuous optimization (scipy.optimize)
 
-Uses scipy.optimize.minimize (Nelder-Mead) to find the continuous-valued interval that maximizes per-SED efficiency, confirming the discrete sweep.
+Uses scipy.optimize.minimize_scalar (bounded Brent) to find the continuous-valued interval that maximizes net ΔD per SED and, separately, steady-state D, confirming the discrete sweep.
 
 ```
 
@@ -337,18 +331,18 @@ ANALYSIS G: continuous optimization (scipy.optimize)
 ======================================================================
 
 FST 5:
-  Efficiency optimum: interval=59d, efficiency=1.055 nmol/L/SED (32 function evals)
+  Net-change optimum: interval=3d, net_change=0.525 nmol/L/SED (31 function evals)
   Absolute D optimum: interval=2d, steady_state_D=44.6 nmol/L (32 function evals)
-  Cross-check: ss_D at eff optimum = 23.1, gross_eff at D optimum = 0.769
-  AUC deficit at 50 nmol/L for optimal schedule: 2188.4
-  AUC deficit at 30 nmol/L for optimal schedule: 508.4
+  Cross-check: ss_D at net-change optimum = 38.3, net_change at D optimum = 0.519
+  AUC deficit at 50 nmol/L for optimal schedule: 1356.3
+  AUC deficit at 30 nmol/L for optimal schedule: 39.0
 
 FST 6:
-  Efficiency optimum: interval=59d, efficiency=0.982 nmol/L/SED (32 function evals)
+  Net-change optimum: interval=3d, net_change=0.483 nmol/L/SED (31 function evals)
   Absolute D optimum: interval=2d, steady_state_D=43.2 nmol/L (32 function evals)
-  Cross-check: ss_D at eff optimum = 22.9, gross_eff at D optimum = 0.720
-  AUC deficit at 50 nmol/L for optimal schedule: 2195.4
-  AUC deficit at 30 nmol/L for optimal schedule: 515.4
+  Cross-check: ss_D at net-change optimum = 37.2, net_change at D optimum = 0.482
+  AUC deficit at 50 nmol/L for optimal schedule: 1417.1
+  AUC deficit at 30 nmol/L for optimal schedule: 43.8
 
 ```
 
@@ -492,69 +486,68 @@ ANALYSIS L: constant-sessions optimization sweep
     Interval:        7.0 days
     Max D:           48.8 nmol/L
     AUC deficit @50: 2951.2 nmol/L·days
-    Gross eff:       1.463 nmol/L/SED
     Net ΔD/SED:      0.432 nmol/L/SED
 
-    N  SED/sesh  Interval   Max D  Deficit@50  GrossEff  NetΔD/SED  Roll7d                 Flag
-  --- --------- --------- ------- ----------- --------- ---------- ------- --------------------
-    1   52.000    365.0    32.4     10338.7     0.142     -0.196    52.0     UV safety: review
-    2   26.000    182.5    31.4      9659.9     0.248     -0.133    26.0     UV safety: review
-    3   17.333    121.7    30.7      9166.8     0.332     -0.085    17.3     UV safety: review
-    4   13.000     91.2    30.3      8766.2     0.402     -0.046    13.0     UV safety: review
-    5   10.400     73.0    30.0      8423.1     0.463     -0.013    10.4     UV safety: review
-    6    8.667     60.8    30.2      8119.3     0.517      0.016     8.7     UV safety: review
-    7    7.429     52.1    31.2      7844.2     0.566      0.041     7.4     UV safety: review
-    8    6.500     45.6    32.1      7591.9     0.611      0.064     6.5     UV safety: review
-    9    5.778     40.6    32.9      7358.1     0.653      0.085     5.8     UV safety: review
-   10    5.200     36.5    33.7      7140.0     0.692      0.104     5.2     UV safety: review
-   11    4.727     33.2    34.5      6935.5     0.729      0.122     4.7                      
-   12    4.333     30.4    35.2      6742.9     0.763      0.138     4.3                      
-   13    4.000     28.1    35.9      6560.8     0.796      0.154     4.0                      
-   14    3.714     26.1    36.5      6388.3     0.827      0.168     3.7                      
-   15    3.467     24.3    37.1      6224.4     0.857      0.182     3.5                      
-   16    3.250     22.8    37.7      6068.2     0.885      0.195     3.2                      
-   17    3.059     21.5    38.3      5919.3     0.912      0.207     3.1                      
-   18    2.889     20.3    38.8      5776.8     0.938      0.219     2.9                      
-   19    2.737     19.2    39.3      5640.4     0.963      0.229     2.7                      
-   20    2.600     18.2    39.8      5509.6     0.987      0.240     2.6                      
-   21    2.476     17.4    40.2      5384.0     1.010      0.250     2.5                      
-   22    2.364     16.6    40.7      5263.2     1.032      0.259     2.4                      
-   23    2.261     15.9    41.1      5147.0     1.053      0.269     2.3                      
-   24    2.167     15.2    41.5      5035.0     1.074      0.277     2.2                      
-   25    2.080     14.6    41.9      4926.9     1.094      0.286     2.1                      
-   26    2.000     14.0    42.3      4822.6     1.113      0.294     2.0                      
-   27    1.926     13.5    42.6      4721.7     1.132      0.302     1.9                      
-   28    1.857     13.0    43.0      4624.2     1.150      0.309     1.9                      
-   29    1.793     12.6    43.3      4529.8     1.167      0.316     1.8                      
-   30    1.733     12.2    43.6      4438.4     1.184      0.323     1.7                      
-   31    1.677     11.8    43.9      4349.8     1.201      0.330     1.7                      
-   32    1.625     11.4    44.2      4263.8     1.217      0.336     1.6                      
-   33    1.576     11.1    44.5      4180.4     1.232      0.343     1.6                      
-   34    1.529     10.7    44.8      4099.4     1.247      0.349     1.5                      
-   35    1.486     10.4    45.1      4020.6     1.262      0.355     1.5                      
-   36    1.444     10.1    45.4      3944.1     1.276      0.360     1.4                      
-   37    1.405      9.9    45.6      3869.6     1.290      0.366     1.4                      
-   38    1.368      9.6    45.9      3797.1     1.304      0.371     1.4                      
-   39    1.333      9.4    46.1      3726.6     1.317      0.376     1.3                      
-   40    1.300      9.1    46.4      3657.8     1.330      0.381     1.3                      
-   41    1.268      8.9    46.6      3590.8     1.342      0.386     1.3                      
-   42    1.238      8.7    46.8      3525.5     1.355      0.391     1.2                      
-   43    1.209      8.5    47.0      3461.8     1.367      0.396     1.2                      
-   44    1.182      8.3    47.2      3399.6     1.378      0.400     1.2                      
-   45    1.156      8.1    47.5      3338.9     1.390      0.405     1.2                      
-   46    1.130      7.9    47.7      3279.7     1.401      0.409     1.1                      
-   47    1.106      7.8    47.9      3221.8     1.412      0.413     1.1                      
-   48    1.083      7.6    48.1      3165.2     1.423      0.417     1.1                      
-   49    1.061      7.4    48.2      3109.9     1.433      0.421     1.1                      
-   50    1.040      7.3    48.4      3055.8     1.443      0.425     1.0                      
-   51    1.020      7.2    48.6      3002.9     1.453      0.429     1.0                      
-   52    1.000      7.0    48.8      2951.2     1.463      0.432     1.0                      
+    N  SED/sesh  Interval   Max D  Deficit@50  NetΔD/SED  Roll7d                 Flag
+  --- --------- --------- ------- ----------- ---------- ------- --------------------
+    1   52.000    365.0    32.4     10338.7     -0.196    52.0     UV safety: review
+    2   26.000    182.5    31.4      9659.9     -0.133    26.0     UV safety: review
+    3   17.333    121.7    30.7      9166.8     -0.085    17.3     UV safety: review
+    4   13.000     91.2    30.3      8766.2     -0.046    13.0     UV safety: review
+    5   10.400     73.0    30.0      8423.1     -0.013    10.4     UV safety: review
+    6    8.667     60.8    30.2      8119.3      0.016     8.7     UV safety: review
+    7    7.429     52.1    31.2      7844.2      0.041     7.4     UV safety: review
+    8    6.500     45.6    32.1      7591.9      0.064     6.5     UV safety: review
+    9    5.778     40.6    32.9      7358.1      0.085     5.8     UV safety: review
+   10    5.200     36.5    33.7      7140.0      0.104     5.2     UV safety: review
+   11    4.727     33.2    34.5      6935.5      0.122     4.7                      
+   12    4.333     30.4    35.2      6742.9      0.138     4.3                      
+   13    4.000     28.1    35.9      6560.8      0.154     4.0                      
+   14    3.714     26.1    36.5      6388.3      0.168     3.7                      
+   15    3.467     24.3    37.1      6224.4      0.182     3.5                      
+   16    3.250     22.8    37.7      6068.2      0.195     3.2                      
+   17    3.059     21.5    38.3      5919.3      0.207     3.1                      
+   18    2.889     20.3    38.8      5776.8      0.219     2.9                      
+   19    2.737     19.2    39.3      5640.4      0.229     2.7                      
+   20    2.600     18.2    39.8      5509.6      0.240     2.6                      
+   21    2.476     17.4    40.2      5384.0      0.250     2.5                      
+   22    2.364     16.6    40.7      5263.2      0.259     2.4                      
+   23    2.261     15.9    41.1      5147.0      0.269     2.3                      
+   24    2.167     15.2    41.5      5035.0      0.277     2.2                      
+   25    2.080     14.6    41.9      4926.9      0.286     2.1                      
+   26    2.000     14.0    42.3      4822.6      0.294     2.0                      
+   27    1.926     13.5    42.6      4721.7      0.302     1.9                      
+   28    1.857     13.0    43.0      4624.2      0.309     1.9                      
+   29    1.793     12.6    43.3      4529.8      0.316     1.8                      
+   30    1.733     12.2    43.6      4438.4      0.323     1.7                      
+   31    1.677     11.8    43.9      4349.8      0.330     1.7                      
+   32    1.625     11.4    44.2      4263.8      0.336     1.6                      
+   33    1.576     11.1    44.5      4180.4      0.343     1.6                      
+   34    1.529     10.7    44.8      4099.4      0.349     1.5                      
+   35    1.486     10.4    45.1      4020.6      0.355     1.5                      
+   36    1.444     10.1    45.4      3944.1      0.360     1.4                      
+   37    1.405      9.9    45.6      3869.6      0.366     1.4                      
+   38    1.368      9.6    45.9      3797.1      0.371     1.4                      
+   39    1.333      9.4    46.1      3726.6      0.376     1.3                      
+   40    1.300      9.1    46.4      3657.8      0.381     1.3                      
+   41    1.268      8.9    46.6      3590.8      0.386     1.3                      
+   42    1.238      8.7    46.8      3525.5      0.391     1.2                      
+   43    1.209      8.5    47.0      3461.8      0.396     1.2                      
+   44    1.182      8.3    47.2      3399.6      0.400     1.2                      
+   45    1.156      8.1    47.5      3338.9      0.405     1.2                      
+   46    1.130      7.9    47.7      3279.7      0.409     1.1                      
+   47    1.106      7.8    47.9      3221.8      0.413     1.1                      
+   48    1.083      7.6    48.1      3165.2      0.417     1.1                      
+   49    1.061      7.4    48.2      3109.9      0.421     1.1                      
+   50    1.040      7.3    48.4      3055.8      0.425     1.0                      
+   51    1.020      7.2    48.6      3002.9      0.429     1.0                      
+   52    1.000      7.0    48.8      2951.2      0.432     1.0                      
 
 ```
 
 ## 14. Decision problems (recommended objectives)
 
-The sweeps above maximise `gross_synth_per_SED`, which rises monotonically as dosing approaches zero and whose reported optima end *below* their starting 25(OH)D. These are the same questions posed so that cumulative UV is held fixed, or so that cancer risk is scored alongside the vitamin D outcome.
+The sweeps above used to maximise the retired per-SED efficiency metric (removed from the code on 2026-07-31), which rose monotonically as dosing approaches zero and whose reported optima ended *below* their starting 25(OH)D. These are the same questions posed so that cumulative UV is held fixed, or so that cancer risk is scored alongside the vitamin D outcome.
 
 ```
 ==========================================================================
@@ -723,12 +716,15 @@ UNCERTAINTY PROPAGATION (400 draws, uniform over prior ranges)
 
 ### Read the decision-problem sections first
 
-Sections 2-13 sweep `gross_synth_per_SED`. That metric has **no interior
-optimum**: it rises monotonically as dosing approaches zero, and its reported
-"optima" (21-30 d, and ~59 d under continuous optimisation) end *below* the
-starting 25(OH)D -- a net loss of vitamin D scored as maximal efficiency. The
-apparent optimum drifts upward with the search bound, which is the signature of
-a monotone objective rather than a peak.
+Sections 2-13 used to sweep the retired per-SED efficiency metric (removed
+from the code on 2026-07-31; see `vitd_model.py`). That metric had **no
+interior optimum**: it rose monotonically as dosing approaches zero, and its
+reported "optima"
+(21-30 d, and ~59 d under continuous optimisation) ended *below* the starting
+25(OH)D -- a net loss of vitamin D scored as maximal efficiency. The apparent
+optimum drifted upward with the search bound, which is the signature of a
+monotone objective rather than a peak. The sweeps now select by
+`steady_state_D` instead.
 
 Ablation shows why: setting `K_ATTEN = 0` changes the interval ranking by ~0.3%,
 and setting `K_ATTEN = 0` *and* `K_SC = 0` leaves it intact. The ordering comes

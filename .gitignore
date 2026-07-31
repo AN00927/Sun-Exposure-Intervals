@@ -31,3 +31,6 @@ venv/
 # audit_outputs/ ARE tracked.
 audit_outputs/extracted_text/
 extracted_texts/
+reports/melanin_sc_advisor_memo.md
+OPEN_WORK.md
+PROBLEM_STATEMENT.md

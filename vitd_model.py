@@ -501,7 +501,6 @@ def synthesis_per_session(sed: float, M: float, M_baseline: float,
     constitutive_factor = np.exp(-Kc_use * M_baseline)
     facultative_factor = np.exp(-K_use * excess_M)
     sc_factor = np.exp(-K_SC_use * SC)
-    # [C3-feedback] Upgrade baseline response to a calibration-supported feedback factor.
     # Linear feedback (default): max(0.0, 1.0 - D / D_max_use)
     # Power feedback: max(0.0, 1.0 - (D / D_max_use) ** feedback_power)
     # Saturating/exponential feedback (from P5/P33/P35): exp(-decay * D)
@@ -856,15 +855,12 @@ def steady_state_D(result, window_days=28):
     return float(np.mean(D[mask]))
 
 
-def efficiency_D_per_SED(result):
-    log = result["synthesis_log"]
-    if not log: return 0.0
-    total_d = sum(item[2] for item in log)
-    total_s = sum(item[1] for item in log)
-    return total_d / total_s if total_s > 0 else 0.0
-
-
-gross_synth_per_SED = efficiency_D_per_SED
+# REMOVED 2026-07-31: efficiency_D_per_SED / gross_synth_per_SED (alias).
+# It ranked schedules at Spearman rho = -0.999 against mean 25(OH)D and
+# -0.999 against time-integrated deficiency below 50 nmol/L, i.e. it was
+# anti-correlated with the clinical outcome it claimed to optimise.
+# The finding is reproducible from scripts/metric_redundancy.py, which keeps a
+# local copy of the function for that purpose.
 
 
 def net_final_D_change_per_SED(result, D0=None):
@@ -882,13 +878,12 @@ def _trapz(y, x):
     return np.trapz(y, x)
 
 
-def auc_D_per_SED(result):
-    t = result["t"]
-    D = result["D"]
-    total_sed = result["cumulative_SED"]
-    if total_sed <= 0 or len(t) < 2:
-        return 0.0
-    return float(_trapz(D, t)) / total_sed
+# REMOVED 2026-07-31: auc_D_per_SED.
+# It ranked schedules at Spearman rho = -1.000 against final_D, i.e. it was
+# that metric exactly inverted, carrying no independent information. Reporting
+# both invited treating one measurement as two agreeing ones.
+# The finding is reproducible from scripts/metric_redundancy.py, which keeps a
+# local copy of the function for that purpose.
 
 
 def auc_above_baseline_per_SED(result, D0=None):
@@ -961,8 +956,6 @@ if __name__ == "__main__":
     print(f"  ss D:    {steady_state_D(r):.2f} nmol/L")
     print(f"  final M: {mean_final_M(r):.3f}")
     print(f"  final SC:{mean_final_SC(r):.3f}")
-    print(f"  gross_synth_per_SED:           {gross_synth_per_SED(r):.3f}")
     print(f"  net_final_D_change_per_SED:    {net_final_D_change_per_SED(r):.3f}")
-    print(f"  auc_D_per_SED:                 {auc_D_per_SED(r):.3f}")
     print(f"  auc_above_baseline_per_SED:    {auc_above_baseline_per_SED(r):.3f}")
     print(f"  auc_above_sufficiency_per_SED: {auc_above_sufficiency_per_SED(r):.3f}")

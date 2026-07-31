@@ -2,7 +2,6 @@ import pytest
 import numpy as np
 from vitd_model import (
     simulate, build_pulse_schedule, steady_state_D,
-    gross_synth_per_SED, net_final_D_change_per_SED,
     synthesis_per_session, ModelParams, auc_deficit,
 )
 
@@ -24,16 +23,6 @@ def test_steady_state_independent_of_D0():
             ss_values.append(steady_state_D(result))
         max_diff = max(ss_values) - min(ss_values)
         assert max_diff <= 5.0, f"FST={fst}: max steady-state diff = {max_diff:.3f} nmol/L"
-
-
-def test_efficiency_ordering():
-    schedule = build_pulse_schedule(84, 1.0, 7)
-    result = simulate(fst=2, schedule=schedule, duration_days=84)
-    gross = gross_synth_per_SED(result)
-    net = net_final_D_change_per_SED(result)
-    assert gross >= net - 1e-12
-    assert gross >= 0
-    assert net > 0
 
 
 def test_build_pulse_schedule_counts():

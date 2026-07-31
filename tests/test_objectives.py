@@ -20,9 +20,10 @@ from vitd_objectives import (optimal_spacing_fixed_sessions,
 class TestFixedSessionSpacing:
 
     def test_total_dose_is_constant_across_candidates(self):
-        """The whole point: cumulative UV is held fixed, so a spacing cannot
-        win by reducing exposure. Contrast gross_synth_per_SED, whose optimum
-        is achieved by dosing toward zero."""
+        """Cumulative UV is held fixed, so a spacing cannot win by reducing
+        exposure. Contrast the retired per-SED efficiency metric (removed
+        from vitd_model.py 2026-07-31), whose optimum was achieved by
+        dosing toward zero."""
         r = optimal_spacing_fixed_sessions(fst=5, n_sessions=10)
         totals = {round(row["total_sed"], 9) for row in r["table"]}
         assert len(totals) == 1, f"cumulative dose varied: {totals}"

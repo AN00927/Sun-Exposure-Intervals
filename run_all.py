@@ -199,7 +199,6 @@ def main():
         "Miyamura 2011 data and the handoff flagged that it may be larger in FST V-VI.\n"
     )
     report.append("\n```\n" + alpha_log + "\n```\n")
-    report.append("\n![alpha sweep, efficiency](figs/alpha_sweep_efficiency.png)\n")
     report.append("\n![alpha sweep, absolute D](figs/alpha_sweep_absolute_D.png)\n")
 
     report.append("\n## 3. beta sensitivity sweep (tanning decay rate, NEW)\n")
@@ -246,8 +245,9 @@ def main():
 
     report.append("\n## 7. Continuous optimization (scipy.optimize)\n")
     report.append(
-        "\nUses scipy.optimize.minimize (Nelder-Mead) to find the continuous-valued "
-        "interval that maximizes per-SED efficiency, confirming the discrete sweep.\n"
+        "\nUses scipy.optimize.minimize_scalar (bounded Brent) to find the "
+        "continuous-valued interval that maximizes net ΔD per SED and, "
+        "separately, steady-state D, confirming the discrete sweep.\n"
     )
     report.append("\n```\n" + scipy_log + "\n```\n")
 
@@ -300,9 +300,11 @@ def main():
     report.append("\n```\n" + const_log + "\n```\n")
 
     # ---- Decision problems, held-out benchmark, and uncertainty -------------
-    # These are the sections to read first. The sweeps above optimise
-    # gross_synth_per_SED, which has no interior optimum (see the warning at the
-    # top of this report); everything below is posed as a real decision.
+    # These are the sections to read first. The sweeps above used to optimise
+    # the retired per-SED efficiency metric (removed from the code on
+    # 2026-07-31; see vitd_model.py), which had no interior optimum -- they
+    # now select by steady_state_D instead; everything below is posed as a
+    # real decision.
     import vitd_objectives
     import vitd_benchmark_webbkift
     import vitd_sensitivity
@@ -316,11 +318,12 @@ def main():
 
     report.append("\n## 14. Decision problems (recommended objectives)\n")
     report.append(
-        "\nThe sweeps above maximise `gross_synth_per_SED`, which rises "
-        "monotonically as dosing approaches zero and whose reported optima end "
-        "*below* their starting 25(OH)D. These are the same questions posed so "
-        "that cumulative UV is held fixed, or so that cancer risk is scored "
-        "alongside the vitamin D outcome.\n"
+        "\nThe sweeps above used to maximise the retired per-SED efficiency "
+        "metric (removed from the code on 2026-07-31), which rose "
+        "monotonically as dosing approaches zero and whose reported optima "
+        "ended *below* their starting 25(OH)D. These are the same questions "
+        "posed so that cumulative UV is held fixed, or so that cancer risk "
+        "is scored alongside the vitamin D outcome.\n"
     )
     report.append("\n```\n" + obj_log + "\n```\n")
 
@@ -344,12 +347,15 @@ def main():
     report.append("""
 ### Read the decision-problem sections first
 
-Sections 2-13 sweep `gross_synth_per_SED`. That metric has **no interior
-optimum**: it rises monotonically as dosing approaches zero, and its reported
-"optima" (21-30 d, and ~59 d under continuous optimisation) end *below* the
-starting 25(OH)D -- a net loss of vitamin D scored as maximal efficiency. The
-apparent optimum drifts upward with the search bound, which is the signature of
-a monotone objective rather than a peak.
+Sections 2-13 used to sweep the retired per-SED efficiency metric (removed
+from the code on 2026-07-31; see `vitd_model.py`). That metric had **no
+interior optimum**: it rose monotonically as dosing approaches zero, and its
+reported "optima"
+(21-30 d, and ~59 d under continuous optimisation) ended *below* the starting
+25(OH)D -- a net loss of vitamin D scored as maximal efficiency. The apparent
+optimum drifted upward with the search bound, which is the signature of a
+monotone objective rather than a peak. The sweeps now select by
+`steady_state_D` instead.
 
 Ablation shows why: setting `K_ATTEN = 0` changes the interval ranking by ~0.3%,
 and setting `K_ATTEN = 0` *and* `K_SC = 0` leaves it intact. The ordering comes

@@ -10,7 +10,6 @@ import glob
 
 def test_no_invalid_tests_in_main_suite():
     """Assert no file in the main validation suite contains STATUS: INVALID_FOR_PHYSIOLOGICAL_VALIDATION."""
-    # Check main validation files (not in validation_exploratory/)
     main_files = glob.glob("vitd_validation.py") + glob.glob("test_vitd_validation.py")
 
     for filepath in main_files:

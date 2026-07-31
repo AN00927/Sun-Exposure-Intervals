@@ -164,8 +164,6 @@ def fractional_med_trend(verbose: bool = True) -> dict:
     """Show that the fractional-MED insult FALLS during the study.
 
     Constant 0.8 SED against a rising MED means the relative insult declines.
-    Directionally this is the right mechanism for late recovery, but the MED
-    rise is far too slow (~87 d half-life) to produce the observed late surge.
     """
     out = {}
     for stratum, meds in DEBOER_MED_SED.items():
