@@ -100,7 +100,7 @@ Stubbed, marked with a visible red `[TODO verify: ...]` marker in the compiled
 PDF rather than left silently blank:
 
 - **Simulation setup and validation status**: a placeholder paragraph states
-  the current validation count (9/10 required checks, regenerable with
+  the current validation count (13/14 required checks, regenerable with
   `run_all.py`) and the held-out benchmark result, but the full numerical
   method, schedule-generator, and reproducibility write-up is not yet
   written.
