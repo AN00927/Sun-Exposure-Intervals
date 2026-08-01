@@ -88,7 +88,8 @@ Parameter & Source Sourcing
     thickness is flat (108.6 -> 109.4 um, p = 0.718). Fluid is not extra
     corneocyte layers. Treat SC as an EMPIRICAL photoadaptation channel, not a
     validated optical mechanism -- and note K_ATTEN ~ K_SC is jointly
-    unidentifiable anyway (vitd_sensitivity.py). See OPEN_QUESTIONS gap 28.
+    unidentifiable anyway (vitd_sensitivity.py). See MODEL_AND_EVIDENCE.md,
+    'Remaining gaps', gap 28.
     [C7-SC] SC_max = 0.30 is a PRIOR, not a calibrated constant. De Boer 2025
     (P2) supports an SC thickening range of +23% (FP I-III) to +36% (FP IV-VI);
     evidence-based prior is 0.20-0.40. Do NOT tighten alpha_SC, k_decay_SC, or
@@ -340,7 +341,8 @@ class ModelParams:
     body_weight_kg: Optional[float] = None
     # Previtamin-D3 photodegradation plateau (Holick 1981, van Dijk 2016).
     # This is the mechanism that makes dose-splitting genuinely better, as
-    # opposed to the feedback artifact in OPEN_QUESTIONS gap 19.
+    # opposed to the feedback artifact in MODEL_AND_EVIDENCE.md, 'Remaining
+    # gaps', gap 19.
     use_photodegradation: bool = False
     # Cutaneous D3 -> serum 25(OH)D transit delay. Without this, UV synthesis
     # appears in serum 25(OH)D instantaneously, which is wrong on exactly the

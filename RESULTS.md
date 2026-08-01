@@ -46,7 +46,7 @@ VALIDATION SUITE
     Observed SC dips ~26% BELOW baseline at week 5. Model cannot
     reproduce that at k_damage=0.0, which is deliberate: the
     parameter is unidentifiable from 3 group medians. See
-    scripts/fit_sc_deboer2025.py and OPEN_QUESTIONS gap 27.
+    scripts/fit_sc_deboer2025.py and MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 27.
   PASS (warning-only)
 
 [Lit 2] Bogh 2012 - quantitative NB-UVB validation  [C1]
@@ -659,7 +659,7 @@ Nothing in this repository is calibrated to this study. Every other check in the
   FST II:VI ratio of 1.3-1.4 is per-unit-dose at MATCHED BSA under
   lamps; Webb/Kift's 2.5-3.0x is a whole-body naturalistic response.
   These measure different things, and K_const is calibrated to the
-  former. See OPEN_QUESTIONS gap 23.
+  former. See MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 23.
 
 ```
 

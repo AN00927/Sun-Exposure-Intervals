@@ -61,14 +61,14 @@ Fully drafted, from the repository's own documentation and code:
   parameters change; do not hand-edit values here.
 - **Limitations and assumptions** (`\section{Limitations and assumptions}`):
   the full register of provisional results, cross-referenced to
-  `OPEN_WORK.md` and `MODEL_AND_EVIDENCE.md` in the repository root.
+  `MODEL_AND_EVIDENCE.md` in the repository root.
 
 ### Objective-choice correction (read this before quoting an "optimal interval")
 
 A first draft of this manuscript repeated this project's own earlier claim
 that `net_final_D_change_per_SED` gives a genuine interior optimum near three
 days. Three new diagnostic scripts in `scripts/` (not present when
-`OPEN_WORK.md` was last written) show that claim needs correcting, and the
+`MODEL_AND_EVIDENCE.md` was last written) show that claim needs correcting, and the
 manuscript now reflects the correction in the abstract, Introduction,
 Section 3.2 (Objectives), and Section 7 (Limitations):
 
@@ -137,7 +137,7 @@ them). Each line names the claim and what is missing.
    author-year fragments throughout the repository. No further bibliographic
    detail is available.
 5. **Eadie 2021, Armstrong & Kricker 2001, and a 2023 *PLOS ONE* melanoma
-   study.** All three are named in `OPEN_WORK.md` as papers the project wants
+   study.** All three are named in `MODEL_AND_EVIDENCE.md` as papers the project wants
    for a quantitative cancer-risk model and does **not** have. None is in
    `Papers_and_Datasets/`.
 6. **Matsuoka et al. 1990 (*J Lab Clin Med* 116:87-90, PMID 2165512), full
@@ -175,7 +175,7 @@ them). Each line names the claim and what is missing.
     SED conversion factor (5.5, cabinet-specific to a Waldmann UV7002).
     Journal, volume, pages, and full author list are not recorded anywhere in
     the repository, only the measured irradiance values themselves.
-15. **Miyamura 2011**, named in `OPEN_WORK.md` gap 7 as an early source for
+15. **Miyamura 2011**, named in `MODEL_AND_EVIDENCE.md` gap 7 as an early source for
     the melanin-induction rate parameter. No further bibliographic detail
     recorded.
 16. **Rhodes 2017** ("P22" in `vitd_model.py`), the CPD/DNA-damage
@@ -217,7 +217,7 @@ next revision, or delete the entries if they turn out not to be needed.
 ## A note on the parameter table
 
 Every value in Table 1 was read out of `vitd_model.py` on 2026-07-31, not
-retyped from `OPEN_WORK.md`, `MODEL_AND_EVIDENCE.md`, or this README. If those
+retyped from `MODEL_AND_EVIDENCE.md` or this README. If those
 values drift apart in the future, `vitd_model.py` is correct by the
 repository's own rule (see `CLAUDE.md`): parameter values live in exactly one
 place in the source code, and every document that quotes one is a copy, not a

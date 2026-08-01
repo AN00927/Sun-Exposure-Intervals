@@ -59,7 +59,8 @@ N_PARAM_VALUES = 9
 # ---------------------------------------------------------------------------
 # Parameters that limit synthesis or burden the body.
 # Ranges are the documented prior ranges where the repo states one
-# (ModelParams.SC_PRIOR_RANGES, OPEN_WORK gap 29 for K_ATTEN); otherwise a
+# (ModelParams.SC_PRIOR_RANGES, MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 29
+# for K_ATTEN); otherwise a
 # plausible bracket around the default, marked as such in `note`.
 # ---------------------------------------------------------------------------
 def _p(name, attr, lo, hi, label, note, log=False):
@@ -70,7 +71,8 @@ PARAMETERS = [
     _p("K_ATTEN", "K_ATTEN", 0.0, 1.0,
        "melanin attenuation $K_{ATTEN}$",
        "0.34-1.00 implied by Matsuoka 1990 after deconvolving baseline feedback "
-       "(OPEN_WORK gap 29); 0 included as ablation"),
+        "(MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 29); 0 included as "
+        "ablation"),
     _p("K_const", "K_const", 0.15, 0.50,
        "constitutive pigment $K_{const}$",
        "bracket around Young 2020-derived value; PLAUSIBLE BRACKET, not a "
@@ -89,7 +91,8 @@ PARAMETERS = [
        "SC_PRIOR_RANGES; default 0.0 because NOT IDENTIFIABLE from group medians"),
     _p("D_max", "D_max", 100.0, 250.0,
        "feedback ceiling $D_{max}$",
-       "ORIGIN UNCONFIRMED (OPEN_WORK issue 3); bracket is illustrative only"),
+       "ORIGIN UNCONFIRMED (MODEL_AND_EVIDENCE.md, 'Known issues', #3); bracket "
+       "is illustrative only"),
     _p("alpha", "alpha", 0.001, 0.005,
        r"melanin induction rate $\alpha$",
        "bracket around Miyamura 2011-calibrated default; light-skin derived"),

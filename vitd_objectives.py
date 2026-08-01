@@ -10,7 +10,7 @@ metric, removed from `vitd_model.py` on 2026-07-31 -- had no interior optimum:
 it rose monotonically as dosing approaches zero, and its reported "optima" sat
 at schedules that END BELOW their starting 25(OH)D. It was also shown by
 ablation to be driven by the `(1 - D/D_max)` feedback term rather than by
-photoadaptation. See OPEN_QUESTIONS gap 19.
+photoadaptation. See MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 19.
 
 The objectives here are posed the way a person or clinician would pose them:
 

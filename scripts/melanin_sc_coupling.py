@@ -158,11 +158,12 @@ def main():
     print("    31 people, not a genotype one.")
     print("  - No dataset in this repository links pigment genotype (ASIP,")
     print("    SLC24A4, SLC45A2, MC1R) to barrier or epidermal thickening.")
-    print("    See OPEN_WORK.md gap 4 and data request 11.")
+    print("    See MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 4 and "
+          "'Data and paper requests', data request 11.")
     print("  - de Boer 2025 attribute their SC change to EDEMA, not acanthosis;")
     print("    epidermal thickness was flat (108.6 -> 109.4 um, p = 0.718).")
     print("    Treat SC here as an empirical channel, not proven optics.")
-    print("    See OPEN_WORK.md gap 28.")
+    print("    See MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 28.")
 
 
 if __name__ == "__main__":

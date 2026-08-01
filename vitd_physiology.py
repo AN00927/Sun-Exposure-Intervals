@@ -97,7 +97,8 @@ def photodegradation_factor(sed: float, d_sat: float = PREVITAMIN_D_SAT_SED) -> 
 
     This is the mechanism that makes splitting a UV budget across sessions
     genuinely better than taking it in one hit -- a real interior optimum,
-    unlike the feedback-driven artifact documented in OPEN_QUESTIONS gap 19.
+    unlike the feedback-driven artifact documented in MODEL_AND_EVIDENCE.md,
+    'Remaining gaps', gap 19.
     """
     if sed <= 0.0:
         return 1.0

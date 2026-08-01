@@ -660,7 +660,7 @@ def validate_sc_deBoer2025(verbose=True):
         print(f"    Observed SC dips ~26% BELOW baseline at week 5. Model cannot")
         print(f"    reproduce that at k_damage=0.0, which is deliberate: the")
         print(f"    parameter is unidentifiable from 3 group medians. See")
-        print(f"    scripts/fit_sc_deboer2025.py and OPEN_QUESTIONS gap 27.")
+        print(f"    scripts/fit_sc_deboer2025.py and MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 27.")
         print(f"  {'PASS' if passed else 'FAIL'} (warning-only)")
     return passed
 

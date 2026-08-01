@@ -1,14 +1,3 @@
-# -----------------------------------------------------------------------------
-# Ignore policy
-# -----------------------------------------------------------------------------
-# Generated model outputs (figs/, tables/, audit_outputs/, reports/, RESULTS.md)
-# are DELIBERATELY TRACKED. They are the reviewable record of what the model
-# produced at each commit, which matters more here than a clean `git status`
-# after a run. Regenerate with `python3 run_all.py`.
-#
-# Only genuinely machine-local or bulk-derived files belong below.
-# -----------------------------------------------------------------------------
-
 # Python
 __pycache__/
 *.pyc
@@ -26,11 +15,27 @@ venv/
 .idea/
 .vscode/
 
-# Bulk PDF full-text extracts: large, regenerable, and derived from the
-# tracked PDFs in Papers_and_Datasets/. Summarized snippets under
-# audit_outputs/ ARE tracked.
 audit_outputs/extracted_text/
 extracted_texts/
+
 reports/melanin_sc_advisor_memo.md
-OPEN_WORK.md
-PROBLEM_STATEMENT.md
+
+.claude/
+
+validation_exploratory/
+Papers_and_Datasets/additional info.txt
+Papers_and_Datasets/manifest_raw.csv
+Papers_and_Datasets/rename_map.csv
+Papers_and_Datasets/column_decisions.csv
+Papers_and_Datasets/TL-01 conversion factor
+Papers_and_Datasets/UV index and UV dose, action spectra data version 2
+
+paper/*.pdf
+paper/*.aux
+paper/*.log
+paper/*.bbl
+paper/*.blg
+paper/*.out
+paper/*.synctex.gz
+paper/*.fls
+paper/*.fdb_latexmk

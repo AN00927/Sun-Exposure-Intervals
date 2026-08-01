@@ -46,7 +46,7 @@ notes: |
 
   Open blockers:
   - D_max = 150.0 origin unconfirmed, and it drives the headline interval
-    ranking (see OPEN_QUESTIONS gaps 19-20). Highest-value calibration target.
+    ranking (see MODEL_AND_EVIDENCE.md, 'Remaining gaps', gaps 19-20). Highest-value calibration target.
   - K_ATTEN is a single-source prior; the sole source (Matsuoka 1990,
     J Lab Clin Med, PMID 2165512) is not in the repo.
   - No genuine held-out validation study exists; every study is a calibration

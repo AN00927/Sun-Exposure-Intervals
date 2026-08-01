@@ -4,7 +4,7 @@
 %
 % PROVENANCE: every entry below is transcribed from citations already recorded
 % in this repository -- primarily MODEL_AND_EVIDENCE.md (per-paper evidence
-% cards, 46 papers), OPEN_WORK.md (gap list, data requests, assumption
+% cards, 46 papers), MODEL_AND_EVIDENCE.md (gap list, data requests, assumption
 % register), and inline comments in vitd_model.py / vitd_physiology.py /
 % vitd_objectives.py. No bibliographic field (journal, volume, pages, DOI) was
 % invented. Where the repository gives only an author/year/topic fragment and
@@ -13,7 +13,7 @@
 %
 % Do not add a volume/page/DOI to a %TODO-marked entry without checking the
 % primary source -- these gaps are exactly the kind of thing that drifted into
-% error before (see OPEN_WORK.md issue 5 / assumption A7 on the two different
+% error before (see MODEL_AND_EVIDENCE.md, 'Known issues', #5 / assumption A7 on the two different
 % "Matsuoka 1990" papers).
 % =============================================================================
 
@@ -163,7 +163,7 @@
 % %TODO verify: local PDF filename is "Matsuoka (1).pdf" and MODEL_AND_EVIDENCE.md
 % card [21] confirms full text was retrieved and gives this citation in full.
 % This is the SUNSCREEN/BODY-REGION paper, NOT the tanning-attenuation source
-% -- do not confuse with matsuoka1990jlcm below (OPEN_WORK.md issue 5,
+% -- do not confuse with matsuoka1990jlcm below (MODEL_AND_EVIDENCE.md, 'Known issues', #5,
 % assumption A7). No DOI recorded in the repo for this one.
 @article{matsuoka1990jaad,
   author  = {Matsuoka, L. Y. and Wortsman, J. and Hollis, B. W.},
@@ -180,7 +180,7 @@
 % -----------------------------------------------------------------------------
 
 % The ONLY within-subject tanned-vs-untanned vitamin-D-synthesis study located
-% by this project (OPEN_WORK.md gap 1, issue 5). Abstract only -- full text
+% by this project (MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 1, 'Known issues', #5). Abstract only -- full text
 % not in the repository. K_ATTEN is derived from this abstract in
 % vitd_calibration.py; the widely-quoted "51% attenuation" from this paper is
 % NOT a melanin effect (see Limitations and CLAUDE.md project rules) -- most
@@ -372,7 +372,7 @@
 
 % %TODO verify: cited in the repo only as "a 2025 Communications Medicine
 % study (Nature)" / "Communications Medicine 2025 (PMC12894941)"
-% (vitd_physiology.py comment; OPEN_WORK.md data request 7). Authors, exact
+% (vitd_physiology.py comment; MODEL_AND_EVIDENCE.md, 'Data and paper requests', data request 7). Authors, exact
 % title, volume, and pages are NOT recorded anywhere in the repository. The
 % PMC id is recorded and is the only reliable locator. Source of the
 % biphasic 25-hydroxylation inflection at 56 nmol/L used in
@@ -385,7 +385,7 @@
 }
 
 % %TODO verify: cited in the repo only as "Holick 1981 (Science 211:590-3)"
-% (vitd_physiology.py comment, OPEN_WORK.md data request 6). Author list and
+% (vitd_physiology.py comment, MODEL_AND_EVIDENCE.md, 'Data and paper requests', data request 6). Author list and
 % exact title not recorded in the repository; do not guess co-authors.
 @misc{holick1981,
   author = {Holick, M. F. and others},
@@ -396,7 +396,7 @@
 
 % %TODO verify: cited in the repo only as "van Dijk et al. 2016, Photochem
 % Photobiol Sci -- 'The action spectrum for vitamin D3: initial skin
-% reaction and prolonged exposure'" (OPEN_WORK.md data request 5). Full
+% reaction and prolonged exposure'" (MODEL_AND_EVIDENCE.md, 'Data and paper requests', data request 5). Full
 % author list, volume, and pages not recorded.
 @misc{vandijk2016,
   author = {van Dijk, A. and others},
@@ -612,28 +612,28 @@
   note   = {Journal, volume, and pages not recorded in the repository}
 }
 
-% Named in OPEN_WORK.md as a paper the project WANTS but does NOT have --
+% Named in MODEL_AND_EVIDENCE.md as a paper the project WANTS but does NOT have --
 % "Missing cancer risk model papers" (gap 15). Included here only because
 % the manuscript's Limitations section names it as an explicit data gap;
 % it is not otherwise used.
 @misc{eadie2021,
   author = {Eadie, E. and others},
-  title  = {{TODO} verify -- UV dose-response for skin cancer (Eadie 2021); NOT in the repository, named only as a data request in OPEN\_WORK.md},
+  title  = {{TODO} verify -- UV dose-response for skin cancer (Eadie 2021); NOT in the repository, named only as a data request in MODEL\_AND\_EVIDENCE.md},
   year   = {2021}
 }
 
-% Named in OPEN_WORK.md as a paper the project WANTS but does NOT have.
+% Named in MODEL_AND_EVIDENCE.md as a paper the project WANTS but does NOT have.
 @misc{armstrongkricker2001,
   author = {Armstrong, B. K. and Kricker, A.},
-  title  = {{TODO} verify -- intermittent vs cumulative sun exposure and melanoma; NOT in the repository, named only as a data request in OPEN\_WORK.md},
+  title  = {{TODO} verify -- intermittent vs cumulative sun exposure and melanoma; NOT in the repository, named only as a data request in MODEL\_AND\_EVIDENCE.md},
   year   = {2001}
 }
 
-% Named in OPEN_WORK.md ("PLOS ONE 2023 (intermittent vs continuous UV and
+% Named in MODEL_AND_EVIDENCE.md ("PLOS ONE 2023 (intermittent vs continuous UV and
 % melanoma)") as a paper the project WANTS but does NOT have. No author or
 % title recorded.
 @misc{plosone2023,
-  title = {{TODO} verify -- intermittent vs continuous {UV} and melanoma, {PLOS} {ONE}, 2023; NOT in the repository, named only as a data request in OPEN\_WORK.md},
+  title = {{TODO} verify -- intermittent vs continuous {UV} and melanoma, {PLOS} {ONE}, 2023; NOT in the repository, named only as a data request in MODEL\_AND\_EVIDENCE.md},
   year  = {2023}
 }
 
@@ -722,7 +722,7 @@
   year   = {2018}
 }
 
-% Named in OPEN_WORK.md / vitd_model.py ONLY to document a citation-tracing
+% Named in MODEL_AND_EVIDENCE.md / vitd_model.py ONLY to document a citation-tracing
 % error: an earlier revision of this project attributed D_max to
 % PMID 19798069 under the label "Bogh 2010"; that PMID does not belong to
 % Bogh 2010 at all, but to this unrelated obesity paper. Included here so the
@@ -774,7 +774,7 @@
 }
 
 % -----------------------------------------------------------------------------
-% Named in OPEN_WORK.md gap 7 as a source the current alpha (photoadaptation
+% Named in MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 7 as a source the current alpha (photoadaptation
 % rise rate) parameter was originally calibrated from (light-skin data); a
 % dedicated re-fit from Young 2020 trial data was attempted and found alpha
 % structurally unidentifiable from that dataset. No further bibliographic
@@ -782,7 +782,7 @@
 % -----------------------------------------------------------------------------
 @misc{miyamura2011,
   author = {Miyamura, Y. and others},
-  title  = {{TODO} verify -- light-skin photoadaptation kinetics study, cited only as ``Miyamura 2011'' in OPEN\_WORK.md},
+  title  = {{TODO} verify -- light-skin photoadaptation kinetics study, cited only as ``Miyamura 2011'' in MODEL\_AND\_EVIDENCE.md},
   year   = {2011}
 }
 

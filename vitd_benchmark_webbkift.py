@@ -22,7 +22,8 @@ Why this is the right benchmark
 -------------------------------
 Every study already in `vitd_validation.py` is either a calibration target or an
 explicit debug target, so the suite's pass rate says nothing about
-out-of-sample skill (OPEN_QUESTIONS gap 22). This is an independent group,
+out-of-sample skill (MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 22). This is
+an independent group,
 independent cohort, and a naturalistic (not lamp) protocol.
 
 What can and cannot be compared
@@ -138,7 +139,7 @@ def run(verbose: bool = True) -> dict:
             print("  FST II:VI ratio of 1.3-1.4 is per-unit-dose at MATCHED BSA under")
             print("  lamps; Webb/Kift's 2.5-3.0x is a whole-body naturalistic response.")
             print("  These measure different things, and K_const is calibrated to the")
-            print("  former. See OPEN_QUESTIONS gap 23.")
+            print("  former. See MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 23.")
 
     return {
         "webbkift_dose_ratio": dose_ratio_ok,
