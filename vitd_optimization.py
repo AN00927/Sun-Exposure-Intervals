@@ -16,7 +16,7 @@ from typing import List, Tuple, Iterator, Optional
 from vitd_model import (
     simulate, build_pulse_schedule, steady_state_D,
     auc_deficit, net_final_D_change_per_SED,
-    ModelParams,
+    ModelParams, SOURCE_CALIBRATION_TABLE,
 )
 
 
@@ -111,7 +111,7 @@ def evaluate_schedule(
     }
 
 
-def analysis_constant_sessions():
+def analysis_constant_sessions(params: Optional[ModelParams] = None):
     """Sweep session counts 1-52 over 365 days with fixed total SED, uniform spacing.
 
     For each session count, evaluates max-D, AUC deficiency, and net D change
@@ -126,14 +126,12 @@ def analysis_constant_sessions():
     duration_days = 365
     fst = 5
     sed_per_session_default = 1.0
-    params = ModelParams()
+    if params is None:
+        params = ModelParams()
+        from vitd_model import get_E_source
+        params.E_source = get_E_source("solar_summer")
 
-    # Placeholder annotation — see MODEL_AND_EVIDENCE.md, 'Known issues', #12
-    E_source_note = "E_source=2.5 (NB-UVB 311 nm placeholder)"
-    print(f"\n  {E_source_note}")
-    print(f"  WARNING: E_source=2.5 is a placeholder. Per-study calibration")
-    print(f"  from SOURCE_CALIBRATION_TABLE should be used for absolute predictions.")
-    params.E_source = 2.5
+    print(f"\n  Using E_source = {params.E_source:.2f} for constant-sessions sweep.")
 
     rows = []
     for N_sessions in range(1, 53):

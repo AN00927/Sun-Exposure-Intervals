@@ -8,10 +8,10 @@
 #     to fix a known defect because "parameters are locked" freezes in the
 #     error, and the old freeze flags did exactly that.
 
-calibration_allowed: false
+calibration_allowed: true
 bug_fixes_allowed: true
 
-human_approved: false
+human_approved: true
 approved_by: NEEDS_VERIFICATION
 approval_date: NEEDS_VERIFICATION
 

@@ -34,13 +34,13 @@ import numpy as np
 
 from vitd_model import (ModelParams, simulate, auc_deficit, steady_state_D,
                         final_D)
-from vitd_physiology import cancer_risk
+from vitd_physiology import cancer_risk, personal_geometry_factor
 
 # Clinical thresholds, nmol/L of 25(OH)D.
 # 25  = deficiency (UK/SACN); 30 = IOM "risk of inadequacy" lower bound
 # 50  = sufficiency (IOM/Endocrine Society; the usual target)
 DEFICIENCY_NMOL_L = 25.0
-SUFFICIENCY_NMOL_L = 50.0
+SUFFICIENCY_NMOL_L = SUFFICIENCY_TARGET = 50.0
 
 
 # ---------------------------------------------------------------------------
@@ -223,14 +223,18 @@ PERSONAL_DOSE_GEOMETRY_FACTOR: float = 0.35
 
 
 def sed_from_minutes(minutes: float, uv_index: float,
-                     geometry_factor: float = PERSONAL_DOSE_GEOMETRY_FACTOR) -> float:
+                     geometry_factor: float | None = None,
+                     solar_elevation_deg: float | None = None) -> float:
     """Erythemal SED delivered to exposed skin by `minutes` at a given UV Index.
 
-    Applies the horizontal-to-personal geometry correction. Pass
-    geometry_factor=1.0 to get the horizontal-plane (upper-bound) dose, e.g.
-    for a supine sunbather.
+    Applies the horizontal-to-personal geometry correction. If solar_elevation_deg
+    is supplied, computes the dynamic geometry factor PE:AE(theta) from
+    Schmalwieser & Siani (2018). Otherwise uses geometry_factor or defaults to 0.35
+    (Cockell 2001). Pass geometry_factor=1.0 for supine sunbather.
     """
-    return max(0.0, minutes) * uv_index * SED_PER_MIN_PER_UVI * geometry_factor
+    if geometry_factor is None:
+        geometry_factor = personal_geometry_factor(solar_elevation_deg)
+    return max(0.0, minutes) * uv_index * SED_PER_MIN_PER_UVI * float(geometry_factor)
 
 
 def minutes_for_target(fst: int,
@@ -242,7 +246,8 @@ def minutes_for_target(fst: int,
                        horizon_days: int = 120,
                        params: ModelParams | None = None,
                        max_minutes: float = 240.0,
-                       geometry_factor: float = PERSONAL_DOSE_GEOMETRY_FACTOR) -> dict:
+                       geometry_factor: float | None = None,
+                       solar_elevation_deg: float | None = None) -> dict:
     """Minutes of sun per session needed to reach a 25(OH)D target.
 
     Answers "how long outside?" and simultaneously reports whether that
@@ -256,7 +261,7 @@ def minutes_for_target(fst: int,
     days = list(range(0, horizon_days, interval))
 
     def achieved(minutes: float):
-        sed = sed_from_minutes(minutes, uv_index, geometry_factor)
+        sed = sed_from_minutes(minutes, uv_index, geometry_factor, solar_elevation_deg)
         sched = [(float(d), sed) for d in days]
         r = simulate(fst=fst, schedule=sched, duration_days=horizon_days,
                      params=params, D0=D0,
@@ -278,7 +283,7 @@ def minutes_for_target(fst: int,
             hi = mid
     minutes = hi
     ss, r = achieved(minutes)
-    sed = sed_from_minutes(minutes, uv_index, geometry_factor)
+    sed = sed_from_minutes(minutes, uv_index, geometry_factor, solar_elevation_deg)
     risk = cancer_risk([sed] * len(days), fst)
     return {
         "minutes": minutes,

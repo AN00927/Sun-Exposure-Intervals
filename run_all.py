@@ -7,8 +7,15 @@ Usage:  python3 run_all.py
 """
 
 import os
+import sys
 from io import StringIO
 from contextlib import redirect_stdout
+
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 import vitd_validation
 import vitd_analyses

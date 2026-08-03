@@ -11,6 +11,7 @@ from vitd_model import (ModelParams, simulate, build_pulse_schedule,
                         build_weekly_schedule, synthesis_per_session)
 from vitd_physiology import (body_weight_dilution_factor,
                              photodegradation_factor,
+                             personal_geometry_factor,
                              hydroxylation_efficiency,
                              cancer_risk,
                              BODY_WEIGHT_REF_KG)
@@ -296,3 +297,19 @@ class TestTwoProcessSC:
         fr = fractional_med_trend(verbose=False)
         for stratum, (f0, f1, f2) in fr.items():
             assert f2 < f0, stratum
+
+
+class TestPersonalGeometryFactor:
+    """Schmalwieser & Siani 2018; Parisi 2000/2003: geometry factor vs solar elevation."""
+
+    def test_default_when_elevation_unknown(self):
+        assert personal_geometry_factor(None) == 0.35
+
+    def test_solar_noon_lower_ratio(self):
+        """At 60 deg solar elevation, vertical surfaces receive ~0.30 ratio."""
+        assert personal_geometry_factor(60.0) == pytest.approx(0.30, abs=1e-2)
+
+    def test_low_elevation_higher_ratio(self):
+        """At 0 deg solar elevation, ratio rises to 0.45."""
+        assert personal_geometry_factor(0.0) == pytest.approx(0.45, abs=1e-2)
+

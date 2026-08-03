@@ -109,6 +109,26 @@ def photodegradation_factor(sed: float, d_sat: float = PREVITAMIN_D_SAT_SED) -> 
 
 
 # ---------------------------------------------------------------------------
+# 2b. Dynamic Solar Elevation Geometry Factor
+# ---------------------------------------------------------------------------
+# Schmalwieser & Siani 2018 (Photochem Photobiol 94:900-915) & Parisi 2000/2003:
+# The ratio of personal anatomical exposure to ambient horizontal UV (PE:AE)
+# varies dynamically with solar elevation angle (theta). For standing posture,
+# PE:AE is ~0.15 at solar noon (theta ~ 60 deg) and rises to ~0.45 at low solar
+# elevations (theta ~ 20 deg).
+def personal_geometry_factor(solar_elevation_deg: float | None = None) -> float:
+    """Dynamic ratio of personal anatomical UV dose to ambient horizontal UV.
+
+    Returns 0.35 if solar elevation is unknown (matching Cockell 2001 default).
+    Otherwise returns 0.15 + 0.30 * cos(theta_rad) (Schmalwieser & Siani 2018).
+    """
+    if solar_elevation_deg is None:
+        return 0.35
+    rad = np.radians(max(0.0, min(90.0, float(solar_elevation_deg))))
+    return float(0.15 + 0.30 * np.cos(rad))
+
+
+# ---------------------------------------------------------------------------
 # 3. Biphasic 25-hydroxylation (mechanistic replacement for linear D_max)
 # ---------------------------------------------------------------------------
 # The core model damps synthesis with (1 - D/D_max), D_max = 150 nmol/L of

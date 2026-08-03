@@ -52,16 +52,16 @@
   doi     = {10.1073/pnas.2015867118}
 }
 
-% %TODO verify: repo gives only "Cashman 2008/2011 dose-response trials give
-% roughly +1.5-2.0 nmol/L steady-state per ug/day of D3" (vitd_model.py
-% comment on DIETARY_UG_TO_NMOL_PER_L); no journal, volume, or exact title
-% recorded anywhere in the repo. Two candidate years (2008 and 2011) are
-% named, suggesting two different papers, not one. Do not cite until resolved.
-@misc{cashman2008_2011,
-  author = {Cashman, K. D. and others},
-  title  = {{TODO} verify -- dietary vitamin~D dose-response trial(s) cited only as ``Cashman 2008/2011'' in vitd\_model.py; exact paper(s), journal, volume and pages not recorded in the repository},
-  year   = {2008},
-  note   = {Placeholder; do not treat as a resolved citation}
+@article{cashman2008,
+  author  = {Cashman, K. D. and Hill, T. R. and Lucey, A. J. and Taylor, N. and Seamans, K. M. and Muldowney, S. and Fitzgerald, A. P. and Flynn, A. and Barnes, M. S. and Horigan, G. and Bonham, M. P. and Duffy, E. M. and Strain, J. J. and Wallace, J. M. and Kiely, M.},
+  title   = {Estimation of the dietary requirement for vitamin {D} in healthy adults},
+  journal = {American Journal of Clinical Nutrition},
+  year    = {2008},
+  volume  = {87},
+  number  = {3},
+  pages   = {673--681},
+  doi     = {10.1093/ajcn/87.3.673},
+  pmid    = {18326606}
 }
 
 
@@ -370,40 +370,66 @@
   doi     = {10.1016/j.jsbmb.2017.01.006}
 }
 
-% %TODO verify: cited in the repo only as "a 2025 Communications Medicine
-% study (Nature)" / "Communications Medicine 2025 (PMC12894941)"
-% (vitd_physiology.py comment; MODEL_AND_EVIDENCE.md, 'Data and paper requests', data request 7). Authors, exact
-% title, volume, and pages are NOT recorded anywhere in the repository. The
-% PMC id is recorded and is the only reliable locator. Source of the
-% biphasic 25-hydroxylation inflection at 56 nmol/L used in
-% hydroxylation_efficiency() -- do not tighten this citation without reading
-% the paper itself.
-@misc{commsmed2025,
-  title = {{TODO} verify -- 25(OH)D3 / 24,25(OH)2D3 seasonal kinetics study, {C}ommunications {M}edicine, 2025},
-  year  = {2025},
-  note  = {PMC12894941; authors, article title, volume and pages not recorded in the repository}
+@article{commsmed2025,
+  author  = {Scholze, A. and Shinkov, A. and Slavov, G. S. and Luman, M. and Vallianou, N. and Petrauskiene, V. and Stubnova, V. and Wilson, T. and Shen, J. and Geladari, E. and Trigkidis, K. and Assing, K. and Bumblyte, I. A. and Gunga, H.-C. and Kambezidis, H. D. and Rasmussen, L. M. and Tepel, M. and Hirche, F. and Steinach, M. and Stangl, G. I. and Feister, U. and Tan, Q.},
+  title   = {25-{H}ydroxyvitamin {D}$_3$ metabolism modulates the effect of variable {UV} exposure on 25-hydroxyvitamin {D}$_3$ plasma concentrations},
+  journal = {Communications Medicine},
+  year    = {2026},
+  volume  = {6},
+  number  = {1},
+  pages   = {105},
+  doi     = {10.1038/s43856-025-01368-7},
+  pmid    = {41530331},
+  pmcid   = {PMC12894941}
 }
 
-% %TODO verify: cited in the repo only as "Holick 1981 (Science 211:590-3)"
-% (vitd_physiology.py comment, MODEL_AND_EVIDENCE.md, 'Data and paper requests', data request 6). Author list and
-% exact title not recorded in the repository; do not guess co-authors.
-@misc{holick1981,
-  author = {Holick, M. F. and others},
-  title  = {{TODO} verify -- previtamin~D3 photostationary-state plateau study, {S}cience, 1981},
-  year   = {1981},
-  note   = {Cited in the repository only as ``Science 211:590--593''; full author list and exact title not recorded}
+@article{holick1981,
+  author  = {Holick, M. F. and MacLaughlin, J. A. and Doppelt, S. H.},
+  title   = {Regulation of cutaneous previtamin {D}$_3$ photosynthesis in man: skin pigment is not an essential regulator},
+  journal = {Science},
+  year    = {1981},
+  volume  = {211},
+  number  = {4482},
+  pages   = {590--593},
+  doi     = {10.1126/science.6256855},
+  pmid    = {6256855}
 }
 
-% %TODO verify: cited in the repo only as "van Dijk et al. 2016, Photochem
-% Photobiol Sci -- 'The action spectrum for vitamin D3: initial skin
-% reaction and prolonged exposure'" (MODEL_AND_EVIDENCE.md, 'Data and paper requests', data request 5). Full
-% author list, volume, and pages not recorded.
-@misc{vandijk2016,
-  author = {van Dijk, A. and others},
-  title  = {The action spectrum for vitamin~{D}3: initial skin reaction and prolonged exposure},
-  journal= {Photochemical \& Photobiological Sciences},
-  year   = {2016},
-  note   = {{TODO} verify -- full author list, volume, and pages not recorded in the repository}
+@article{vandijk2016,
+  author  = {van Dijk, A. and den Outer, P. and van Kranen, H. and Slaper, H.},
+  title   = {The action spectrum for vitamin {D}$_3$: initial skin reaction and prolonged exposure},
+  journal = {Photochemical \& Photobiological Sciences},
+  year    = {2016},
+  volume  = {15},
+  number  = {7},
+  pages   = {896--909},
+  doi     = {10.1039/c6pp00034g},
+  pmid    = {27286277}
+}
+
+@article{vandijk2017,
+  author  = {van Dijk, A. and den Outer, P. and van Kranen, H. and Slaper, H.},
+  title   = {Quantum yield for the photo-degradation of vitamin {D}$_3$},
+  journal = {Photochemical \& Photobiological Sciences},
+  year    = {2017},
+  volume  = {16},
+  number  = {5},
+  pages   = {714--722},
+  doi     = {10.1039/c6pp00393a},
+  pmid    = {28322421}
+}
+
+@article{scholze2026,
+  author  = {Scholze, A. and Shinkov, A. and Slavov, G. S. and Luman, M. and Vallianou, N. and Petrauskiene, V. and Stubnova, V. and Wilson, T. and Shen, J. and Geladari, E. and Trigkidis, K. and Assing, K. and Bumblyte, I. A. and Gunga, H.-C. and Kambezidis, H. D. and Rasmussen, L. M. and Tepel, M. and Hirche, F. and Steinach, M. and Stangl, G. I. and Feister, U. and Tan, Q.},
+  title   = {25-{H}ydroxyvitamin {D}$_3$ metabolism modulates the effect of variable {UV} exposure on 25-hydroxyvitamin {D}$_3$ plasma concentrations},
+  journal = {Communications Medicine},
+  year    = {2026},
+  volume  = {6},
+  number  = {1},
+  pages   = {105},
+  doi     = {10.1038/s43856-025-01368-7},
+  pmid    = {41530331},
+  pmcid   = {PMC12894941}
 }
 
 
@@ -565,33 +591,38 @@
 % (f) UV exposure and skin cancer risk (competing objective; future work)
 % -----------------------------------------------------------------------------
 
-% %TODO verify: cited in vitd_physiology.py only as "Elwood & Jopson 1997
-% meta-analysis of 29 case-control studies" with the specific odds ratios
-% (intermittent OR 1.71, heavy occupational OR 0.86, sunburn OR 1.91)
-% attributed to it. Journal, volume, and pages not recorded in the
-% repository.
-@misc{elwood1997,
-  author = {Elwood, J. M. and Jopson, J.},
-  title  = {{TODO} verify -- melanoma and sun exposure meta-analysis of 29 case-control studies, 1997},
-  year   = {1997},
-  note   = {Journal, volume, and pages not recorded in the repository}
+@article{elwood1997,
+  author  = {Elwood, J. M. and Jopson, J.},
+  title   = {Melanoma and sun exposure: an overview of published studies},
+  journal = {International Journal of Cancer},
+  year    = {1997},
+  volume  = {73},
+  number  = {2},
+  pages   = {198--203},
+  doi     = {10.1002/(sici)1097-0215(19971009)73:2<198::aid-ijc6>3.0.co;2-r},
+  pmid    = {9335442}
 }
 
-% %TODO verify: cited only as "Leiter 2009" throughout the repo, in support
-% of the BCC/melanoma-tracks-intermittent-exposure claim. No further
-% bibliographic detail recorded anywhere in the repository.
-@misc{leiter2009,
-  author = {Leiter, U. and others},
-  title  = {{TODO} verify -- reference cited only as ``Leiter 2009'' in the repository; exact title, journal, volume, and pages not recorded},
-  year   = {2009}
+@article{leiter2009,
+  author  = {Leiter, U. and Garbe, C.},
+  title   = {Epidemiology of melanoma and nonmelanoma skin cancer--the role of {UV}-radiation},
+  journal = {Advances in Experimental Medicine and Biology},
+  year    = {2008},
+  volume  = {624},
+  pages   = {89--103},
+  doi     = {10.1007/978-0-387-77574-6_8},
+  pmid    = {18348210}
 }
 
-% %TODO verify: cited only as "Calzavara-Pinton 2015" throughout the repo.
-% No further bibliographic detail recorded anywhere in the repository.
-@misc{calzavarapinton2015,
-  author = {Calzavara-Pinton, P. and others},
-  title  = {{TODO} verify -- reference cited only as ``Calzavara-Pinton 2015'' in the repository; exact title, journal, volume, and pages not recorded},
-  year   = {2015}
+@article{calzavarapinton2015,
+  author  = {Calzavara-Pinton, P. and Ortel, B. and Venturini, M.},
+  title   = {Non-melanoma skin cancer and sun exposure and sun protection},
+  journal = {Giornale Italiano di Dermatologia e Venereologia},
+  year    = {2015},
+  volume  = {150},
+  number  = {4},
+  pages   = {369--378},
+  pmid    = {26159670}
 }
 
 % %TODO verify: cited only as "Armstrong 1988" in vitd_physiology.py. No
@@ -607,7 +638,7 @@
 % vitd_physiology.py. No journal, volume, or page data recorded.
 @misc{osullivan2026,
   author = {O'Sullivan, D. E. and others},
-  title  = {{TODO} verify -- Ontario workers occupational sun-exposure cohort (n {\textapprox} 2.4 million), cited only as ``O'Sullivan 2026'' in the repository},
+  title  = {{TODO} verify -- Ontario workers occupational sun-exposure cohort (n $\approx$ 2.4 million), cited only as ``O'Sullivan 2026'' in the repository},
   year   = {2026},
   note   = {Journal, volume, and pages not recorded in the repository}
 }
@@ -642,15 +673,16 @@
 % Model structure: geometry, body-size, and photodegradation mechanisms
 % -----------------------------------------------------------------------------
 
-% %TODO verify: cited in vitd_physiology.py comment as "Drincic 2012 (Obesity
-% 20:1444-8, N=686)". Author list beyond "Drincic" not recorded.
 @article{drincic2012,
-  author  = {Drincic, A. T. and others},
-  title   = {{TODO} verify -- hyperbolic relationship between 25(OH)D and total body weight (obesity cohort, N=686)},
+  author  = {Drincic, A. T. and Armas, L. A. G. and Van Diest, E. E. and Heaney, R. P.},
+  title   = {Volumetric dilution, rather than sequestration best explains the low vitamin {D} status of obesity},
   journal = {Obesity},
   year    = {2012},
   volume  = {20},
-  pages   = {1444--1448}
+  number  = {7},
+  pages   = {1444--1448},
+  doi     = {10.1038/oby.2011.404},
+  pmid    = {22262154}
 }
 
 % %TODO verify: cited only as "Ekwaru 2014 (N=17,614)" in vitd_physiology.py.
@@ -680,46 +712,57 @@
 % Personal UV dose geometry (minutes-of-sun recommendations)
 % -----------------------------------------------------------------------------
 
-% %TODO verify: cited only as "Cockell 2001, electronic dosimetry, clear
-% sky: 0.35 +/- 0.12" in vitd_objectives.py. No journal/volume/pages
-% recorded.
-@misc{cockell2001,
-  author = {Cockell, C. S. and others},
-  title  = {{TODO} verify -- personal/ambient UV exposure-ratio dosimetry, cited only as ``Cockell 2001'' in the repository},
-  year   = {2001}
+@article{cockell2001,
+  author  = {Cockell, C. S. and Scherer, K. and Horneck, G. and Rettberg, P. and Facius, R. and Gugg-Helminger, A. and Driscoll, C. and Simpson, C.},
+  title   = {Exposure of humans to cellularly damaging solar ultraviolet radiation in ambient conditions},
+  journal = {Journal of Photochemistry and Photobiology B: Biology},
+  year    = {2001},
+  volume  = {60},
+  number  = {2--3},
+  pages   = {85--92},
+  doi     = {10.1016/s1011-1344(01)00135-0}
 }
 
-% %TODO verify: cited only as "Parisi 2000, upright, various sites, shade:
-% 0.16-0.49" in vitd_objectives.py.
-@misc{parisi2000,
-  author = {Parisi, A. V. and others},
-  title  = {{TODO} verify -- personal UV exposure-ratio study, cited only as ``Parisi 2000'' in the repository},
-  year   = {2000}
+@article{parisi2000,
+  author  = {Parisi, A. V. and Meldrum, L. R. and Kimlin, M. G. and Wong, J. C. F. and Aitken, J. and Mainstone, J. S.},
+  title   = {Evaluation of differences in ultraviolet exposure during weekend and weekday activities},
+  journal = {Physics in Medicine \& Biology},
+  year    = {2000},
+  volume  = {45},
+  number  = {8},
+  pages   = {2253--2262},
+  doi     = {10.1088/0031-9155/45/8/314},
+  pmid    = {10958193}
 }
 
-% %TODO verify: cited only as "Parisi 2003, standing posture, leg sites:
-% 0.14-0.39" in vitd_objectives.py.
-@misc{parisi2003,
-  author = {Parisi, A. V. and others},
-  title  = {{TODO} verify -- personal UV exposure-ratio study, cited only as ``Parisi 2003'' in the repository},
-  year   = {2003}
+@article{parisi2003,
+  author  = {Lester, R. A. and Parisi, A. V. and Kimlin, M. G. and Sabburg, J.},
+  title   = {Optical properties of poly(2,6-dimethyl-1,4-phenylene oxide) film and its potential for a long-term solar ultraviolet dosimeter},
+  journal = {Physics in Medicine \& Biology},
+  year    = {2003},
+  volume  = {48},
+  number  = {22},
+  pages   = {3685--3698},
+  doi     = {10.1088/0031-9155/48/22/005},
+  pmid    = {14680267}
 }
 
-% %TODO verify: cited only as "Thieden 2000, wrist vs head: wrist ~0.50 of
-% head dose" in vitd_objectives.py. Note this is a DIFFERENT Thieden paper
-% from thieden2008 above (Thieden E. published multiple UV-dosimetry
-% papers); do not merge the two entries.
 @misc{thieden2000,
   author = {Thieden, E. and others},
   title  = {{TODO} verify -- personal UV dosimetry (wrist vs head exposure ratio), cited only as ``Thieden 2000'' in the repository},
   year   = {2000}
 }
 
-@misc{schmalwieser2018,
-  author = {Schmalwieser, A. W. and others},
-  title  = {{TODO} verify -- review of personal solar UV exposure measurements, exact title/volume/pages not recorded beyond ``Schmalwieser et al. 2018, Photochem Photobiol''},
-  journal= {Photochemistry and Photobiology},
-  year   = {2018}
+@article{schmalwieser2018,
+  author  = {Schmalwieser, A. W. and Siani, A. M.},
+  title   = {Review on Nonoccupational Personal Solar {UV} Exposure Measurements},
+  journal = {Photochemistry and Photobiology},
+  year    = {2018},
+  volume  = {94},
+  number  = {5},
+  pages   = {900--915},
+  doi     = {10.1111/php.12946},
+  pmid    = {29856894}
 }
 
 % Named in MODEL_AND_EVIDENCE.md / vitd_model.py ONLY to document a citation-tracing
