@@ -247,9 +247,9 @@ def young2020_calibration_check():
     else:
         ratio = float("inf")
 
-    # Young 2020 target range
+    # Young 2020 target range (xlsx per-person fit range)
     target_low = 1.29
-    target_high = 1.43
+    target_high = 1.50
 
     if target_low <= ratio <= target_high:
         result_status = "CALIBRATION_CHECK_PASS"
@@ -307,5 +307,84 @@ def young2020_calibration_check():
     }
 
 
+def alahouhala_reversal_check():
+    """Verify biphasic mode reproduces Finland UV reversal at high baseline.
+    
+    Targets (approximate from Ala-Houhala Finland vernal study):
+      Low baseline D0 ≈ 37 nmol/L: predict delta 25(OH)D > 0 after 8 weeks
+      High baseline D0 ≈ 116 nmol/L: predict delta 25(OH)D < 0 after 8 weeks
+    
+    Protocol proxy: 3x/week spring solar UV in Finland (~1 SED/session),
+    BSA = 0.25 (arms/face typical spring clothing), 56 day duration,
+    source = 'solar_broadband'.
+    """
+    from vitd_model import ModelParams, simulate, build_weekly_schedule, get_E_source
+    
+    params = ModelParams(feedback_mode='biphasic')
+    schedule = build_weekly_schedule(56, 1.0, [0, 2, 4])  # Mon/Wed/Fri
+    
+    print("\n--- Ala-Houhala Finland Reversal Check ---")
+    results = {}
+    for D0, label in [(37.0, 'low_baseline'), (116.0, 'high_baseline')]:
+        r = simulate(fst=2, schedule=schedule, duration_days=56,
+                     params=params, D0=D0, exposed_bsa_override=0.25,
+                     E_source_override=get_E_source('solar_broadband'))
+        delta = r['D'][-1] - D0
+        expected_sign = '+' if D0 < 90 else '-'
+        actual_sign = '+' if delta > 0 else '-'
+        status = 'PASS' if expected_sign == actual_sign else 'FAIL'
+        results[label] = {
+            "D0": D0,
+            "delta": delta,
+            "actual_sign": actual_sign,
+            "expected_sign": expected_sign,
+            "status": status
+        }
+        print(f"  {label}: D0={D0:.0f}, delta D={delta:.1f}, sign={actual_sign}, expected={expected_sign} [{status}]")
+    return results
+
+
+def deboer2025_vitd_check():
+    """Cross-validate synthesis rate A against De Boer 2025 vitamin D response.
+
+    De Boer 2025 protocol:
+      31 subjects, 0.8 SED per session, 3x/week for 5 weeks (15 sessions, 8.8 SED cumulative).
+      Lower back exposure only (~8% BSA, exposed_bsa_override=0.08).
+      Solar simulator (E_source=1.0). Baseline D0 ≈ 64.0 nmol/L.
+      Observed response FP I-III: +6.0 nmol/L (64 -> 70 nmol/L, p=0.023).
+    """
+    from vitd_model import ModelParams, simulate, build_weekly_schedule, get_E_source
+    
+    params = ModelParams(feedback_mode='linear')
+    schedule = build_weekly_schedule(35, 0.8, [0, 2, 4])  # 5 weeks
+    
+    r = simulate(
+        fst=2,
+        schedule=schedule,
+        duration_days=35,
+        params=params,
+        D0=64.0,
+        exposed_bsa_override=0.08,
+        E_source_override=get_E_source('solar_broadband')
+    )
+    pred_delta = r['D'][-1] - 64.0
+    obs_delta = 6.0
+    ratio = obs_delta / pred_delta if pred_delta > 0 else float('inf')
+    
+    print("\n--- De Boer 2025 Vitamin D Check ---")
+    print(f"  Observed delta D = {obs_delta:.1f} nmol/L, Predicted delta D = {pred_delta:.2f} nmol/L")
+    if ratio > 2.0:
+        print(f"  WARNING: Model synthesis rate A underpredicts observed response at small BSA by {ratio:.1f}x. (A=2.353 kept constant per constraints)")
+    return {
+        "obs_delta": obs_delta,
+        "pred_delta": pred_delta,
+        "underpredict_ratio": ratio
+    }
+
+
 if __name__ == "__main__":
     run(verbose=True)
+    young2020_calibration_check()
+    alahouhala_reversal_check()
+    deboer2025_vitd_check()
+

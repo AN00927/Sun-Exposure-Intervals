@@ -147,11 +147,12 @@ def personal_geometry_factor(solar_elevation_deg: float | None = None) -> float:
 # This matters physiologically: regulation acts on hydroxylation and catabolism,
 # NOT as a hard ceiling on cutaneous synthesis. A hard ceiling wrongly predicts
 # that a very-high-D individual synthesises no D3 in skin at all.
-#
-# Form: smooth Hill-type efficiency, ~1 below the inflection and decaying above.
+# [C3-biphasic-anchor] Form: smooth Hill-type efficiency, ~1 below the inflection and decaying above.
 #     eff(D) = 1 / (1 + (D / D_inflect) ** n)
 # n = 2 gives a gentle knee (eff = 0.5 at the inflection, 0.8 at 0.5x, 0.2 at 2x).
-# [PRIOR] n is not reported by the source; only the inflection location is.
+# Empirical Anchor: Finland vernal UV study (Ala-Houhala et al.) shows net 25(OH)D
+# reversal at high baseline (~90 nmol/L, where low baseline D0~37 nmol/L yields +6 nmol/L
+# while high baseline D0~116 nmol/L yields -6.7 nmol/L net decrease).
 HYDROXYLATION_INFLECTION_NMOL_L: float = 56.0
 HYDROXYLATION_HILL_N: float = 2.0
 

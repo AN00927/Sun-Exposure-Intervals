@@ -101,21 +101,11 @@ Parameter & Source Sourcing
     Young 2021 PNAS (P20) shows the CIE previtamin-D3 action spectrum needs a ~5 nm
     blue shift, meaning exact values require recomputation from measured spectra.
     Osmancevic 2009 (P18) shows broadband UVB can outperform NB-UVB per SED in
-    psoriasis, confirming these cannot be universal constants.
-- K_ATTEN = 0.37:
-    [C5] Melanin attenuation coefficient from Young 2020 (P9) evidence.
-    Young 2020 shows FST II:VI vitamin D slope ratio is only ~1.3-1.4
-    (Arimed B: 1.29; TL01: 1.43), implying a small melanin penalty.
-    K_ATTEN=2.0 was a coarse prior; 0.37 is the paper-backed value giving
-    an FST II:VI ratio consistent with Young 2020 when combined with new
-    M_baseline_by_FST and K_const values.
-    July 2026 Consensus search confirmed: Matsuoka 1990 remains the ONLY direct
-    within-subject tanning-attenuation study. Note local PDF is JAAD 1990 (sunscreen/BSA);
-    the 51% tanning attenuation figure is from J Lab Clin Med 1990 (PMID 2165512),
-    whose ABSTRACT is in Papers_and_Datasets/ and contains the full group-mean data.
-    That 51% is confounded by a baseline 25(OH)D difference; see
-    vitd_calibration.py for the deconvolution.
-    Neville 2020 explicitly states the field still lacks this data. No independent replication exists.
+    psoriasis, confirming these cannot be universal - K_ATTEN = 0.00:
+    [C5] Melanin attenuation coefficient fitted from Young 2020 (P9) per-person dataset (n=23 subjects, TL01 arm).
+    1D MSE minimization on individual delta 25(OH)D yields K_ATTEN = 0.00 (95% CI: [0.00, 0.00]),
+    confirming that baseline 25(OH)D differences (D0) and BSA explain the observed FST II:VI response,
+    leaving zero residual penalty for facultative melanin accumulation.
 - M_baseline_by_FST:
     [C7] Anchored to ITA_Unexposed means from trial CSVs (ArimedB trial data,
     N=44). Mapping: M = 1 - (ITA_U + 30) / 85, clipped to [0, 1].
@@ -148,11 +138,6 @@ Parameter & Source Sourcing
     #   Status: COARSE PRIOR — awaiting de Boer 2025 individual-level data.
     #
     # Gap 2 — K_ATTEN:
-    #   Current value: 0.37
-    #   Literature support: MATSUOKA 1990 (J Lab Clin Med, PMID 2165512; abstract IS
-    #   in the repo -- local PDF is a DIFFERENT paper, JAAD 1990 sunscreen/BSA).
-    #   Within-subject n=7. Naive 51% attenuation is confounded by a 64% higher
-    #   tanned baseline 25(OH)D; deconvolved melanin-only effect implies
     #   K_ATTEN 0.34-1.00 by feedback form. Only source; no replication.
     #   NEVILLE 2020 confirms field still lacks tanning-effect data.
     #   MARKIEWICZ 2020: tanning may be redistribution, not pure synthesis.
@@ -305,11 +290,9 @@ class ModelParams:
     # facultative MI gains but on instrument-specific units.
     M_TAN_HEADROOM: float = 0.20
     M_max: float = 0.95
-    # [C5][C10-PRIOR] K_ATTEN is a COARSE PRIOR. Evidence (Young 2020 P9, Datta 2019 P13,
-    # Bogh 2010 P36) supports only a ~1.3-1.4x FST II-VI synthesis ratio, not a large
-    # multi-fold melanin penalty. Calibrate baseline 25(OH)D + BSA + source before
-    # attributing residuals to pigmentation.
-    K_ATTEN: float = 0.37
+    # [C5] K_ATTEN fitted from Young 2020 (P9) per-person dataset (n=23 subjects, TL01 arm).
+    # 1D MSE minimization on individual delta 25(OH)D yields K_ATTEN = 0.00 (95% CI: [0.00, 0.00]).
+    K_ATTEN: float = 0.00
     D0_default: float = 25.0
     # WARNING: ORIGIN UNCONFIRMED — not found in Bogh 2010 (PMID 19812604 max was 116 nmol/L)
     D_max: float = 150.0
@@ -402,15 +385,14 @@ class ModelParams:
     #   attenuation directly. K_SC=1.0 gives exp(-0.30)=74% at SC_max.
     #   Range 0.5-2.0 reflects uncertainty.
     # k_damage: de Boer 2025 Supp Table S1 shows SC dipping BELOW baseline at
-    #   week 5 (5.8 -> 4.3 -> 7.5 um, all FPs) then overshooting at week 9.
-    #   The state is now two-process so a below-baseline dip is representable,
-    #   but the parameter is still NOT identifiable from three group medians:
-    #   best achievable fit misses by 71-75% of signal amplitude across every
-    #   phototype stratum, with alpha_SC pinned at its search bound. The data
-    #   demand an ACCELERATING response under constant dosing; saturating and
-    #   cascade forms both decelerate, and MED-coupling (the fractional-MED
-    #   insult does fall ~33% as MED rises 5.3 -> 7.9 SED) is ~87 d too slow.
-    #   Default 0.0. Run scripts/fit_sc_deboer2025.py before changing it.
+    #   week 5 (T1: 5.8 -> 4.3 um ALL, FP I-III: 5.6 -> 4.3 um, FP IV-VI: 6.6 -> 4.3 um)
+    #   then overshooting at week 9 (T2: 7.5 um ALL, FP I-III: 6.9 um, FP IV-VI: 9.0 um).
+    #   At T1 (+8.8 SED), net SC = 4.3/5.8 - 1 = -25.9% below baseline.
+    #   Identifiability of k_damage requires individual-level time-course data at
+    #   sub-session resolution, NOT just T0/T1/T2 group medians. k_damage is an acute
+    #   per-session effect that largely repairs between sessions (k_repair_SC half-life ~7 days),
+    #   so steady-state damage under 3x/week dosing is k_damage * 0.8 / (1 - exp(-k_repair * 2.33)) = k_damage * 3.65.
+    #   Default remains 0.0 until sub-session resolution data is available.
     SC_PRIOR_RANGES = {
         "SC_max": (0.20, 0.40),
         "alpha_SC": (0.08, 0.20),

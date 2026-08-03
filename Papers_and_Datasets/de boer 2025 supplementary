@@ -1,0 +1,72 @@
+Supplementary Figure S1 Absorption and action spectra for erythema (Webb et al, 2011), vitamin D (Young et al, 2021), NMSC, immunosuppression (Damian et al, 2011), radical formation (Zastrow et al, 2009), and formation of cis-urocanic acid (McLoone et al, 2005). Emission spectra from the lamp used in the experiment (SunShower combi) in comparison with the sun at different latitudes are shown. NMSC, nonmelanoma skin cancer.
+Unit	Biomarker	T0
+Median (IQR)	T1
+Median (IQR)	T2
+Median (IQR)	P-Value T1 Versus T0	P-Value T2 Versus T0	P-Value T2 Versus T1
+SED	MED (all FPs)	5.3 (4.4–6.2)	6.9 (6.2–8.4)	7.9 (6.9–9.0)	<.0001	<.0001	<.001
+ 	MED (FP I–III)	4.4 (4.2–4.7)	6.2 (5.2–8.3)	6.9 (6.9–7.9)	<.001	<.001	.019
+ 	MED (FP IV–VI)	6.1 (5.3–6.9)	6.9 (6.2–8.5)	7.9 (6.9–9.1)	.002	<.001	.029
+μm	SC thickness (all FPs)	5.8 (4.5–8.6)	4.3 (3.3–5.5)	7.5 (6.9–9.3)	.016	<.001	<.0001
+ 	SC thickness (FP I–III)	5.6 (4.4–6.8)	4.3 (3.2–5.4)	6.9 (6.3–8.1)	.170	.002	<.0001
+ 	SC thickness (FP IV–VI)	6.6 (4.3–9.2)	4.3 (3.2–5.5)	9.0 (7.2–9.7)	.134	<.001	<.0001
+μm	Epidermal thickness (all FP)	108.6 (107.4–110.6)	108.3 (107.8–110.4)	109.4 (108.0–110.0)	.718	.975	.608
+ 	Epidermal thickness (FP I–III)	110.4 (107.7–116.8)	109.7 (107.7–110.3)	109.1 (108.0–110.7)	.266	.159	>.999
+ 	Epidermal thickness (FP IV–VI)	108.2 (107.1–108.9)	108.3 (108.0–110.7)	109.4 (107.6–110.0)	.121	.105	.551
+ 	Melanin index (all FPs)	30.3 (28.6–32.8)	34.3 (30.7–36.8)	33.7 (32.5–38.6)	<.0001	<.0001	.166
+ 	Melanin index (FP I–III)	29.0 (26.6–30.6)	30.9 (30.4–34.5)	33.3 (32.2–35.1)	.001	<.001	.045
+ 	Melanin index (FP IV–VI)	31.8 (30.1–35.9)	35.3 (32.5–40.9)	34.6 (32.7–39.5)	.002	<.001	.791
+ 	Erythema index (all FPs)	7.4 (5.7–11.4)	11.2 (9.0–12.7)	11.3 (9.2–15.1)	.001	<.0001	.036
+ 	Erythema index (FP I–III)	6.1 (4.9–7.0)	11.6 (8.1–12.6)	10.2 (9.2–13.4)	<.001	.001	.637
+ 	Erythema index (FP IV–VI)	10.3 (7.7–12.4)	11.2 (9.1–12.8)	13.4 (9.1–16.6)	.233	.011	.021
+cUCA/total UCA	cUCA ratio (all FPs)	0.0	0.6 (0.5–0.6)	0.5 (0.4–0.6)	<.0001	<.0001	.031
+ 	cUCA ratio (FP I–III)	0.0	0.6 (0.6–0.7)	0.5 (0.4–0.6)	<.0001	.003	.078
+ 	cUCA ratio (FP IV–VI)	0.0	0.6 (0.5–0.6)	0.5 (0.4–0.6)	<.0001	<.001	.182
+μmol/l	Vitamin D (all FPs)	64.0 (53.0–77.0)	69.0 (61.0–80.0)	 	.039	 	 
+μmol/l	Vitamin D (FP I–III)	64.0 (54.5–74.0)	70.0 (67.0–83.5)	 	.023	 	 
+μmol/l	Vitamin D (FP IV–VI)	62.5 (46.8–84.8)	67.0 (50.8–78.3)	 	.495	 	 
+Supplementary Table S1
+MED, SC Thickness, Epidermal Thickness, Melanin Index, Erythema Index, and cUCA Ratio at Different Visits
+Abbreviations: cUCA, cis-urocanic acid; FP, Fitzpatrick phototype; IQR, interquartile range; MED, minimal erythema dose; SC, stratum corneum; SED, standard erythema dose; UCA, urocanic acid.
+P < .05 is considered statistically significant. Boldfaced numbers are statistically significant. The difference between visits was tested using ANOVA nonparametric tests. Biomarkers are presented as median with IQR.
+Open table in a new tab
+Unit	Biomarker	T0
+Median (IQR)	T1
+Median (IQR)	T2
+Median (IQR)	(Adjusted) P-Value T1 Versus T0	(Adjusted) P-Value T2 Versus T0	(Adjusted) P-Value T2 Versus T1
+SC biomarkers
+pg/μg protein	IL-1RA	193.2 (126.6–265.4)	304.8 (178.5–492.9)	144.9 (103.8–209.3)	.034	.076	<.001
+pg/μg protein	IL-1α	225.6 (153.4–348.9)	137.1 (81.8–229.2)	140.9 (75.7–202.6)	.001	<.001	.236
+pg/μg protein	IL1RA/IL1α	0.8 (0.5–1.5)	2.2 (1.0–4.2)	1.3 (0.6–2.2)	<.0001	.012	.012
+pg/μg protein	IL-18	0.3 (0.2–0.7)	0.4 (0.2–0.9)	0.2 (0.1–0.7)	.200	.096	.003
+pg/μg protein	CCL17	0.1 (0.1–0.1)	0.1 (0.1–0.1)	0.1 (0.0–0.1)	1.000	.014	.014
+pg/μg protein	CCL27	0.3 (0.2–0.4)	0.4 (0.3–0.4)	0.3 (0.2–0.3)	.954	.003	.002
+pg/μg protein	IP-10	0.1 (0.1–0.1)	0.1 (0.1–0.1)	0.1 (0.0–0.1)	.286	.001	<.001
+pg/μg protein	CCL4	0.2 (0.2–0.3)	0.2 (0.2–0.3)	0.1 (0.1–0.2)	.999	<.001	<.001
+pg/μg protein	VEGFA	0.2 (0.2–0.3)	0.2 (0.1–0.3)	0.1 (0.1–0.2)	.096	<.001	.019
+pg/μg protein	PIGF	0.4 (0.2–0.5)	0.4 (0.3–0.6)	0.3 (0.2–0.4)	1.000	.001	.001
+pg/μg protein	MMP9	0.3 (0.1–1.7)	0.2 (0.1–1.3)	0.1 (0.1–0.8)	.377	.034	.216
+Blood biomarkers
+pg/μl	IL-1RA	482.3 (334.7–597.4)	405.0 (337.7–687.9)	 	.810	 	 
+pg/μl	IL-18	743.5 (596.2–970.5)	780.1 (637.7–1157.0)	 	1.000	 	 
+pg/μl	CCL17	432.3 (328.4–632.7)	486.5 (328.3–639.7)	 	.522	 	 
+pg/μl	CCL27	2263.0 (1850.0–2541.0)	2003.0 (1523.0–2433.0)	 	.191	 	 
+pg/μl	IP-10	347.0 (307.8–493.1)	395.2 (343.7–622.8)	 	.810	 	 
+pg/μl	CCL4	114.5 (87.5–165.8)	138.6 (95.7–192.1)	 	1.000	 	 
+pg/μl	VEGFA	56.7 (35.7–112.3)	66.7 (43.8–111.7)	 	.810	 	 
+pg/μl	PIGF	6.1 (4.0–10.2)	3.6 (1.3–6.5)	 	.006	 	 
+pg/μl	MMP9	110,128.0 (73,517.0–142,324.0)	115,030.0 (67,259.0–132,931.0)	 	.688	 	 
+Supplementary Table S2
+Immunological Biomarkers Measured in the SC at T0–T2 and in Blood at T0–T1, Provided as Median with IQR
+Abbreviations: IQR, interquartile range; MMP9, matrix metalloproteinase 9; SC, stratum corneum.
+Adjusted P-values are corrected for multiple testing using Benjamini–Hochberg false discovery rate test. The difference between visits was tested using ANOVA nonparametric tests. T0 = baseline, visit 1; T1 = after 5 weeks; and T2 = after 9 weeks. P < .05 was regarded as significant. Boldfaced numbers are statistically significant.
+Open table in a new tab
+UVR Source	Erythema	NMSC	Immunosuppression	Radical Formation	cUCA	Previtamin D	Previtamin D (5-nm Shifted)
+SunSZA30	1.00	1.00	1.00	1.00	1.00	1.00	1.00
+SunSZA60	1.00	0.95	1.60	1.87	1.46	0.80	0.61
+SunShower	1.00	0.82	1.92	1.90	0.55	0.79	1.13
+Supplementary Table S3
+Comparison of the Biological Efficiencies of 3 UV Sources: the Sunshower, the Sun Under 30 Degrees Elevation (Representing a Moderate Sun in Spring in The Netherlands), and the Sun Under 60 Degrees Elevation1
+Abbreviations: cUCA, cis-urocanic acid; NMSC, nonmelanoma skin cancer.
+Starting point is a situation where a participant receives the same fixed erythemally weighted dose from either of the 3 UV sources. The high sun is taken to be the reference; therefore, all contributions in the table for this UV source are equal to 1. Similarly, as for all UV sources, the erythemally weighted UV dose is assumed to be the same dose, and all elements in the table for erythema are equal to 1. For all other elements, the table gives the amplification factor of the different effect-weighted UV doses from the Sunshower and the low sun when compared with the high sun. The following health effects are considered: erythema, NMSC, immunosuppression, radical formation, cUCA, previtamin D, and previtamin D (5 nm shifted). For example, a person who uses the Sunshower combi creates 90% more free radicals, 45% less cUCA, and 13% more vitamin D (in the 5-nm shifted vitamin D-action spectrum) than in the sun at an elevation of 60 degrees, which is equal to the amplification of this effect for the lower sun (87%).
+1
+Highest sun in The Netherlands, noon in June.
