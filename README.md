@@ -25,15 +25,24 @@ Unicode characters.
 
 ## Repository Layout
 
-- `vitd_model.py`: model state, parameters, source calibration, and canonical
-   parameter values.
+- `vitd_model.py`: model state, parameters, Young 2021 5nm blue-shift action spectrum calibration, and canonical parameter values.
+- `vitd_calibration.py`: calibration suite (Matsuoka 1990, Young 2020 per-person ratio, Ala-Houhala Finland reversal check, De Boer 2025 cross-validation).
 - `vitd_objectives.py`: the decision problems and schedule objectives.
 - `vitd_protocols.py`: named protocol helpers for study-specific simulations.
 - `vitd_validation.py`: validation suite wiring.
-- `scripts/`: standalone analyses, sweeps, and diagnostics.
+- `nhanes_preprocessing.py`: NHANES standardization and harmonization pipeline.
+- `scripts/`: standalone analyses, parameter fitting, and diagnostics:
+   - `scripts/fit_katten_young2020.py`: 1D MSE fit of $K_{\text{ATTEN}}$ on per-person Young 2020 dataset ($n=23$).
+   - `scripts/nhanes_weighted_check.py`: survey-weighted NHANES analysis with CDC XPT auto-download and zero-retention.
 - `tables/` and `figs/`: generated outputs from the latest analyses.
 - `audit_outputs/`: extracted datasets, summaries, and provenance artifacts.
 - `paper/`: manuscript skeleton and paper-specific notes.
+
+## Key Scripts & Calibration Checks
+
+- **Fitting $K_{\text{ATTEN}}$**: `python scripts/fit_katten_young2020.py`
+- **NHANES Weighted Analysis**: `python scripts/nhanes_weighted_check.py` (automatically downloads missing CDC XPT files)
+- **Calibration Suite**: `python -m vitd_calibration`
 
 ## Key Outputs
 
@@ -48,13 +57,13 @@ Unicode characters.
 Run the full pipeline to regenerate the summary report, tables, and figures:
 
 ```bash
-PYTHONIOENCODING=utf-8 python3 run_all.py
+PYTHONIOENCODING=utf-8 python run_all.py
 ```
 
 Run the tests only:
 
 ```bash
-python3 -m pytest
+python -m pytest
 ```
 
 ## Documentation Map
