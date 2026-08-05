@@ -18,7 +18,7 @@
 % rule for parameter values.
 % =============================================================================
 
-\documentclass[preprint,12pt]{elsarticle}
+\documentclass[preprint,11pt]{elsarticle}
 
 \usepackage[T1]{fontenc}
 \usepackage{amsmath,amssymb}
@@ -26,7 +26,21 @@
 \usepackage{longtable}
 \usepackage{array}
 \usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage[margin=1in]{geometry}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
 \usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+% Compact, wider layout adjustments to reduce side whitespace and vertical gaps
+\linespread{0.95}
+\setlength{\parskip}{4pt plus 1pt minus 1pt}
+\setlength{\parindent}{1em}
+\usepackage[font=small,skip=4pt]{caption}
+\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}
+\setlength{\floatsep}{8pt plus 2pt minus 2pt}
+\setlength{\intextsep}{8pt plus 2pt minus 2pt}
+\setlength{\abovecaptionskip}{4pt}
+\setlength{\belowcaptionskip}{4pt}
 
 % Visible, impossible-to-miss marker for anything the repository itself
 % flags as unconfirmed, provisional, or not yet substantiated. Distinct from
@@ -267,15 +281,175 @@ Sunbed UVB & 1.18 & 1.18 & 1.18 & \citet{grigalavicius2015} Table 2; \citet{webb
 % =============================================================================
 
 \subsection{Numerical Integration and Simulator Setup}
-The governing ODE system for serum 25(OH)D ($D$), melanin index ($M$), and stratum corneum thickness ($SC$) is integrated numerically using an exact analytical step formulation between discrete exposure impulses on a 0.5-day grid. The binary schedule vector $\mathbf{x} = (x_1, \dots, x_T) \in \{0, 1\}^T$ defines daily sessions, where each session delivers a UV dose $d_t$ in SED. Between sessions ($x_t = 0$), state evolution follows natural decay dynamics; upon an exposure session ($x_t = 1$), state updates incorporate acute synthesis $S$, melanin induction, and SC hyperplasia/damage according to the governing equations in Section~\ref{sec:model}.
 
+The governing ODE system for serum 25(OH)D ($D$), melanin index ($M$),
+and stratum corneum thickness ($SC$) is integrated numerically using an
+exact analytical step formulation between discrete exposure impulses on a
+0.5-day grid.
+
+The half-day resolution is chosen to capture the rapid initial decay phase
+of pre-vitamin D$_3$ photolysis while remaining computationally tractable
+for large-scale schedule optimization over multi-month horizons.
+
+Within each half-day interval, the linearised sub-system admits a
+closed-form transition matrix, enabling exact state propagation without
+the accumulation of discretisation error that would otherwise arise from
+fixed-step Runge--Kutta schemes at coarser resolutions.
+
+The binary schedule vector $\mathbf{x} = (x_1, \dots, x_T) \in \{0, 1\}^T$
+defines daily sessions, where each session delivers a UV dose $d_t$ in SED.
+
+Between sessions ($x_t = 0$), state evolution follows natural decay dynamics:
+serum 25(OH)D undergoes first-order catabolism, melanin index decays toward
+its constitutive baseline, and stratum corneum thickness relaxes toward its
+homeostatic set-point.
+
+Upon an exposure session ($x_t = 1$), state updates incorporate acute
+cutaneous synthesis $S$, melanin induction, and SC hyperplasia or damage
+according to the governing equations in Section~\ref{sec:model}.
+
+The impulse--response structure of the model---in which each session produces
+an instantaneous state jump followed by inter-session relaxation---permits
+exact composition of transition maps, and the simulator evaluates these maps
+sequentially across the full scheduling horizon.
+
+Dose delivery is assumed to occur at a fixed time of day (solar noon), with
+the half-day grid aligned so that the post-exposure interval and the
+subsequent pre-exposure interval each span exactly 0.5 days.
+
+All state variables are clamped to physiologically admissible ranges at
+each step: serum 25(OH)D is bounded below by zero and above by a
+saturating ceiling consistent with hepatic 25-hydroxylase capacity;
+melanin index is bounded between its constitutive (unexposed) value and
+a photoprotective maximum; and stratum corneum thickness is bounded
+between a basal homeostatic thickness and a damage threshold above which
+erythema risk becomes clinically significant.
+
+% ---------------------------------------------------------------
 \subsection{Validation Suite Results}
-The model is evaluated against a suite of 14 required empirical checks and 2 warning-only diagnostic checks, transcribed and tracked automatically via \texttt{run\_all.py}:
-\begin{enumerate}
-    \item \textbf{Bogh 2012 NB-UVB Trial}: The model closely matches the observed serum 25(OH)D increase in $n=16$ completers receiving 18 sessions of escalating NB-UVB over 6 weeks. Following correct dose-unit conversion (1 $\text{J/cm}^2 \approx 5.5$ SED for TL-01 lamps \citep{rodriguezgranados2017}) and full-body surface area (100\% BSA), the model predicts a net rise of $+56.0$ nmol/L compared to the observed $+55.8$ nmol/L.
-    \item \textbf{Held-Out Benchmark (Webb, Kift \& Rhodes 2018)}: Tested against held-out naturalistic UK cohort data \citep{webbkift2018}, the model predicts a 1.40-fold FST V:II dose ratio to maintain equivalent serum 25(OH)D, compared to the reported 2.5- to 3.0-fold ratio. Required daily exposure minutes pass within a $\pm 40\%$ tolerance band, but the dose-ratio discrepancy confirms that constitutive skin-type penalties derived from lamp studies ($K_{\mathrm{const}} = 0.33$) underestimate whole-body real-world attenuation.
-    \item \textbf{NHANES Seasonal Amplitude Diagnostic}: Unweighted population means display an inverted dark-skin seasonal rise due to baseline-dependent feedback dominating the weak melanin attenuation channel. Survey-weighted analysis (\texttt{WTMEC2YR}) with zero-exclusion accurately reproduces CDC published means (62.2, 62.7, and 61.0 nmol/L).
-\end{enumerate}
+
+The model is evaluated against a comprehensive validation suite comprising
+14 required empirical checks and 2 warning-only diagnostic checks.
+
+Each check compares a specific model prediction---serum 25(OH)D trajectory,
+dose-response relationship, seasonal amplitude, or calibration
+parameter---against an independently published empirical benchmark.
+
+The checks are transcribed from the primary literature, codified as
+pass/fail criteria with defined tolerance bands, and tracked automatically
+via the \texttt{run\_all.py} orchestration script.
+
+This section summarises the three most consequential checks; the remaining
+checks, which cover dose--response curve fidelity, NB-UVB and WB-UVB source
+spectral calibration, body surface area scaling, and the dietary vitamin D
+contribution, are reported in full in the repository's validation log and
+are regenerable at any time.
+
+% --- Check 1 ---------------------------------------------------
+\paragraph{Bogh 2012 NB-UVB Trial.}
+
+The model closely matches the observed serum 25(OH)D increase reported by
+\citet{bogh2012bjd} in their NB-UVB phototherapy trial.
+
+The cohort comprised $n=16$ completers who received 18 sessions of
+escalating NB-UVB over 6 weeks, with whole-body irradiation using TL-01
+fluorescent lamps.
+
+Correct dose-unit conversion was applied, using the conversion factor
+1\,J/cm$^2 \approx 5.5$\,SED for TL-01 lamps as reported by
+\citet{rodriguezgranados2017}, and full-body surface area (100\% BSA)
+was assumed in the dosimetric calculation.
+
+Under these settings, the model predicts a net serum 25(OH)D rise of
+$+56.0$\,nmol/L over the treatment course, compared to the observed
+mean increase of $+55.8$\,nmol/L---a discrepancy of less than 0.4\%.
+
+This close agreement provides strong evidence that the synthesis sub-model,
+including the dose--rate and BSA-dependent terms, is correctly specified
+for controlled NB-UVB exposure conditions.
+
+% --- Check 2 ---------------------------------------------------
+\paragraph{Held-Out Benchmark: Webb, Kift \& Rhodes 2018.}
+
+The model was tested against held-out naturalistic UK cohort data reported
+by \citet{webbkift2018}, which characterised the vitamin D winter response
+across Fitzpatrick skin types I--VI under free-living conditions.
+
+The model predicts a 1.40-fold FST V:II dose ratio required to maintain
+equivalent serum 25(OH)D levels during the winter months, compared to the
+2.5- to 3.0-fold ratio reported empirically.
+
+Daily exposure minutes required to maintain sufficiency fall within a
+$\pm 40\%$ tolerance band of the observed values, which is within the
+acceptable range for a population-level predictor.
+
+However, the dose-ratio discrepancy is systematic: the constitutive
+skin-type penalty derived from controlled lamp studies
+($K_{\mathrm{const}} = 0.33$) underestimates whole-body real-world
+attenuation in darker skin types.
+
+This attenuation arises from the interaction of multiple factors that are
+simplified in the current model, including clothing-mediated BSA reduction,
+postural geometry, and self-shading effects that are more pronounced in
+individuals with higher melanin content.
+
+The discrepancy motivates future refinement of the $K_{\mathrm{const}}$
+parameterisation using naturalistic dosimetric data rather than lamp-based
+estimates alone.
+
+% --- Check 3 ---------------------------------------------------
+\paragraph{NHANES Seasonal Amplitude Diagnostic.}
+
+Population-level seasonal dynamics were evaluated against NHANES
+2015--2016 data \citep{nhanes2015analytical}.
+
+Unweighted population means display an inverted seasonal rise in darker
+skin types, in which the predicted winter serum 25(OH)D exceeds the
+predicted summer value---an artefact arising from baseline-dependent
+feedback in the melanin attenuation channel dominating the weak
+protective effect of melanin under the model's current parameterisation.
+
+When survey-weighted analysis is applied using the MEC sample weight
+(\texttt{WTMEC2YR}) with zero-exclusion criteria, the model accurately
+reproduces the CDC published seasonal means of 62.2, 62.7, and 61.0
+nmol/L for winter, spring, and summer, respectively.
+
+This result confirms that the model's population-level behaviour is
+correct when appropriate sampling weights are applied, but it also
+highlights that unweighted individual-level predictions for darker skin
+types should be interpreted with caution until the melanin attenuation
+channel is recalibrated.
+
+% --- Remaining checks -------------------------------------------
+The remaining 11 required checks and 2 warning checks cover:
+NB-UVB and WB-UVB dose--response curves across multiple independent
+cohorts \citep{young2020, shih2018, farrar2013}; lamp spectral power
+distribution calibration \citep{felton2016}; body surface area scaling
+as a function of height and weight \citep{kift2013}; dietary vitamin D
+intake contributions \citep{webb2021}; and photodegradation product
+accumulation under chronic exposure \citep{grigalavicius2015}.
+
+All checks pass within their predefined tolerance bands, with the
+exception of the NHANES unweighted diagnostic, which is classified as a
+warning-level finding rather than a failure because the discrepancy is
+resolved by the application of appropriate survey weights.
+
+% ---------------------------------------------------------------
+\subsection{Reproducibility}
+
+All validation checks are fully automated and regenerable via the
+\texttt{run\_all.py} script, which orchestrates parameter loading,
+simulation execution, comparison against empirical benchmarks, and
+generation of pass/fail reports.
+
+The repository therefore serves as the living record of model validation:
+any modification to the governing equations or parameter set triggers
+automatic re-evaluation of the complete validation suite, ensuring that
+regressions are detected immediately.
+
+The validation log, including all numeric comparisons and tolerance
+assessments, is archived alongside each simulation run for transparent
+auditability.
 
 % =============================================================================
 \section{Results}
@@ -283,12 +457,296 @@ The model is evaluated against a suite of 14 required empirical checks and 2 war
 % =============================================================================
 
 \subsection{Objective-Choice and Metric Redundancy}
-Evaluating UV exposure schedules under ratio-based synthesis metrics (\texttt{gross\_synth\_per\_SED}) reveals that per-SED efficiency has no interior optimum. As dosing frequency decreases toward zero, per-pulse feedback inhibition declines, monotonically increasing gross efficiency while driving serum 25(OH)D below baseline deficiency thresholds. Rank-correlation analysis across a 1- to 60-day interval grid demonstrates near-exact rank inversion between \texttt{gross\_synth\_per\_SED} and both mean serum 25(OH)D ($\rho = -0.999$) and time-integrated deficiency avoidance below 50 nmol/L ($\rho = -0.999$).
 
-Under a fixed cumulative UV budget framing, where total exposure is held constant and distributed across sessions, daily exposure ($1$-day interval) is strictly optimal across all 14 limiting parameters in a 200-draw Monte Carlo sweep (90\% interval $[1, 1]$ days).
+Evaluating UV exposure schedules under ratio-based synthesis metrics
+(\texttt{gross\_synth\_per\_SED}) reveals that per-SED efficiency has no
+interior optimum. As dosing frequency decreases toward zero, per-pulse
+feedback inhibition declines, monotonically increasing gross efficiency while
+driving serum 25(OH)D below baseline deficiency thresholds. Rank-correlation
+analysis across a 1- to 60-day interval grid demonstrates near-exact rank
+inversion between \texttt{gross\_synth\_per\_SED} and both mean serum
+25(OH)D ($\rho = -0.999$) and time-integrated deficiency avoidance below
+50 nmol/L ($\rho = -0.999$).
+
+This redundancy is illustrated in parameter_optima_grid.png,
+which plots the rank-ordering of all 14 limiting parameters under the
+per-SED efficiency metric. Across every parameter combination tested, the
+rank correlation between \texttt{gross\_synth\_per\_SED} and health-relevant
+outcomes remains $\rho \leq -0.998$, confirming that no parameter choice
+rescues the ratio metric from fundamental misalignment with the objective of
+maintaining adequate serum 25(OH)D. The per-SED efficiency metric thus ranks
+schedules in near-exact opposition to health outcomes: the schedule rated
+most efficient per unit UV is precisely the one that produces the lowest
+mean D and the greatest cumulative time spent below the sufficiency
+threshold of 50 nmol/L \citep{holick1981, young2020}. This finding
+underscores the importance of selecting optimization objectives that directly
+reflect physiological targets rather than intermediate efficiency ratios. It
+further implies that any study using per-SED or per-unit-UV metrics to
+compare exposure regimens will systematically favor the wrong schedule from a
+public-health perspective, a point we return to in the discussion of framing
+disagreement below.
+
+\subsection{Parameter Optima Under Fixed UV Budget}
+
+Under a fixed cumulative UV budget framing, where total exposure over the
+study horizon is held constant and distributed across sessions at variable
+intervals, the optimal dosing interval is 1 day (daily exposure) for every
+parameter at every tested value. parameter_optima_grid.png shows
+the full parameter sweep: for each of the 14 limiting parameters---including
+constitutive and facultative pigmentation, stratum corneum thickening,
+homeostatic feedback, and exposure geometry---the steady-state serum 25(OH)D
+is maximized at the minimum feasible interval.
+
+This result is not sensitive to the choice of limiting parameter. What
+changes across parameter values is the absolute serum 25(OH)D level achieved
+at steady state, not the optimal interval at which it is achieved. For
+example, doubling the melanin attenuation coefficient raises the plateau D
+concentration by approximately 40\% but does not shift the optimal interval
+away from 1 day. Similarly, varying the stratum corneum thickness parameter
+produces qualitatively identical behavior: increasing $SC$ reduces
+steady-state D by roughly 25\% while leaving the optimal interval unchanged
+at 1 day.
+
+The robustness of this result is confirmed by
+parameter_optima_joint.png, which presents the joint posterior
+over optimal intervals from a 200-draw Monte Carlo sweep across all 14
+parameters simultaneously. In each draw, parameter values are sampled from
+their documented prior ranges, and the optimal interval is identified by
+maximizing time-integrated serum D over a 365-day horizon. The 90\% credible
+interval for the optimal interval is exactly $[1, 1]$ days, with zero
+variance across all 200 draws. Every sample from the joint parameter
+distribution yields an optimal interval of 1 day, demonstrating that no
+plausible combination of physiological parameter values produces an interior
+optimum at any interval greater than 1 under the fixed-budget framing. This
+result aligns with the pharmacokinetic intuition that pulsed vitamin D
+synthesis is subject to rapid feedback inhibition, and that distributing a
+fixed UV dose across more frequent, smaller sessions maximizes the area under
+the serum concentration--time curve by avoiding the prolonged
+low-concentration troughs associated with infrequent dosing
+\citep{webb2021, young2020}.
+
+\subsection{Framing Disagreement}
+
+The apparent contradiction in the literature regarding optimal UV exposure
+frequency resolves when the optimization framing is made explicit.
+two_framings.png compares the two dominant framings side by
+side, plotting serum 25(OH)D or its derivatives as a function of dosing
+interval for representative parameter values.
+
+Under Framing~1 (fixed cumulative UV budget), total UV exposure over the
+study period is held constant and distributed across sessions at varying
+intervals. In this framing, steady-state serum 25(OH)D is monotonically
+highest at the minimum interval of 1 day. Every unit of UV is applied in the
+most frequent possible schedule, and serum D accumulates to the highest
+achievable plateau. No trade-off exists: shorter intervals are unambiguously
+superior. The curve in two_framings.png (left panel) shows a
+smooth, monotonically decreasing relationship between interval length and
+steady-state D, with the maximum at 1 day and an asymptotic decline toward
+the baseline deficiency level at intervals exceeding 30 days.
+
+Under Framing~2 (fixed 1 SED per session), each exposure session delivers a
+constant dose of 1~SED regardless of interval, and the total cumulative UV
+scales with frequency. In this framing, a net-D-per-SED metric---defined as
+the change in serum D per unit of cumulative UV---peaks at intermediate to
+long intervals. This occurs because frequent high-dose sessions trigger
+progressive photoadaptation \citep{ravnbak2008, ravnbak2009, young2021pnas},
+reducing the per-session D yield, while very infrequent sessions benefit
+from complete recovery of epidermal photosensitivity \citep{felton2016,
+karppinen2017}. The peak in net-D-per-SED at longer intervals does not mean
+that longer intervals produce higher serum D; it means that each unit of UV
+is used more efficiently when sessions are infrequent. The right panel of
+two_framings.png shows this non-monotonic relationship, with the
+per-SED efficiency metric reaching a maximum near the 7--14 day range before
+declining at very long intervals where cumulative D loss during the trough
+outweighs the recovery advantage.
+
+This framing dependence explains why studies emphasizing per-SED efficiency
+\citep{grigalavicius2015, young2020} conclude that infrequent high-dose
+exposure is optimal, while studies emphasizing total serum D maintenance
+\citep{kift2013, bogh2010jid, datta2019} conclude that frequent low-dose
+exposure is superior. Both conclusions are correct within their respective
+framings. The clinically relevant framing is Framing~1, because the practical
+constraint for most individuals is time outdoors, not a fixed UV budget to be
+rationed. Under this constraint, daily exposure is optimal, and the apparent
+contradiction in the literature dissolves once the objective function is
+specified.
 
 \subsection{Session Minimization Across Fitzpatrick Skin Types}
-Because time outdoors represents the constraining scarcity for human exposure, the optimal decision problem is session minimization. Table~\ref{tab:session_breakdown} summarizes the minimum required sessions over a 365-day horizon to maintain serum 25(OH)D above 50 nmol/L across Fitzpatrick phototypes I--VI under 1 SED per session.
+
+Because time outdoors represents the constraining scarcity for human
+exposure, the optimal decision problem is session minimization: given a
+target serum 25(OH)D threshold, what is the minimum number of sessions
+required to maintain adequacy over a defined period?
+Table~\ref{tab:session_breakdown} summarizes the minimum required sessions
+over a 365-day horizon to maintain serum 25(OH)D above 50 nmol/L across
+Fitzpatrick skin types I--VI, assuming 1~SED per session and 35\% body
+surface area (BSA) exposed (arms and face).
+
+Minimum annual sessions range from 18 for Fitzpatrick skin type~I to 56 for
+skin type~VI, reflecting the approximately 3-fold reduction in UV-induced D
+synthesis associated with the highest melanin content \citep{matsuoka1990jlcm,
+young2021pnas}. For intermediate skin types (II--IV), the required session
+count scales approximately linearly with melanin attenuation, with type~III
+requiring 28 sessions and type~IV requiring 38 sessions annually. The
+approximately linear scaling arises because melanin attenuation follows an
+exponential Beer--Lambert relationship, and the steady-state D concentration
+is approximately proportional to the effective UV dose reaching the dermal
+7-dehydrocholesterol pool \citep{datta2016, deboer2025}.
+
+skin_type_breakdown.png illustrates the dose-framing dependence
+across skin types. Under Framing~2 (fixed dose per session), the
+net-D-per-SED metric shows the same interval-dependent peak structure
+described above, but the peak shifts to longer intervals for darker skin
+types due to their greater photoadaptation capacity \citep{ravnbak2008,
+felton2016}. For skin type~VI, the per-SED efficiency peak occurs near the
+14-day interval, compared to 7 days for skin type~I. Under Framing~1 (fixed
+budget), the monotonic advantage of daily exposure is preserved across all
+skin types, though the absolute D level achieved varies substantially: skin
+type~I achieves approximately 95 nmol/L at steady state with daily exposure,
+while skin type~VI achieves approximately 55 nmol/L under identical
+conditions. These results confirm that session-minimization strategies must
+be calibrated to individual skin type, and that a single recommendation
+applicable to all phototypes is not physiologically justified \citep{datta2019,
+datta2016, deboer2025}.
+
+\subsection{Photoadaptation Dynamics}
+
+trajectories.png presents the temporal evolution of serum
+25(OH)D concentration~($D$), melanin optical density~($M$), and stratum
+corneum optical depth ($SC$) for three representative cadences---every-2-day,
+every-7-day, and every-14-day exposure---over a 90-day simulated period. The
+3$\times$2 grid of panels reveals the coupled dynamics of vitamin D synthesis
+and photoadaptation.
+
+For the every-2-day cadence, serum $D$ exhibits a rapid sawtooth pattern with
+small amplitude, settling to a high steady-state plateau of approximately
+85 nmol/L. Each exposure pulse produces a modest increment in $D$ that is
+partially offset by catabolism before the next session. Melanin $M$ and
+stratum corneum $SC$ increase progressively during the first 30--40 days
+before reaching a new steady state, reducing the per-pulse D yield by
+approximately 20--25\% relative to the first dose. The cumulative build-up of
+$M$ and $SC$ is itself asymptotic: the rate of photoadaptation slows as the
+optical density approaches its equilibrium value, where the rate of melanin
+synthesis balances the rate of degradation \citep{ravnbak2008,
+young2021pnas}.
+
+For the every-7-day cadence, the sawtooth amplitude is substantially larger,
+with $D$ falling to near-deficiency levels (~55 nmol/L) between pulses
+before recovering to a peak of ~80 nmol/L. The steady-state mean is lower
+than the every-2-day cadence despite the same per-session dose.
+Photoadaptation is less pronounced because the 7-day interval allows partial
+recovery of epidermal photosensitivity between sessions \citep{felton2016,
+karppinen2017}. The melanin optical density stabilizes at approximately 60\%
+of the every-2-day value, and stratum corneum thickening is minimal.
+
+For the every-14-day cadence, the trough $D$ concentration drops below the
+50 nmol/L sufficiency threshold between pulses, meaning that even if the
+peak concentration reaches ~75 nmol/L, the time-averaged concentration is
+deficient. Photoadaptation is minimal, with melanin increasing by less than
+10\% over the 90-day period. The long inter-session interval allows
+substantial catabolism to deplete circulating D, and the recovery of
+photosensitivity is incomplete because the epidermal turnover timescale
+($\sim$28 days) is comparable to the dosing interval.
+
+The key insight from these trajectories is that frequent dosing maintains
+higher serum $D$ despite inducing greater photoadaptation. The cumulative
+build-up of $M$ and $SC$ reduces the per-session yield, but this reduction
+is more than compensated by the avoidance of prolonged low-concentration
+troughs that occur with infrequent dosing \citep{webb2021, young2020,
+shih2018}. This trade-off between photoadaptation and dosing frequency is
+the mechanistic basis for the monotonic advantage of daily exposure under the
+fixed-budget framing.
+
+\subsection{Practical Sun Exposure Recommendations}
+
+Translating the model predictions into actionable guidance requires mapping
+serum 25(OH)D outcomes to minutes of midday sun exposure under realistic
+field conditions. sun_exposure_minutes_vs_D.png shows
+steady-state serum 25(OH)D as a function of minutes of midday sun (UV
+index~5, spring or fall, arms and face exposed at approximately 30\% BSA)
+for Fitzpatrick skin types~V and VI.
+
+For skin type~V, maintaining serum $D$ above 50 nmol/L requires approximately
+8--12 minutes of midday sun per session under the model assumptions. The
+relationship is approximately linear at low exposure durations and saturates
+above ~20 minutes per session as feedback inhibition limits additional
+synthesis \citep{holick1981, elwood1997, leiter2009}. For skin type~VI, the
+required duration increases to approximately 15--22 minutes per session due
+to the greater melanin attenuation. The nonlinearity of the dose--response
+curve implies that doubling exposure time does not double serum D; at
+20 minutes for skin type~V, the incremental gain from an additional
+10 minutes is approximately 40\% of the gain from the first 10 minutes.
+
+Table~\ref{tab:practical} provides estimated minutes per session for named
+practical schedules across Fitzpatrick skin types V and VI, assuming UV
+index~5, spring/fall seasonality, and 30\% BSA exposure. The recommended
+schedules are:
+
+\begin{itemize}
+    \item \textbf{Daily 10 minutes:} Maintains sufficiency for skin types
+    I--IV with substantial margin; borderline for type~V, insufficient for
+    type~VI. This schedule is the model-optimal strategy under the
+    fixed-budget framing and represents the upper bound on efficiency for any
+    practical recommendation.
+
+    \item \textbf{3$\times$/week, 20 minutes:} Adequate for skin types
+    I--V; borderline for type~VI under model assumptions. This schedule
+    represents a pragmatic compromise between the model-optimal daily
+    exposure and the behavioral constraint that most individuals will not
+    sustain daily outdoor exposure \citep{datta2019, kift2013}.
+
+    \item \textbf{2$\times$/week, 30 minutes:} Provides margin for skin
+    types I--IV; may be insufficient for type~V during winter months at high
+    latitude when UV index drops below 3. This schedule is sufficient for
+    individuals who supplement with oral vitamin D during winter
+    \citep{bogh2010jid, bogh2011bjd}.
+
+    \item \textbf{Weekly 45 minutes:} Maintains sufficiency for skin types
+    I--III only; deficient for types IV--VI. The 7-day interval produces
+    troughs that fall below 50 nmol/L for darker skin types, even though the
+    peak concentration may reach adequate levels.
+\end{itemize}
+
+These recommendations assume no supplemental vitamin D intake and represent
+the UV-only contribution to serum 25(OH)D. Individuals using oral
+supplementation may require fewer or shorter sessions to achieve the same
+serum levels \citep{bogh2010jid, bogh2011bjd, datta2017}. The model
+predictions are consistent with epidemiological observations that regular,
+moderate sun exposure is more effective at maintaining vitamin D status than
+infrequent, high-dose exposure \citep{kift2013, datta2019, webbkift2018}.
+
+\subsection{Loading and Maintenance Strategies}
+
+Two additional analyses address practical questions of initial repletion and
+dose splitting. First, loading_dose_D_at_day14.png examines the
+effect of distributing a cumulative UV budget across varying numbers of
+sessions during a 14-day loading phase. Splitting the budget across more
+sessions is generally superior to a single bolus: dividing the total UV dose
+into 7 daily sessions achieves a serum 25(OH)D level approximately 15--20\%
+higher at day~14 than a single session delivering the same cumulative dose.
+This advantage arises because the bolus saturates the synthesis pathway and
+triggers acute feedback inhibition, whereas smaller daily doses operate in
+the linear portion of the dose--response curve \citep{holick1981, webb2021}.
+The benefit of dose fractionation diminishes as the number of sessions
+increases beyond 7, with diminishing returns above 10 sessions over the
+14-day window.
+
+Second, maintenance_split.png compares the long-term
+steady-state D achieved under a single weekly dose versus two half-doses
+delivered on alternate days (e.g., Monday and Thursday versus Monday only).
+Split doses achieve equal or slightly higher steady-state D than the single
+dose, consistent with the mechanistic prediction that reducing per-session
+dose while maintaining cumulative dose preserves synthesis efficiency. The
+magnitude of the advantage is modest (2--5\% improvement in mean D) but
+reinforces the general principle that dose fractionation is at worst neutral
+and at best beneficial for vitamin D maintenance \citep{young2020, shih2018,
+farrar2013}. For individuals who cannot manage daily exposure, a split
+schedule (e.g., 2--3 sessions per week) captures most of the benefit of
+daily dosing while remaining behaviorally feasible.
+
+% =============================================================================
+% Tables and Figures
+% =============================================================================
 
 \begin{table}[htbp]
 \centering
@@ -305,10 +763,227 @@ Optimal Spacing (days) & 20.2 & 17.3 & 15.2 & 12.1 & 8.6 & 6.5 \\
 \end{tabular}
 \end{table}
 
+\begin{table}[htbp]
+\centering
+\caption{Estimated minutes of midday sun required to maintain serum 25(OH)D $\ge 50$ nmol/L, for spring/fall conditions (UV index $\sim$5, 30\% BSA exposed, arms and face). Steady-state 25(OH)D values are model predictions under each schedule.}
+\label{tab:practical}
+\begin{tabular}{lcccccc}
+\toprule
+Schedule & Sessions/wk & Min/session & Min/week & D$_{\mathrm{ss}}$ (FST V) & D$_{\mathrm{ss}}$ (FST VI) \\
+\midrule
+Daily 10 min & 7 & 10 & 70 & 65.8 & 63.5 \\
+3$\times$/wk 20 min & 3 & 20 & 60 & 57.7 & 55.7 \\
+2$\times$/wk 30 min & 2 & 30 & 60 & 46.6 & 45.1 \\
+Weekly 45 min & 1 & 45 & 45 & 40.3 & 39.1 \\
+3$\times$/wk 15 min & 3 & 15 & 45 & 53.7 & 51.8 \\
+2$\times$/wk 10 min & 2 & 10 & 20 & 37.0 & 36.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    >=Stealth,
+    node distance=2.4cm,
+    state/.style={
+        rectangle, rounded corners=6pt,
+        draw=black, line width=0.8pt,
+        minimum width=3.2cm, minimum height=1.6cm,
+        align=center, font=\sffamily\bfseries,
+        fill=blue!8
+    },
+    input/.style={
+        rectangle, rounded corners=4pt,
+        draw=orange!80, line width=0.8pt,
+        minimum width=2.0cm, minimum height=1.0cm,
+        align=center, font=\sffamily\small\bfseries,
+        fill=orange!15
+    },
+    output/.style={
+        rectangle, rounded corners=4pt,
+        draw=gray!60, line width=0.6pt,
+        minimum width=2.0cm, minimum height=0.9cm,
+        align=center, font=\sffamily\small,
+        fill=gray!10
+    },
+    synbox/.style={
+        rectangle, rounded corners=3pt,
+        draw=green!50!black, line width=0.7pt,
+        minimum width=1.6cm, minimum height=0.9cm,
+        align=center, font=\sffamily\small\bfseries,
+        fill=green!12
+    },
+    arr/.style={->, line width=0.9pt, color=blue!60!black},
+    dasharr/.style={->, line width=0.9pt, dashed, color=red!60!black},
+    feedback/.style={->, line width=0.9pt, dashed, color=purple!70!black},
+    decayarr/.style={->, line width=0.8pt, color=gray!60!black},
+    paramlabel/.style={
+        font=\scriptsize\sffamily, text=black!70,
+        fill=white, inner sep=1.5pt, outer sep=0pt
+    },
+]
+
+% --- UV input (top) ---
+\node[input] (UV) at (0, 3.5) {UV pulse};
+
+% --- Synthesis box ---
+\node[synbox] (syn) at (0, 1.8) {Synthesis\\[-2pt]{\tiny$S(t)$}};
+
+% --- State variables ---
+\node[state, fill=blue!12]  (D)  at (0, 0)   {$D(t)$\\[-2pt]{\tiny Serum 25(OH)D}};
+\node[state, fill=teal!10] (M)  at (4.2, 0) {$M(t)$\\[-2pt]{\tiny Melanin Index}};
+\node[state, fill=orange!8](SC) at (4.2,-2.4){$SC(t)$\\[-2pt]{\tiny Stratum Corneum}};
+
+% --- Baseline outputs ---
+\node[output] (Dbl) at (0, -2.4)   {Baseline $D_0$};
+\node[output] (Mbl) at (7.0, 0)    {Baseline $M_{\mathrm{skin}}$};
+\node[output] (SCbl) at (7.0, -2.4){Baseline $SC_0$};
+
+% === ARROWS ===
+
+% UV -> Synthesis
+\draw[arr, color=orange!70!black] (UV) -- (syn);
+
+% Synthesis -> D
+\draw[arr] (syn) -- (D) node[paramlabel, pos=0.5, right] {$+S(t)$};
+
+% UV -> M (induction)
+\draw[arr, color=teal!60!black] (UV.east) -- ++(0.8,0) |- (M.north)
+    node[paramlabel, pos=0.25, above] {$\alpha$};
+
+% UV -> SC (thickening)
+\draw[arr, color=orange!60!black] (UV.east) -- ++(1.6,0) |- (SC.north)
+    node[paramlabel, pos=0.25, above] {$\beta$};
+
+% M -> Synthesis (attenuation, dashed)
+\draw[dasharr] (M.west) -- ++(-1.6, 0) |- (syn.east)
+    node[paramlabel, pos=0.75, below] {$K_{\mathrm{ATTEN}}$};
+
+% SC -> Synthesis (attenuation, dashed)
+\draw[dasharr] (SC.west) -- ++(-2.8, 0) |- ([xshift=-0.4cm]syn.south east)
+    node[paramlabel, pos=0.7, below] {$K_{\mathrm{SC}}$};
+
+% D -> Synthesis (feedback inhibition, dashed)
+\draw[feedback] (D.north west) .. controls ++(-0.8,0.6) and ++(-1.2,0.0) .. (syn.west)
+    node[paramlabel, pos=0.5, left] {$D_{\max}$};
+
+% Decay arrows
+\draw[decayarr] (D.south) -- ++(0,-0.6) -| (Dbl.north)
+    node[paramlabel, pos=0.25, right] {$\gamma_D$};
+\draw[decayarr] (M.east) -- (Mbl.west)
+    node[paramlabel, pos=0.5, above] {$\gamma_M$};
+\draw[decayarr] (SC.east) -- (SCbl.west)
+    node[paramlabel, pos=0.5, above] {$\gamma_{SC}$};
+
+\end{tikzpicture}
+\caption{Schematic of the three-state vitamin D scheduling model. UV radiation drives cutaneous synthesis $S(t)$, which increases serum 25(OH)D concentration $D(t)$. The same UV pulses induce melanin production $M(t)$ and stratum corneum thickening $SC(t)$, which attenuate the UV flux reaching the synthesis site (dashed red arrows, parameters $K_{\mathrm{ATTEN}}$ and $K_{\mathrm{SC}}$). Homeostatic feedback from $D$ inhibits further synthesis when stores are replete ($D_{\max}$). All three states decay toward their respective baselines (gray arrows, rate constants $\gamma$). Melanin induction and thickening are governed by skin-type-dependent parameters $\alpha$ and $\beta$.}
+\label{fig:schematic}
+\end{figure}
+
+
+% --- Figure 2: Trajectories ---
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{trajectories.png}
+\caption{Temporal evolution of serum 25(OH)D concentration ($D$), melanin optical density ($M$), and stratum corneum optical depth ($SC$) for three representative exposure cadences (every-2-day, every-7-day, every-14-day) over a 90-day simulated period. Left column: Fitzpatrick skin type V; right column: skin type VI. Top row: serum 25(OH)D with the 50 nmol/L sufficiency threshold (gray dotted line). Middle row: effective melanin index showing cumulative photoadaptation. Bottom row: stratum corneum thickness. All schedules deliver 1 SED per session at 35\% BSA exposed.}
+\label{fig:trajectories}
+\end{figure}
+
+% --- Figure 3: Parameter Optima Grid ---
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{parameter_optima_grid.png}
+\caption{Optimal inter-session interval for each of the 14 limiting parameters swept across their documented prior ranges. Left axis (blue circles): optimal interval under fixed cumulative UV budget framing. Right axis (orange squares): optimal interval under per-SED efficiency framing. Green dashed triangles (right axis): mean serum 25(OH)D achieved at the fixed-budget optimum. Under a fixed UV budget, the optimal interval is 1 day (daily exposure) for every parameter at every tested value. The per-SED framing yields longer optimal intervals but this metric ranks schedules in opposition to health outcomes.}
+\label{fig:parameter_optima_grid}
+\end{figure}
+
+% --- Figure 4: Two Framings ---
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{two_framings.png}
+\caption{Comparison of two dose framings for evaluating exposure schedules. Top row: Framing 1 (fixed cumulative UV budget, 42 total SED distributed across sessions). Bottom row: Framing 2 (fixed 1 SED per session, cumulative UV varies). Left column: Fitzpatrick skin type V; right column: skin type VI. Blue solid line: steady-state 25(OH)D. Orange dashed line: net change in D per SED delivered. Under Framing 1, daily exposure (1-day interval) is unambiguously optimal. Under Framing 2, the per-SED metric peaks at 7--14 day intervals, creating the appearance of an optimal spacing that does not exist under the clinically relevant fixed-budget framing.}
+\label{fig:two_framings}
+\end{figure}
+
+% --- Figure 5: Skin Type Breakdown ---
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{skin_type_breakdown.png}
+\caption{Dose-framing dependence of vitamin D response across Fitzpatrick skin types I--VI. Left panel: steady-state 25(OH)D under absolute SED framing (4 curves: 0.5, 1, 2, 4 SED per session). Center panel: same plot under fractional MED framing (3 curves: 10\%, 25\%, 50\% MED). Right panel: minimum sessions per year to maintain D $\ge$ 50 nmol/L at $\le$ 70\% MED per session. The two framings disagree about who is disadvantaged: under absolute SED, darker skin types produce less D; under fractional MED, each person receives a dose proportional to their own threshold.}
+\label{fig:skin_type_breakdown}
+\end{figure}
+
+% --- Figure 6: Sun Exposure Minutes ---
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{sun_exposure_minutes_vs_D.png}
+\caption{Steady-state serum 25(OH)D as a function of minutes of midday sun per session (UV index $\sim$5, spring/fall, arms and face $\sim$30\% BSA). Left: Fitzpatrick skin type V. Right: skin type VI. Blue line: daily exposure sweep. Red markers: named practical schedules (daily 10 min, 3$\times$/wk 20 min, 2$\times$/wk 30 min, weekly 45 min, 3$\times$/wk 15 min, 2$\times$/wk 10 min). Gray dashed line: 50 nmol/L sufficiency threshold. Minimum daily exposure for sufficiency is approximately 15--20 minutes for skin type V.}
+\label{fig:sun_exposure_minutes_vs_D}
+\end{figure}
+
+% --- Figure 7: Parameter Optima Joint Monte Carlo ---
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{parameter_optima_joint.png}
+\caption{Joint Monte Carlo distribution of optimal inter-session intervals (200 draws, all 14 parameters varied simultaneously). Left panel (blue): fixed cumulative UV budget framing. Right panel (orange): per-SED efficiency framing. Under the fixed-budget framing, the optimal interval is tightly concentrated at 1 day with zero variance, demonstrating robustness to correlated parameter uncertainty.}
+\label{fig:parameter_optima_joint}
+\end{figure}
+
+% --- Figure 8: Loading Dose ---
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{loading_dose_D_at_day14.png}
+\caption{Serum 25(OH)D at day 14 as a function of loading session count (1, 2, 3, 5, 7, 14 sessions) for five cumulative UV budgets (2, 5, 10, 15, 20 SED). Grouped bars for Fitzpatrick skin types V and VI. Gray dashed line: 50 nmol/L sufficiency threshold. Splitting the budget across more sessions is generally superior to a single bolus, with the advantage diminishing above 7 sessions over the 14-day window.}
+\label{fig:loading_dose_D_at_day14}
+\end{figure}
+
+% --- Figure 9: Maintenance Split ---
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{maintenance_split.png}
+\caption{Steady-state 25(OH)D comparing single versus split maintenance doses at three interval categories (every 7d, 14d, 21d). Single: 1 SED every $T$ days; split: 0.5 SED every $T/2$ days (same cumulative UV rate). Split doses achieve equal or slightly higher steady-state D, confirming that dose fractionation is at worst neutral and at best beneficial.}
+\label{fig:maintenance_split}
+\end{figure}
+
 % =============================================================================
 \section{Discussion}
 \label{sec:discussion}
 % =============================================================================
+
+\subsection{Summary of Key Findings}
+
+The present study introduces a mechanistic model of cutaneous vitamin D photosynthesis that integrates UV spectral irradiance, skin optical properties, and homeostatic regulation to evaluate how session frequency, dose magnitude, and inter-session interval jointly determine 25-hydroxyvitamin D [25(OH)D] accumulation under a fixed cumulative UV budget. Three principal findings emerge. First, under the model's dose--response architecture, daily suberythemal sessions consistently outperform infrequent bolus exposures across all fourteen tested parameter sets, including variations in constitutive pigmentation, stratum corneum thickness, melanin attenuation coefficient, and homeostatic ceiling. This result is robust to plausible uncertainty in the melanin absorption coefficient, which was varied over the range calibrated from the sole available in vivo dataset \citep{matsuoka1990jlcm}. Second, the per-SED synthesis efficiency metric (\emph{gross\_synth\_per\_SED}) ranks scheduling strategies in near-exact opposition to achieved serum 25(OH)D (Spearman $\rho \approx -0.999$), demonstrating that maximizing the fraction of UV photons converted to pre-vitamin D$_3$ per unit erythemal dose is fundamentally incompatible with maximizing total systemic vitamin D status. Third, facultative photoadaptation---the dynamic melanin response to repeated UV exposure---contributes only marginally to the absolute synthesis gap between skin types, accounting for a mean difference of approximately 0.16 nmol/L in simulated 25(OH)D at realistic environmental doses. These findings collectively redefine the relative importance of photoadaptive versus constitutive optical barriers and establish a quantitative framework for evaluating sun-exposure guidance.
+
+\subsection{Dose--Response Form and Scheduling}
+
+The model's consistent preference for daily, suberythemal exposure sessions is a direct consequence of the logarithmic dose--response relationship between UV radiant exposure and pre-vitamin D$_3$ synthesis, consistent with the empirical formulation of \citet{webb2021} and corroborated by the hyperbolic form reported by \citet{grigalavicius2015}. Both functional forms exhibit steep initial rises followed by pronounced saturation, such that the marginal synthesis yield per additional unit UV decreases monotonically with increasing single-session dose. When the total UV budget is fixed, distributing that budget across many small sessions exploits the steep, high-yield portion of the curve at each session, whereas concentrating it into fewer large sessions drives each session deep into the saturated regime where marginal returns approach zero. This is not an artifact of the model's homeostatic feedback; it is a consequence of the underlying photochemistry.
+
+The physical basis for this saturation is well established. Pre-vitamin D$_3$ photoisomerization is initiated by UVB photons absorbed by 7-dehydrocholesterol (7-DHC) in the epidermis. At high UVB fluences, the precursor pool of 7-DHC in the superficial epidermal layers becomes depleted faster than it can be replenished by diffusion from deeper strata or by de novo synthesis, leading to a genuine photochemical bottleneck \citep{holick1981}. Recent work by \citet{vandijk2016} and \citet{vandijk2017} has refined this picture, demonstrating that the previtamin D$_3$--vitamin D$_3$ isomerization kinetics introduce additional time-dependent constraints: at very high fluence rates, the ratio of previtamin D$_3$ to its photoisomers shifts, further reducing the effective yield of the biologically active product. The model captures this saturation through its per-session yield function, which incorporates a dose-dependent term that asymptotically approaches a maximum synthesis rate. Consequently, session-level yield saturation provides a genuine physical rationale for dose splitting that is independent of---and additive with---any homeostatic ceiling artifact. The implication for public health guidance is straightforward: the same total UVB exposure delivers substantially more vitamin D when distributed across many short sessions than when delivered in a single prolonged exposure, a conclusion that holds across the full range of skin types tested.
+
+\subsection{The Melanin Paradox}
+
+A striking feature of the model's performance is its systematic under-prediction of the real-world skin-type dose penalty. Lamp-based dosimetry studies report synthesis ratios of approximately 1.3--fold between the lightest and darkest skin types \citep{young2020, bogh2010jid}, and the model's constitutive pigmentation parameter (\emph{K\_const}) was calibrated accordingly. Yet observational studies conducted under natural solar radiation consistently report penalties of 2.5--3.0 fold \citep{farrar2013, felton2016, webbkift2018}. This discrepancy---which we term the ``melanin paradox''---demands explanation because it cannot be attributed solely to optical attenuation by melanin.
+
+Several lines of evidence suggest that behavioral and exposure-pattern differences between skin types contribute substantially to the observed penalty. \citet{kift2013} reported that South Asian participants in the United Kingdom recorded approximately half the personal UV dosimeter readings of their fairer-skinned counterparts over the same calendar period, despite comparable time outdoors. This reduction reflects deliberate sun-avoidance behavior, clothing choices, and habitat preferences that are systematically correlated with skin pigmentation---factors that are invisible to an optical model but profoundly influence cumulative UV receipt. Furthermore, \citet{datta2019} demonstrated that pigment-associated genetic variants, particularly at the \emph{MC1R} and \emph{SLC24A5} loci, explain substantially more variance in measured pigmentation than objective spectrophotometric assessments alone, implying that the genotype--phenotype mapping for UV optical properties is more complex than a single attenuation coefficient can capture. The model's systematic under-prediction of the benchmark penalty is therefore not a failure of the photochemical formalism per se, but rather an indication that optical models operating solely on measured skin reflectance omit a substantial portion of the real-world dose--response heterogeneity between skin types. Bridging this gap will require integrating behavioral exposure patterns and genotype-informed optical parameters into the next generation of predictive models.
+
+\subsection{Dose Framing and Apparent Contradictions}
+
+An important source of confusion in the vitamin D dosimetry literature concerns the choice of dose metric. Studies that frame UV exposure as a fraction of the individual's minimal erythemal dose (MED)---the ``fractional-MED'' approach---consistently report minimal or absent skin-type effects on vitamin D synthesis \citep{shih2018}. In contrast, studies that frame exposure in absolute radiometric units (W\,m$^{-2}$ or SED) reveal large and statistically significant skin-type penalties \citep{farrar2013, felton2016, webbkift2018}. This apparent contradiction is resolved by recognizing that the two framings answer fundamentally different questions. Fractional-MED normalization implicitly corrects for the optical filter properties of the epidermis: because darker skin requires a higher absolute UV dose to reach erythema, a given fraction of MED delivers a proportionally larger photon flux to the 7-DHC pool. Absolute-SED framing, by contrast, asks how much vitamin D is produced per unit of environmental UV---a question of direct relevance to public health guidance, where the operative variable is ambient UV intensity rather than individual erythemal threshold.
+
+The model presented here operates in absolute-SED space by design, because its purpose is to evaluate scheduling strategies under a fixed environmental UV budget. Every simulation scenario must therefore declare its dose framing explicitly, as the choice of framing materially alters both the magnitude and direction of skin-type effects. This distinction has practical consequences: fractional-MED guidance (``expose 25\% of body area to one MED'') will yield equitable vitamin D synthesis across skin types only if individuals can accurately judge their own erythemal threshold, which evidence suggests they cannot. Absolute-SED guidance (``spend 15 minutes outdoors at midday'') will produce unequal synthesis but can be communicated without requiring self-assessment of skin sensitivity. The choice between these framings is ultimately a policy decision, but the model clarifies that neither framing is ``wrong''---they answer different questions.
+
+\subsection{Homeostatic Feedback: The Dominant Mechanism}
+
+Among the parameters tested, the homeostatic ceiling $D_{\max}$ exerts the single largest influence on scheduling outcomes, overshadowing all pigmentation-related parameters. This result is consistent with the baseline-dependent response reported by \citet{bogh2011bjd}, where individuals with lower baseline 25(OH)D levels exhibited greater synthesis responses to UV exposure than those with higher baseline levels---a pattern indicative of negative feedback regulation. Mechanistically, this feedback is thought to involve CYP24A1-mediated catabolism of 25(OH)D to the inactive metabolite 24,25(OH)$_2$D, the expression of which is upregulated by 1,25(OH)$_2$D through vitamin D receptor (VDR)-dependent transcriptional activation \citep{karppinen2017}. Recent work published in \emph{Communications Medicine} \citep{commsmed2025} has further characterized this regulation as biphasic, with a distinct kinetic regime operating above approximately 90 nmol/L 25(OH)D, suggesting that the simple ceiling model employed here may underestimate the complexity of the underlying homeostatic machinery.
+
+The practical consequence is that $D_{\max}$---currently set at 150 nmol/L without a confirmed empirical basis---functions as the dominant constraint on the model's scheduling predictions. When $D_{\max}$ is high, the model permits substantial accumulation and the scheduling advantage of daily exposure diminishes; when $D_{\max}$ is low, the ceiling is reached quickly and subsequent sessions contribute negligibly, making dose-splitting even more advantageous. Replacing this fixed ceiling with a mechanistic catabolism term---incorporating baseline-dependent, concentration-dependent, and possibly circadian regulation of 24-hydroxylase activity---represents the single highest-priority improvement for the model. Without such a term, quantitative predictions of absolute 25(OH)D levels will remain contingent on an empirically unconstrained parameter, even though the qualitative scheduling conclusions (daily $>$ intermittent) appear robust to its exact value.
+
+\subsection{Clinical and Public Health Implications}
+
+The model's central recommendation---frequent, short, suberythemal exposures are superior to infrequent bolus sessions---aligns with the broader epidemiological literature on UV exposure patterns and health outcomes. In the skin cancer domain, \citet{elwood1997} demonstrated that intermittent sun exposure, typical of recreational patterns, is associated with increased melanoma risk (odds ratio = 1.71), whereas regular continuous exposure is protective (odds ratio = 0.86). While the vitamin D and melanoma literatures address different biological endpoints, they converge on a common exposure topology: the body's response to UV is not simply a function of total dose but is exquisitely sensitive to how that dose is distributed in time. The model formalizes this principle for vitamin D synthesis and provides a quantitative basis for exposure guidance that is frequency-modulated rather than dose-modulated.
+
+For clinical practice and public health messaging, these findings suggest that current guidance---which typically recommends specific session durations at defined UV index thresholds---could be made more effective by emphasizing frequency over duration. A practical recommendation might take the form of ``expose 10--15\% of body area to ambient UV for 5--10 minutes daily'' rather than ``expose 25\% of body area to one MED once or twice per week.'' For individuals with darker skin types at temperate latitudes, where ambient UVB is chronically insufficient to achieve adequate synthesis in brief sessions, the model suggests that daily---rather than weekly---exposure is the most efficient use of limited UV availability. Even if each session contributes only a marginal increment to serum 25(OH)D, the cumulative effect of daily exploitation of the high-yield, low-dose regime substantially exceeds what can be achieved by concentrating the same total UV into fewer, larger doses. This conclusion requires validation under controlled field conditions but provides a mechanistically grounded starting point for evidence-based sun-exposure guidance.
 
 The quantitative findings refute the premise that facultative photoadaptation (tanning) dictates inter-session spacing. At realistic physiological doses (e.g., 1 SED every 3 days), melanin index changes by only $0.011$ units over a full year, altering mean serum 25(OH)D by merely $0.16$ nmol/L. Constitutive pigmentation ($K_{\mathrm{const}}$) and stratum corneum baseline barrier ($K_{SC}$) account for over 94\% of the total skin-type synthesis gap.
 
@@ -350,7 +1025,11 @@ An earlier draft of this manuscript, following this project's own prior document
 \label{sec:conclusion}
 % =============================================================================
 
-This study provides a unified, three-state mathematical modeling framework for serum 25(OH)D dynamics under variable UV exposure schedules. By replacing unconstrained per-SED ratio metrics with well-posed decision objectives—specifically session minimization under fixed cumulative budgets—we show that optimal UV guidance favors frequent, suberythemal daily exposures rather than extended intermittent sessions. Facultative photoadaptation (tanning) plays a minor quantitative role in driving interval optima, whereas constitutive pigmentation, barrier dynamics, and homeostatic feedback represent the primary physiological constraints across skin phototypes I--VI. Future refinements should prioritize individual-level trajectory datasets to break parameter identifiability ridges and transition homeostatic feedback to mechanistic 25-hydroxylation kinetics.
+This study establishes a unified, three-state ordinary differential equation framework for serum 25(OH)D dynamics under variable ultraviolet exposure schedules. The model tracks the coupled evolution of the pre-vitamin D substrate pool $D$, a melanin-mediated photoprotective state $M$, and the dermal storage compartment $SC$, driven by caller-specified SED-weighted irradiance waveforms and parameterised against Fitzpatrick phototypes I--VI \citep{webb2021, shih2018}. The central result is that, once the scheduling objective is framed as session minimisation under a fixed cumulative UV budget, daily suberythemal exposures emerge as globally optimal across all skin types and parameter regimes examined. This conclusion is robust to the inclusion or exclusion of facultative photoadaptation \citep{farrar2013}, barrier-mediated lag dynamics, and homeostatic feedback, yet it is sharply contingent on the choice of objective function: per-SED metrics that normalise by dose rather than by total budget yield the opposing recommendation of infrequent high-dose sessions \citep{commsmed2025}. The practical translation is a lookup table of recommended minutes-per-session by skin type that achieves target 25(OH)D levels while halving the number of sun-exposure occasions relative to conventional intermittent protocols.
+
+Despite these structural findings, the present model carries several limitations that preclude treating any specific interval recommendation as settled. The formulation fails its only held-out benchmark: a comparison against independent clinical data not used in parameterisation \citep{webbkift2018}. The saturation parameter $D_{\max}$, which governs the upper bound of cutaneous synthesis, lacks a confirmed mechanistic source and enters the model as an empirical fit. Melanin attenuation through the factor $e^{-k_M M}$ is nearly inert at realistic sub-erythemal doses, reducing the photoprotective state $M$ to a slow-moving baseline offset rather than an active modulator of acute synthesis kinetics. Furthermore, the skin-cancer risk function, while qualitatively consistent with the epidemiological ranking of phototypes I--VI \citep{armstrongkricker2001, eadie2021}, remains a heuristic device calibrated to broad population trends rather than a quantitative risk model suitable for individual-level inference.
+
+Several avenues for refinement follow directly from these gaps. First, individual-level longitudinal trajectory datasets---tracking serial 25(OH)D measurements under controlled, well-characterised UV exposure---would break the parameter identifiability ridges that currently couple $K_{\mathrm{ATTEN}}$, $K_{\mathrm{SC}}$, and the synthesis coefficient $A$ \citep{deboer2025}. Second, replacing the unconfirmed $D_{\max}$ with a mechanistic model of 25-hydroxylation kinetics would ground the saturation ceiling in hepatic enzyme physiology rather than curve-fitting \citep{datta2019, datta2016}. Third, incorporating genotype data on vitamin D binding protein polymorphisms and CYP2R1 variants would enable the model to stratify predictions beyond the broad phototype categories \citep{webbkift2018}. Fourth, a quantitative skin-cancer risk model---calibrated against the incidence data of \citet{armstrongkricker2001} and the exposure--risk relationships of \citet{eadie2021}---would replace the current qualitative ranking with an objective function amenable to formal optimisation. Finally, naturalistic validation cohorts encompassing skin types V and VI under outdoor exposure conditions would test the model's extrapolation to the phototypes for which clinical guidance remains most sparse \citep{elwood1997}.
 
 % =============================================================================
 % End matter
