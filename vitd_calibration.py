@@ -8,6 +8,8 @@ being checked -- each function's own docstring says which.
 Two checks live here:
   - derive_K_ATTEN / run(): Matsuoka 1990 K_ATTEN deconvolution.
   - young2020_calibration_check(): Young 2020 FST II:VI ratio check.
+  - elwood1997_intermittency_check(): Elwood & Jopson 1997 OR anchoring for
+    the intermittent-risk exponent.
 
 Run as a module for the Matsuoka report: `python3 -m vitd_calibration`.
 """
@@ -152,7 +154,9 @@ def run(verbose: bool = True) -> dict:
                 if r["valid"] and r["feedback_mode"] != "none"]
 
     current = params.K_ATTEN
-    consistent = bool(valid_Ks) and (min(valid_Ks) <= current <= max(valid_Ks))
+    # bool(), not the bare comparison: valid_Ks are np.float64, so the chained
+    # comparison yields np.bool_ and callers doing `is False` silently fail.
+    consistent = bool(valid_Ks) and bool(min(valid_Ks) <= current <= max(valid_Ks))
 
     if verbose:
         print("[Matsuoka 1990] K_ATTEN derivation from PMID 2165512 (abstract, n=7)")
@@ -176,12 +180,17 @@ def run(verbose: bool = True) -> dict:
         print(f"  {'CONSISTENT' if consistent else 'INCONSISTENT'}: current value "
               f"{'lies within' if consistent else 'lies OUTSIDE'} the implied range")
         if not consistent:
-            print("  -> K_ATTEN=0.37 was derived from Young 2020's FST II:VI")
-            print("     CONSTITUTIVE ratio, which is a different quantity from")
-            print("     Matsuoka's within-subject FACULTATIVE (tanning) effect.")
-            print("     Note sensitivity analysis shows K_ATTEN swings steady-state")
-            print("     D by only ~0.3% over 0-2.0, so this changes little in")
-            print("     practice -- but the citation should match the number.")
+            print("  -> EXPECTED, not a defect. The model's K_ATTEN is fitted to the")
+            print("     Young 2020 per-person dataset (n=23, TL01 arm) by 1D MSE")
+            print("     minimisation on individual delta 25(OH)D, which is a")
+            print("     CONSTITUTIVE between-subject quantity. Matsuoka measures a")
+            print("     WITHIN-SUBJECT FACULTATIVE (tanning) effect. The two were")
+            print("     never the same number, and the fit leaves no residual for")
+            print("     facultative melanin once baseline 25(OH)D and BSA are in.")
+            print("     Tolerable because melanin is a weak channel here: moving")
+            print("     K_ATTEN across the whole Matsuoka range shifts steady-state")
+            print("     25(OH)D by ~1%. That is checked, not assumed --")
+            print("     tests/test_matsuoka1990.py::TestConsistencyWithModel.")
         print("  Caveats: n=7, group means, serum D3 not 25(OH)D, excess_M assumed,")
         print("  seasonal confounds. Only within-subject study in existence.")
 
@@ -382,9 +391,170 @@ def deboer2025_vitd_check():
     }
 
 
+# ===========================================================================
+# Elwood & Jopson 1997 -- INTERMITTENT_BURN_EXPONENT anchoring
+# ===========================================================================
+#
+# Source (NOT IN THE REPO -- cited values only; see MODEL_AND_EVIDENCE.md,
+# 'Remaining gaps', gap 15, which lists the skin-cancer dose-response papers as
+# an outstanding acquisition):
+#     Elwood JM, Jopson J. "Melanoma and sun exposure: an overview of published
+#     studies." Int J Cancer. 1997;73(2):198-203.
+#     Meta-analysis of 29 case-control studies. Odds ratios for melanoma:
+#         intermittent exposure          OR = 1.71
+#         sunburn history                OR = 1.91
+#         heavy occupational (continuous) OR = 0.86  (i.e. PROTECTIVE)
+#
+# WHAT THIS CHECK DOES, AND WHAT IT CANNOT DO
+# --------------------------------------------
+# `INTERMITTENT_BURN_EXPONENT` (k) was previously a stated modelling choice with
+# no derivation. This check asks what the Elwood ORs actually constrain it to.
+#
+# The risk index is a SUM over sessions (vitd_physiology.cancer_risk):
+#       intermittent_index  ~  sum_i (sed_i / MED) ** k
+# Compare two schedules at EQUAL CUMULATIVE SED -- the fixed-UV-budget
+# counterfactual that scheduling is actually about. Write the bursty arm as
+# N_b sessions at dose d_b and the continuous arm as N_c at d_c, with
+# N_b * d_b = N_c * d_c. Then
+#
+#       index_b / index_c = (N_b / N_c) * (d_b / d_c) ** k
+#                         = (d_c / d_b) * (d_b / d_c) ** k
+#                         = (d_b / d_c) ** (k - 1)
+#
+# so, writing C = d_b / d_c for the dose contrast and R for the observed OR
+# ratio between the arms,
+#
+#       k = 1 + ln(R) / ln(C)                                          (*)
+#
+# The leading 1 is not cosmetic. Dropping it -- i.e. equating the SUMMED index
+# ratio to a per-session dose ratio -- yields k < 1.4 for every plausible C,
+# a SUB-LINEAR exponent under which bursts would be cheaper than spreading,
+# inverting the model's central scheduling claim.
+#
+# (*) has one equation and two unknowns. Elwood & Jopson report R but not C:
+# the studies classify exposure by PATTERN (recreational/intermittent vs
+# occupational/continuous), never by dose as a fraction of MED. So the ORs alone
+# do NOT identify k. They identify a curve k(C), and a value of k follows only
+# once C is stated.
+#
+# ANCHORING C FROM THE MODEL'S OWN CITED QUANTITIES
+# --------------------------------------------------
+# Rather than guess C, take both arms from quantities this repository already
+# carries with citations:
+#   - burst arm      d_b = 1.0 * MED. Definitional: the sunburn OR arm is
+#                    defined by erythema, and erythema is 1 MED
+#                    (MED values: Shih/Farrar/Rhodes 2018).
+#   - continuous arm d_c = GAMMA_MED * MED = 0.7 * MED, the sub-erythemal
+#                    ceiling used throughout this project. The occupational arm
+#                    does not burn, so d_c < MED necessarily; 0.7 is the
+#                    largest non-burning dose the model ever recommends.
+# giving C = 1 / GAMMA_MED = 1.43, and k in [2.93, 3.24] across the two OR
+# pairs. The incumbent value 3.0 sits inside that interval.
+#
+# DIRECTION OF THE TWO KNOWN BIASES
+# ----------------------------------
+# 1. C is a LOWER bound, so k here is an UPPER bound. If the occupational arm's
+#    typical per-session dose is well under 0.7 MED, C rises and k falls --
+#    C = 2 gives k ~ 2.1, C = 5 gives k ~ 1.5. The bracket is wide.
+# 2. Opposing bias: the arms are NOT at equal cumulative dose. Outdoor workers
+#    accumulate far MORE lifetime UV than the intermittent group and still show
+#    the lower OR, so at matched cumulative dose the true R would exceed the
+#    observed ratio -- which pushes k back up.
+# The two biases oppose, and neither is quantified. Treat 3.0 as OR-CONSISTENT
+# under stated anchors, not as a fitted value, and read the sensitivity table
+# this function prints before quoting any absolute risk index.
+ELWOOD_OR_INTERMITTENT: float = 1.71
+ELWOOD_OR_SUNBURN: float = 1.91
+ELWOOD_OR_OCCUPATIONAL: float = 0.86
+
+
+def elwood_intermittency_exponent(or_burst: float, or_continuous: float,
+                                  dose_contrast: float) -> float:
+    """Exponent k implied by an OR ratio at a given burst:continuous dose contrast.
+
+    Implements k = 1 + ln(R)/ln(C) -- see the derivation above. `dose_contrast`
+    is d_burst/d_continuous in fractions of MED and must exceed 1.
+    """
+    if dose_contrast <= 1.0:
+        raise ValueError("dose_contrast must be > 1 (burst dose exceeds continuous)")
+    if or_continuous <= 0 or or_burst <= 0:
+        raise ValueError("odds ratios must be positive")
+    return 1.0 + float(np.log(or_burst / or_continuous) / np.log(dose_contrast))
+
+
+def elwood1997_intermittency_check(verbose: bool = True) -> dict:
+    """Anchor INTERMITTENT_BURN_EXPONENT against the Elwood & Jopson 1997 ORs.
+
+    This is a CALIBRATION CHECK, not independent validation: it asks whether the
+    incumbent exponent is consistent with the published ORs under the model's own
+    dose anchors, and reports how far the implied value moves as the (unmeasured)
+    dose contrast widens.
+    """
+    from vitd_physiology import INTERMITTENT_BURN_EXPONENT
+    from vitd_objectives import GAMMA_MED
+
+    or_pairs = (("sunburn", ELWOOD_OR_SUNBURN),
+                ("intermittent", ELWOOD_OR_INTERMITTENT))
+    anchor_contrast = 1.0 / GAMMA_MED
+    contrasts = (anchor_contrast, 2.0, 3.0, 5.0)
+
+    table = []
+    for label, or_burst in or_pairs:
+        for C in contrasts:
+            table.append({
+                "or_arm": label,
+                "odds_ratio": or_burst,
+                "or_ratio": or_burst / ELWOOD_OR_OCCUPATIONAL,
+                "dose_contrast": C,
+                "implied_k": elwood_intermittency_exponent(
+                    or_burst, ELWOOD_OR_OCCUPATIONAL, C),
+                "is_anchor": abs(C - anchor_contrast) < 1e-12,
+            })
+
+    anchor_ks = [r["implied_k"] for r in table if r["is_anchor"]]
+    anchor_lo, anchor_hi = min(anchor_ks), max(anchor_ks)
+    full_lo = min(r["implied_k"] for r in table)
+    full_hi = max(r["implied_k"] for r in table)
+    consistent = anchor_lo <= INTERMITTENT_BURN_EXPONENT <= anchor_hi
+
+    if verbose:
+        print("\n--- Elwood & Jopson 1997 intermittency-exponent check ---")
+        print(f"  k = 1 + ln(OR_burst/OR_occupational) / ln(dose_contrast)")
+        print(f"  Anchor contrast C = 1 MED / {GAMMA_MED:.2f} MED = "
+              f"{anchor_contrast:.3f}  (erythema threshold vs sub-erythemal ceiling)")
+        print(f"\n  {'OR arm':>13s} {'OR':>5s} {'R':>6s} {'contrast':>9s} "
+              f"{'implied k':>10s}")
+        print(f"  {'-'*13} {'-'*5} {'-'*6} {'-'*9} {'-'*10}")
+        for r in table:
+            mark = "  <- anchor" if r["is_anchor"] else ""
+            print(f"  {r['or_arm']:>13s} {r['odds_ratio']:>5.2f} "
+                  f"{r['or_ratio']:>6.3f} {r['dose_contrast']:>9.2f} "
+                  f"{r['implied_k']:>10.3f}{mark}")
+        print(f"\n  Anchored bracket:  k in [{anchor_lo:.2f}, {anchor_hi:.2f}]")
+        print(f"  Full sensitivity:  k in [{full_lo:.2f}, {full_hi:.2f}] "
+              f"as the contrast widens to {max(contrasts):.0f}x")
+        print(f"  INTERMITTENT_BURN_EXPONENT = {INTERMITTENT_BURN_EXPONENT:.2f} "
+              f"-> {'CONSISTENT' if consistent else 'OUTSIDE'} with the anchored bracket")
+        if consistent:
+            print("  Status: OR-CONSISTENT under stated anchors. NOT a fitted value --")
+            print("  the ORs under-determine k (one equation, two unknowns); the dose")
+            print("  contrast is an assumption, not a measurement. See the module")
+            print("  comment for the two opposing biases.")
+
+    return {
+        "table": table,
+        "anchor_contrast": anchor_contrast,
+        "anchor_bracket": (anchor_lo, anchor_hi),
+        "full_bracket": (full_lo, full_hi),
+        "exponent": INTERMITTENT_BURN_EXPONENT,
+        "consistent": bool(consistent),
+    }
+
+
 if __name__ == "__main__":
     run(verbose=True)
     young2020_calibration_check()
     alahouhala_reversal_check()
     deboer2025_vitd_check()
+    elwood1997_intermittency_check()
 

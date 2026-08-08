@@ -200,6 +200,29 @@ def hydroxylation_efficiency(D: float,
 # Erythema is the key non-linearity: risk per event rises steeply once a session
 # exceeds ~1 MED. Sub-erythemal sessions still accrue cumulative (SCC) risk.
 SCC_CUMULATIVE_WEIGHT: float = 1.0
+
+# Exponent on per-session intensity in the intermittent (BCC/melanoma) term.
+#
+# [OR-ANCHORED, NOT FITTED] Previously an unjustified modelling choice. It is now
+# anchored to the Elwood & Jopson 1997 odds ratios, but the anchoring identifies
+# an INTERVAL, not a point. Derivation, both bias directions, and the sensitivity
+# of the implied value to the (unmeasured) burst:continuous dose contrast are in
+# vitd_calibration.elwood1997_intermittency_check -- read it before quoting any
+# absolute risk index. In brief:
+#
+#   at equal cumulative SED, index_burst / index_continuous = C ** (k - 1)
+#   so  k = 1 + ln(OR_burst / OR_occupational) / ln(C)
+#
+# where C is the burst:continuous per-session dose contrast in fractions of MED.
+# Anchoring C to this model's own cited doses -- the erythema threshold (1 MED,
+# which defines the sunburn OR arm) against the sub-erythemal ceiling
+# (vitd_objectives.GAMMA_MED, the largest non-burning dose the model recommends)
+# -- puts k in a narrow interval that contains the value below. Widening C
+# lowers the implied k substantially; the non-matched cumulative dose between
+# Elwood's arms biases it back up. Neither bias is quantified.
+#
+# The value is retained rather than moved: it sits inside the anchored interval,
+# and the ORs do not resolve it more finely than that interval.
 INTERMITTENT_BURN_EXPONENT: float = 3.0
 REFERENCE_ANNUAL_SED: float = 52.0
 
@@ -238,8 +261,23 @@ def cancer_risk(session_seds, fst: int) -> dict:
     med = _med_sed_by_fst(fst)
 
     # Constitutive susceptibility. FST I = 1.0 down to FST VI ~ 0.1.
-    # Order-of-magnitude only; matches the ~10x incidence gap between
-    # very fair and deeply pigmented populations.
+    #
+    # [PRIOR] Order-of-magnitude only; matches the ~10x incidence gap between
+    # very fair and deeply pigmented populations qualitatively, and nothing more.
+    # Deliberately NOT touched by the Elwood & Jopson anchoring applied to
+    # INTERMITTENT_BURN_EXPONENT above: Elwood & Jopson do not stratify by skin
+    # type, so there is no FST dose-response in that source to fit this decay
+    # rate to, and force-fitting one OR onto a parameter it never measured would
+    # launder a guess as a calibration. The two axes of the risk model therefore
+    # have DIFFERENT evidence status -- the intensity axis is OR-anchored, this
+    # one is not. Any Pareto frontier that ranks skin types against each other
+    # rests on this prior. A source giving RR or OR per erythemal episode BY SKIN
+    # TYPE is what would settle it (MODEL_AND_EVIDENCE.md, 'Remaining gaps',
+    # gap 15).
+    #
+    # It cancels out of within-FST comparisons: every index here is proportional
+    # to it, so schedule RANKINGS for one person are unaffected. It matters only
+    # for cross-FST comparisons of absolute index values.
     susceptibility = float(np.exp(-0.45 * (fst - 1)))
 
     if seds.size == 0:

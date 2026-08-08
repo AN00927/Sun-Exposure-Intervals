@@ -316,12 +316,20 @@ def main():
     import vitd_benchmark_webbkift
     import vitd_sensitivity
 
+    # The Q2 frontier above is printed as a text table. This turns it into one
+    # actionable schedule per skin type and saves the frontier figure.
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    "scripts"))
+    import risk_aware_scheduling
+
     obj_log = capture_log(_report_decision_problems)
     bench_log = capture_log(vitd_benchmark_webbkift.run)
     sens_log = capture_log(vitd_sensitivity.run)
+    risk_log = capture_log(risk_aware_scheduling.main)
     print(obj_log)
     print(bench_log)
     print(sens_log)
+    print(risk_log)
 
     report.append("\n## 14. Decision problems (recommended objectives)\n")
     report.append(
@@ -333,6 +341,23 @@ def main():
         "is scored alongside the vitamin D outcome.\n"
     )
     report.append("\n```\n" + obj_log + "\n```\n")
+
+    report.append("\n### 14b. Risk-constrained schedule recommendation (constraint C9)\n")
+    report.append(
+        "\nQ2 above returns a frontier, and a frontier is not advice. This "
+        "collapses it to one schedule per skin type: minimise the combined "
+        "cancer-risk index subject to never burning (C1), holding the "
+        "sufficiency floor after the loading period (C3), a session-length "
+        "ceiling (C7), and an optional risk cap (C9).\n\n"
+        "The intensity axis of the risk index is anchored to the Elwood & "
+        "Jopson 1997 odds ratios (`vitd_calibration."
+        "elwood1997_intermittency_check`); the skin-type susceptibility axis is "
+        "**not**, and remains an order-of-magnitude prior. Interval and minutes "
+        "do not depend on it; cross-skin-type comparisons of the index values "
+        "do.\n"
+    )
+    report.append("\n```\n" + risk_log + "\n```\n")
+    report.append("\n![deficiency vs risk frontier](figs/deficiency_risk_frontier.png)\n")
 
     report.append("\n## 15. Held-out external benchmark (Webb/Kift 2018)\n")
     report.append(

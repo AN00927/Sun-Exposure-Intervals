@@ -42,6 +42,25 @@ from vitd_physiology import cancer_risk, personal_geometry_factor
 DEFICIENCY_NMOL_L = 25.0
 SUFFICIENCY_NMOL_L = SUFFICIENCY_TARGET = 50.0
 
+# Sub-erythemal ceiling (constraint C1). Public-health guidance is to stay below
+# the erythema threshold; 0.7 MED leaves headroom for MED estimation error, which
+# is large (MED itself is a group prior here, Shih/Farrar/Rhodes 2018).
+#
+# Lives here rather than in scripts/ because it is a model-level constraint, and
+# because vitd_calibration anchors the Elwood dose contrast to it: 1 MED (the
+# erythema threshold) against GAMMA_MED * MED (the largest non-burning dose the
+# model recommends) is the burst:continuous contrast in
+# vitd_calibration.elwood1997_intermittency_check.
+GAMMA_MED = 0.7
+# 25(OH)D starts below target (D0 = 25 nmol/L), so a sufficiency floor cannot
+# bind from day 0. Allow a loading period, then require the floor to hold.
+RAMP_IN_DAYS = 90
+# Longest session anyone will realistically sit through, and roughly the window
+# over which UV index stays near its midday peak (constraint C7). Sessions longer
+# than this are reported but flagged: the model permits them, a person would not
+# do them.
+PRACTICAL_MAX_MINUTES = 120.0
+
 
 # ---------------------------------------------------------------------------
 # Q1. Fixed session budget -- how should the sessions be spaced?

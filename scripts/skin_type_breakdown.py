@@ -45,7 +45,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from vitd_model import ModelParams, simulate, steady_state_D
 from vitd_physiology import _med_sed_by_fst
 from vitd_objectives import (SUFFICIENCY_NMOL_L, sed_from_minutes,
-                             PERSONAL_DOSE_GEOMETRY_FACTOR)
+                             PERSONAL_DOSE_GEOMETRY_FACTOR,
+                             GAMMA_MED, RAMP_IN_DAYS, PRACTICAL_MAX_MINUTES)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIGS_DIR = os.path.join(ROOT, "figs")
@@ -58,20 +59,12 @@ ABSOLUTE_SEDS = [0.5, 1.0, 2.0, 4.0]
 MED_FRACTIONS = [0.1, 0.25, 0.5]
 INTERVALS = list(range(1, 31))
 
-# Sub-erythemal ceiling. Public-health guidance is to stay below the erythema
-# threshold; 0.7 MED leaves headroom for MED estimation error, which is large
-# (MED itself is a group prior here, Shih/Farrar/Rhodes 2018).
-GAMMA_MED = 0.7
-# 25(OH)D starts at D0 = 25 nmol/L, below target, so the sufficiency constraint
-# cannot bind from day 0. Allow a loading period, then require the floor.
-RAMP_IN_DAYS = 90
+# GAMMA_MED (sub-erythemal ceiling), RAMP_IN_DAYS and PRACTICAL_MAX_MINUTES are
+# model-level constraints and now live in vitd_objectives, so that
+# vitd_optimization can share them without importing from scripts/.
 # Reference conditions for the minutes translation.
 UV_INDEX_REF = 6.0
 EXPOSED_BSA_REF = 0.35
-# Longest session anyone will realistically sit through, and roughly the window
-# over which UV index stays near its midday peak. Sessions longer than this are
-# reported but flagged: the model permits them, a person would not do them.
-PRACTICAL_MAX_MINUTES = 120.0
 
 
 def _run(fst: int, sed: float, interval: int, params: ModelParams | None = None,

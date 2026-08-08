@@ -14,6 +14,8 @@ from vitd_physiology import (body_weight_dilution_factor,
                              personal_geometry_factor,
                              hydroxylation_efficiency,
                              cancer_risk,
+                             _med_sed_by_fst,
+                             INTERMITTENT_BURN_EXPONENT,
                              BODY_WEIGHT_REF_KG)
 
 
@@ -196,6 +198,76 @@ class TestCancerRisk:
                      duration_days=84, params=ModelParams(), D0=25.0)
         assert "cancer_risk" in r
         assert r["cancer_risk"]["total_sed"] == pytest.approx(r["cumulative_SED"])
+
+
+class TestElwoodIntermittencyAnchor:
+    """Ties INTERMITTENT_BURN_EXPONENT back to Elwood & Jopson 1997.
+
+    The exponent is OR-ANCHORED, not fitted: the ORs give one equation in two
+    unknowns (the exponent and the burst:continuous dose contrast, which the
+    studies never report). These lock in the anchoring that was actually used,
+    so that moving the exponent without revisiting the derivation fails loudly.
+    Derivation: vitd_calibration.elwood1997_intermittency_check.
+    """
+
+    def test_model_reproduces_the_elwood_or_ratio_at_equal_cumulative_dose(self):
+        """THE calibration check. At equal cumulative SED, the model's burst:
+        continuous intermittent-index ratio must land inside the range of OR
+        ratios Elwood & Jopson actually observed."""
+        from vitd_objectives import GAMMA_MED
+        from vitd_calibration import (ELWOOD_OR_INTERMITTENT, ELWOOD_OR_SUNBURN,
+                                      ELWOOD_OR_OCCUPATIONAL)
+        fst = 2
+        med = _med_sed_by_fst(fst)
+        # Burst arm at the erythema threshold, continuous arm at the
+        # sub-erythemal ceiling, matched on cumulative SED (70 * med each).
+        burst = cancer_risk([1.0 * med] * 70, fst)
+        continuous = cancer_risk([GAMMA_MED * med] * 100, fst)
+        assert burst["total_sed"] == pytest.approx(continuous["total_sed"])
+
+        ratio = burst["intermittent_index"] / continuous["intermittent_index"]
+        lo = ELWOOD_OR_INTERMITTENT / ELWOOD_OR_OCCUPATIONAL   # 1.71 / 0.86
+        hi = ELWOOD_OR_SUNBURN / ELWOOD_OR_OCCUPATIONAL        # 1.91 / 0.86
+        assert lo <= ratio <= hi, (
+            f"model burst:continuous index ratio {ratio:.3f} falls outside the "
+            f"Elwood & Jopson observed OR-ratio range [{lo:.3f}, {hi:.3f}]")
+
+    def test_exponent_sits_inside_the_anchored_bracket(self):
+        from vitd_calibration import elwood1997_intermittency_check
+        r = elwood1997_intermittency_check(verbose=False)
+        lo, hi = r["anchor_bracket"]
+        assert lo <= INTERMITTENT_BURN_EXPONENT <= hi
+        assert r["consistent"] is True
+
+    def test_derivation_inverts_correctly(self):
+        """k = 1 + ln(R)/ln(C) must round-trip: an exponent k fed back through
+        the equal-cumulative-dose ratio C**(k-1) recovers R."""
+        from vitd_calibration import elwood_intermittency_exponent
+        for R, C in ((2.221, 1.4286), (1.988, 2.0), (3.0, 5.0)):
+            k = elwood_intermittency_exponent(R, 1.0, C)
+            assert C ** (k - 1.0) == pytest.approx(R, rel=1e-9)
+
+    def test_derivation_rejects_degenerate_contrast(self):
+        """C = 1 means the two arms had the same dose, under which no exponent
+        can explain any OR difference."""
+        from vitd_calibration import elwood_intermittency_exponent
+        with pytest.raises(ValueError):
+            elwood_intermittency_exponent(1.91, 0.86, 1.0)
+        with pytest.raises(ValueError):
+            elwood_intermittency_exponent(1.91, 0.0, 1.43)
+
+    def test_susceptibility_axis_is_not_claimed_to_be_anchored(self):
+        """The FST susceptibility decay is an untouched prior. It cancels out of
+        within-skin-type rankings, which is why the recommender may use it -- if
+        that ever stops holding, the frontier's cross-FST comparisons become
+        load-bearing on a guess."""
+        a = cancer_risk([1.0] * 52, 2)
+        b = cancer_risk([2.0] * 26, 2)
+        c = cancer_risk([1.0] * 52, 5)
+        d = cancer_risk([2.0] * 26, 5)
+        # Same schedule pair, different FST: the RATIO must be identical.
+        assert (a["intermittent_index"] / b["intermittent_index"]) == pytest.approx(
+            c["intermittent_index"] / d["intermittent_index"])
 
 
 class TestBackwardCompatibility:

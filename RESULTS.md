@@ -639,6 +639,53 @@ geometry correction applied. 'would burn' flags unusable advice.
 
 ```
 
+### 14b. Risk-constrained schedule recommendation (constraint C9)
+
+Q2 above returns a frontier, and a frontier is not advice. This collapses it to one schedule per skin type: minimise the combined cancer-risk index subject to never burning (C1), holding the sufficiency floor after the loading period (C3), a session-length ceiling (C7), and an optional risk cap (C9).
+
+The intensity axis of the risk index is anchored to the Elwood & Jopson 1997 odds ratios (`vitd_calibration.elwood1997_intermittency_check`); the skin-type susceptibility axis is **not**, and remains an order-of-magnitude prior. Interval and minutes do not depend on it; cross-skin-type comparisons of the index values do.
+
+```
+================================================================================================
+A. LOWEST-RISK SCHEDULE THAT HOLDS SUFFICIENCY, BY SKIN TYPE
+================================================================================================
+  Objective:   minimise the combined skin-cancer risk index
+  Constraint C1: per-session dose <= 70% of MED (sub-erythemal, never burns)
+  Constraint C3: 25(OH)D >= 50 nmol/L every day after day 90
+  Constraint C7: session length <= 120 min
+  Constraint C9: combined risk index <= unbounded
+  Exposed BSA 35%; minutes at UV index 6, geometry factor 0.35
+
+  FST    MED  binding  interval  sess/yr  SED/sess  min/sess   %MED    ss D     SCC  melanoma  combined
+  --- ------ -------- --------- -------- --------- --------- ------ ------- ------- --------- ---------
+    1    2.1      MED        1d      365      0.30        10     14    64.3    2.13    0.1957    0.6454
+    2    2.6      MED        1d      365      0.31        10     12    64.3    1.40    0.2130    0.5453
+    3    3.2      MED        1d      365      0.33        10     10    64.3    0.94    0.2525    0.4877
+    4    5.6  minutes        1d      365      0.40        13      7    64.1    0.72    0.4407    0.5646
+    5    7.5  minutes        1d      365      0.46        15      6    64.1    0.54    0.6892    0.6074
+    6   15.2  minutes        1d      365      0.51        16      3    64.1    0.38    0.9250    0.5901
+
+  Saved C:\Users\Ahaan\sunresearch\Sun-Exposure-Intervals\tables\risk_aware_schedule_by_fst.csv
+
+  All skin types land on the shortest interval on the grid (1d). This is not a solver artefact:
+  the sufficiency floor eliminates the long intervals outright (they cannot reach the
+  target within the erythema and session-length caps), and among what survives, the
+  intermittent term is steeply increasing in per-session dose, so the most frequent
+  schedule is also the lowest-risk one. Deficiency and cancer risk point the SAME way
+  here; the Pareto frontier over the unconstrained grid still trades off, but the
+  constrained problem does not. C9 therefore acts as a feasibility test, not a selector.
+
+  Cross-skin-type comparisons of the risk index VALUES rest on the FST susceptibility
+  prior in vitd_physiology.cancer_risk, which is an order-of-magnitude guess and is NOT
+  anchored by Elwood & Jopson. Interval and minutes columns do not depend on it.
+  Minutes carry at least +/-40% geometric uncertainty (gap 26) and assume the UV index
+  holds at 6 for the whole session.
+Saved C:\Users\Ahaan\sunresearch\Sun-Exposure-Intervals\figs\deficiency_risk_frontier.png
+
+```
+
+![deficiency vs risk frontier](figs/deficiency_risk_frontier.png)
+
 ## 15. Held-out external benchmark (Webb/Kift 2018)
 
 Nothing in this repository is calibrated to this study. Every other check in the validation suite is a calibration or debug target, so this is the only out-of-sample evidence available.

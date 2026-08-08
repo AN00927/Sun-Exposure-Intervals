@@ -15,9 +15,45 @@ human_approved: true
 approved_by: NEEDS_VERIFICATION
 approval_date: NEEDS_VERIFICATION
 
-allowed_calibration_parameters: []
-calibration_set: []
+allowed_calibration_parameters:
+  - INTERMITTENT_BURN_EXPONENT
+calibration_set:
+  - Elwood & Jopson 1997 (Int J Cancer 73:198) odds ratios
 validation_set: []
+
+# Per-parameter approvals. Scoped deliberately: the file-level `approved_by`
+# above still reads NEEDS_VERIFICATION because no one has signed off on the
+# whole calibration set, and filling it in on the strength of one scoped
+# approval would overstate what was actually reviewed.
+parameter_approvals:
+  INTERMITTENT_BURN_EXPONENT:
+    approved_by: User (repository owner)
+    approval_date: 2026-08-08
+    change: "value UNCHANGED at 3.0; provenance changed from an underived
+      modelling choice to OR-anchored"
+    source: >-
+      Elwood & Jopson 1997 melanoma odds ratios (intermittent 1.71, sunburn
+      1.91, heavy occupational 0.86). Cited values only -- the paper itself is
+      NOT in Papers_and_Datasets/ (see MODEL_AND_EVIDENCE.md gap 15).
+    derivation: vitd_calibration.elwood1997_intermittency_check()
+    status: >-
+      OR-ANCHORED TO AN INTERVAL, NOT FITTED TO A POINT. At equal cumulative SED
+      the burst:continuous index ratio is C**(k-1), so
+      k = 1 + ln(OR_burst/OR_occupational)/ln(C). That is one equation in two
+      unknowns: C, the burst:continuous per-session dose contrast in fractions
+      of MED, is never reported by the exposure-pattern literature, which
+      classifies by pattern rather than by dose. Anchoring C to this model's own
+      cited doses (erythema threshold vs sub-erythemal ceiling GAMMA_MED)
+      produces an interval that contains the incumbent value, so the value was
+      RETAINED rather than moved. Two biases oppose and neither is quantified:
+      a wider true contrast lowers the implied exponent, while the non-matched
+      cumulative dose between Elwood's arms raises it.
+    not_covered: >-
+      The FST susceptibility decay in cancer_risk() is deliberately untouched
+      and remains an order-of-magnitude prior. Elwood & Jopson do not stratify
+      by skin type, so there is no dose-response in that source to fit it to.
+      Within-skin-type schedule rankings do not depend on it; cross-skin-type
+      comparisons of absolute index values do.
 
 # Live status. Regenerate with: PYTHONIOENCODING=utf-8 python3 run_all.py
 current_validation:
@@ -44,10 +80,24 @@ notes: |
 
   Young 2020 remains a calibration CHECK, not independent validation.
 
+  INTERMITTENT_BURN_EXPONENT (2026-08-08): the Elwood & Jopson anchoring did NOT
+  change the value. It replaced an unjustified constant with a documented
+  derivation, a stated bracket, and a regression test
+  (tests/test_physiology.py::TestElwoodIntermittencyAnchor) that fails if the
+  exponent moves outside the anchored interval. Treat this as a provenance
+  upgrade, not a recalibration -- no model output changed.
+
   Open blockers:
   - D_max = 150.0 origin unconfirmed, and it drives the headline interval
     ranking (see MODEL_AND_EVIDENCE.md, 'Remaining gaps', gaps 19-20). Highest-value calibration target.
-  - K_ATTEN is a single-source prior; the sole source (Matsuoka 1990,
-    J Lab Clin Med, PMID 2165512) is not in the repo.
+  - K_ATTEN is fitted to the Young 2020 per-person dataset (n=23, TL01 arm),
+    NOT to Matsuoka. Two earlier statements here were wrong and are corrected:
+    (a) Matsuoka 1990 (PMID 2165512) IS in the repo -- the abstract carries the
+    complete n=7 dataset, under a filename that once read "NO PAPER FOUND";
+    (b) the fitted value sits BELOW the Matsuoka-implied facultative range, a
+    documented divergence between a constitutive between-subject fit and a
+    within-subject facultative measurement, not a blocker. It is immaterial
+    (~1% swing in steady-state D) and enforced by
+    tests/test_matsuoka1990.py::TestConsistencyWithModel.
   - No genuine held-out validation study exists; every study is a calibration
     or debug target.
