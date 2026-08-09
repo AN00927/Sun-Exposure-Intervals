@@ -551,10 +551,187 @@ def elwood1997_intermittency_check(verbose: bool = True) -> dict:
     }
 
 
+# ----------------------------------
+# Skin-cancer risk: cumulative-dose exponent (SCC axis)
+# ----------------------------------
+# Ab, the biological amplification factor, is the exponent in
+#     relative tumour density ~ (annual erythemal dose) ** Ab.
+# Published erythemally weighted estimates, so directly comparable to this
+# model's SED units. See the SCC_DOSE_EXPONENT comment in vitd_physiology.
+MOAN1989_AB_SCC: tuple = (1.6, 1.8)     # Cancer Res 49:5207-12, PMID 2766289
+MOAN1989_AB_BCC: tuple = (2.1, 2.3)     # same source
+LITERATURE_AB_RANGE: tuple = (1.3, 3.0)  # Moan 1989 ozone-corrected low end;
+#                                         Jones 1992 Br J Dermatol SCC high end
+
+
+def moan1989_scc_exponent_check(verbose: bool = True) -> dict:
+    """Check SCC_DOSE_EXPONENT against published amplification factors.
+
+    A CONSISTENCY CHECK, not a fit: Ab is measured across ambient-dose gradients
+    between regions, and is applied here to a personal annual cumulative dose.
+    That transfer is an assumption -- the epidemiology constrains the SHAPE
+    (super-linear, exponent well above 1), not the transfer.
+    """
+    from vitd_physiology import SCC_DOSE_EXPONENT
+
+    lo, hi = MOAN1989_AB_SCC
+    in_scc = lo <= SCC_DOSE_EXPONENT <= hi
+    in_lit = LITERATURE_AB_RANGE[0] <= SCC_DOSE_EXPONENT <= LITERATURE_AB_RANGE[1]
+
+    # What the retired linear term implied, for contrast: doubling cumulative
+    # dose doubled the index; under a power law it more than doubles.
+    doubling_ratio = 2.0 ** SCC_DOSE_EXPONENT
+
+    if verbose:
+        print("\n--- Moan 1989 SCC cumulative-dose exponent check ---")
+        print(f"  Moan 1989 Ab, erythemally weighted:  SCC {lo}-{hi}, "
+              f"BCC {MOAN1989_AB_BCC[0]}-{MOAN1989_AB_BCC[1]}")
+        print(f"  Wider literature range:              "
+              f"{LITERATURE_AB_RANGE[0]}-{LITERATURE_AB_RANGE[1]}")
+        print(f"  SCC_DOSE_EXPONENT = {SCC_DOSE_EXPONENT:.2f}  -> "
+              f"{'INSIDE' if in_scc else 'OUTSIDE'} the Moan SCC range, "
+              f"{'INSIDE' if in_lit else 'OUTSIDE'} the literature range")
+        print(f"  Doubling cumulative dose multiplies the SCC index by "
+              f"{doubling_ratio:.2f} (was 2.00 under the retired linear term)")
+        print("  Moan computed Ab with an erythema action spectrum AND a basal-")
+        print("  layer mutagenesis spectrum and got agreement within ~10%, so")
+        print("  using erythemal SED here is not the dominant error.")
+
+    return {
+        "exponent": SCC_DOSE_EXPONENT,
+        "moan1989_scc_range": MOAN1989_AB_SCC,
+        "literature_range": LITERATURE_AB_RANGE,
+        "in_moan_range": bool(in_scc),
+        "in_literature_range": bool(in_lit),
+        "doubling_ratio": float(doubling_ratio),
+    }
+
+
+# ----------------------------------
+# Skin-cancer risk: FST susceptibility axis
+# ----------------------------------
+# Out-of-sample checks. None of these was used to fit anything -- the single
+# fitted number is Fajuyigbe 2018's basal:whole CPD protection ratio, which
+# lives in vitd_physiology.FAJUYIGBE2018_PROTECTION.
+GANDINI2005_RR_SKINTYPE_I_VS_IV: float = 2.09          # PMID 16125929
+GANDINI2005_RR_SKINTYPE_I_VS_IV_CI: tuple = (1.67, 2.58)
+# Ahmed et al. 2025, Br J Dermatol -- England NDRS 2013-2020, European
+# age-standardised incidence per 100,000 py, by ONS ethnic group.
+AHMED2025_WHITE_BLACK_RATIOS: dict = {
+    "melanoma": 27.3 / 1.67,   # 16.3
+    "cSCC": 61.8 / 4.73,       # 13.1
+    "BCC": 154.0 / 5.98,       # 25.8
+}
+# The prior this replaced.
+RETIRED_SUSCEPTIBILITY_DECAY: float = 0.45
+
+
+def skin_type_susceptibility_check(verbose: bool = True) -> dict:
+    """Audit the FST susceptibility curve against evidence it was not fitted to.
+
+    Fitted to exactly one number (Fajuyigbe 2018's basal:whole CPD protection
+    ratio). Checked against three others. Reports the retired prior alongside so
+    the improvement -- or a future regression -- is visible rather than asserted.
+    """
+    from vitd_physiology import (basal_damage_fraction, _phi,
+                                 MELANIN_ATTENUATION_KAPPA,
+                                 SHIH2018_EPIDERMAL_MELANIN_PCT,
+                                 SHIH2018_MEAN_MELANIN_PCT,
+                                 SHIH2018_BASAL_LAYER_CPD_SLOPE,
+                                 SHIH2018_WHOLE_EPIDERMAL_CPD_SLOPE,
+                                 FAJUYIGBE2018_PROTECTION,
+                                 _med_sed_by_fst)
+
+    fsts = [1, 2, 3, 4, 5, 6]
+    derived = {f: basal_damage_fraction(f) for f in fsts}
+    prior = {f: float(np.exp(-RETIRED_SUSCEPTIBILITY_DECAY * (f - 1))) for f in fsts}
+
+    derived_i_iv = derived[1] / derived[4]
+    derived_ii_vi = derived[2] / derived[6]
+    prior_i_iv = prior[1] / prior[4]
+
+    # Check 1 -- Gandini 2005 III melanoma RR, skin type I vs IV.
+    lo, hi = GANDINI2005_RR_SKINTYPE_I_VS_IV_CI
+    gandini_ok = lo <= derived_i_iv <= hi
+
+    # Check 2 -- the premise. If whole-epidermal CPD depends only on fractional
+    # MED, the equal-physical-dose whole-epidermis protection factor MUST equal
+    # the MED ratio. Shih's MED table vs Fajuyigbe's measured 8.0x.
+    med_ratio = _med_sed_by_fst(6) / _med_sed_by_fst(1)
+    premise_err = abs(med_ratio - FAJUYIGBE2018_PROTECTION["whole"]) / \
+        FAJUYIGBE2018_PROTECTION["whole"]
+    premise_ok = premise_err < 0.25
+
+    # Check 3 -- Shih's own pooled basal:whole slope ratio at the study's mean
+    # melanin. Both slopes have wide CIs, so the admissible interval is wide.
+    shih_obs = SHIH2018_BASAL_LAYER_CPD_SLOPE / SHIH2018_WHOLE_EPIDERMAL_CPD_SLOPE
+    shih_ci_lo = 0.01 / 0.19
+    shih_ci_hi = min(0.14 / 0.03, 1.0)
+    shih_pred = _phi(MELANIN_ATTENUATION_KAPPA * SHIH2018_MEAN_MELANIN_PCT)
+    shih_ok = shih_ci_lo <= shih_pred <= shih_ci_hi
+
+    # Direction check only -- population incidence, never a target.
+    ahmed_lo = min(AHMED2025_WHITE_BLACK_RATIOS.values())
+    ahmed_below = derived_ii_vi < ahmed_lo
+
+    if verbose:
+        print("\n--- FST susceptibility check (basal-layer damage fraction) ---")
+        print(f"  FITTED to one number: Fajuyigbe 2018 basal:whole CPD "
+              f"protection = {FAJUYIGBE2018_PROTECTION['basal']}/"
+              f"{FAJUYIGBE2018_PROTECTION['whole']} = "
+              f"{FAJUYIGBE2018_PROTECTION['basal']/FAJUYIGBE2018_PROTECTION['whole']:.3f}"
+              f"   (kappa = {MELANIN_ATTENUATION_KAPPA:.5f})")
+        print(f"\n  {'FST':>4s} {'melanin %':>10s} {'derived':>9s} {'retired prior':>14s}")
+        print(f"  {'-'*4} {'-'*10} {'-'*9} {'-'*14}")
+        for f in fsts:
+            print(f"  {f:>4d} {SHIH2018_EPIDERMAL_MELANIN_PCT[f]:>10.2f} "
+                  f"{derived[f]:>9.4f} {prior[f]:>14.4f}")
+
+        print(f"\n  CHECK 1  Gandini 2005 III melanoma RR, skin type I vs IV "
+              f"= {GANDINI2005_RR_SKINTYPE_I_VS_IV} ({lo}-{hi})")
+        print(f"           derived {derived_i_iv:.2f}  -> "
+              f"{'PASS' if gandini_ok else 'FAIL'}"
+              f"   (retired prior gave {prior_i_iv:.2f})")
+        print(f"  CHECK 2  premise: Shih MED ratio VI:I = {med_ratio:.2f} must "
+              f"equal Fajuyigbe whole-epidermis {FAJUYIGBE2018_PROTECTION['whole']}")
+        print(f"           off by {premise_err*100:.1f}%  -> "
+              f"{'PASS' if premise_ok else 'FAIL'}")
+        print(f"  CHECK 3  Shih pooled basal:whole = {shih_obs:.3f} "
+              f"(CI-admissible {shih_ci_lo:.2f}-{shih_ci_hi:.2f})")
+        print(f"           curve implies {shih_pred:.3f}  -> "
+              f"{'PASS' if shih_ok else 'FAIL'}")
+        print(f"  DIRECTION Ahmed 2025 England White:Black incidence "
+              f"{ahmed_lo:.1f}-{max(AHMED2025_WHITE_BLACK_RATIOS.values()):.1f}")
+        print(f"           derived II:VI = {derived_ii_vi:.2f}  -> "
+              f"{'below, as a constitutive factor should be' if ahmed_below else 'ABOVE -- investigate'}")
+        print("\n  Limits: Fajuyigbe is abstract-only and carries the whole")
+        print("  calibration; Shih's FST V/VI melanin means are n=3 and n=1; no")
+        print("  epidemiological RR per erythemal episode BY SKIN TYPE exists, so")
+        print("  a biomarker stands in for one. Curve is conservative for dark")
+        print("  skin -- neither study could detect basal CPD in FST IV-VI at all.")
+
+    return {
+        "derived": derived,
+        "retired_prior": prior,
+        "kappa": float(MELANIN_ATTENUATION_KAPPA),
+        "derived_I_vs_IV": float(derived_i_iv),
+        "derived_II_vs_VI": float(derived_ii_vi),
+        "gandini_consistent": bool(gandini_ok),
+        "premise_consistent": bool(premise_ok),
+        "premise_error": float(premise_err),
+        "shih_consistent": bool(shih_ok),
+        "shih_implied_ratio": float(shih_pred),
+        "below_population_ratio": bool(ahmed_below),
+        "prior_I_vs_IV": float(prior_i_iv),
+    }
+
+
 if __name__ == "__main__":
     run(verbose=True)
     young2020_calibration_check()
     alahouhala_reversal_check()
     deboer2025_vitd_check()
     elwood1997_intermittency_check()
+    moan1989_scc_exponent_check()
+    skin_type_susceptibility_check()
 

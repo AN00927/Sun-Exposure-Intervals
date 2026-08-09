@@ -556,27 +556,27 @@ spacing can win by simply dosing less.
 
   FST 5, 1.0 SED/session, 84-day horizon, baseline 25 nmol/L:
     sessions  best gap   mean D  final D   min D   d<50  melanoma
-           6        1d     27.4     24.8    24.8     84     0.115   (mean D spread across spacings: 1.8)
-          12        1d     31.0     28.2    25.0     84     0.231   (mean D spread across spacings: 2.7)
-          18        1d     34.0     31.4    25.0     84     0.346   (mean D spread across spacings: 2.7)
-          24        1d     36.5     34.4    25.0     84     0.462   (mean D spread across spacings: 3.0)
-          36        1d     40.6     40.2    25.0     84     0.692   (mean D spread across spacings: 3.1)
+           6        1d     27.4     24.8    24.8     84     0.001   (mean D spread across spacings: 1.8)
+          12        1d     31.0     28.2    25.0     84     0.001   (mean D spread across spacings: 2.7)
+          18        1d     34.0     31.4    25.0     84     0.002   (mean D spread across spacings: 2.7)
+          24        1d     36.5     34.4    25.0     84     0.003   (mean D spread across spacings: 3.0)
+          36        1d     40.6     40.2    25.0     84     0.004   (mean D spread across spacings: 3.1)
 
   FST 5, 3.0 SED/session, 84-day horizon, baseline 25 nmol/L:
     sessions  best gap   mean D  final D   min D   d<50  melanoma
-           6        1d     31.1     27.9    25.0     84     3.115   (mean D spread across spacings: 2.9)
-          12        1d     37.0     33.5    25.0     84     6.231   (mean D spread across spacings: 4.3)
-          18        1d     41.9     38.6    25.0     84     9.346   (mean D spread across spacings: 4.3)
-          24        1d     46.1     43.4    25.0     57    12.462   (mean D spread across spacings: 4.8)
-          36        1d     52.7     52.3    25.0     19    18.692   (mean D spread across spacings: 4.9)
+           6        1d     31.1     27.9    25.0     84     0.018   (mean D spread across spacings: 2.9)
+          12        1d     37.0     33.5    25.0     84     0.036   (mean D spread across spacings: 4.3)
+          18        1d     41.9     38.6    25.0     84     0.054   (mean D spread across spacings: 4.3)
+          24        1d     46.1     43.4    25.0     57     0.072   (mean D spread across spacings: 4.8)
+          36        1d     52.7     52.3    25.0     19     0.108   (mean D spread across spacings: 4.9)
 
   FST 6, 3.0 SED/session, 84-day horizon, baseline 25 nmol/L:
     sessions  best gap   mean D  final D   min D   d<50  melanoma
-           6        1d     30.5     27.5    25.0     84     3.115   (mean D spread across spacings: 2.8)
-          12        1d     36.1     32.7    25.0     84     6.231   (mean D spread across spacings: 4.0)
-          18        1d     40.8     37.6    25.0     84     9.346   (mean D spread across spacings: 4.1)
-          24        1d     44.7     42.1    25.0     66    12.462   (mean D spread across spacings: 4.6)
-          36        1d     51.0     50.7    25.0     20    18.692   (mean D spread across spacings: 4.7)
+           6        1d     30.5     27.5    25.0     84     0.001   (mean D spread across spacings: 2.8)
+          12        1d     36.1     32.7    25.0     84     0.002   (mean D spread across spacings: 4.0)
+          18        1d     40.8     37.6    25.0     84     0.003   (mean D spread across spacings: 4.1)
+          24        1d     44.7     42.1    25.0     66     0.004   (mean D spread across spacings: 4.6)
+          36        1d     51.0     50.7    25.0     20     0.007   (mean D spread across spacings: 4.7)
 
 ==========================================================================
 Q2. STAY SUFFICIENT AT LEAST CANCER RISK (Pareto frontier)
@@ -586,27 +586,27 @@ SCC tracks cumulative dose; melanoma/BCC track intermittent bursts
 
   FST 2, 1-year horizon, target 50 nmol/L:
     Lowest-risk schedule that stays sufficient: 2.0 SED every 1d (365 sessions, 730 SED total)
-      mean D 93.0, days below 50: 16, SCC idx 8.95, melanoma idx 56.154, burn fraction 0%
+      mean D 93.0, days below 50: 16, SCC idx 88.55, melanoma idx 29.366, burn fraction 0%
     Pareto frontier (6 nondominated points):
         SED  interval    d<50     SCC  melanoma
-       4.00        1d      11   17.90   449.231
-       2.00        1d      16    8.95    56.154
-       1.00        1d      27    4.48     7.019
-       0.50        1d      51    2.24     0.877
-       0.25        1d     122    1.12     0.110
-       0.25       28d     365    0.04     0.004
+       4.00        1d      11  287.69   234.931
+       2.00        1d      16   88.55    29.366
+       1.00        1d      27   27.25     3.671
+       0.50        1d      51    8.39     0.459
+       0.25        1d     122    2.58     0.057
+       0.25       28d     365    0.01     0.002
 
   FST 5, 1-year horizon, target 50 nmol/L:
     Lowest-risk schedule that stays sufficient: 4.0 SED every 1d (365 sessions, 1460 SED total)
-      mean D 93.4, days below 50: 16, SCC idx 4.64, melanoma idx 449.231, burn fraction 0%
+      mean D 93.4, days below 50: 16, SCC idx 76.51, melanoma idx 2.603, burn fraction 0%
     Pareto frontier (6 nondominated points):
         SED  interval    d<50     SCC  melanoma
-       4.00        1d      16    4.64   449.231
-       2.00        1d      24    2.32    56.154
-       1.00        1d      41    1.16     7.019
-       0.50        1d      81    0.58     0.877
-       0.25        1d     254    0.29     0.110
-       0.25       28d     365    0.01     0.004
+       4.00        1d      16   76.51     2.603
+       2.00        1d      24   23.55     0.325
+       1.00        1d      41    7.25     0.041
+       0.50        1d      81    2.23     0.005
+       0.25        1d     254    0.69     0.001
+       0.25       28d     365    0.00     0.000
 
 ==========================================================================
 Q3. MINUTES OF SUN PER DAY
@@ -643,7 +643,7 @@ geometry correction applied. 'would burn' flags unusable advice.
 
 Q2 above returns a frontier, and a frontier is not advice. This collapses it to one schedule per skin type: minimise the combined cancer-risk index subject to never burning (C1), holding the sufficiency floor after the loading period (C3), a session-length ceiling (C7), and an optional risk cap (C9).
 
-The intensity axis of the risk index is anchored to the Elwood & Jopson 1997 odds ratios (`vitd_calibration.elwood1997_intermittency_check`); the skin-type susceptibility axis is **not**, and remains an order-of-magnitude prior. Interval and minutes do not depend on it; cross-skin-type comparisons of the index values do.
+All three axes of the risk index are now literature-anchored, with different evidence status each. Interval and minutes do not depend on the skin-type axis; cross-skin-type comparisons of the index values do.
 
 ```
 ================================================================================================
@@ -658,12 +658,12 @@ A. LOWEST-RISK SCHEDULE THAT HOLDS SUFFICIENCY, BY SKIN TYPE
 
   FST    MED  binding  interval  sess/yr  SED/sess  min/sess   %MED    ss D     SCC  melanoma  combined
   --- ------ -------- --------- -------- --------- --------- ------ ------- ------- --------- ---------
-    1    2.1      MED        1d      365      0.30        10     14    64.3    2.13    0.1957    0.6454
-    2    2.6      MED        1d      365      0.31        10     12    64.3    1.40    0.2130    0.5453
-    3    3.2      MED        1d      365      0.33        10     10    64.3    0.94    0.2525    0.4877
-    4    5.6  minutes        1d      365      0.40        13      7    64.1    0.72    0.4407    0.5646
-    5    7.5  minutes        1d      365      0.46        15      6    64.1    0.54    0.6892    0.6074
-    6   15.2  minutes        1d      365      0.51        16      3    64.1    0.38    0.9250    0.5901
+    1    2.1      MED        1d      365      0.30        10     14    64.3    3.61    0.1957    0.8407
+    2    2.6      MED        1d      365      0.31        10     12    64.3    3.76    0.1114    0.6472
+    3    3.2      MED        1d      365      0.33        10     10    64.3    3.93    0.0672    0.5140
+    4    5.6  minutes        1d      365      0.40        13      7    64.1    2.70    0.0110    0.1723
+    5    7.5  minutes        1d      365      0.46        15      6    64.1    1.95    0.0040    0.0881
+    6   15.2  minutes        1d      365      0.51        16      3    64.1    1.18    0.0003    0.0198
 
   Saved C:\Users\Ahaan\sunresearch\Sun-Exposure-Intervals\tables\risk_aware_schedule_by_fst.csv
 
@@ -685,6 +685,77 @@ Saved C:\Users\Ahaan\sunresearch\Sun-Exposure-Intervals\figs\deficiency_risk_fro
 ```
 
 ![deficiency vs risk frontier](figs/deficiency_risk_frontier.png)
+
+### 14c. What anchors the three axes of the risk index
+
+- **Intensity** (`INTERMITTENT_BURN_EXPONENT`): anchored to the Elwood & Jopson 1997 odds ratios, to an *interval* rather than a point — the ORs give one equation in two unknowns.
+- **Cumulative dose** (`SCC_DOSE_EXPONENT`): the biological amplification factor. Super-linear, Moan 1989 Ab = 1.6-1.8 for SCC, erythemally weighted. This term used to be linear.
+- **Skin type** (`basal_damage_fraction`): derived from measured basal-layer CPD, fitted to one number and checked against three it was not fitted to. It replaced an order-of-magnitude prior.
+
+```
+
+--- Elwood & Jopson 1997 intermittency-exponent check ---
+  k = 1 + ln(OR_burst/OR_occupational) / ln(dose_contrast)
+  Anchor contrast C = 1 MED / 0.70 MED = 1.429  (erythema threshold vs sub-erythemal ceiling)
+
+         OR arm    OR      R  contrast  implied k
+  ------------- ----- ------ --------- ----------
+        sunburn  1.91  2.221      1.43      3.237  <- anchor
+        sunburn  1.91  2.221      2.00      2.151
+        sunburn  1.91  2.221      3.00      1.726
+        sunburn  1.91  2.221      5.00      1.496
+   intermittent  1.71  1.988      1.43      2.927  <- anchor
+   intermittent  1.71  1.988      2.00      1.992
+   intermittent  1.71  1.988      3.00      1.626
+   intermittent  1.71  1.988      5.00      1.427
+
+  Anchored bracket:  k in [2.93, 3.24]
+  Full sensitivity:  k in [1.43, 3.24] as the contrast widens to 5x
+  INTERMITTENT_BURN_EXPONENT = 3.00 -> CONSISTENT with the anchored bracket
+  Status: OR-CONSISTENT under stated anchors. NOT a fitted value --
+  the ORs under-determine k (one equation, two unknowns); the dose
+  contrast is an assumption, not a measurement. See the module
+  comment for the two opposing biases.
+
+
+--- Moan 1989 SCC cumulative-dose exponent check ---
+  Moan 1989 Ab, erythemally weighted:  SCC 1.6-1.8, BCC 2.1-2.3
+  Wider literature range:              1.3-3.0
+  SCC_DOSE_EXPONENT = 1.70  -> INSIDE the Moan SCC range, INSIDE the literature range
+  Doubling cumulative dose multiplies the SCC index by 3.25 (was 2.00 under the retired linear term)
+  Moan computed Ab with an erythema action spectrum AND a basal-
+  layer mutagenesis spectrum and got agreement within ~10%, so
+  using erythemal SED here is not the dominant error.
+
+
+--- FST susceptibility check (basal-layer damage fraction) ---
+  FITTED to one number: Fajuyigbe 2018 basal:whole CPD protection = 59.0/8.0 = 7.375   (kappa = 0.05367)
+
+   FST  melanin %   derived  retired prior
+  ---- ---------- --------- --------------
+     1       0.00    1.0000         1.0000
+     2       0.28    0.9925         0.6376
+     3       2.21    0.9419         0.4066
+     4      25.14    0.4727         0.2592
+     5      42.04    0.2640         0.1653
+     6      59.70    0.1356         0.1054
+
+  CHECK 1  Gandini 2005 III melanoma RR, skin type I vs IV = 2.09 (1.67-2.58)
+           derived 2.12  -> PASS   (retired prior gave 3.86)
+  CHECK 2  premise: Shih MED ratio VI:I = 7.24 must equal Fajuyigbe whole-epidermis 8.0
+           off by 9.5%  -> PASS
+  CHECK 3  Shih pooled basal:whole = 0.615 (CI-admissible 0.05-1.00)
+           curve implies 0.701  -> PASS
+  DIRECTION Ahmed 2025 England White:Black incidence 13.1-25.8
+           derived II:VI = 7.32  -> below, as a constitutive factor should be
+
+  Limits: Fajuyigbe is abstract-only and carries the whole
+  calibration; Shih's FST V/VI melanin means are n=3 and n=1; no
+  epidemiological RR per erythemal episode BY SKIN TYPE exists, so
+  a biomarker stands in for one. Curve is conservative for dark
+  skin -- neither study could detect basal CPD in FST IV-VI at all.
+
+```
 
 ## 15. Held-out external benchmark (Webb/Kift 2018)
 
@@ -822,15 +893,30 @@ sub-erythemal sessions carry far less melanoma/BCC risk than a few large ones.
 Frequent-and-small beats rare-and-large, and this now agrees with the vitamin D
 objective rather than opposing it.
 
+All three axes are literature-anchored as of 2026-08-09. The cumulative axis is
+a power law, not linear -- incidence follows `dose ** Ab` with the biological
+amplification factor `Ab` = 1.6-1.8 for SCC (Moan 1989, erythemally weighted),
+so doubling cumulative dose costs 3.25x rather than 2x. The skin-type axis is no
+longer a prior: it is the measured fraction of DNA damage reaching the
+germinative basal layer, derived from Shih 2018 and Fajuyigbe 2018, and it
+reproduces Gandini 2005's melanoma RR for skin type I vs IV (2.09 measured,
+2.12 derived) without having been fitted to it. Recommended schedules did not
+move; the index values did. See section 14c and MODEL_AND_EVIDENCE.md gap 15.
+
 ### What still needs better data
 
-- **The skin-type penalty for whole-body naturalistic exposure** (the Webb/Kift
-  gap above) is the highest-value calibration target.
+- **The skin-type penalty**: the real discrepancy is between two *lamp* studies
+  (Young 2020's 1.3-1.4x against Farrar 2013's 2.5-3x at equal 25(OH)D gain),
+  not between lamp and naturalistic exposure as previously recorded. See
+  MODEL_AND_EVIDENCE.md gap 23.
 - **`D_max`** drives the headline result and has unconfirmed origin. The
-  mechanistic alternative (`feedback_mode='biphasic'`, inflection ~56 nmol/L
-  from Comms Med 2025) is implemented but not yet the default.
-- **Matsuoka 1990 (J Lab Clin Med, PMID 2165512)** is the sole source for
-  `K_ATTEN` and is absent from the repository.
+  mechanistic alternative (`feedback_mode='biphasic'`) is implemented but not
+  the default, and its ~56 nmol/L inflection is an *output* of a breakpoint
+  fitted on the vitamin D3 axis (Scholze 2026, Commun Med 6:105), not a
+  regressor -- the Hill exponent cannot be fitted from that paper at all.
+- **Fajuyigbe 2018 (FASEB J 32:3700)** is abstract-only and its basal:whole CPD
+  protection ratio is the single fitted number behind the whole skin-type risk
+  axis.
 - **de Boer 2025 individual-level SC/MI trajectories** would break the
   `alpha_SC ~ SC_max` and `K_ATTEN ~ K_SC` ridges.
 - **Ambient-to-personal UV dosimetry** for upright activity: the 0.55 geometry

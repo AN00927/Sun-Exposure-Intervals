@@ -111,16 +111,38 @@ def photodegradation_factor(sed: float, d_sat: float = PREVITAMIN_D_SAT_SED) -> 
 # ---------------------------------------------------------------------------
 # 2b. Dynamic Solar Elevation Geometry Factor
 # ---------------------------------------------------------------------------
-# Schmalwieser & Siani 2018 (Photochem Photobiol 94:900-915) & Parisi 2000/2003:
-# The ratio of personal anatomical exposure to ambient horizontal UV (PE:AE)
-# varies dynamically with solar elevation angle (theta). For standing posture,
-# PE:AE is ~0.15 at solar noon (theta ~ 60 deg) and rises to ~0.45 at low solar
-# elevations (theta ~ 20 deg).
+# [CITATION DEFECT, recorded 2026-08-09 -- do not treat this form as sourced.]
+# The functional form below was attributed to Schmalwieser & Siani 2018
+# (Photochem Photobiol 94:900-915) and Parisi 2000/2003. A full-text read of
+# Schmalwieser & Siani does NOT support it:
+#   - The review's own conclusion is that the exposure ratio as a function of
+#     solar elevation is mostly unavailable: "we still lack the knowledge to
+#     predict the UV exposure of exposed body sites under any condition because
+#     ERTAs are not fully available."
+#   - Its one measured ratio-vs-elevation curve (Fig. 2, face) is NON-MONOTONIC:
+#     ~70% at 20 deg elevation, a MINIMUM of ~25% at 30 deg, 120% at 45 deg,
+#     60% at 62 deg. No a + b*cos(theta) can produce that shape. (That curve is
+#     also alpine skiing on snow, so its absolute level is not general.)
+#   - Its Table 1 pairs the same activity and body site across two elevation
+#     bands, and for the chest the ratio is often HIGHER at low elevation --
+#     while Table 4 shows posture alone moves a single site by up to 10x
+#     (shoulder 50% standing vs 5% lying; lower leg 10% standing vs 56% lying).
+#   - No Parisi paper giving the ratio as a function of solar elevation was
+#     located.
+# The closest published closed form is Vernez et al. 2015 (J Expo Sci Environ
+# Epidemiol 25:113-118), which is a TWO-variable model -- cos of maximum daily
+# solar zenith angle and the sky fraction visible from the body site -- so it
+# does not reduce to a function of elevation alone either. Its coefficients are
+# paywalled (data request #13).
+# The form is RETAINED for now because removing it without a replacement would
+# lose the elevation dependence entirely, but it must be treated as a
+# placeholder, not as evidence. See MODEL_AND_EVIDENCE.md gap 26.
 def personal_geometry_factor(solar_elevation_deg: float | None = None) -> float:
     """Dynamic ratio of personal anatomical UV dose to ambient horizontal UV.
 
     Returns 0.35 if solar elevation is unknown (matching Cockell 2001 default).
-    Otherwise returns 0.15 + 0.30 * cos(theta_rad) (Schmalwieser & Siani 2018).
+    Otherwise returns 0.15 + 0.30 * cos(theta_rad) -- a PLACEHOLDER form whose
+    cited support does not hold up on a full-text read; see the comment above.
     """
     if solar_elevation_deg is None:
         return 0.35
@@ -180,9 +202,16 @@ def hydroxylation_efficiency(D: float,
 #   SCC  tracks CUMULATIVE lifetime UV dose.
 #   BCC and MELANOMA track INTERMITTENT, intense exposure and sunburns.
 #
-# Sources: Elwood & Jopson 1997 meta-analysis of 29 case-control studies
-# (intermittent exposure OR = 1.71 for melanoma; heavy OCCUPATIONAL exposure
-# OR = 0.86, i.e. PROTECTIVE; sunburn OR = 1.91); Leiter 2009; Calzavara-Pinton
+# Sources: Elwood & Jopson 1997 (Int J Cancer 73:198-203), overview of 29
+# case-control studies of sun exposure and 21 of sunburn, 9,121 incident
+# melanomas. Full text now in Papers_and_Datasets/ and all four ORs verified
+# against it: intermittent 1.71 (1.54-1.90), heavy OCCUPATIONAL 0.86
+# (0.77-0.96, i.e. PROTECTIVE), sunburn at any age 1.91 (1.69-2.17), and --
+# the number that most directly constrains this module -- TOTAL exposure only
+# 1.18 (1.02-1.38). Melanoma is therefore almost entirely a pattern effect and
+# barely a cumulative-dose effect, which is why the melanoma/BCC axis below is
+# built on per-session intensity and the cumulative axis is labelled SCC.
+# Also Leiter 2009; Calzavara-Pinton
 # 2015 (BCC ~ intermittent, especially childhood; SCC ~ chronic/cumulative);
 # Armstrong 1988. O'Sullivan 2026 (2.4M Ontario workers) finds low-intermittent
 # HR = 1.26 vs high-continuous HR = 1.13, preserving the ordering.
@@ -200,6 +229,36 @@ def hydroxylation_efficiency(D: float,
 # Erythema is the key non-linearity: risk per event rises steeply once a session
 # exceeds ~1 MED. Sub-erythemal sessions still accrue cumulative (SCC) risk.
 SCC_CUMULATIVE_WEIGHT: float = 1.0
+
+# Exponent on CUMULATIVE dose in the SCC term -- the "biological amplification
+# factor" Ab of the skin-cancer dosimetry literature.
+#
+# [LITERATURE-ANCHORED] This term used to be LINEAR in cumulative dose (exponent
+# 1.0), which is not what the epidemiology says. Incidence follows a POWER LAW in
+# annual UV dose,
+#     ln(relative tumour density) = Ab * ln(annual erythemal dose),
+# and Ab > 1 for every keratinocyte cancer measured (Moan 2015, Photodermatol
+# Photoimmunol Photomed 31:26-35, which fits this form across SCC, BCC and
+# melanoma).
+#
+# Values of Ab, erythemally weighted -- which is the weighting this model's SED
+# already carries:
+#   Moan, Dahlback, Henriksen & Magnus 1989 (Cancer Res 49:5207-12, PMID
+#     2766289; 6 Norwegian regions, 1976-1985):  SCC 1.6-1.8, BCC 2.1-2.3.
+#     Critically for the unit choice here, they computed Ab with an erythema
+#     action spectrum AND with a basal-layer mutagenesis action spectrum and got
+#     answers agreeing "to within about 10%" -- so using erythemal SED rather
+#     than a carcinogenic action spectrum is not the dominant error.
+#   Green et al. 1976 (Photochem Photobiol):     ~1.8 for NMSC (US).
+#   Jones 1992 (Br J Dermatol 127:519-22):        3.0 SCC, 1.7 BCC.
+# The literature therefore brackets Ab at roughly 1.3-3.0. 1.7 is the midpoint
+# of the SCC range in the single source that (a) reports SCC and BCC separately,
+# (b) uses erythemal weighting, and (c) cross-checks the action spectrum.
+#
+# Consequence for scheduling: cumulative dose now costs MORE than proportionally,
+# so "many tiny sessions" no longer buys an unlimited free pass on the SCC axis
+# the way a linear term allowed. See vitd_calibration.moan1989_scc_exponent_check.
+SCC_DOSE_EXPONENT: float = 1.7
 
 # Exponent on per-session intensity in the intermittent (BCC/melanoma) term.
 #
@@ -224,12 +283,152 @@ SCC_CUMULATIVE_WEIGHT: float = 1.0
 # The value is retained rather than moved: it sits inside the anchored interval,
 # and the ORs do not resolve it more finely than that interval.
 INTERMITTENT_BURN_EXPONENT: float = 3.0
+# The reference schedule both indices are normalised to: 1 SED/week for a year.
+# Both score exactly 1.0 for FST I on it.
 REFERENCE_ANNUAL_SED: float = 52.0
+REFERENCE_SESSION_SED: float = 1.0
 
 
 def _med_sed_by_fst(fst: int) -> float:
     """Minimal erythema dose in SED, Shih/Farrar/Rhodes 2018 (P24)."""
     return {1: 2.1, 2: 2.6, 3: 3.2, 4: 5.6, 5: 7.5, 6: 15.2}.get(fst, 3.5)
+
+
+# ---------------------------------------------------------------------------
+# 4a. FST susceptibility, derived from measured basal-layer DNA damage
+# ---------------------------------------------------------------------------
+# This replaces an admitted order-of-magnitude prior, exp(-0.45*(fst-1)), which
+# was wrong in BOTH directions: too steep across FST I-IV and too shallow across
+# I-VI (see the anchors below).
+#
+# THE MEASUREMENT IT IS BUILT FROM, and why it is the right one.
+# Shih, Farrar, ... de Gruijl & Rhodes 2018 (J Invest Dermatol 138:2244-2252;
+# PDF in Papers_and_Datasets/, and already this file's MED source) dosed FST I-VI
+# at 20-80% of each person's own MED -- i.e. exactly the sub-erythemal,
+# fractional-MED regime this model schedules -- and measured cyclobutane
+# pyrimidine dimers (CPD) by epidermal depth. Two findings drive everything here:
+#
+#   1. WHOLE-epidermal CPD per fractional MED does NOT depend on skin type
+#      (mixed-effects regression, P = 0.63): +0.13 AU per 20% MED increment
+#      (95% CI 0.03-0.19), pooled over all skin types.
+#   2. BASAL-layer CPD does: skin type is significant (P = 0.03). Pooled slope
+#      +0.08 AU per 20% MED (95% CI 0.01-0.14), but basal-layer CPD was
+#      UNDETECTABLE throughout 20-80% MED in skin types IV-VI, while being
+#      dose-responsive in I-III. The CPD depth gradient correlated with skin
+#      darkness at r = 0.74 (P < 0.0001) and did not vary with dose (P = 0.29).
+#      Repair was complete by 48 h with no skin-type difference (P = 0.38).
+#
+# The germinative basal layer is where skin cancers initiate (Shih 2018's own
+# framing: "actively dividing, long-residing cells"). So the carcinogenically
+# relevant quantity is not damage per unit dose, and not even damage per
+# fractional MED -- it is the FRACTION of that damage reaching the basal layer.
+#
+# DERIVATION (one fitted parameter; three independent out-of-sample checks).
+# Melanin attenuates UVR through the epidermis, so take CPD(z) = C0*exp(-mu*z)
+# (Beer-Lambert). With epidermal depth h and x = mu*h:
+#     whole-epidermal mean = C0 * (1 - exp(-x)) / x
+#     basal layer          = C0 * exp(-x)
+#     basal : whole        = phi(x) = x*exp(-x) / (1 - exp(-x))
+# phi(0) = 1 (no pigment: damage uniform with depth, which is what Shih observed
+# in FST I) and phi -> 0 as pigment rises. Because finding 1 says the
+# whole-epidermal level is FST-independent, phi(x_FST) IS the relative basal
+# damage per fractional MED, normalised to unpigmented skin.
+#
+# x is taken proportional to Shih's own Table 1 melanin measurement -- percentage
+# of epidermal area staining for melanin, by skin type -- so the FST dependence
+# comes from measured pigment, not from an assumed decay rate.
+#
+# THE ONE FITTED NUMBER. kappa is fixed by Fajuyigbe et al. 2018 (FASEB J
+# 32:3700-3706, PMID 29394104; abstract only, full text not obtained), which
+# measured CPD protection factors in FST VI versus fair Europeans by epidermal
+# depth: whole epidermis 8.0x, upper 5.0x, middle 16.5x, BASAL LAYER 59.0x.
+# The quantity this model needs is the basal:whole ratio, 59.0/8.0 = 7.375 --
+# and because it is a ratio of two protection factors measured on the SAME
+# subjects at the SAME exposures, it is independent of whether Fajuyigbe's arms
+# were matched on physical dose or on fractional MED. That ambiguity, which
+# would otherwise be disqualifying, cancels. kappa solves phi(kappa * 59.70) =
+# 8.0/59.0. Nothing else is fitted.
+#
+# THREE CHECKS IT WAS NOT FITTED TO, AND PASSES:
+#   1. Gandini et al. 2005 III (Eur J Cancer 41:2040-59, PMID 16125929), pooled
+#      over 60 studies: melanoma RR for skin type I vs IV = 2.09 (1.67-2.58).
+#      Derived here: 2.12. A CPD biomarker measured in two extreme phenotypes
+#      predicts a melanoma meta-analysis to within 1.5%.
+#   2. The premise itself. Shih's MED ratio FST VI:I is 15.2/2.1 = 7.24. If
+#      whole-epidermal CPD really depends only on fractional MED, then at equal
+#      PHYSICAL dose the whole-epidermis protection factor must be that same
+#      7.24. Fajuyigbe measured 8.0. Two labs, two assays, ~10% apart.
+#   3. Shih's own pooled basal:whole slope ratio, 0.08/0.13 = 0.615 at the
+#      study's mean melanin of 12.56%. This curve implies 0.70 -- comfortably
+#      inside the interval those two wide CIs permit (0.05 to 1.0).
+#   For contrast the retired prior gave I:IV = 3.9 against Gandini's 2.09.
+#
+# HONEST LIMITS -- read before quoting a cross-skin-type absolute index:
+#   - Fajuyigbe is ABSTRACT-ONLY here, and is a small extreme-phenotype study
+#     (black West Africans vs fair Europeans). Its 59x basal figure carries the
+#     whole calibration. Getting the full text is data request #12.
+#   - Shih's melanin percentages rest on n = 5, 6, 6, 5, 3 and 1 volunteers for
+#     FST I-VI. FST VI is a single person.
+#   - Shih found basal CPD UNDETECTABLE in FST IV-VI, whereas this curve assigns
+#     them 0.47, 0.26 and 0.14. It is therefore CONSERVATIVE -- it charges dark
+#     skin more residual basal damage than either study could detect, which is
+#     the safe direction for a risk model.
+#   - Nothing here is an epidemiological RR per erythemal episode BY SKIN TYPE.
+#     No such source exists (searched 2026-08-09; the per-sunburn meta-analyses
+#     either pool skin types or restrict to FST I-IV). Substituting a biomarker
+#     for that missing RR is the central assumption of this axis.
+#   - Sanity, not target: Ahmed et al. 2025 (Br J Dermatol; England NDRS
+#     2013-2020) gives White:Black age-standardised incidence ratios of 16.3
+#     (melanoma), 13.1 (cSCC) and 25.8 (BCC). This curve gives 7.3 for FST
+#     II:VI -- SMALLER, as a constitutive factor should be, because population
+#     ratios also contain behaviour, exposure, ancestry latitude and
+#     ascertainment. It is a direction check, never a calibration target.
+# See vitd_calibration.skin_type_susceptibility_check().
+
+# Percentage of epidermal area stained for melanin by skin type, Shih 2018
+# Table 1 (modified Warthin-Starry). n = 5, 6, 6, 5, 3, 1 for FST I-VI.
+SHIH2018_EPIDERMAL_MELANIN_PCT: dict = {
+    1: 0.0, 2: 0.28, 3: 2.21, 4: 25.14, 5: 42.04, 6: 59.70,
+}
+# "All" row of the same table -- the mean the pooled CPD slopes correspond to.
+SHIH2018_MEAN_MELANIN_PCT: float = 12.56
+# Pooled CPD dose-response slopes, AU per 20% MED increment (Shih 2018 Results).
+# Used as a CHECK on the calibration below, not as its target.
+SHIH2018_WHOLE_EPIDERMAL_CPD_SLOPE: float = 0.13   # 95% CI 0.03-0.19
+SHIH2018_BASAL_LAYER_CPD_SLOPE: float = 0.08       # 95% CI 0.01-0.14
+
+# Fajuyigbe et al. 2018 CPD protection factors, FST VI vs fair European, by
+# epidermal depth (FASEB J 32:3700-3706, PMID 29394104; abstract only).
+FAJUYIGBE2018_PROTECTION: dict = {
+    "whole": 8.0, "upper": 5.0, "middle": 16.5, "basal": 59.0,
+}
+# Attenuation per unit of melanin-stained epidermal area. Solves
+# phi(kappa * 59.70) = 8.0 / 59.0 -- see basal_damage_fraction below.
+MELANIN_ATTENUATION_KAPPA: float = 0.0536715
+
+
+def _phi(x: float) -> float:
+    """basal:whole CPD ratio for Beer-Lambert attenuation of optical depth x."""
+    if x <= 1e-9:
+        return 1.0
+    return float(x * np.exp(-x) / (1.0 - np.exp(-x)))
+
+
+def basal_damage_fraction(fst: int,
+                          kappa: float = MELANIN_ATTENUATION_KAPPA) -> float:
+    """Relative basal-layer DNA damage per fractional-MED dose, by skin type.
+
+    1.0 for unpigmented skin (damage uniform with epidermal depth, as observed
+    in FST I) and falling with measured epidermal melanin. This is the model's
+    skin-cancer susceptibility factor; the derivation and its limits are in the
+    module comment above.
+
+    Returns the FST III value for out-of-range inputs, matching the defensive
+    behaviour of _med_sed_by_fst.
+    """
+    melanin = SHIH2018_EPIDERMAL_MELANIN_PCT.get(
+        int(fst), SHIH2018_EPIDERMAL_MELANIN_PCT[3])
+    return _phi(kappa * float(melanin))
 
 
 def cancer_risk(session_seds, fst: int) -> dict:
@@ -252,33 +451,27 @@ def cancer_risk(session_seds, fst: int) -> dict:
         total_sed          cumulative erythemal SED
         combined_index     equal-weight summary for single-objective ranking
 
-    Both indices scale with FST susceptibility: melanoma and NMSC incidence are
-    roughly an order of magnitude lower in FST V-VI than FST I-II, and basal
-    keratinocytes in darker skin are substantially protected from CPD
-    (Shih/Rhodes 2018). Modelled as a factor falling with FST.
+    Both indices scale with FST susceptibility, which is now the measured
+    fraction of DNA damage reaching the germinative basal layer
+    (`basal_damage_fraction`, derived from Shih 2018) rather than an
+    order-of-magnitude prior.
     """
     seds = np.asarray([s for s in session_seds if s > 0], dtype=float)
     med = _med_sed_by_fst(fst)
 
-    # Constitutive susceptibility. FST I = 1.0 down to FST VI ~ 0.1.
+    # Constitutive susceptibility: relative basal-layer DNA damage per
+    # fractional-MED dose. FST I = 1.0 down to FST VI ~ 0.06.
     #
-    # [PRIOR] Order-of-magnitude only; matches the ~10x incidence gap between
-    # very fair and deeply pigmented populations qualitatively, and nothing more.
-    # Deliberately NOT touched by the Elwood & Jopson anchoring applied to
-    # INTERMITTENT_BURN_EXPONENT above: Elwood & Jopson do not stratify by skin
-    # type, so there is no FST dose-response in that source to fit this decay
-    # rate to, and force-fitting one OR onto a parameter it never measured would
-    # launder a guess as a calibration. The two axes of the risk model therefore
-    # have DIFFERENT evidence status -- the intensity axis is OR-anchored, this
-    # one is not. Any Pareto frontier that ranks skin types against each other
-    # rests on this prior. A source giving RR or OR per erythemal episode BY SKIN
-    # TYPE is what would settle it (MODEL_AND_EVIDENCE.md, 'Remaining gaps',
-    # gap 15).
+    # [DERIVED, two out-of-sample checks] Full derivation, anchors and limits in
+    # section 4a above. Superseded the prior exp(-0.45*(fst-1)), which was too
+    # steep across FST I-IV (3.9 vs Gandini's 2.09) and too shallow across I-VI
+    # (9.5 vs England's observed 13-26).
     #
     # It cancels out of within-FST comparisons: every index here is proportional
     # to it, so schedule RANKINGS for one person are unaffected. It matters only
-    # for cross-FST comparisons of absolute index values.
-    susceptibility = float(np.exp(-0.45 * (fst - 1)))
+    # for cross-FST comparisons of absolute index values -- which is precisely
+    # what the old prior could not support and this can, within stated limits.
+    susceptibility = basal_damage_fraction(fst)
 
     if seds.size == 0:
         return {"scc_index": 0.0, "intermittent_index": 0.0,
@@ -288,8 +481,16 @@ def cancer_risk(session_seds, fst: int) -> dict:
 
     total_sed = float(seds.sum())
 
-    # SCC: linear in cumulative dose.
-    scc = SCC_CUMULATIVE_WEIGHT * susceptibility * total_sed / REFERENCE_ANNUAL_SED
+    # SCC: power law in cumulative dose, exponent Ab = SCC_DOSE_EXPONENT
+    # (Moan 1989 / Moan 2015). Susceptibility multiplies the index rather than
+    # entering the base: Ab is a WITHIN-population dose-response slope, measured
+    # across ambient-dose gradients in a phenotypically homogeneous (Norwegian)
+    # population, so it describes how risk scales with dose, not how it scales
+    # between skin types. Raising the susceptibility to Ab as well would
+    # double-count the phenotype effect -- and would predict a FST I:VI ratio of
+    # ~120x against England's observed 13x for cSCC (Ahmed 2025).
+    scc = (SCC_CUMULATIVE_WEIGHT * susceptibility
+           * (total_sed / REFERENCE_ANNUAL_SED) ** SCC_DOSE_EXPONENT)
 
     # BCC / melanoma: super-linear in per-session intensity relative to MED, so
     # that one big session costs far more than the same dose split up.
@@ -297,8 +498,27 @@ def cancer_risk(session_seds, fst: int) -> dict:
     # many small sessions -- the Elwood/Leiter intermittency finding.
     frac_med = seds / med
     intermittent = float(susceptibility * np.sum(frac_med ** INTERMITTENT_BURN_EXPONENT))
-    # Normalise by the reference schedule (1 SED/wk for a year) for that FST.
-    ref_intermittent = susceptibility * 52.0 * (1.0 / med) ** INTERMITTENT_BURN_EXPONENT
+    # Normalise by a FIXED reference schedule: 1 SED/week for a year delivered
+    # to FST I skin, i.e. 52 sessions at 1.0/2.1 = 0.48 MED.
+    #
+    # [BUG FIX 2026-08-09] The reference used to be per-FST AND to include the
+    # susceptibility factor: `susceptibility * 52 * (1/med)**k`. Both of those
+    # then cancelled out of the ratio, leaving the raw absolute sum of sed**k.
+    # Two consequences, both contradicting this module's own documented model:
+    #   - the docstring's claim that "both indices scale with FST
+    #     susceptibility" was false for this index -- it was exactly 1.0 for
+    #     every skin type on the reference schedule;
+    #   - because the per-FST reference is far gentler in fractional-MED terms
+    #     for dark skin, the index ranked a FST VI person at 0.5 MED as ~380x
+    #     riskier than a FST I person at 0.5 MED. Shih 2018 -- already this
+    #     module's MED source -- measured EQUAL whole-epidermal damage and LESS
+    #     basal damage at equal fractional MED in darker skin. The ordering was
+    #     backwards.
+    # A fixed reference keeps the index in fractional-MED currency, so it is
+    # comparable across skin types, and lets the susceptibility survive. FST I
+    # on the reference schedule still scores exactly 1.0, as before.
+    ref_intermittent = (52.0 * (REFERENCE_SESSION_SED / _med_sed_by_fst(1))
+                        ** INTERMITTENT_BURN_EXPONENT)
     if ref_intermittent > 0:
         intermittent /= ref_intermittent
 

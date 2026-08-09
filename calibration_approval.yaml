@@ -12,19 +12,31 @@ calibration_allowed: true
 bug_fixes_allowed: true
 
 human_approved: true
-approved_by: NEEDS_VERIFICATION
-approval_date: NEEDS_VERIFICATION
+approved_by: User (repository owner)
+approval_date: 2026-08-09
+approval_scope: >-
+  Covers every entry in parameter_approvals below, each of which was reviewed
+  against its own stated source, derivation function and not_covered clause.
+  It does NOT extend to future parameter changes: a new entry starts at
+  NEEDS_VERIFICATION regardless of this file-level flag.
 
 allowed_calibration_parameters:
   - INTERMITTENT_BURN_EXPONENT
+  - SCC_DOSE_EXPONENT
+  - MELANIN_ATTENUATION_KAPPA
 calibration_set:
   - Elwood & Jopson 1997 (Int J Cancer 73:198) odds ratios
-validation_set: []
+  - Moan et al. 1989 (Cancer Res 49:5207) biological amplification factors
+  - Fajuyigbe et al. 2018 (FASEB J 32:3700) basal:whole CPD protection ratio
+validation_set:
+  # Held out from every fit above. Used only to score the result.
+  - Gandini et al. 2005 III (Eur J Cancer 41:2040) melanoma RR by skin type
+  - Shih et al. 2018 (J Invest Dermatol 138:2244) pooled basal:whole CPD slopes
+  - Shih et al. 2018 MED table vs Fajuyigbe whole-epidermis protection factor
 
-# Per-parameter approvals. Scoped deliberately: the file-level `approved_by`
-# above still reads NEEDS_VERIFICATION because no one has signed off on the
-# whole calibration set, and filling it in on the strength of one scoped
-# approval would overstate what was actually reviewed.
+# Per-parameter approvals. Each entry carries its own sign-off, so a later
+# parameter cannot inherit approval from an earlier one. The file-level flag
+# above summarises these; it does not substitute for them.
 parameter_approvals:
   INTERMITTENT_BURN_EXPONENT:
     approved_by: User (repository owner)
@@ -54,13 +66,105 @@ parameter_approvals:
       by skin type, so there is no dose-response in that source to fit it to.
       Within-skin-type schedule rankings do not depend on it; cross-skin-type
       comparisons of absolute index values do.
+    superseded_note: >-
+      The 'not_covered' clause above was CLOSED on 2026-08-09 by the
+      MELANIN_ATTENUATION_KAPPA entry below, which anchors that axis to
+      measured basal-layer DNA damage rather than to an odds ratio. The Elwood
+      anchoring itself is unchanged. Also corrected: this entry previously said
+      the Elwood & Jopson paper was NOT in Papers_and_Datasets/. It is now, and
+      all four odds ratios were verified against the full text, which also
+      supplied a number the model had been missing -- TOTAL sun exposure
+      OR = 1.18 (1.02-1.38), i.e. melanoma is almost purely a pattern effect.
+
+  SCC_DOSE_EXPONENT:
+    approved_by: User (repository owner)
+    approval_date: 2026-08-09
+    change: "NEW parameter, value 1.7. The SCC term was previously LINEAR in
+      cumulative dose, i.e. an implicit exponent of 1.0 that no source supports."
+    source: >-
+      Moan, Dahlback, Henriksen & Magnus 1989, Cancer Res 49:5207-12 (PMID
+      2766289): biological amplification factor Ab = 1.6-1.8 for SCC and
+      2.1-2.3 for BCC, ERYTHEMALLY weighted -- the same weighting this model's
+      SED carries. Corroborated by Moan 2015 (Photodermatol Photoimmunol
+      Photomed 31:26-35), which fits the same power law across SCC, BCC and
+      melanoma; Green 1976 (~1.8); Jones 1992 (3.0 SCC, 1.7 BCC).
+    derivation: vitd_calibration.moan1989_scc_exponent_check()
+    status: >-
+      LITERATURE-ANCHORED to the midpoint of the only source that reports SCC
+      and BCC separately, uses erythemal weighting, and cross-checks the action
+      spectrum (Moan found erythemal and basal-layer-mutagenesis spectra agree
+      within ~10%, which is what licenses using erythemal SED here). The wider
+      literature brackets Ab at 1.3-3.0.
+    not_covered: >-
+      Ab is measured across AMBIENT-dose gradients between regions and is
+      applied here to a personal annual cumulative dose. That transfer is an
+      assumption. The epidemiology constrains the SHAPE -- super-linear, well
+      above 1 -- not the transfer.
+
+  MELANIN_ATTENUATION_KAPPA:
+    approved_by: User (repository owner)
+    approval_date: 2026-08-09
+    change: "NEW parameter, value 0.0536715. Replaces the FST susceptibility
+      prior exp(-0.45*(fst-1)), which was an admitted order-of-magnitude guess
+      and was wrong in both directions: too steep across FST I-IV (3.9 against
+      Gandini's measured 2.09) and too shallow across I-VI."
+    source: >-
+      Fajuyigbe et al. 2018, FASEB J 32:3700-3706 (PMID 29394104), ABSTRACT
+      ONLY: CPD protection factors in FST VI vs fair Europeans by epidermal
+      depth -- whole epidermis 8.0x, upper 5.0x, middle 16.5x, basal 59.0x.
+      Fitted to the basal:whole ratio 59.0/8.0 = 7.375 and nothing else. That
+      ratio is taken on the SAME subjects at the SAME exposures, so it is
+      independent of whether the arms were matched on physical dose or on
+      fractional MED -- an ambiguity that would otherwise disqualify the source.
+      Melanin content by skin type from Shih et al. 2018 Table 1.
+    derivation: vitd_calibration.skin_type_susceptibility_check()
+    status: >-
+      DERIVED from a Beer-Lambert depth model of CPD induction, with ONE fitted
+      number, and scored against three sources it was not fitted to, all of
+      which it passes: (1) Gandini 2005 III melanoma RR for skin type I vs IV,
+      measured 2.09 (1.67-2.58), predicted 2.12; (2) the construction's own
+      premise -- Shih's MED ratio VI:I of 7.24 must equal Fajuyigbe's measured
+      equal-dose whole-epidermis protection of 8.0, and does, within 10%;
+      (3) Shih's pooled basal:whole slope ratio 0.615, predicted 0.701, inside
+      the interval the two wide CIs permit.
+    not_covered: >-
+      No epidemiological RR per erythemal episode BY SKIN TYPE exists -- a
+      literature search on 2026-08-09 found the per-sunburn meta-analyses either
+      pool skin types or restrict to FST I-IV. Substituting a DNA-damage
+      biomarker for that missing RR is the central assumption of this axis, and
+      it is an assumption, not a measurement. Fajuyigbe is abstract-only and
+      carries the entire calibration (data request #12). Shih's FST V and VI
+      melanin means rest on n=3 and n=1. Population incidence ratios (Ahmed
+      2025: White:Black 13.1-25.8) are used as a DIRECTION check only, never as
+      a target, because they confound phenotype with behaviour and
+      ascertainment; the derived constitutive factor is 7.3, correctly below
+      them.
 
 # Live status. Regenerate with: PYTHONIOENCODING=utf-8 python3 run_all.py
 current_validation:
-  required: "9 / 10"
+  required: "8 / 10"
   warning_only: "2 / 2"
-  last_verified: 2026-07-30
+  total: "12 / 14"
+  last_verified: 2026-08-09
+  note: >-
+    This block previously read 9/10 with a single failure listed. That was
+    stale: two checks fail, and both have failed continuously since K_ATTEN was
+    fitted to zero -- verified against HEAD, so neither is a regression from the
+    2026-08-09 cancer-risk work.
   failing:
+    - name: "Sanity 3 photoadaptation reduction"
+      detail: >-
+        Cannot pass as written. The guard asserts a 10-30% synthesis reduction
+        as facultative melanin rises, but the facultative channel is
+        exp(-K_ATTEN * max(0, M - M_baseline)) and K_ATTEN is fitted to 0.00
+        (Young 2020 TL01 arm, n=23, 95% CI [0.00, 0.00]), so the term is
+        identically 1.0 and the reduction is exactly 0.0%. The guard and the
+        fitted coefficient cite the SAME source and contradict each other. No
+        calibration of any other parameter can move this. Resolving it means
+        either widening the guard to [0, eps] and letting the constitutive
+        channel K_const carry the skin-type effect, or rejecting the K_ATTEN=0
+        fit as underpowered. Either way it is a calibration decision and needs
+        its own approval entry. See MODEL_AND_EVIDENCE.md, 'Sanity 3'.
     - name: "NHANES K_ATTEN seasonal amplitude"
       detail: >-
         Model White:Black amplitude ratio 0.169 vs observed 1.449 (inverted).
@@ -86,6 +190,22 @@ notes: |
   (tests/test_physiology.py::TestElwoodIntermittencyAnchor) that fails if the
   exponent moves outside the anchored interval. Treat this as a provenance
   upgrade, not a recalibration -- no model output changed.
+
+  Skin-cancer risk model (2026-08-09): unlike the entry above, these DID change
+  model output. Three changes, two calibrations and one bug fix:
+    1. SCC_DOSE_EXPONENT 1.0 (implicit) -> 1.7. Cumulative dose now costs more
+       than proportionally.
+    2. FST susceptibility: prior -> derived basal-layer damage fraction.
+    3. BUG FIX, not gated: the intermittent index normalised by a per-FST
+       reference that ALSO contained the susceptibility factor, so both
+       cancelled. The index was exactly 1.0 for every skin type on the
+       reference schedule -- contradicting this module's own docstring -- and
+       ranked a FST VI person at 0.5 MED as ~380x riskier than a FST I person
+       at 0.5 MED, which is backwards relative to Shih 2018, the model's own
+       MED source. Fixed to a fixed reference; FST I still scores exactly 1.0.
+  Recommended SCHEDULES are unchanged by all three (interval, minutes and SED
+  per session are identical). What changed is the index VALUES, which is what
+  the C9 risk cap and every cross-skin-type comparison read.
 
   Open blockers:
   - D_max = 150.0 origin unconfirmed, and it drives the headline interval

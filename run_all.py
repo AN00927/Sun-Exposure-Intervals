@@ -19,6 +19,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 import vitd_validation
 import vitd_analyses
+import vitd_calibration
 from vitd_optimization import analysis_constant_sessions
 
 
@@ -326,6 +327,12 @@ def main():
     bench_log = capture_log(vitd_benchmark_webbkift.run)
     sens_log = capture_log(vitd_sensitivity.run)
     risk_log = capture_log(risk_aware_scheduling.main)
+    risk_anchor_log = "\n".join(
+        capture_log(fn) for fn in (
+            vitd_calibration.elwood1997_intermittency_check,
+            vitd_calibration.moan1989_scc_exponent_check,
+            vitd_calibration.skin_type_susceptibility_check,
+        ))
     print(obj_log)
     print(bench_log)
     print(sens_log)
@@ -349,15 +356,27 @@ def main():
         "cancer-risk index subject to never burning (C1), holding the "
         "sufficiency floor after the loading period (C3), a session-length "
         "ceiling (C7), and an optional risk cap (C9).\n\n"
-        "The intensity axis of the risk index is anchored to the Elwood & "
-        "Jopson 1997 odds ratios (`vitd_calibration."
-        "elwood1997_intermittency_check`); the skin-type susceptibility axis is "
-        "**not**, and remains an order-of-magnitude prior. Interval and minutes "
-        "do not depend on it; cross-skin-type comparisons of the index values "
+        "All three axes of the risk index are now literature-anchored, with "
+        "different evidence status each. Interval and minutes do not depend on "
+        "the skin-type axis; cross-skin-type comparisons of the index values "
         "do.\n"
     )
     report.append("\n```\n" + risk_log + "\n```\n")
     report.append("\n![deficiency vs risk frontier](figs/deficiency_risk_frontier.png)\n")
+
+    report.append("\n### 14c. What anchors the three axes of the risk index\n")
+    report.append(
+        "\n- **Intensity** (`INTERMITTENT_BURN_EXPONENT`): anchored to the "
+        "Elwood & Jopson 1997 odds ratios, to an *interval* rather than a "
+        "point — the ORs give one equation in two unknowns.\n"
+        "- **Cumulative dose** (`SCC_DOSE_EXPONENT`): the biological "
+        "amplification factor. Super-linear, Moan 1989 Ab = 1.6-1.8 for SCC, "
+        "erythemally weighted. This term used to be linear.\n"
+        "- **Skin type** (`basal_damage_fraction`): derived from measured "
+        "basal-layer CPD, fitted to one number and checked against three it "
+        "was not fitted to. It replaced an order-of-magnitude prior.\n"
+    )
+    report.append("\n```\n" + risk_anchor_log + "\n```\n")
 
     report.append("\n## 15. Held-out external benchmark (Webb/Kift 2018)\n")
     report.append(
@@ -440,15 +459,30 @@ sub-erythemal sessions carry far less melanoma/BCC risk than a few large ones.
 Frequent-and-small beats rare-and-large, and this now agrees with the vitamin D
 objective rather than opposing it.
 
+All three axes are literature-anchored as of 2026-08-09. The cumulative axis is
+a power law, not linear -- incidence follows `dose ** Ab` with the biological
+amplification factor `Ab` = 1.6-1.8 for SCC (Moan 1989, erythemally weighted),
+so doubling cumulative dose costs 3.25x rather than 2x. The skin-type axis is no
+longer a prior: it is the measured fraction of DNA damage reaching the
+germinative basal layer, derived from Shih 2018 and Fajuyigbe 2018, and it
+reproduces Gandini 2005's melanoma RR for skin type I vs IV (2.09 measured,
+2.12 derived) without having been fitted to it. Recommended schedules did not
+move; the index values did. See section 14c and MODEL_AND_EVIDENCE.md gap 15.
+
 ### What still needs better data
 
-- **The skin-type penalty for whole-body naturalistic exposure** (the Webb/Kift
-  gap above) is the highest-value calibration target.
+- **The skin-type penalty**: the real discrepancy is between two *lamp* studies
+  (Young 2020's 1.3-1.4x against Farrar 2013's 2.5-3x at equal 25(OH)D gain),
+  not between lamp and naturalistic exposure as previously recorded. See
+  MODEL_AND_EVIDENCE.md gap 23.
 - **`D_max`** drives the headline result and has unconfirmed origin. The
-  mechanistic alternative (`feedback_mode='biphasic'`, inflection ~56 nmol/L
-  from Comms Med 2025) is implemented but not yet the default.
-- **Matsuoka 1990 (J Lab Clin Med, PMID 2165512)** is the sole source for
-  `K_ATTEN` and is absent from the repository.
+  mechanistic alternative (`feedback_mode='biphasic'`) is implemented but not
+  the default, and its ~56 nmol/L inflection is an *output* of a breakpoint
+  fitted on the vitamin D3 axis (Scholze 2026, Commun Med 6:105), not a
+  regressor -- the Hill exponent cannot be fitted from that paper at all.
+- **Fajuyigbe 2018 (FASEB J 32:3700)** is abstract-only and its basal:whole CPD
+  protection ratio is the single fitted number behind the whole skin-type risk
+  axis.
 - **de Boer 2025 individual-level SC/MI trajectories** would break the
   `alpha_SC ~ SC_max` and `K_ATTEN ~ K_SC` ridges.
 - **Ambient-to-personal UV dosimetry** for upright activity: the 0.55 geometry

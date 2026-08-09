@@ -256,11 +256,11 @@ class TestElwoodIntermittencyAnchor:
         with pytest.raises(ValueError):
             elwood_intermittency_exponent(1.91, 0.0, 1.43)
 
-    def test_susceptibility_axis_is_not_claimed_to_be_anchored(self):
-        """The FST susceptibility decay is an untouched prior. It cancels out of
-        within-skin-type rankings, which is why the recommender may use it -- if
-        that ever stops holding, the frontier's cross-FST comparisons become
-        load-bearing on a guess."""
+    def test_susceptibility_cancels_from_within_skin_type_rankings(self):
+        """The FST susceptibility is now derived rather than a prior (see
+        TestSkinTypeSusceptibility), but this invariant must survive that: it is
+        a pure multiplier, so schedule RANKINGS for one person cannot depend on
+        it. Only cross-FST comparisons of absolute index values do."""
         a = cancer_risk([1.0] * 52, 2)
         b = cancer_risk([2.0] * 26, 2)
         c = cancer_risk([1.0] * 52, 5)
@@ -268,6 +268,165 @@ class TestElwoodIntermittencyAnchor:
         # Same schedule pair, different FST: the RATIO must be identical.
         assert (a["intermittent_index"] / b["intermittent_index"]) == pytest.approx(
             c["intermittent_index"] / d["intermittent_index"])
+
+
+class TestSkinTypeSusceptibility:
+    """The FST susceptibility is a DERIVED basal-layer damage fraction.
+
+    Fitted to exactly one number -- Fajuyigbe 2018's basal:whole CPD protection
+    ratio (59.0/8.0) -- and checked against three sources it was not fitted to.
+    These tests pin the fit, the checks, and the physical form, so that moving
+    kappa or the melanin table without redoing the derivation fails loudly.
+    Derivation: vitd_physiology section 4a; audit:
+    vitd_calibration.skin_type_susceptibility_check.
+    """
+
+    def test_reproduces_the_fajuyigbe_ratio_it_was_fitted_to(self):
+        from vitd_physiology import basal_damage_fraction, FAJUYIGBE2018_PROTECTION
+        target = FAJUYIGBE2018_PROTECTION["basal"] / FAJUYIGBE2018_PROTECTION["whole"]
+        assert basal_damage_fraction(1) / basal_damage_fraction(6) == pytest.approx(
+            target, rel=1e-3)
+
+    def test_predicts_gandini_2005_skin_type_I_vs_IV(self):
+        """OUT-OF-SAMPLE. A CPD biomarker in two extreme phenotypes must land
+        inside a melanoma meta-analysis of 60 studies: RR 2.09 (1.67-2.58)."""
+        from vitd_calibration import (skin_type_susceptibility_check,
+                                      GANDINI2005_RR_SKINTYPE_I_VS_IV_CI)
+        r = skin_type_susceptibility_check(verbose=False)
+        lo, hi = GANDINI2005_RR_SKINTYPE_I_VS_IV_CI
+        assert lo <= r["derived_I_vs_IV"] <= hi
+        assert r["gandini_consistent"] is True
+
+    def test_premise_holds_med_ratio_matches_measured_whole_epidermis_protection(self):
+        """OUT-OF-SAMPLE. The construction assumes whole-epidermal CPD depends
+        only on fractional MED. If so, Shih's MED ratio (7.24) must equal
+        Fajuyigbe's measured equal-dose whole-epidermis protection (8.0)."""
+        from vitd_calibration import skin_type_susceptibility_check
+        r = skin_type_susceptibility_check(verbose=False)
+        assert r["premise_consistent"] is True
+        assert r["premise_error"] < 0.25
+
+    def test_consistent_with_shih_pooled_basal_to_whole_ratio(self):
+        from vitd_calibration import skin_type_susceptibility_check
+        r = skin_type_susceptibility_check(verbose=False)
+        assert r["shih_consistent"] is True
+
+    def test_stays_below_confounded_population_incidence_ratio(self):
+        """A CONSTITUTIVE factor must be smaller than the observed population
+        gap, which also contains behaviour, exposure and ascertainment."""
+        from vitd_calibration import skin_type_susceptibility_check
+        r = skin_type_susceptibility_check(verbose=False)
+        assert r["below_population_ratio"] is True
+
+    def test_beats_the_retired_prior_on_the_anchor_it_can_be_scored_on(self):
+        from vitd_calibration import (skin_type_susceptibility_check,
+                                      GANDINI2005_RR_SKINTYPE_I_VS_IV)
+        r = skin_type_susceptibility_check(verbose=False)
+        target = GANDINI2005_RR_SKINTYPE_I_VS_IV
+        assert abs(r["derived_I_vs_IV"] - target) < abs(r["prior_I_vs_IV"] - target)
+
+    def test_monotone_decreasing_and_bounded(self):
+        from vitd_physiology import basal_damage_fraction
+        vals = [basal_damage_fraction(f) for f in range(1, 7)]
+        assert vals == sorted(vals, reverse=True)
+        assert vals[0] == pytest.approx(1.0)   # unpigmented: uniform with depth
+        assert all(0.0 < v <= 1.0 for v in vals)
+
+    def test_conservative_where_the_studies_saw_nothing(self):
+        """Shih found basal CPD UNDETECTABLE in FST IV-VI. The curve still
+        charges them risk -- the safe direction. If this ever goes to zero the
+        model would declare dark skin risk-free, which no source supports."""
+        from vitd_physiology import basal_damage_fraction
+        for f in (4, 5, 6):
+            assert basal_damage_fraction(f) > 0.05
+
+    def test_out_of_range_fst_does_not_explode(self):
+        from vitd_physiology import basal_damage_fraction
+        assert basal_damage_fraction(0) == pytest.approx(basal_damage_fraction(3))
+        assert basal_damage_fraction(9) == pytest.approx(basal_damage_fraction(3))
+
+
+class TestIntermittentIndexNormalisation:
+    """Regression tests for the 2026-08-09 normalisation bug fix.
+
+    The reference schedule used to be per-FST and to include the susceptibility
+    factor, so both cancelled out of the ratio. The index was then exactly 1.0
+    for every skin type on the reference schedule, and ranked dark skin as
+    hugely riskier than light skin at equal fractional MED -- backwards
+    relative to Shih 2018, this module's own MED source.
+    """
+
+    def test_susceptibility_survives_normalisation(self):
+        """The bug: this was 1.0 for every FST."""
+        vals = [cancer_risk([1.0] * 52, f)["intermittent_index"] for f in range(1, 7)]
+        assert len({round(v, 9) for v in vals}) == 6
+        assert vals == sorted(vals, reverse=True)
+
+    def test_equal_fractional_med_ranks_darker_skin_lower(self):
+        """Shih 2018: at equal fractional MED, whole-epidermal damage is equal
+        across FST I-VI and basal-layer damage FALLS with skin darkness. The
+        burst-driven index must follow, since it is already in fractional-MED
+        units."""
+        vals = []
+        for f in range(1, 7):
+            med = _med_sed_by_fst(f)
+            vals.append(cancer_risk([0.5 * med] * 52, f)["intermittent_index"])
+        assert vals == sorted(vals, reverse=True)
+        # And the spread must be the susceptibility ratio, nothing else.
+        from vitd_physiology import basal_damage_fraction
+        assert vals[0] / vals[5] == pytest.approx(
+            basal_damage_fraction(1) / basal_damage_fraction(6), rel=1e-9)
+
+    def test_reference_schedule_scores_one_for_fst_I_on_both_axes(self):
+        r = cancer_risk([1.0] * 52, 1)
+        assert r["scc_index"] == pytest.approx(1.0)
+        assert r["intermittent_index"] == pytest.approx(1.0)
+
+    def test_within_fst_burst_penalty_is_unchanged_by_the_fix(self):
+        """The fix must not touch within-person rankings -- the burst:spread
+        ratio at fixed cumulative dose is C**(k-1) regardless of skin type."""
+        ratios = []
+        for f in (1, 3, 6):
+            spread = cancer_risk([1.0] * 52, f)["intermittent_index"]
+            burst = cancer_risk([26.0] * 2, f)["intermittent_index"]
+            ratios.append(burst / spread)
+        assert ratios[0] == pytest.approx(ratios[1])
+        assert ratios[1] == pytest.approx(ratios[2])
+
+
+class TestSCCDoseExponent:
+    """SCC is super-linear in cumulative dose (biological amplification factor).
+
+    Moan 1989 (Cancer Res 49:5207) gives Ab = 1.6-1.8 for SCC, erythemally
+    weighted -- the same weighting this model's SED carries. The term used to be
+    linear (Ab = 1), which understated the cost of accumulating dose.
+    """
+
+    def test_exponent_inside_the_published_range(self):
+        from vitd_calibration import moan1989_scc_exponent_check
+        r = moan1989_scc_exponent_check(verbose=False)
+        assert r["in_moan_range"] is True
+        assert r["in_literature_range"] is True
+
+    def test_scc_is_super_linear_in_cumulative_dose(self):
+        """Doubling cumulative dose must MORE than double the SCC index."""
+        one = cancer_risk([1.0] * 52, 2)
+        two = cancer_risk([2.0] * 52, 2)
+        assert two["total_sed"] == pytest.approx(2 * one["total_sed"])
+        assert two["scc_index"] > 2.0 * one["scc_index"]
+
+    def test_still_depends_only_on_the_cumulative_total(self):
+        """Super-linear, but in the TOTAL: how the dose is split must not matter
+        on this axis. That separation is what makes the two indices distinct."""
+        a = cancer_risk([1.0] * 52, 2)
+        b = cancer_risk([26.0] * 2, 2)
+        assert a["scc_index"] == pytest.approx(b["scc_index"])
+
+    def test_reference_schedule_normalisation_preserved(self):
+        """1 SED/week for a year is the unit schedule: index = susceptibility."""
+        from vitd_physiology import basal_damage_fraction
+        r = cancer_risk([1.0] * 52, 3)
+        assert r["scc_index"] == pytest.approx(basal_damage_fraction(3))
 
 
 class TestBackwardCompatibility:
