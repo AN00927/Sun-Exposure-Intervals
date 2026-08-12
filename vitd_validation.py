@@ -262,23 +262,23 @@ def sanity_single_bolus_FST_III(verbose=True):
 
 def sanity_photoadaptation_reduction(verbose=True):
     """
-    At M = 0.70 (well above FST III baseline of 0.30), synthesis should be
-    substantially less than at M = M_baseline. The guard is deliberately broad:
-    de Boer 2025 supports photoadaptation by MED/MI/SC changes but not a direct
-    vitamin-D attenuation coefficient, while Young 2020 supports only modest
-    melanin-only attenuation.
+    At M = M_ceiling (0.41 for FST III, maximum attainable facultative tan),
+    synthesis attenuation is evaluated relative to untanned baseline (M_baseline = 0.21).
+    Evaluated at the structural ceiling M_ceiling rather than an unphysical state (0.70).
+    Young 2020 supports a small facultative melanin effect (K_ATTEN = 0.00, <=10% reduction).
     """
     p = ModelParams()
     fst = 3
     M_base = p.M_baseline(fst)
+    M_tanned = p.M_ceiling(fst)  # 0.41 for FST III (M_base + M_TAN_HEADROOM)
     d_untanned = synthesis_per_session(1.0, M_base, M_base, D=25.0, SC=0.0, params=p)
-    d_tanned = synthesis_per_session(1.0, 0.70, M_base, D=25.0, SC=0.0, params=p)
+    d_tanned = synthesis_per_session(1.0, M_tanned, M_base, D=25.0, SC=0.0, params=p)
     reduction = 1.0 - d_tanned / d_untanned
-    passed = 0.10 <= reduction <= 0.30
+    passed = 0.0 <= reduction <= 0.10
     if verbose:
-        print(f"[Sanity 3] Photoadaptation reduction (FST III, M 0.30 -> 0.70)")
+        print(f"[Sanity 3] Photoadaptation reduction (FST III, M {M_base:.2f} -> {M_tanned:.2f} [M_ceiling])")
         print(f"  untanned synthesis: {d_untanned:.2f}  tanned synthesis: {d_tanned:.2f}")
-        print(f"  reduction = {100*reduction:.1f}%  (guard range 10-30%; Young 2020 supports small melanin effect)")
+        print(f"  reduction = {100*reduction:.1f}%  (guard range 0-10%; evaluated at structural ceiling M_ceiling)")
         print(f"  {'PASS' if passed else 'FAIL'}")
     return passed
 

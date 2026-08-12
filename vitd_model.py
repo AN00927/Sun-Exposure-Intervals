@@ -103,9 +103,10 @@ Parameter & Source Sourcing
     Osmancevic 2009 (P18) shows broadband UVB can outperform NB-UVB per SED in
     psoriasis, confirming these cannot be universal - K_ATTEN = 0.00:
     [C5] Melanin attenuation coefficient fitted from Young 2020 (P9) per-person dataset (n=23 subjects, TL01 arm).
-    1D MSE minimization on individual delta 25(OH)D yields K_ATTEN = 0.00 (95% CI: [0.00, 0.00]),
-    confirming that baseline 25(OH)D differences (D0) and BSA explain the observed FST II:VI response,
-    leaving zero residual penalty for facultative melanin accumulation.
+    1D MSE minimization on individual delta 25(OH)D yields K_ATTEN = 0.00. The objective surface on this acute
+    sub-erythemal 6-week protocol (cumulative dose 7.5 SED) is flat (delta-MSE = 0.08% across K_ATTEN in [0.00, 0.33]),
+    rendering the reported CI [0.00, 0.00] an artifact of bound-constrained fitting rather than tight estimation.
+    Baseline 25(OH)D differences (D0) and BSA explain the observed FST II:VI response in this trial.
 - M_baseline_by_FST:
     [C7] Anchored to ITA_Unexposed means from trial CSVs (ArimedB trial data,
     N=44). Mapping: M = 1 - (ITA_U + 30) / 85, clipped to [0, 1].
