@@ -543,6 +543,230 @@ ANALYSIS L: constant-sessions optimization sweep
 
 ```
 
+## 13b. Variable-dose optimisation
+
+Every other analysis in this repository fixes one dose and searches only *when* to dose. This frees the dose of each session and asks what that buys, holding the sufficiency floor and the session count fixed so the comparison cannot be won by dosing less or going outside more.
+
+At a fixed budget **and** session count, variable dose cannot help: the intermittency term is convex in the doses, so equal doses minimise it by Jensen's inequality. The gain instead comes from needing a smaller budget — a single constant dose has to both climb to the target and hold there, so it necessarily overshoots in steady state. Splitting those two jobs is the whole effect, which is also why it shrinks as the session count rises and the per-session dose is already small.
+
+`seasonal` and `gap_coupled` returning the uniform optimum is the correct result, not a search failure: their grids contain the constant-dose special case (amplitude 0, exponent 0) and select it. Seasonality matters here as a *constraint* on achievable dose, not as a free choice — see `dose_seasonal`.
+
+Time-to-sufficiency is now reported because constraint C3 starts at `RAMP_IN_DAYS` and so cannot see how fast a schedule climbs; two schedules that both hold the floor from day 90 are scored identically by C3 even when one reaches sufficiency a month sooner.
+
+```
+
+======================================================================
+ANALYSIS M: variable-dose optimisation
+======================================================================
+
+  min combined cancer risk  s.t.  min D(t >= ramp) >= 50 nmol/L,
+  per-session dose <= 0.7 MED, sessions uniformly spaced.
+  Dose framing: absolute SED per session (not fractional MED).
+
+  FST    N       family      risk  vs unif%   totSED  SED sav%  trough  t->suff
+  ----------------------------------------------------------------------------------
+    2  104      uniform    5.7348       0.0    168.8       0.0   50.00      84d
+    2  104    two_phase    2.1812      62.0     96.2      43.0   50.00      77d
+    2  104  exponential    2.3350      59.3    104.2      38.3   50.00      84d
+    2  104     seasonal    5.7348       0.0    168.8       0.0   50.00      84d
+    2  104  gap_coupled    5.7348       0.0    168.8       0.0   50.00      84d
+
+    2  122      uniform    3.8304       0.0    152.2       0.0   50.00      87d
+    2  122    two_phase    1.5149      60.5     90.1      40.8   50.00      81d
+    2  122  exponential    1.8195      52.5     93.5      38.6   50.00      78d
+    2  122     seasonal    3.8304       0.0    152.2       0.0   50.00      87d
+    2  122  gap_coupled    3.8304       0.0    152.2       0.0   50.00      87d
+
+    2  146      uniform    2.8270       0.0    144.4       0.0   50.00      85d
+    2  146    two_phase    1.4752      47.8     90.3      37.4   50.00      62d
+    2  146  exponential    1.3866      51.0    100.2      30.6   50.00      85d
+    2  146     seasonal    2.8270       0.0    144.4       0.0   50.00      85d
+    2  146  gap_coupled    2.8270       0.0    144.4       0.0   50.00      85d
+
+    2  183      uniform    1.7878       0.0    130.8       0.0   50.00      88d
+    2  183    two_phase    0.8299      53.6     81.2      37.9   50.00      68d
+    2  183  exponential    0.8854      50.5     91.2      30.3   50.00      88d
+    2  183     seasonal    1.7878       0.0    130.8       0.0   50.00      88d
+    2  183  gap_coupled    1.7878       0.0    130.8       0.0   50.00      88d
+
+    3  104      uniform    4.8021       0.0    182.8       0.0   50.00      84d
+    3  104    two_phase    2.2467      53.2    109.2      40.2   50.00      70d
+    3  104  exponential    1.9626      59.1    109.1      40.3   50.00      84d
+    3  104     seasonal    4.8021       0.0    182.8       0.0   50.00      84d
+    3  104  gap_coupled    4.8021       0.0    182.8       0.0   50.00      84d
+
+    3  122      uniform    3.1671       0.0    163.9       0.0   50.00      87d
+    3  122    two_phase    1.5508      51.0    102.1      37.7   50.00      72d
+    3  122  exponential    1.5649      50.6    108.1      34.1   50.00      78d
+    3  122     seasonal    3.1671       0.0    163.9       0.0   50.00      87d
+    3  122  gap_coupled    3.1671       0.0    163.9       0.0   50.00      87d
+
+    3  146      uniform    2.3149       0.0    154.8       0.0   50.00      85d
+    3  146    two_phase    0.8661      62.6     90.3      41.7   50.00      80d
+    3  146  exponential    1.1359      50.9    107.5      30.5   50.00      85d
+    3  146     seasonal    2.3149       0.0    154.8       0.0   50.00      85d
+    3  146  gap_coupled    2.3149       0.0    154.8       0.0   50.00      85d
+
+    3  183      uniform    1.4474       0.0    139.5       0.0   50.00      88d
+    3  183    two_phase    0.8245      43.0     94.0      32.7   50.00      70d
+    3  183  exponential    0.7171      50.5     97.3      30.3   50.00      88d
+    3  183     seasonal    1.4474       0.0    139.5       0.0   50.00      88d
+    3  183  gap_coupled    1.4474       0.0    139.5       0.0   50.00      88d
+
+    5  104      uniform    1.2630       0.0    306.4       0.0   50.00      84d
+    5  104    two_phase    0.5993      52.6    175.3      42.8   50.00      70d
+    5  104  exponential    0.5369      57.5    189.5      38.2   50.00      84d
+    5  104     seasonal    1.2630       0.0    306.4       0.0   50.00      84d
+    5  104  gap_coupled    1.2630       0.0    306.4       0.0   50.00      84d
+
+    5  122      uniform    0.7503       0.0    262.8       0.0   50.00      87d
+    5  122    two_phase    0.3298      56.0    152.9      41.8   50.00      75d
+    5  122  exponential    0.3225      57.0    163.3      37.8   50.00      87d
+    5  122     seasonal    0.7503       0.0    262.8       0.0   50.00      87d
+    5  122  gap_coupled    0.7503       0.0    262.8      -0.0   50.00      87d
+
+    5  146      uniform    0.5071       0.0    240.1       0.0   50.00      85d
+    5  146    two_phase    0.2997      40.9    153.7      36.0   50.00      58d
+    5  146  exponential    0.2126      58.1    147.7      38.5   50.00      85d
+    5  146     seasonal    0.5071       0.0    240.1       0.0   50.00      85d
+    5  146  gap_coupled    0.5071       0.0    240.1       0.0   50.00      85d
+
+    5  183      uniform    0.2890       0.0    208.1       0.0   50.00      88d
+    5  183    two_phase    0.2667       7.7    139.5      33.0   50.00      44d
+    5  183  exponential    0.1417      51.0    136.8      34.2   50.00      80d
+    5  183     seasonal    0.2890       0.0    208.1       0.0   50.00      88d
+    5  183  gap_coupled    0.2890       0.0    208.1       0.0   50.00      88d
+
+  Lowest-risk family at each operating point:
+    FST 2, 104 sessions/yr: two_phase (62.0% less risk, 43.0% less total UV)
+    FST 2, 122 sessions/yr: two_phase (60.5% less risk, 40.8% less total UV)
+    FST 2, 146 sessions/yr: exponential (51.0% less risk, 30.6% less total UV)
+    FST 2, 183 sessions/yr: two_phase (53.6% less risk, 37.9% less total UV)
+    FST 3, 104 sessions/yr: exponential (59.1% less risk, 40.3% less total UV)
+    FST 3, 122 sessions/yr: two_phase (51.0% less risk, 37.7% less total UV)
+    FST 3, 146 sessions/yr: two_phase (62.6% less risk, 41.7% less total UV)
+    FST 3, 183 sessions/yr: exponential (50.5% less risk, 30.3% less total UV)
+    FST 5, 104 sessions/yr: exponential (57.5% less risk, 38.2% less total UV)
+    FST 5, 122 sessions/yr: exponential (57.0% less risk, 37.8% less total UV)
+    FST 5, 146 sessions/yr: exponential (58.1% less risk, 38.5% less total UV)
+    FST 5, 183 sessions/yr: exponential (51.0% less risk, 34.2% less total UV)
+
+  Interpretation. At fixed budget AND session count the
+  intermittency term is convex in the doses, so equal doses minimise
+  it (Jensen) -- variable dose cannot win on the risk axis alone.
+  Every gain below therefore comes from needing LESS total UV:
+  a constant dose must both climb to target and hold there, so it
+  overshoots in steady state. The gain shrinks as sessions rise,
+  because a frequent schedule already runs a small per-session dose.
+
+  Absolute D inherits the uncalibrated SC priors (SC_max, alpha_SC,
+  K_SC); rankings within a skin type are more robust than levels.
+
+  Saved tables/variable_dose_optimization.csv
+  Saved figs/variable_dose_profiles.png
+
+```
+
+![variable dose profiles](figs/variable_dose_profiles.png)
+
+## 13c. Joint timing + dose optimisation
+
+Section 13b frees the dose but keeps sessions uniformly spaced. This searches spacing and dose together, using a one-parameter monotone warp of the session days (`gamma = 1` is uniform) on top of the dose families.
+
+**A session budget is part of the problem, not an add-on.** Without one the joint optimum is degenerate: at fixed cumulative dose the intermittency term is minimised by spreading over as many days as possible, so risk falls monotonically all the way to a daily schedule — which is what section 14b already reports from a different direction. The meaningful object is therefore the frontier over a session budget, and that budget is set by adherence rather than photobiology.
+
+**This does not need to be mixed-integer.** `d_t = 0` already means 'no session that day', so a dose vector encodes timing and dose together with no integer variables — the encoding used in maximum-hands-off control (Nagahara, Quevedo & Nešić 2016, *IEEE TAC* 61:735-747). Their L1 = L0 equivalence is proved for linear dynamics and is not established for this nonlinear system, so it motivates the formulation rather than justifying it; `scripts/joint_schedule_freesolve.py` checks the answer against a direct 365-variable solve instead of assuming it.
+
+**The comparison is against uniform spacing searched by the same solver at the same budget**, not against the coarse grid of 13b. The spacing dimension is present in both arms and merely inert in the control, because `differential_evolution` sizes its population as `popsize × n_parameters` — giving the free arm an extra dimension would also give it ~33% more evaluations and confound spacing with search effort.
+
+```
+
+======================================================================
+ANALYSIS N: joint timing + dose optimisation
+======================================================================
+
+  min combined cancer risk  s.t.  min D(t >= ramp) >= 50 nmol/L,
+  per-session dose <= 0.7 MED, session budget fixed per row.
+  Control arm pins spacing to uniform; treatment arm frees the
+  spacing exponent. Same solver and budget in both.
+
+  A session budget is part of the problem: without one the optimum
+  is degenerate (risk falls monotonically to a daily schedule),
+  because at fixed cumulative dose the intermittency term is
+  minimised by spreading over as many days as possible.
+
+  FST    N   spacing       family  gamma      risk  vs unif%   totSED  t->suff
+  ----------------------------------------------------------------------------------
+    2  104   uniform    two_phase   1.00    1.9431       0.0     94.5      84d
+    2  104      free  exponential   1.35    1.5937      18.0     97.6      83d
+
+    2  146   uniform    two_phase   1.00    0.9943       0.0     83.4      85d
+    2  146      free  exponential   1.38    0.8679      12.7     87.2      85d
+
+    2  183   uniform    two_phase   1.00    0.7333       0.0     79.8      78d
+    2  183      free    two_phase   1.28    0.6060      17.4     81.8      85d
+
+    2  260   uniform    two_phase   1.00    0.3903       0.0     73.2      88d
+    2  260      free    two_phase   1.55    0.3637       6.8     76.8      86d
+
+    3  104   uniform    two_phase   1.00    1.6092       0.0    101.5      84d
+    3  104      free    two_phase   1.32    1.2671      21.3    103.1      83d
+
+    3  146   uniform    two_phase   1.00    0.8110       0.0     89.1      85d
+    3  146      free    two_phase   1.36    0.6986      13.9     92.5      83d
+
+    3  183   uniform    two_phase   1.00    0.5498       0.0     84.1      88d
+    3  183      free    two_phase   1.28    0.4945      10.1     87.5      88d
+
+    3  260   uniform    two_phase   1.00    0.3165       0.0     77.8      87d
+    3  260      free  exponential   1.14    0.3291      -4.0     83.3      86d
+
+    5  104   uniform    two_phase   1.00    0.3914       0.0    159.2      84d
+    5  104      free    two_phase   1.33    0.2716      30.6    158.2      82d
+
+    5  146   uniform    two_phase   1.00    0.1759       0.0    137.9      85d
+    5  146      free    two_phase   1.29    0.1338      23.9    134.0      78d
+
+    5  183   uniform    two_phase   1.00    0.1051       0.0    120.1      86d
+    5  183      free  exponential   1.43    0.0887      15.6    125.8      85d
+
+    5  260   uniform    two_phase   1.00    0.0559       0.0    108.9      88d
+    5  260      free  exponential   1.29    0.0518       7.3    115.3      87d
+
+  Free spacing vs uniform spacing, 12 operating points:
+    median gain +14.71%   best +30.62%   worst -3.99%
+    gamma chosen: median 1.33 (1.00 = uniform), range 1.14-1.55
+
+    A negative entry is not a real loss: gamma = 1 is
+    inside the search bounds, so the free arm can reproduce
+    the control exactly and cannot truly do worse. The worst
+    entry (-4.0%) therefore bounds solver noise, and
+    gains below roughly 4% should not be read as real.
+
+  Mechanism. Free spacing does NOT win by lowering cumulative dose
+  -- total SED is usually slightly HIGHER. It wins by lowering the
+  PEAK per-session dose: bunching sessions more densely early lets
+  the loading phase use smaller individual doses. The intermittency
+  term is cubic in per-session dose while the SCC term is a 1.7 power
+  of the cumulative, so trading a small cumulative increase for a
+  large peak reduction is strongly favourable.
+
+  This REVERSES the fixed-dose result: at fixed dose, spacing only
+  redistributes an unchangeable per-session intensity, and uniform
+  spacing wins by minimising the largest gap. Once dose is free,
+  spacing acquires a second job -- setting how much dose each session
+  needs to carry -- and front-loading takes over.
+
+  Precisely: the search selected gamma > 1 at 12 of 12 points,
+  and beat the uniform control at 11 of 12.
+  The 1 remaining point(s) sit inside the solver-noise bound
+  above, so they are not evidence against front-loading -- but
+  they are not evidence for it either. The claim is 11/12, not unanimous.
+
+  Saved tables/joint_schedule_optimization.csv
+
+```
+
 ## 14. Decision problems (recommended objectives)
 
 The sweeps above used to maximise the retired per-SED efficiency metric (removed from the code on 2026-07-31), which rose monotonically as dosing approaches zero and whose reported optima ended *below* their starting 25(OH)D. These are the same questions posed so that cumulative UV is held fixed, or so that cancer risk is scored alongside the vitamin D outcome.

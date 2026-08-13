@@ -142,6 +142,34 @@ def _days_below(result, threshold: float) -> float:
                  else np.trapz(below, t))
 
 
+def time_to_sufficiency(result, target: float = SUFFICIENCY_NMOL_L) -> float:
+    """Days until 25(OH)D first reaches `target`; NaN if it never does.
+
+    Scored because RAMP_IN_DAYS excludes the loading period from the
+    sufficiency floor (constraint C3), which leaves *how fast* a schedule
+    climbs to target completely unscored. Two schedules that both hold the
+    floor from day 90 onward are treated as equivalent by C3 even when one
+    reaches sufficiency in 59 days and the other in 113 -- a difference that
+    matters clinically and is exactly where variable dosing pays.
+
+    Interpolates linearly within the crossing step rather than returning the
+    grid point, so the value does not quantise to the solver step size.
+    """
+    t = np.asarray(result["t"], dtype=float)
+    D = np.asarray(result["D"], dtype=float)
+    hit = np.flatnonzero(D >= target)
+    if hit.size == 0:
+        return float("nan")
+    i = int(hit[0])
+    if i == 0:
+        return float(t[0])
+    D0_, D1_ = D[i - 1], D[i]
+    if D1_ == D0_:
+        return float(t[i])
+    frac = (target - D0_) / (D1_ - D0_)
+    return float(t[i - 1] + frac * (t[i] - t[i - 1]))
+
+
 # ---------------------------------------------------------------------------
 # Q2. Stay out of deficiency at least cancer risk -- Pareto frontier
 # ---------------------------------------------------------------------------

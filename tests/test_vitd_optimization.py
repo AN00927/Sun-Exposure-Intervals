@@ -177,3 +177,258 @@ class TestRiskConstrainedInterval:
             optimal_interval_risk_constrained(fst=3, interval_grid=())
         with pytest.raises(ValueError):
             optimal_interval_risk_constrained(fst=3, interval_grid=(0, 7))
+
+
+# ---------------------------------------------------------------------------
+# Variable-dose profiles and optimisation
+# ---------------------------------------------------------------------------
+from vitd_optimization import (            # noqa: E402
+    session_days, dose_uniform, dose_two_phase, dose_exponential,
+    dose_seasonal, dose_gap_coupled, dose_knots, build_variable_schedule,
+    optimise_variable_dose, VARIABLE_DOSE_FAMILIES,
+)
+from vitd_objectives import time_to_sufficiency, GAMMA_MED  # noqa: E402
+from vitd_physiology import (_med_sed_by_fst, cancer_risk,  # noqa: E402
+                             INTERMITTENT_BURN_EXPONENT)
+
+
+class TestDoseProfiles:
+    def test_families_return_one_dose_per_session(self):
+        days = session_days(20, 365)
+        assert len(dose_uniform(days, 1.0)) == 20
+        assert len(dose_two_phase(days, 2.0, 0.5, 100.0)) == 20
+        assert len(dose_exponential(days, 1.0, 2.0, 30.0)) == 20
+        assert len(dose_seasonal(days, 1.0, 0.4)) == 20
+        assert len(dose_gap_coupled(days, 1.0, 1.0)) == 20
+        assert len(dose_knots(days, [1.0, 2.0, 0.5], T_days=365)) == 20
+
+    def test_constant_dose_is_recovered_at_the_null_parameter(self):
+        """Each family must nest the constant-dose baseline, or a comparison
+        against it is not a comparison -- the search could lose to uniform
+        purely by being unable to express it."""
+        days = session_days(30, 365)
+        assert np.allclose(dose_gap_coupled(days, 1.5, 0.0), 1.5)
+        assert np.allclose(dose_seasonal(days, 1.5, 0.0), 1.5)
+        assert np.allclose(dose_two_phase(days, 1.5, 1.5, 100.0), 1.5)
+        assert np.allclose(dose_exponential(days, 1.5, 0.0, 30.0), 1.5)
+        assert np.allclose(dose_knots(days, [1.5, 1.5, 1.5], T_days=365), 1.5)
+
+    def test_two_phase_loads_then_drops(self):
+        days = session_days(40, 365)
+        seds = dose_two_phase(days, 2.0, 0.5, 100.0)
+        assert np.all(seds[days < 100.0] == 2.0)
+        assert np.all(seds[days >= 100.0] == 0.5)
+
+    def test_exponential_decays_monotonically_to_the_asymptote(self):
+        days = session_days(40, 365)
+        seds = dose_exponential(days, 1.0, 3.0, 30.0)
+        assert np.all(np.diff(seds) < 0)
+        assert seds[-1] == pytest.approx(1.0, abs=1e-3)
+
+    def test_knots_do_not_overshoot_between_control_points(self):
+        """PCHIP is shape-preserving; a cubic spline would ring here and could
+        emit negative doses."""
+        days = session_days(60, 365)
+        seds = dose_knots(days, [0.1, 3.0, 0.1], T_days=365)
+        assert seds.min() >= 0.0
+        assert seds.max() <= 3.0 + 1e-9
+
+
+class TestBuildVariableSchedule:
+    def test_clips_to_the_erythema_ceiling(self):
+        days = session_days(10, 365)
+        sched = build_variable_schedule(days, np.full(10, 99.0), fst=3)
+        cap = GAMMA_MED * _med_sed_by_fst(3)
+        assert all(s <= cap + 1e-12 for _, s in sched)
+
+    def test_zero_dose_drops_the_session(self):
+        """This is what lets session count be optimised without integer
+        variables: d_i = 0 IS 'no session that day'."""
+        days = session_days(10, 365)
+        seds = np.array([1.0, 0.0] * 5)
+        sched = build_variable_schedule(days, seds, fst=3)
+        assert len(sched) == 5
+
+    def test_negative_and_nan_doses_do_not_propagate(self):
+        days = session_days(4, 365)
+        sched = build_variable_schedule(days, np.array([1.0, -2.0, np.nan, 0.5]),
+                                        fst=3)
+        assert all(np.isfinite(s) and s > 0 for _, s in sched)
+
+
+class TestVariableDoseOptimisation:
+    HORIZON, RAMP, N = 365, 90, 104
+
+    def _opt(self, family, fst=3):
+        return optimise_variable_dose(fst=fst, n_sessions=self.N, family=family,
+                                      horizon_days=self.HORIZON,
+                                      ramp_in_days=self.RAMP)
+
+    def test_returned_profile_actually_holds_the_floor(self):
+        """Re-simulated independently of the optimiser's own bookkeeping."""
+        for fam in ("uniform", "two_phase", "exponential"):
+            res = self._opt(fam)
+            assert res is not None, f"{fam} found nothing feasible"
+            assert res["trough_after_ramp"] >= SUFFICIENCY_NMOL_L - 1e-6
+
+    def test_returned_profile_never_burns(self):
+        for fam in VARIABLE_DOSE_FAMILIES:
+            res = self._opt(fam)
+            if res is None:
+                continue
+            assert res["max_sed"] <= GAMMA_MED * _med_sed_by_fst(3) + 1e-9
+
+    def test_variable_dose_is_never_worse_than_uniform(self):
+        """Every family nests constant dose, so the search can only tie or win.
+        A loss would mean the optimiser cannot find a point it can express."""
+        base = self._opt("uniform")
+        assert base is not None
+        for fam in VARIABLE_DOSE_FAMILIES:
+            res = self._opt(fam)
+            if res is None:
+                continue
+            assert res["combined_risk"] <= base["combined_risk"] * 1.02, (
+                f"{fam} lost to uniform, which it can express exactly")
+
+    def test_gain_comes_from_a_smaller_budget_not_from_reshaping(self):
+        """The Jensen argument, checked on the model rather than asserted: at
+        fixed total dose AND session count, equal doses minimise the
+        intermittency term, so any real gain must show up as less total UV."""
+        base = self._opt("uniform")
+        best = self._opt("two_phase")
+        assert base is not None and best is not None
+        if best["combined_risk"] < base["combined_risk"] * 0.99:
+            assert best["total_sed"] < base["total_sed"]
+
+    def test_equal_doses_minimise_the_intermittency_term(self):
+        """Direct Jensen check at fixed budget and count."""
+        n, budget = 60, 60.0
+        equal = np.full(n, budget / n)
+        base = cancer_risk(equal, 3)["intermittent_index"]
+        rng = np.random.default_rng(0)
+        for _ in range(25):
+            w = rng.random(n) + 0.05
+            uneven = budget * w / w.sum()
+            assert cancer_risk(uneven, 3)["intermittent_index"] >= base - 1e-12
+        assert INTERMITTENT_BURN_EXPONENT > 1.0   # why the above holds
+
+    def test_unreachable_target_returns_none_rather_than_a_near_miss(self):
+        assert optimise_variable_dose(fst=3, n_sessions=104, target=500.0,
+                                      horizon_days=self.HORIZON,
+                                      ramp_in_days=self.RAMP) is None
+
+    def test_rejects_unknown_family(self):
+        with pytest.raises(ValueError):
+            optimise_variable_dose(fst=3, n_sessions=20, family="nope")
+
+
+class TestJointTimingAndDose:
+    """Joint spacing + dose search."""
+
+    HORIZON, RAMP, N = 365, 90, 104
+
+    def _opt(self, free_spacing, fst=3, n=None, seed=0):
+        from vitd_optimization import optimise_joint_schedule
+        return optimise_joint_schedule(
+            fst=fst, n_sessions=n or self.N, horizon_days=self.HORIZON,
+            ramp_in_days=self.RAMP, free_spacing=free_spacing, seed=seed,
+            maxiter=8, popsize=6)
+
+    def test_warp_recovers_uniform_spacing_at_gamma_one(self):
+        from vitd_optimization import warp_days
+        assert np.allclose(warp_days(40, 365, 1.0), session_days(40, 365))
+
+    def test_warp_is_monotone_and_within_horizon(self):
+        from vitd_optimization import warp_days
+        for gamma in (0.4, 1.0, 2.5):
+            d = warp_days(50, 365, gamma)
+            assert np.all(np.diff(d) > 0)
+            assert d[0] == 0.0 and d[-1] < 365
+
+    def test_gamma_above_one_front_loads(self):
+        from vitd_optimization import warp_days
+        front = warp_days(50, 365, 2.0)
+        assert front[1] - front[0] < front[-1] - front[-2]
+
+    def test_returned_schedule_holds_the_floor_and_never_burns(self):
+        for free in (False, True):
+            res = self._opt(free)
+            assert res is not None
+            assert res["trough_after_ramp"] >= SUFFICIENCY_NMOL_L - 1e-6
+            assert res["max_sed"] <= GAMMA_MED * _med_sed_by_fst(3) + 1e-9
+
+    def test_control_arm_really_is_uniformly_spaced(self):
+        res = self._opt(free_spacing=False)
+        assert res is not None
+        assert res["gamma"] == pytest.approx(1.0)
+
+    def test_rebuild_reproduces_the_scored_schedule(self):
+        """The stored parameters must regenerate exactly what was scored, or
+        every downstream figure and table describes a different schedule."""
+        from vitd_optimization import rebuild_joint_schedule
+        from vitd_model import simulate as _sim
+        res = self._opt(free_spacing=True)
+        assert res is not None
+        days, seds = rebuild_joint_schedule(res, horizon_days=self.HORIZON)
+        sched = build_variable_schedule(days, seds, fst=int(res["fst"]))
+        r = _sim(fst=int(res["fst"]), schedule=sched,
+                 duration_days=self.HORIZON, D0=25.0,
+                 dose_framing="fixed_per_session_SED")
+        assert r["cancer_risk"]["combined_index"] == pytest.approx(
+            res["combined_risk"], rel=1e-6)
+        assert r["cumulative_SED"] == pytest.approx(res["total_sed"], rel=1e-6)
+
+    def test_free_spacing_gets_no_larger_search_budget(self):
+        """Both arms must optimise the same number of parameters. Otherwise
+        differential_evolution (population = popsize * n_params) hands the free
+        arm more evaluations, and any gain is confounded with search effort."""
+        import inspect
+        from vitd_optimization import optimise_joint_schedule
+        src = inspect.getsource(optimise_joint_schedule)
+        assert "if free_spacing:\n            bounds = bounds + " not in src, (
+            "spacing dimension must be present in both arms")
+
+    def test_free_spacing_is_never_worse_than_uniform(self):
+        """gamma = 1 is inside the bounds, so the free arm can express the
+        control exactly and should not lose beyond solver noise."""
+        fixed = self._opt(free_spacing=False)
+        free = self._opt(free_spacing=True)
+        assert fixed is not None and free is not None
+        assert free["combined_risk"] <= fixed["combined_risk"] * 1.10
+
+    def test_infeasible_budget_returns_none(self):
+        assert self._opt(free_spacing=True, n=1) is None
+
+
+class TestTimeToSufficiency:
+    def test_returns_nan_when_target_is_never_reached(self):
+        r = simulate(fst=3, schedule=[(0.0, 0.1)], duration_days=60, D0=25.0,
+                     dose_framing="fixed_per_session_SED")
+        assert np.isnan(time_to_sufficiency(r, 500.0))
+
+    def test_crossing_is_interpolated_not_quantised_to_the_grid(self):
+        r = simulate(fst=3, schedule=[(float(d), 2.0) for d in range(0, 200, 3)],
+                     duration_days=200, D0=25.0,
+                     dose_framing="fixed_per_session_SED")
+        ttf = time_to_sufficiency(r, SUFFICIENCY_NMOL_L)
+        assert np.isfinite(ttf)
+        t, D = np.asarray(r["t"]), np.asarray(r["D"])
+        assert t[0] <= ttf <= t[-1]
+        # D at the reported time is the target, to within the local slope
+        assert float(np.interp(ttf, t, D)) == pytest.approx(
+            SUFFICIENCY_NMOL_L, abs=0.5)
+
+    def test_a_faster_schedule_reaches_sufficiency_sooner(self):
+        """Both arms must actually reach the target, or this compares a number
+        against NaN and passes/fails for the wrong reason. At 1 SED every 5 days
+        FST III never reaches 50 nmol/L at all."""
+        slow = simulate(fst=3, schedule=[(float(d), 2.0) for d in range(0, 300, 5)],
+                        duration_days=300, D0=25.0,
+                        dose_framing="fixed_per_session_SED")
+        fast = simulate(fst=3, schedule=[(float(d), 2.0) for d in range(0, 300, 3)],
+                        duration_days=300, D0=25.0,
+                        dose_framing="fixed_per_session_SED")
+        t_slow = time_to_sufficiency(slow, SUFFICIENCY_NMOL_L)
+        t_fast = time_to_sufficiency(fast, SUFFICIENCY_NMOL_L)
+        assert np.isfinite(t_slow) and np.isfinite(t_fast)
+        assert t_fast < t_slow

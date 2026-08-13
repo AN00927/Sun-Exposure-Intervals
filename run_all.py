@@ -20,7 +20,8 @@ if hasattr(sys.stdout, "reconfigure"):
 import vitd_validation
 import vitd_analyses
 import vitd_calibration
-from vitd_optimization import analysis_constant_sessions
+from vitd_optimization import (analysis_constant_sessions, analysis_variable_dose,
+                               analysis_joint_schedule)
 
 
 REPORT_PATH = "RESULTS.md"
@@ -162,9 +163,12 @@ def main():
         vitd_analyses.analysis_sun_exposure,
         vitd_analyses.analysis_trajectories,
         analysis_constant_sessions,
+        analysis_variable_dose,
+        analysis_joint_schedule,
     ]
     alpha_log, k_log, beta_log, frame_log, fine_log, scipy_log, \
-        maxint_log, load_log, split_log, sun_log, traj_log, const_log = [
+        maxint_log, load_log, split_log, sun_log, traj_log, const_log, \
+        vardose_log, joint_log = [
             capture_log(fn) for fn in analyses
         ]
 
@@ -182,6 +186,8 @@ def main():
     print(sun_log)
     print(traj_log)
     print(const_log)
+    print(vardose_log)
+    print(joint_log)
 
     # 3. Markdown report
     n_pass = sum(val_results.values())
@@ -306,6 +312,63 @@ def main():
         "below 50 nmol/L + safety sidecar.\n"
     )
     report.append("\n```\n" + const_log + "\n```\n")
+
+    report.append("\n## 13b. Variable-dose optimisation\n")
+    report.append(
+        "\nEvery other analysis in this repository fixes one dose and searches "
+        "only *when* to dose. This frees the dose of each session and asks what "
+        "that buys, holding the sufficiency floor and the session count fixed so "
+        "the comparison cannot be won by dosing less or going outside more.\n\n"
+        "At a fixed budget **and** session count, variable dose cannot help: the "
+        "intermittency term is convex in the doses, so equal doses minimise it by "
+        "Jensen's inequality. The gain instead comes from needing a smaller "
+        "budget — a single constant dose has to both climb to the target and hold "
+        "there, so it necessarily overshoots in steady state. Splitting those two "
+        "jobs is the whole effect, which is also why it shrinks as the session "
+        "count rises and the per-session dose is already small.\n\n"
+        "`seasonal` and `gap_coupled` returning the uniform optimum is the "
+        "correct result, not a search failure: their grids contain the "
+        "constant-dose special case (amplitude 0, exponent 0) and select it. "
+        "Seasonality matters here as a *constraint* on achievable dose, not as a "
+        "free choice — see `dose_seasonal`.\n\n"
+        "Time-to-sufficiency is now reported because constraint C3 starts at "
+        "`RAMP_IN_DAYS` and so cannot see how fast a schedule climbs; two "
+        "schedules that both hold the floor from day 90 are scored identically by "
+        "C3 even when one reaches sufficiency a month sooner.\n"
+    )
+    report.append("\n```\n" + vardose_log + "\n```\n")
+    report.append("\n![variable dose profiles](figs/variable_dose_profiles.png)\n")
+
+    report.append("\n## 13c. Joint timing + dose optimisation\n")
+    report.append(
+        "\nSection 13b frees the dose but keeps sessions uniformly spaced. This "
+        "searches spacing and dose together, using a one-parameter monotone warp "
+        "of the session days (`gamma = 1` is uniform) on top of the dose "
+        "families.\n\n"
+        "**A session budget is part of the problem, not an add-on.** Without one "
+        "the joint optimum is degenerate: at fixed cumulative dose the "
+        "intermittency term is minimised by spreading over as many days as "
+        "possible, so risk falls monotonically all the way to a daily schedule — "
+        "which is what section 14b already reports from a different direction. "
+        "The meaningful object is therefore the frontier over a session budget, "
+        "and that budget is set by adherence rather than photobiology.\n\n"
+        "**This does not need to be mixed-integer.** `d_t = 0` already means "
+        "'no session that day', so a dose vector encodes timing and dose together "
+        "with no integer variables — the encoding used in maximum-hands-off "
+        "control (Nagahara, Quevedo & Nešić 2016, *IEEE TAC* 61:735-747). Their "
+        "L1 = L0 equivalence is proved for linear dynamics and is not established "
+        "for this nonlinear system, so it motivates the formulation rather than "
+        "justifying it; `scripts/joint_schedule_freesolve.py` checks the answer "
+        "against a direct 365-variable solve instead of assuming it.\n\n"
+        "**The comparison is against uniform spacing searched by the same "
+        "solver at the same budget**, not against the coarse grid of 13b. The "
+        "spacing dimension is present in both arms and merely inert in the "
+        "control, because `differential_evolution` sizes its population as "
+        "`popsize × n_parameters` — giving the free arm an extra dimension would "
+        "also give it ~33% more evaluations and confound spacing with search "
+        "effort.\n"
+    )
+    report.append("\n```\n" + joint_log + "\n```\n")
 
     # ---- Decision problems, held-out benchmark, and uncertainty -------------
     # These are the sections to read first. The sweeps above used to optimise
