@@ -2,26 +2,23 @@
 
 Project instructions. These override any default behaviour.
 
-## Git — never commit, never push
+## Git — commit only when asked, never push
 
-**Do not run `git commit`. Do not run `git push`. Ever. Not even when asked.**
+**Do not run `git commit` unless the user asks for that commit. Never run
+`git push` unless the user asks for that push.**
 
-The user handles every commit and push in this repository, without exception.
+When the user does ask, commit. Otherwise leave the working tree as it is and
+report what changed.
 
-If work is finished, stop after staging is *not* required either — leave the
-working tree as it is and report what changed. Say what you did and let the user
-commit it. If the user asks for a commit message, write one as text for them to
-use; do not execute it.
+A past authorization does not carry forward. Each commit needs its own fresh,
+explicit instruction — "you committed last time" is not permission to commit
+again, and neither is work being verified, tested, and obviously correct. When
+in doubt, hand back the message as text instead of running it.
 
-This rule has no exceptions for:
-- "just this once" / a one-off request in a previous turn
-- follow-up work in the same session after an earlier commit was requested
-- work that is verified, tested, and obviously correct
-- "finish up and commit" style instructions
-
-A single past authorization does not carry forward. Treat every commit as
-requiring a fresh, explicit instruction — and even then, prefer to hand back the
-message rather than run the command.
+History rewrites (`filter-repo`, `filter-branch`, BFG) and `push --force` are a
+separate class: ask every time, and take a full **filesystem copy** first, not a
+`git clone` — much of what makes this repo recoverable is gitignored and a clone
+skips it. A rewrite here has already destroyed uncommitted work once.
 
 Read-only git is fine: `git status`, `git diff`, `git log`, `git show`.
 
