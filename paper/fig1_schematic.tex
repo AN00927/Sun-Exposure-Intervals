@@ -1,0 +1,99 @@
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+    >=Stealth,
+    node distance=2.4cm,
+    state/.style={
+        rectangle, rounded corners=6pt,
+        draw=black, line width=0.8pt,
+        minimum width=3.2cm, minimum height=1.6cm,
+        align=center, font=\sffamily\bfseries,
+        fill=blue!8
+    },
+    input/.style={
+        rectangle, rounded corners=4pt,
+        draw=orange!80, line width=0.8pt,
+        minimum width=2.0cm, minimum height=1.0cm,
+        align=center, font=\sffamily\small\bfseries,
+        fill=orange!15
+    },
+    output/.style={
+        rectangle, rounded corners=4pt,
+        draw=gray!60, line width=0.6pt,
+        minimum width=2.0cm, minimum height=0.9cm,
+        align=center, font=\sffamily\small,
+        fill=gray!10
+    },
+    synbox/.style={
+        rectangle, rounded corners=3pt,
+        draw=green!50!black, line width=0.7pt,
+        minimum width=1.6cm, minimum height=0.9cm,
+        align=center, font=\sffamily\small\bfseries,
+        fill=green!12
+    },
+    arr/.style={->, line width=0.9pt, color=blue!60!black},
+    dasharr/.style={->, line width=0.9pt, dashed, color=red!60!black},
+    feedback/.style={->, line width=0.9pt, dashed, color=purple!70!black},
+    decayarr/.style={->, line width=0.8pt, color=gray!60!black},
+    paramlabel/.style={
+        font=\scriptsize\sffamily, text=black!70,
+        fill=white, inner sep=1.5pt, outer sep=0pt
+    },
+]
+
+% --- UV input (top) ---
+\node[input] (UV) at (0, 3.5) {UV pulse};
+
+% --- Synthesis box ---
+\node[synbox] (syn) at (0, 1.8) {Synthesis\\[-2pt]{\tiny$S(t)$}};
+
+% --- State variables ---
+\node[state, fill=blue!12]  (D)  at (0, 0)   {$D(t)$\\[-2pt]{\tiny Serum 25(OH)D}};
+\node[state, fill=teal!10] (M)  at (4.2, 0) {$M(t)$\\[-2pt]{\tiny Melanin Index}};
+\node[state, fill=orange!8](SC) at (4.2,-2.4){$SC(t)$\\[-2pt]{\tiny Stratum Corneum}};
+
+% --- Baseline outputs ---
+\node[output] (Dbl) at (0, -2.4)   {Baseline $D_0$};
+\node[output] (Mbl) at (7.0, 0)    {Baseline $M_{\mathrm{skin}}$};
+\node[output] (SCbl) at (7.0, -2.4){Baseline $SC_0$};
+
+% === ARROWS ===
+
+% UV -> Synthesis
+\draw[arr, color=orange!70!black] (UV) -- (syn);
+
+% Synthesis -> D
+\draw[arr] (syn) -- (D) node[paramlabel, pos=0.5, right] {$+S(t)$};
+
+% UV -> M (induction)
+\draw[arr, color=teal!60!black] (UV.east) -- ++(0.8,0) |- (M.north)
+    node[paramlabel, pos=0.25, above] {$\alpha$};
+
+% UV -> SC (thickening)
+\draw[arr, color=orange!60!black] (UV.east) -- ++(1.6,0) |- (SC.north)
+    node[paramlabel, pos=0.25, above] {$\beta$};
+
+% M -> Synthesis (attenuation, dashed)
+\draw[dasharr] (M.west) -- ++(-1.6, 0) |- (syn.east)
+    node[paramlabel, pos=0.75, below] {$K_{\mathrm{ATTEN}}$};
+
+% SC -> Synthesis (attenuation, dashed)
+\draw[dasharr] (SC.west) -- ++(-2.8, 0) |- ([xshift=-0.4cm]syn.south east)
+    node[paramlabel, pos=0.7, below] {$K_{\mathrm{SC}}$};
+
+% D -> Synthesis (feedback inhibition, dashed)
+\draw[feedback] (D.north west) .. controls ++(-0.8,0.6) and ++(-1.2,0.0) .. (syn.west)
+    node[paramlabel, pos=0.5, left] {$D_{\max}$};
+
+% Decay arrows
+\draw[decayarr] (D.south) -- ++(0,-0.6) -| (Dbl.north)
+    node[paramlabel, pos=0.25, right] {$\gamma_D$};
+\draw[decayarr] (M.east) -- (Mbl.west)
+    node[paramlabel, pos=0.5, above] {$\gamma_M$};
+\draw[decayarr] (SC.east) -- (SCbl.west)
+    node[paramlabel, pos=0.5, above] {$\gamma_{SC}$};
+
+\end{tikzpicture}
+\caption{Schematic of the three-state vitamin D scheduling model. UV radiation drives cutaneous synthesis $S(t)$, which increases serum 25(OH)D concentration $D(t)$. The same UV pulses induce melanin production $M(t)$ and stratum corneum thickening $SC(t)$, which attenuate the UV flux reaching the synthesis site (dashed red arrows, parameters $K_{\mathrm{ATTEN}}$ and $K_{\mathrm{SC}}$). Homeostatic feedback from $D$ inhibits further synthesis when stores are replete ($D_{\max}$). All three states decay toward their respective baselines (gray arrows, rate constants $\gamma$). Melanin induction and thickening are governed by skin-type-dependent parameters $\alpha$ and $\beta$.}
+\label{fig:schematic}
+\end{figure}

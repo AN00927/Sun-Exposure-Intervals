@@ -15,30 +15,73 @@ venv/
 .idea/
 .vscode/
 
+# Research papers & PDFs (copyrighted materials)
+Research_Papers/
+*.pdf
+modelpaper.pdf
+
+# Evidence registers, notes, and direct extractions
+MODEL_AND_EVIDENCE.md
+PAPER_SUMMARIES.md
+SCIENTIFIC_AUDIT_HANDOFF.md
+OPEN_WORK.md
+HANDOFF.md
+OPEN_QUESTIONS.md
+PAPER_REQUESTS.md
+source_requests.md
+ASSUMPTION_REGISTER.md
+KNOWN_ISSUES.md
+PARAMETER_CHANGES.md
+SESSION_LOG.md
+GLOSSARY.md
+AGENTS.md
+AGENT_PROMPT.md
+PART_C_REPORT.md
+
+# Reports and design documents
+reports/
+docs/
+
+# Intermediate extraction outputs and scratchpads
 audit_outputs/extracted_text/
+audit_outputs/new_paper_numeric_snippets.md
+audit_outputs/paper_numeric_snippets.md
+audit_outputs/paper_extraction_index.json
+audit_outputs/audit_extraction_summary.md
+audit_outputs/pdf_*.csv
+audit_outputs/pdf_*.json
+audit_outputs/trial_subject_level.csv
 extracted_texts/
 tmp_katten/
 
-reports/melanin_sc_advisor_memo.md
-
+# Claude / Validation exploratory
 .claude/
-
 validation_exploratory/
 
-# Research papers. Copyrighted PDFs are not ours to redistribute, so they live
-# outside version control entirely. Datasets (NHANES CSVs etc.) are openly
-# distributable and stay tracked under Papers_and_Datasets/.
-Research_Papers/
-*.pdf
-
+# Unneeded dataset text dumps
+Papers_and_Datasets/extracted_pdfs.txt
 Papers_and_Datasets/additional info.txt
 Papers_and_Datasets/manifest_raw.csv
 Papers_and_Datasets/rename_map.csv
 Papers_and_Datasets/column_decisions.csv
 Papers_and_Datasets/TL-01 conversion factor
 Papers_and_Datasets/UV index and UV dose, action spectra data version 2
+Papers_and_Datasets/de boer 2025 supplementary/
+Papers_and_Datasets/read_xlsx_all.txt
+Papers_and_Datasets/read_xlsx_full.txt
+Papers_and_Datasets/read_xlsx_out.txt
+Papers_and_Datasets/read_deBoer_supp.py
+Papers_and_Datasets/read_xlsx.py
 
-paper/*.pdf
+# Licenses
+.licenses/clinical_trials_database_LICENSE.txt
+.licenses/literature_search_arxiv_LICENSE.txt
+.licenses/literature_search_biorxiv_LICENSE.txt
+.licenses/literature_search_europepmc_LICENSE.txt
+.licenses/literature_search_openalex_LICENSE.txt
+.licenses/pubmed_database_LICENSE.txt
+
+# LaTeX build artifacts
 paper/*.aux
 paper/*.log
 paper/*.bbl
@@ -47,23 +90,3 @@ paper/*.out
 paper/*.synctex.gz
 paper/*.fls
 paper/*.fdb_latexmk
-.licenses/clinical_trials_database_LICENSE.txt
-.licenses/literature_search_arxiv_LICENSE.txt
-.licenses/literature_search_biorxiv_LICENSE.txt
-.licenses/literature_search_europepmc_LICENSE.txt
-.licenses/literature_search_openalex_LICENSE.txt
-.licenses/pubmed_database_LICENSE.txt
-.gitignore
-
-Papers_and_Datasets/extracted_pdfs.txt
-Papers_and_Datasets/de boer 2025 supplementary/
-Papers_and_Datasets/read_xlsx_all.txt
-Papers_and_Datasets/read_xlsx_full.txt
-Papers_and_Datasets/read_xlsx_out.txt
-Papers_and_Datasets/read_deBoer_supp.py
-Papers_and_Datasets/read_xlsx.py
-
-paper
-modelpaper.pdf
-HANDOFF.md
-PART_C_REPORT.md
