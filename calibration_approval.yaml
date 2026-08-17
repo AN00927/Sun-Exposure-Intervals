@@ -140,6 +140,99 @@ parameter_approvals:
       ascertainment; the derived constitutive factor is 7.3, correctly below
       them.
 
+  E_SOURCE_SOLAR_DEFAULT:
+    approved_by: User (repository owner)
+    approval_date: 2026-08-16
+    change: >-
+      Sun-facing entry points move from an implicit E_source = 1.00 to
+      'solar_summer' = 1.89. New constant vitd_model.E_SOURCE_SOLAR_DEFAULT.
+      Affects minutes_for_target() when params is not supplied, and
+      vitd_analyses.analysis_sun_exposure. Roughly HALVES every recommended
+      minutes figure for sun.
+    source: >-
+      Webb, Alghamdi, Kift & Rhodes 2021, Endocrine Connections 10:R248-R266,
+      Table 1: VDE:EE for sun = 1.89 (Manchester summer), 2.01 (NZ summer),
+      1.22 (NZ winter). Full text in Papers_and_Datasets/.
+    derivation: >-
+      None -- this is a direct table read, not a fit. The change is better
+      characterised as removing an artefact than as calibrating: 1.00 was the
+      backward-compatibility default when E_source was introduced under audit
+      tag [C2] ("so all existing scenarios are unchanged") and was later
+      retro-labelled "solar broadband reference". No solar spectrum has
+      VDE:EE = 1.00; Webb's lowest published sun value is 1.22, in NEW ZEALAND
+      WINTER. The old default therefore under-weighted solar vitamin D
+      effectiveness by ~1.9x at every latitude and season.
+    status: >-
+      APPROVED WITH A KNOWN COST, ACCEPTED EXPLICITLY. See not_covered.
+      Independent evidence that the direction is right: against the only
+      external absolute anchor in the repo (Webb/Kift 2018, ~9 min/day for
+      white Caucasians) the model moves from 49.7 min to 25.3 min. Still
+      2.8x too long, but 2x closer.
+      A is NOT refitted and does not need to be: it is anchored by Bogh 2012,
+      which runs at the TL-01 E_source of 2.44 and passes to 0.2 nmol/L. The
+      "1.27 nmol/L per SED" figure sometimes described as A's calibration
+      target is computed FROM the parameters in vitd_validation.py and is a
+      regression test, not an external anchor.
+    not_covered: >-
+      SOLAR E_source IS NOT IDENTIFIABLE FROM THIS REPO'S SOLAR CHECKS, and this
+      approval does not pretend otherwise. Every solar validation supplies an
+      ASSUMED daily SED that nobody measured (NHANES _SIM_SED = 0.333; Kift
+      0.333 3x/week), so that assumed dose absorbs any E_source change exactly.
+      Measured consequence: NHANES Part B drops from 6/6 to 4/6. The assumed
+      dose was deliberately NOT retuned to keep the check green -- doing so
+      would be calibration through an ungated back door. Closing this properly
+      requires a real ambient UV climatology so the dose becomes derived rather
+      than assumed; that is FUTURE WORK, recorded as 'Open decisions' item 12(b)
+      in MODEL_AND_EVIDENCE.md. Until then the 1.89 value is a literature read
+      applied on top of unmeasured doses, and absolute 25(OH)D predictions for
+      solar scenarios should be read with that in mind.
+      Also not covered: the seasonal variation of solar VDE:EE (1.22-2.01 across
+      Webb's three entries) is NOT modelled -- one summer value is used
+      year-round.
+
+  VERNEZ_GEOMETRY_MODEL:
+    approved_by: User (repository owner)
+    approval_date: 2026-08-16
+    change: >-
+      vitd_physiology.personal_geometry_factor: the elevation-only form
+      0.15 + 0.30*cos(theta) is WITHDRAWN and replaced by Vernez 2015 Eq. 1,
+      exposed as vernez_exposure_ratio(vis_percent, sza_deg). The 0.35 Cockell
+      scalar remains the default when sky visibility is unknown, so DEFAULT
+      MODEL OUTPUT IS UNCHANGED by this entry.
+    source: >-
+      Vernez, Milon, Vuilleumier, Bulliard, Koechlin, Boniol & Dore 2015,
+      J Expo Sci Environ Epidemiol 25:113-118, doi 10.1038/jes.2014.6,
+      Equation 1. Full text now in Papers_and_Datasets/. This CLOSES data
+      request #13, which this repository twice recorded as "paywalled,
+      confirmed unobtainable" -- exactly the failure mode CLAUDE.md warns about.
+    derivation: >-
+      None -- coefficients transcribed verbatim from the paper and pinned by
+      tests/test_physiology.py::TestPersonalGeometryFactor against two values
+      computable from the printed equation.
+    status: >-
+      SOURCED, replacing an acknowledged PLACEHOLDER whose cited support was
+      found on full-text read to contradict it (gap 26, assumption A23).
+      Vernez fit R^2 = 0.988 (n=8515, 3 postures), held out R^2 = 0.972
+      (n=5672, 2 unseen postures). The substantive finding is that sky
+      visibility moves the ratio ~11.6x while solar zenith angle moves it
+      ~1.18x -- the withdrawn form modelled the small term and had no posture
+      argument at all.
+    not_covered: >-
+      (1) Vernez ER assumes UNPROTECTED SKIN, NO SHADE and CONTINUOUS EXPOSURE.
+      The authors say so and show their model overpredicting farmers' faces
+      (15-55% modelled vs 11-15% measured). These are ceilings for deliberate
+      unshaded exposure, NOT interchangeable with behaviourally-averaged
+      dosimeter numbers such as Cockell's 0.35.
+      (2) Supplementary Table S1 (typical Vis by posture and body site) is NOT
+      in the obtained PDF -- data request #13b. The VIS_PRESETS_PLACEHOLDER
+      values in vitd_physiology.py are BACK-DERIVED by inverting Eq. 1 against
+      the mean ERs printed in the Results text. They are consistent with the
+      paper's outputs but are NOT its inputs and must never be cited as such.
+      Any user-facing number derived from them must be labelled a placeholder.
+      (3) Geometry x BSA are coupled and the model treats them as independent:
+      which sites are uncovered sets BOTH the exposed area and the mean ER.
+      Not addressed.
+
 # Live status. Regenerate with: PYTHONIOENCODING=utf-8 python3 run_all.py
 current_validation:
   required: "9 / 10"
@@ -171,6 +264,7 @@ current_validation:
         feedback-shape diagnostic available, and per the D_max negative result
         (MODEL_AND_EVIDENCE.md section 7, next-step 3) long-horizon seasonal
         data is the ONLY kind that can identify D_max at all.
+
 
 pending_approvals:
   # Changes made in the working tree that are NOT covered by the file-level

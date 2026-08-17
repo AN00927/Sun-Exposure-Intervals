@@ -28,7 +28,8 @@ from vitd_model import (simulate, build_pulse_schedule,
                          final_D, net_final_D_change_per_SED,
                           auc_above_baseline_per_SED,
                           auc_above_sufficiency_per_SED,
-                          auc_deficit)
+                          auc_deficit,
+                          get_E_source, E_SOURCE_SOLAR_DEFAULT)
 
 def print_safety_summary(safety_log, label=""):
     """Print a one-line safety summary from a simulate() safety_log."""
@@ -934,7 +935,9 @@ def analysis_sun_exposure():
     print("ANALYSIS K: sun exposure scheduling (no equipment)")
     print("=" * 70)
     MIN_PER_SED = 6.7
-    E_SOURCE_SUN = 1.0
+    # [CALIBRATION 2026-08-16] Was a hardcoded 1.0. Sun now uses the single
+    # unified solar value; see vitd_model.E_SOURCE_SOLAR_DEFAULT.
+    E_SOURCE_SUN = get_E_source(E_SOURCE_SOLAR_DEFAULT)
     BSA_SUN = 0.30
 
     # Pre-defined practical schedules: (name, sessions_per_week, minutes_per_session)

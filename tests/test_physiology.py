@@ -12,6 +12,7 @@ from vitd_model import (ModelParams, simulate, build_pulse_schedule,
 from vitd_physiology import (body_weight_dilution_factor,
                              photodegradation_factor,
                              personal_geometry_factor,
+                             vernez_exposure_ratio,
                              hydroxylation_efficiency,
                              cancer_risk,
                              _med_sed_by_fst,
@@ -541,16 +542,61 @@ class TestTwoProcessSC:
 
 
 class TestPersonalGeometryFactor:
-    """Schmalwieser & Siani 2018; Parisi 2000/2003: geometry factor vs solar elevation."""
+    """Vernez 2015 Eq. 1 (doi 10.1038/jes.2014.6), full text in the repo.
 
-    def test_default_when_elevation_unknown(self):
+    The previous `0.15 + 0.30*cos(theta)` form was withdrawn 2026-08-16: its
+    cited source contradicts it (gap 26). These tests pin the replacement to
+    numbers printed in the Vernez paper.
+    """
+
+    def test_default_when_vis_unknown(self):
         assert personal_geometry_factor(None) == 0.35
 
-    def test_solar_noon_lower_ratio(self):
-        """At 60 deg solar elevation, vertical surfaces receive ~0.30 ratio."""
-        assert personal_geometry_factor(60.0) == pytest.approx(0.30, abs=1e-2)
+    def test_elevation_alone_warns_and_does_not_change_result(self):
+        """The withdrawn form must not silently come back."""
+        with pytest.warns(UserWarning, match="withdrawn"):
+            assert personal_geometry_factor(60.0) == 0.35
 
-    def test_low_elevation_higher_ratio(self):
-        """At 0 deg solar elevation, ratio rises to 0.45."""
-        assert personal_geometry_factor(0.0) == pytest.approx(0.45, abs=1e-2)
+    def test_intercept_reproduces_at_centring_point(self):
+        """Vernez centres on Vis=58%; there ER == the printed intercept 56.991%."""
+        from vitd_physiology import VERNEZ_REF_SZA_DEG
+        assert vernez_exposure_ratio(58.0, VERNEZ_REF_SZA_DEG) == pytest.approx(
+            0.56991, abs=1e-4)
+
+    def test_low_visibility_site(self):
+        """Vis=10% collapses to ~11.5% ER -- a heavily self-shaded site."""
+        from vitd_physiology import VERNEZ_REF_SZA_DEG
+        assert vernez_exposure_ratio(10.0, VERNEZ_REF_SZA_DEG) == pytest.approx(
+            0.11534, abs=1e-4)
+
+    def test_vis_dominates_sza(self):
+        """The paper: "The Vis parameter is largely predominant".
+
+        Sky visibility must move ER far more than solar geometry does.
+        """
+        sza_span = (vernez_exposure_ratio(58.0, 89.0)
+                    / vernez_exposure_ratio(58.0, 0.0))
+        vis_span = (vernez_exposure_ratio(95.0, 45.0)
+                    / vernez_exposure_ratio(5.0, 45.0))
+        assert sza_span < 1.3, f"SZA term should be a small trim, got {sza_span}"
+        assert vis_span > 8.0, f"Vis term should dominate, got {vis_span}"
+
+    def test_er_increases_with_visibility(self):
+        vals = [vernez_exposure_ratio(v, 45.0) for v in (5, 20, 40, 58, 80, 95)]
+        assert vals == sorted(vals)
+
+    def test_er_bounded(self):
+        for v in (0.5, 1, 10, 50, 99, 100):
+            assert 0.0 <= vernez_exposure_ratio(v, 30.0) <= 1.0
+
+    def test_rejects_out_of_range_visibility(self):
+        for bad in (0.0, -5.0, 101.0):
+            with pytest.raises(ValueError):
+                vernez_exposure_ratio(bad, 45.0)
+
+    def test_unshaded_ceiling_exceeds_behavioural_dosimetry(self):
+        """Vernez ER assumes no shade; it must sit ABOVE the Cockell 0.35 scalar
+        for an averagely-exposed site. This is the caveat, encoded: the two
+        numbers are not interchangeable."""
+        assert vernez_exposure_ratio(58.0, 45.0) > 0.35
 

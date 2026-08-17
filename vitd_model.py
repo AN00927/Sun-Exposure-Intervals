@@ -216,14 +216,37 @@ from vitd_physiology import (body_weight_dilution_factor,
 # Use E_source_mean for point estimates; report range in sensitivity analyses.
 SOURCE_CALIBRATION_TABLE: Dict[str, Tuple[float, float, float]] = {
     # (mean, range_low, range_high)
-    "solar_summer":   (1.89, 1.79, 2.00),  # P21/P35: summer sun
-    "solar_broadband": (1.00, 0.90, 1.10),  # baseline reference
+    # --- SUN ---------------------------------------------------------------
+    # Webb 2021 Table 1 reports VDE:EE for sun at three geometries. They are not
+    # competing estimates of one number: sun VDE:EE genuinely varies with solar
+    # zenith angle and ozone, because ~33% of erythemal weighting comes from
+    # 315-400 nm where the CIE-174 vitamin D spectrum is exactly zero.
+    "solar_summer":    (1.89, 1.79, 2.00),  # P21: Manchester summer. DEFAULT for sun.
+    "solar_summer_nz": (2.01, 2.01, 2.01),  # P21: NZ summer
+    "solar_winter_nz": (1.22, 1.22, 1.22),  # P21: NZ winter -- lowest sun value published
+    # DEPRECATED 2026-08-16, retained so old scripts fail loudly rather than
+    # silently. 1.00 was never a measurement of anything: it was the backward
+    # compatibility default when E_source was introduced (audit tag [C2]) and was
+    # retro-labelled "solar broadband reference". No solar spectrum has
+    # VDE:EE = 1.00 -- Webb's lowest sun entry is 1.22, in NEW ZEALAND WINTER.
+    # Using it for sun under-weights vitamin D effectiveness by ~1.9x.
+    "solar_broadband": (1.00, 0.90, 1.10),
+    # --- LAMPS -------------------------------------------------------------
     "tl01_nb_uvb":    (2.44, 2.24, 2.63),  # P21: 2.24; P35: 2.63; use midpoint
     "tl12_bb_uvb":    (1.24, 1.23, 1.25),  # P21/P35 agree
     "uv6_broadband":  (1.54, 1.54, 1.55),  # P21/P35 agree
     "arimed_b":       (1.83, 1.83, 1.83),  # P21 only
     "sunbed_uvb":     (1.18, 1.18, 1.18),  # P35 (Grigalavicius 2015 Table 2); P21 Wolff Life Sun = 1.85
 }
+
+# The value every sun-facing entry point uses unless told otherwise.
+# [CALIBRATION 2026-08-16, user-approved] Changed from the implicit 1.00 to
+# Webb's Manchester summer measurement. See calibration_approval.yaml and
+# MODEL_AND_EVIDENCE.md 'Open decisions' item 12(a) for the cost: NHANES
+# Part B drops from 6/6 to 4/6 because those checks feed an ASSUMED daily SED
+# that nobody measured, which makes solar E_source unidentifiable from them.
+# That assumed dose was deliberately NOT retuned to keep the check green.
+E_SOURCE_SOLAR_DEFAULT: str = "solar_summer"
 
 # ORAL / DIETARY VITAMIN D: REMOVED 2026-08-16.
 #
@@ -263,6 +286,18 @@ def get_E_source(source_name: str) -> float:
     [C2] Use this instead of hardcoding an E_source float wherever possible.
     Falls back to 1.0 (broadband reference) with a warning if source unknown.
     """
+    if source_name == "solar_broadband":
+        import warnings
+        warnings.warn(
+            "E_source 'solar_broadband' (1.00) is DEPRECATED for sun as of "
+            "2026-08-16. It was the backward-compatibility default when E_source "
+            "was introduced, not a measurement; no solar spectrum has "
+            "VDE:EE = 1.00 (Webb 2021 Table 1's lowest sun entry is 1.22, NZ "
+            f"winter). Use '{E_SOURCE_SOLAR_DEFAULT}' for sun, or a named "
+            "seasonal entry. Returning 1.00 unchanged.",
+            UserWarning, stacklevel=2,
+        )
+        return SOURCE_CALIBRATION_TABLE[source_name][0]
     if source_name in SOURCE_CALIBRATION_TABLE:
         return SOURCE_CALIBRATION_TABLE[source_name][0]
     import warnings

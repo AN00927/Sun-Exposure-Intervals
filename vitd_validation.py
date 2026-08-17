@@ -173,7 +173,7 @@ from vitd_model import (ModelParams, synthesis_per_session, simulate,
                          net_final_D_change_per_SED,
                          auc_above_baseline_per_SED,
                          auc_above_sufficiency_per_SED,
-                         steady_state_D, get_E_source)
+                         steady_state_D, get_E_source, E_SOURCE_SOLAR_DEFAULT)
 from vitd_protocols import bogh2012_session_doses_sed
 
 
@@ -686,9 +686,26 @@ RACE_FST_MAP = {
 SEASON_MAP = {1: "winter", 2: "summer"}
 
 _SIM_DAYS = 84      # 12-week simulation
+# [ASSUMED, NOT MEASURED -- this is the load-bearing weakness of the NHANES
+# checks.] Nobody measured what UV dose NHANES respondents actually received.
+# 0.333 SED/day is a plausible stand-in ("~5 min at UVI 5"), not data. Because
+# synthesis depends on the PRODUCT sed * E_source, this assumed dose absorbs any
+# E_source change exactly -- so solar E_source is NOT identifiable from these
+# checks, in either direction. Deriving this from a real ambient UV climatology
+# is 'Open decisions' item 12(b) and is what would make these checks informative.
 _SIM_SED = 0.333    # ~5 min at UVI 5
 _SIM_BSA = 0.30     # arms + face
-_SIM_ESOURCE = 1.0  # solar / broadband reference
+# [CALIBRATION 2026-08-16, user-approved] Was 1.0 ("solar / broadband
+# reference"). NHANES is a real-sun population scenario, so it takes the same
+# solar value as every other sun path; see vitd_model.E_SOURCE_SOLAR_DEFAULT.
+#
+# THIS MAKES PART B FAIL, AND THAT FAILURE WAS ACCEPTED DELIBERATELY. Holding
+# the assumed dose above fixed while raising E_source 1.0 -> 1.89 raises every
+# modelled summer steady state. The alternative -- deflating _SIM_SED by ~1.89x
+# to keep the check green -- would be tuning an unmeasured knob to hide a
+# calibration change, i.e. calibration through an ungated back door. Do not do
+# that. See calibration_approval.yaml, E_SOURCE_SOLAR_DEFAULT / not_covered.
+_SIM_ESOURCE = get_E_source(E_SOURCE_SOLAR_DEFAULT)
 _SIM_TOLERANCE = 10.0  # nmol/L, matching tightened Bogh 2012 convention
 
 
@@ -1025,6 +1042,65 @@ def validate_kift_2013_south_asian(verbose=True):
     return passed
 
 
+def validate_kallioglu_2024_skintype_gradient(verbose=True):
+    """Kallioglu 2024 (Sci Rep 14:3541) held-out skin-type gradient. HELD OUT.
+
+    Added 2026-08-16. A UV-index-based numerical simulation over Antalya (37N)
+    and Istanbul (41N) reporting the sun exposure time needed for 1000 IU/day at
+    25% body-surface exposure, annual mean, per Fitzpatrick type:
+
+        I 5.05   II 6.30   III 7.60   IV 11.35   V 15.15   VI 25.25  minutes
+
+    WHY THE RATIO AND NOT THE MINUTES. Their absolute minutes embed a Turkish
+    annual-mean UVI and their own geometry treatment, neither of which this repo
+    can reconstruct. The BETWEEN-SKIN-TYPE RATIO is clean: ambient UVI, the
+    geometry factor and E_source are all skin-type-independent, so they cancel
+    exactly. Same argument as `vitd_benchmark_webbkift.py`.
+
+    WHAT THIS ADDS OVER Webb/Kift. It is fully independent -- different method
+    (numerical simulation vs intervention trial), different latitude band
+    (37-41N vs UK), different endpoint (IU synthesised vs delta 25(OH)D). Both
+    now say the model's skin-type penalty is too weak, in the same direction and
+    by a similar factor. That upgrades gap 22 from "one benchmark fails" to
+    "two independent sources agree".
+
+    NOT A DOSIMETRY PROBLEM. E_source and the geometry factor cancel out of the
+    ratio (measured: the ratio moves <2% across the full E_source range). This
+    is K_const / melanin attenuation. See MODEL_AND_EVIDENCE.md gap 22 and
+    'Open decisions' item 12.
+    """
+    from vitd_objectives import minutes_for_target, SUFFICIENCY_NMOL_L
+
+    reported = {1: 5.05, 2: 6.30, 3: 7.60, 4: 11.35, 5: 15.15, 6: 25.25}
+    model = {}
+    for fst in range(1, 7):
+        r = minutes_for_target(fst=fst, uv_index=6.0, exposed_bsa=0.25,
+                               frequency_per_week=7.0, target=SUFFICIENCY_NMOL_L,
+                               horizon_days=150, max_minutes=1200.0)
+        model[fst] = r["minutes"]
+
+    rep_ratio = reported[6] / reported[1]
+    mod_ratio = model[6] / model[1]
+    # Advisory band. The model is currently well outside it; the check exists to
+    # measure the gap and to fail loudly if a change makes it worse.
+    passed = 0.70 * rep_ratio <= mod_ratio <= 1.30 * rep_ratio
+
+    if verbose:
+        print("[Held-out] Kallioglu 2024 skin-type gradient (WARNING-ONLY)")
+        print("  1000 IU/d, 25% BSA, annual mean, Antalya 37N / Istanbul 41N")
+        print(f"  {'FST':>4} {'reported':>9} {'rep ratio':>10} {'model min':>10} {'mod ratio':>10}")
+        for fst in range(1, 7):
+            print(f"  {fst:>4} {reported[fst]:>9.2f} {reported[fst]/reported[1]:>10.2f} "
+                  f"{model[fst]:>10.1f} {model[fst]/model[1]:>10.2f}")
+        print(f"  FST VI:I  reported {rep_ratio:.2f}  model {mod_ratio:.2f}")
+        print(f"  FST V:II  reported {reported[5]/reported[2]:.2f}  "
+              f"model {model[5]/model[2]:.2f}   (Webb/Kift independently: 2.5-3.0)")
+        print(f"  {'PASS' if passed else 'FAIL'} - melanin penalty too weak; "
+              f"NOT closable by dosimetry (ratio is E_source-invariant)")
+
+    return passed
+
+
 # ---------------------------------------------------------------------------
 # How to add a new validation target
 #
@@ -1068,6 +1144,8 @@ def run_all(verbose=True):
         ("metric ordering and sanity",    validate_metric_ordering, False),
         ("K_ATTEN seasonal amplitude",    validate_katten_seasonal_amplitude, False),
         ("Kift 2013 South Asian",         validate_kift_2013_south_asian, False),
+        ("Kallioglu 2024 skin-type gradient [held-out]",
+         validate_kallioglu_2024_skintype_gradient, True),
     ]
     
     results = {}

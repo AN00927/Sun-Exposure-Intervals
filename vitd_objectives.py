@@ -33,7 +33,7 @@ from __future__ import annotations
 import numpy as np
 
 from vitd_model import (ModelParams, simulate, auc_deficit, steady_state_D,
-                        final_D)
+                        final_D, get_E_source, E_SOURCE_SOLAR_DEFAULT)
 from vitd_physiology import cancer_risk, personal_geometry_factor
 
 # Clinical thresholds, nmol/L of 25(OH)D.
@@ -271,16 +271,22 @@ PERSONAL_DOSE_GEOMETRY_FACTOR: float = 0.35
 
 def sed_from_minutes(minutes: float, uv_index: float,
                      geometry_factor: float | None = None,
-                     solar_elevation_deg: float | None = None) -> float:
+                     solar_elevation_deg: float | None = None,
+                     vis_percent: float | None = None) -> float:
     """Erythemal SED delivered to exposed skin by `minutes` at a given UV Index.
 
-    Applies the horizontal-to-personal geometry correction. If solar_elevation_deg
-    is supplied, computes the dynamic geometry factor PE:AE(theta) from
-    Schmalwieser & Siani (2018). Otherwise uses geometry_factor or defaults to 0.35
-    (Cockell 2001). Pass geometry_factor=1.0 for supine sunbather.
+    Applies the horizontal-to-personal geometry correction. Precedence:
+      1. explicit `geometry_factor` (pass 1.0 for a supine sunbather);
+      2. `vis_percent` -> Vernez 2015 Eq. 1, optionally trimmed by
+         `solar_elevation_deg` (see vitd_physiology.vernez_exposure_ratio);
+      3. otherwise 0.35, the Cockell 2001 scalar.
+
+    `solar_elevation_deg` on its own no longer changes the result -- the
+    elevation-only form was withdrawn 2026-08-16 as unsourced (gap 26).
     """
     if geometry_factor is None:
-        geometry_factor = personal_geometry_factor(solar_elevation_deg)
+        geometry_factor = personal_geometry_factor(solar_elevation_deg,
+                                                   vis_percent)
     return max(0.0, minutes) * uv_index * SED_PER_MIN_PER_UVI * float(geometry_factor)
 
 
@@ -300,9 +306,15 @@ def minutes_for_target(fst: int,
     Answers "how long outside?" and simultaneously reports whether that
     exposure crosses the sunburn threshold -- a recommendation that requires
     burning is not a recommendation.
+
+    [CALIBRATION 2026-08-16] When `params` is not supplied this now defaults to
+    the solar E_source (Webb 2021 Manchester summer), not the neutral 1.0. This
+    is a SUN function; 1.0 was never a solar measurement. It roughly halves the
+    minutes. Pass `params` explicitly to override.
     """
     if params is None:
         params = ModelParams()
+        params.E_source = get_E_source(E_SOURCE_SOLAR_DEFAULT)
 
     interval = max(1, int(round(7.0 / max(frequency_per_week, 1e-9))))
     days = list(range(0, horizon_days, interval))

@@ -20,6 +20,9 @@ References are given inline with the numbers actually used.
 
 from __future__ import annotations
 
+import warnings
+from typing import Dict
+
 import numpy as np
 
 
@@ -109,45 +112,200 @@ def photodegradation_factor(sed: float, d_sat: float = PREVITAMIN_D_SAT_SED) -> 
 
 
 # ---------------------------------------------------------------------------
-# 2b. Dynamic Solar Elevation Geometry Factor
+# 2b. Personal anatomical dose geometry: the Vernez 2015 exposure-ratio model
 # ---------------------------------------------------------------------------
-# [CITATION DEFECT, recorded 2026-08-09 -- do not treat this form as sourced.]
-# The functional form below was attributed to Schmalwieser & Siani 2018
-# (Photochem Photobiol 94:900-915) and Parisi 2000/2003. A full-text read of
-# Schmalwieser & Siani does NOT support it:
-#   - The review's own conclusion is that the exposure ratio as a function of
-#     solar elevation is mostly unavailable: "we still lack the knowledge to
-#     predict the UV exposure of exposed body sites under any condition because
-#     ERTAs are not fully available."
-#   - Its one measured ratio-vs-elevation curve (Fig. 2, face) is NON-MONOTONIC:
-#     ~70% at 20 deg elevation, a MINIMUM of ~25% at 30 deg, 120% at 45 deg,
-#     60% at 62 deg. No a + b*cos(theta) can produce that shape. (That curve is
-#     also alpine skiing on snow, so its absolute level is not general.)
-#   - Its Table 1 pairs the same activity and body site across two elevation
-#     bands, and for the chest the ratio is often HIGHER at low elevation --
-#     while Table 4 shows posture alone moves a single site by up to 10x
-#     (shoulder 50% standing vs 5% lying; lower leg 10% standing vs 56% lying).
-#   - No Parisi paper giving the ratio as a function of solar elevation was
-#     located.
-# The closest published closed form is Vernez et al. 2015 (J Expo Sci Environ
-# Epidemiol 25:113-118), which is a TWO-variable model -- cos of maximum daily
-# solar zenith angle and the sky fraction visible from the body site -- so it
-# does not reduce to a function of elevation alone either. Its coefficients are
-# paywalled (data request #13).
-# The form is RETAINED for now because removing it without a replacement would
-# lose the elevation dependence entirely, but it must be treated as a
-# placeholder, not as evidence. See MODEL_AND_EVIDENCE.md gap 26.
-def personal_geometry_factor(solar_elevation_deg: float | None = None) -> float:
-    """Dynamic ratio of personal anatomical UV dose to ambient horizontal UV.
+# REPLACED 2026-08-16. The previous form here was `0.15 + 0.30*cos(theta)`,
+# attributed to Schmalwieser & Siani 2018 and Parisi 2000/2003. A full-text read
+# (gap 26) established that no source supports it: Schmalwieser & Siani's own
+# measured curve is non-monotonic, and their conclusion is that the ratio as a
+# function of solar elevation is not currently derivable. It was carried as a
+# PLACEHOLDER only because nothing better was obtainable.
+#
+# Vernez et al. 2015 (J Expo Sci Environ Epidemiol 25:113-118, doi
+# 10.1038/jes.2014.6) is now IN THE REPO, full text with printed coefficients:
+#   Papers_and_Datasets/A general model to predict individual exposure to
+#   solar UV by.pdf
+# It closes data request #13, which this repo twice recorded as "unobtainable".
+#
+# WHAT THE MODEL IS. A multivariable fractional polynomial regression fitted to
+# the SimUVEx 3D-manikin simulation (8 body sites x 3 postures, n=8515),
+# R^2 = 0.988; held out against 2 unseen postures (n=5672), R^2 = 0.972.
+# Backward selection reduced 6 candidate predictors to just two: the fraction of
+# sky visible from the body site, and the cosine of maximal daily solar zenith
+# angle. Surface area, body-site zenith angle, vertical angle and shading
+# scoring all dropped out.
+#
+# TWO PROPERTIES THAT MATTER MORE THAN THE FIT QUALITY:
+#
+#   1. Vis DOMINATES; solar geometry is a second-order trim. Across the full
+#      SZA range at fixed Vis, ER moves only ~1.18x; across the Vis range at
+#      fixed SZA it moves ~11.6x. The replaced form had elevation dependence and
+#      NO posture argument, i.e. it modelled the small term and omitted the
+#      large one. Vernez state the same thing: "The Vis parameter is largely
+#      predominant in the regression model."
+#
+#   2. THESE ER VALUES ARE AN UNSHADED UPPER BOUND, and are much higher than the
+#      measured personal-dosimetry range this repo cites elsewhere (Parisi
+#      0.14-0.39, Cockell 0.35 +/- 0.12). Vernez say why: the model "predicts ER
+#      assuming an unprotected skin, with no shading and a continuous exposure",
+#      whereas real people are "exposed intermittently and be shaded or
+#      partially shaded from surrounding elements". Their own comparison to
+#      full-time farmers has the model at 15-55% for the face against 11-15%
+#      measured -- they call this "overestimates exposure of farmers" and say ER
+#      "should therefore be weighted taking into account the time spent in the
+#      shade". So Vernez ER is the ceiling for deliberate unshaded exposure --
+#      which IS this project's scenario -- and must NOT be read as a
+#      like-for-like replacement for a behaviourally-averaged dosimeter number.
+#
+# NOT IMPORTED, AND STILL MISSING: Supplementary Table S1 gives typical Vis per
+# posture and body site. It is not in the main PDF (data request #13b). Until it
+# lands, Vis must be supplied by the caller; this module does not guess it.
+# See MODEL_AND_EVIDENCE.md gap 26 and 'Open decisions' item 12.
 
-    Returns 0.35 if solar elevation is unknown (matching Cockell 2001 default).
-    Otherwise returns 0.15 + 0.30 * cos(theta_rad) -- a PLACEHOLDER form whose
-    cited support does not hold up on a full-text read; see the comment above.
+# Vernez et al. 2015, Equation 1. ER in PERCENT.
+#   ER = -3.396*lnVis_cent + 10.714*Vis_cent - 9.199*cosSZA3_cent + 56.991
+# with the centred variables defined in the paper as:
+#   lnVis_cent   = ln(Vis/10) - 1.758
+#   Vis_cent     = Vis/10 - 5.800
+#   cosSZA3_cent = cos(SZA)**3 - 0.315
+VERNEZ_B_LNVIS: float = -3.396
+VERNEZ_B_VIS: float = 10.714
+VERNEZ_B_COSSZA3: float = -9.199
+VERNEZ_INTERCEPT: float = 56.991
+VERNEZ_C_LNVIS: float = 1.758
+VERNEZ_C_VIS: float = 5.800
+VERNEZ_C_COSSZA3: float = 0.315
+
+# Mean ER (%) reported in Vernez 2015 Results for named sites, standing erect,
+# annual mean at Payerne (46.815 N). Anchors for validation, NOT model inputs.
+VERNEZ_REPORTED_SITE_ER: Dict[str, float] = {
+    "top_of_shoulders": 89.0,   # "unshaded, horizontally oriented surface"
+    "back_of_neck": 65.0,       # "intermediate ... partially shaded by the head"
+    "face_standing": 50.0,
+    "face_annual_mean": 43.0,   # "a vertically oriented surface"
+    "face_bowing": 20.0,
+}
+
+# Reference SZA at which Vernez's centring makes the cosSZA3 term vanish, so
+# ER == intercept == 56.991% at Vis = 58%. cos(SZA)**3 = 0.315.
+VERNEZ_REF_SZA_DEG: float = float(np.degrees(np.arccos(VERNEZ_C_COSSZA3 ** (1.0 / 3.0))))
+
+
+def vernez_exposure_ratio(vis_percent: float,
+                          sza_deg: float | None = None) -> float:
+    """Vernez 2015 Eq. 1 exposure ratio, returned as a FRACTION in [0, 1].
+
+    vis_percent : fraction of sky visible from the body site, in PERCENT.
+                  Dominant term. 58% is the model's centring point.
+    sza_deg     : maximal daily solar zenith angle, degrees. If None, uses
+                  VERNEZ_REF_SZA_DEG, where the SZA term is exactly zero.
+
+    Returns the UNSHADED, continuous-exposure ratio -- an upper bound. See the
+    module comment above before comparing it to dosimeter measurements.
     """
-    if solar_elevation_deg is None:
+    vis = float(vis_percent)
+    if not 0.0 < vis <= 100.0:
+        raise ValueError(f"vis_percent must be in (0, 100], got {vis}")
+    sza = VERNEZ_REF_SZA_DEG if sza_deg is None else float(sza_deg)
+    sza = max(0.0, min(90.0, sza))
+
+    ln_vis_cent = np.log(vis / 10.0) - VERNEZ_C_LNVIS
+    vis_cent = vis / 10.0 - VERNEZ_C_VIS
+    cos_sza3_cent = np.cos(np.radians(sza)) ** 3 - VERNEZ_C_COSSZA3
+
+    er_pct = (VERNEZ_B_LNVIS * ln_vis_cent
+              + VERNEZ_B_VIS * vis_cent
+              + VERNEZ_B_COSSZA3 * cos_sza3_cent
+              + VERNEZ_INTERCEPT)
+    # The regression is unbounded; clip to physical range. ER > 100% is possible
+    # in reality for a surface normal to the beam, but Eq. 1 is fitted to
+    # down-welling-only simulation and Vernez do not report ER above ~100%.
+    return float(min(1.0, max(0.0, er_pct / 100.0)))
+
+
+def personal_geometry_factor(solar_elevation_deg: float | None = None,
+                             vis_percent: float | None = None) -> float:
+    """Ratio of personal anatomical UV dose to ambient horizontal UV.
+
+    vis_percent supplied -> Vernez 2015 Eq. 1 (sourced, R^2 = 0.988).
+    vis_percent omitted  -> 0.35, the Cockell 2001 measured central value for
+                            upright activity. [PRIOR] Scalar, behaviourally
+                            averaged, and it directly scales every minutes
+                            recommendation, so sweep it first.
+
+    solar_elevation_deg is converted to zenith angle for the Vernez path. On its
+    own it no longer does anything: the elevation-only form previously returned
+    here was withdrawn on 2026-08-16 as unsourced (gap 26), and Vernez shows
+    solar geometry is the ~1.18x term while posture is the ~11.6x term.
+    """
+    if vis_percent is None:
+        if solar_elevation_deg is not None:
+            warnings.warn(
+                "personal_geometry_factor: solar_elevation_deg alone no longer "
+                "changes the result. The `0.15 + 0.30*cos(theta)` form was "
+                "withdrawn 2026-08-16 as unsourced (MODEL_AND_EVIDENCE.md gap "
+                "26). Pass vis_percent to use the Vernez 2015 model; returning "
+                "the 0.35 Cockell scalar.",
+                UserWarning, stacklevel=2,
+            )
         return 0.35
-    rad = np.radians(max(0.0, min(90.0, float(solar_elevation_deg))))
-    return float(0.15 + 0.30 * np.cos(rad))
+    sza = None if solar_elevation_deg is None else 90.0 - float(solar_elevation_deg)
+    return vernez_exposure_ratio(vis_percent, sza)
+
+
+# =========================== PLACEHOLDER ===================================
+# [PLACEHOLDER -- NOT FROM THE PAPER. Recorded 2026-08-16, data request #13b.]
+#
+# Vernez's Supplementary Table S1 gives typical Vis by posture and body site.
+# It is NOT in the main PDF and has not been obtained. These values are
+# BACK-DERIVED by inverting Eq. 1 at VERNEZ_REF_SZA_DEG against the mean ERs
+# Vernez print in their Results text (see VERNEZ_REPORTED_SITE_ER). That makes
+# them consistent with the paper's own reported outputs, but they are NOT the
+# paper's Vis inputs and must not be cited as such.
+#
+# Two further reasons to treat any number derived from these as provisional:
+#   - Vernez ER assumes NO SHADE and continuous exposure (see above), so these
+#     are ceilings, not expected real-world exposure.
+#   - Whole-body presets additionally assume an area weighting across sites
+#     that this repo has not sourced at all. That assumption is cruder than
+#     the Vis inversion itself.
+#
+# Anything reported from these MUST be labelled a placeholder. Replace as soon
+# as Table S1 lands.
+def _vis_for_target_er(er_percent: float) -> float:
+    """Invert Vernez Eq. 1 for Vis at the reference SZA. PLACEHOLDER helper."""
+    lo, hi = 0.01, 100.0
+    for _ in range(200):
+        mid = 0.5 * (lo + hi)
+        if vernez_exposure_ratio(mid, VERNEZ_REF_SZA_DEG) * 100.0 < er_percent:
+            lo = mid
+        else:
+            hi = mid
+    return 0.5 * (lo + hi)
+
+
+VIS_PRESETS_PLACEHOLDER: Dict[str, float] = {}
+
+
+def vis_preset(name: str) -> float:
+    """Placeholder sky-visibility percentage for a named exposure scenario.
+
+    RAISES if `name` is unknown rather than guessing. Every value returned is a
+    PLACEHOLDER back-derived from Vernez's reported ERs -- see the block comment
+    above. Callers that surface a number to a user must say so.
+    """
+    if not VIS_PRESETS_PLACEHOLDER:
+        VIS_PRESETS_PLACEHOLDER.update({
+            k: _vis_for_target_er(v) for k, v in VERNEZ_REPORTED_SITE_ER.items()
+        })
+    if name not in VIS_PRESETS_PLACEHOLDER:
+        raise KeyError(
+            f"No Vis preset '{name}'. Known placeholders: "
+            f"{sorted(VERNEZ_REPORTED_SITE_ER)}. Vernez Supplementary Table S1 "
+            f"(data request #13b) would replace these with sourced values."
+        )
+    return VIS_PRESETS_PLACEHOLDER[name]
+# ========================= END PLACEHOLDER =================================
 
 
 # ---------------------------------------------------------------------------
