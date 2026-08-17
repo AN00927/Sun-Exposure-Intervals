@@ -21,7 +21,7 @@ References are given inline with the numbers actually used.
 from __future__ import annotations
 
 import warnings
-from typing import Dict
+from typing import Dict, Tuple
 
 import numpy as np
 
@@ -185,6 +185,52 @@ VERNEZ_REPORTED_SITE_ER: Dict[str, float] = {
     "face_annual_mean": 43.0,   # "a vertically oriented surface"
     "face_bowing": 20.0,
 }
+
+# ER (%) RANGES that Vernez state Eq. 1 produces "depending on the body posture
+# and time of year" (Discussion, 'Consistency between the Model and Field-Based
+# ER'). Added 2026-08-17 from a second copy of the paper.
+#
+# These are more useful than the point values above for this project, because a
+# recommendation should carry an interval rather than a single number -- the
+# site you expose and the posture you hold move the answer more than anything
+# else in the dosimetry chain. Still the UNSHADED ceiling; see the caveat above.
+#
+# The paper's own field comparison, quoted so the overprediction stays visible:
+# modelled face 15-55% against 11-15% measured in full-time farmers, which they
+# describe as "overestimates exposure of farmers".
+VERNEZ_REPORTED_SITE_ER_RANGE: Dict[str, Tuple[float, float]] = {
+    "upper_back": (30.0, 87.0),
+    "forearm_external": (44.0, 64.0),
+    "face": (15.0, 55.0),
+    # Stated as classes rather than named sites:
+    "upper_horizontal_sites": (80.0, 100.0),   # e.g. shoulders, skull
+    "vertical_sites": (20.0, 50.0),            # e.g. face, chest
+}
+
+# The 8 body sites Vernez actually modelled (Table 1). Recorded so that any
+# future whole-body area weighting starts from the paper's own site set rather
+# than an invented one.
+VERNEZ_MODELLED_SITES: Tuple[str, ...] = (
+    "face", "skull", "forearm_external", "upper_arm_external",
+    "back_of_neck", "top_of_shoulders", "upper_back", "belly",
+)
+
+
+def vernez_er_interval(site: str) -> Tuple[float, float]:
+    """Published ER interval (as FRACTIONS) for a named site or site class.
+
+    Use this instead of a point geometry factor when reporting minutes to a
+    person: the interval is the honest object. RAISES on unknown sites rather
+    than guessing.
+    """
+    if site not in VERNEZ_REPORTED_SITE_ER_RANGE:
+        raise KeyError(
+            f"No published Vernez ER range for '{site}'. Known: "
+            f"{sorted(VERNEZ_REPORTED_SITE_ER_RANGE)}. The full per-site table "
+            f"is Supplementary Table S1 (data request #13b), not yet obtained."
+        )
+    lo, hi = VERNEZ_REPORTED_SITE_ER_RANGE[site]
+    return lo / 100.0, hi / 100.0
 
 # Reference SZA at which Vernez's centring makes the cosSZA3 term vanish, so
 # ER == intercept == 56.991% at Vis = 58%. cos(SZA)**3 = 0.315.
