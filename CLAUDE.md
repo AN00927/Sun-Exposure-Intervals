@@ -47,6 +47,11 @@ instead.
   contained the complete dataset it claimed was absent.
 - Run the pipeline with `PYTHONIOENCODING=utf-8 python3 run_all.py`. The local
   `.venv` lacks numpy; `python3` is the interpreter with the dependencies.
+  **`run_all.py` takes ~10 minutes** (dominated by the differential-evolution
+  optimisations in sections 13b/13c). Do **not** run it just to "update
+  everything", refresh results, or check mid-task — it is expensive and should
+  only be run when genuinely needed (e.g. before quoting final numbers, after a
+  calibration change, or when the user explicitly asks).
 
 ## Agent guidelines
 
