@@ -100,10 +100,12 @@ Stubbed, marked with a visible red `[TODO verify: ...]` marker in the compiled
 PDF rather than left silently blank:
 
 - **Simulation setup and validation status**: a placeholder paragraph states
-  the current validation count (13/14 required checks, regenerable with
-  `run_all.py`) and the held-out benchmark result, but the full numerical
-  method, schedule-generator, and reproducibility write-up is not yet
-  written.
+  the validation count and the held-out benchmark result, but the full
+  numerical method, schedule-generator, and reproducibility write-up is not
+  yet written. **Do not hardcode the count when writing this up** — regenerate
+  with `run_all.py`. It changed on 2026-08-15 when a second held-out benchmark
+  (Gallagher 2012 oral plateau, warning-only) was added, which is exactly how
+  the previously written "13/14" went stale.
 - **Results**: no tables or figures yet. Quantitative output exists in the
   repository's generated `RESULTS.md`; selecting and writing up specific
   results for the paper was out of scope for this task.

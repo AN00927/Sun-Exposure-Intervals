@@ -35,16 +35,26 @@ class TestBodyWeightDilution:
         assert (body_weight_dilution_factor(140.0)
                 == pytest.approx(0.5 * body_weight_dilution_factor(70.0)))
 
-    def test_applies_to_dietary_route_too(self):
-        """Dilution is a distribution-volume effect, not a skin effect."""
-        light = ModelParams(dietary_D_daily_ug=25.0, body_weight_kg=55.0)
-        heavy = ModelParams(dietary_D_daily_ug=25.0, body_weight_kg=110.0)
-        rl = simulate(fst=3, schedule=[], duration_days=200, params=light, D0=25.0)
-        rh = simulate(fst=3, schedule=[], duration_days=200, params=heavy, D0=25.0)
+    def test_applies_to_the_cutaneous_route(self):
+        """Dilution is a distribution-volume effect, not a skin effect.
+
+        Previously asserted via the oral route, which was removed on
+        2026-08-16. Re-expressed through UV, which is the only input this
+        model has now -- and is the route that actually matters here.
+        """
+        light = ModelParams(body_weight_kg=55.0)
+        heavy = ModelParams(body_weight_kg=110.0)
+        sched = build_weekly_schedule(200, 1.0, [0, 2, 4])
+        rl = simulate(fst=3, schedule=sched, duration_days=200, params=light, D0=25.0)
+        rh = simulate(fst=3, schedule=sched, duration_days=200, params=heavy, D0=25.0)
         assert rl["D"][-1] > rh["D"][-1]
 
-    def test_obese_needs_roughly_double_dose(self):
-        """Ekwaru 2014: obese need 2-3x, overweight ~1.5x the oral dose."""
+    def test_heavier_body_needs_roughly_double_dose(self):
+        """Ekwaru 2014: obese need 2-3x, overweight ~1.5x the dose.
+
+        Ekwaru measured this orally; the factor here is a distribution-volume
+        term and applies to cutaneous input for the same reason.
+        """
         ratio = (body_weight_dilution_factor(70.0)
                  / body_weight_dilution_factor(140.0))
         assert 1.8 <= ratio <= 2.2

@@ -225,15 +225,30 @@ SOURCE_CALIBRATION_TABLE: Dict[str, Tuple[float, float, float]] = {
     "sunbed_uvb":     (1.18, 1.18, 1.18),  # P35 (Grigalavicius 2015 Table 2); P21 Wolff Life Sun = 1.85
 }
 
-# Dietary intake conversion: nmol/L of 25(OH)D added per ug/day of vitamin D3,
-# per day of intake. This is an INPUT-RATE coefficient, not a steady-state
-# response -- the steady state emerges from this source balanced against
-# k_decay_D(D). Cashman 2008/2011 dose-response trials give roughly
-# +1.5-2.0 nmol/L steady-state per ug/day of D3; with the Datta 2017
-# state-dependent clearance in this model, 0.07 reproduces that band
-# (25 ug/day -> ~140 nmol/L over a year with no UV, no baseline intake).
-# [PRIOR] Not independently fitted; revisit if a dietary-only cohort is added.
-DIETARY_UG_TO_NMOL_PER_L: float = 0.07
+# ORAL / DIETARY VITAMIN D: REMOVED 2026-08-16.
+#
+# `DIETARY_UG_TO_NMOL_PER_L` and `ModelParams.dietary_D_daily_ug` used to live
+# here and fed a zero-order oral source term in `simulate()`. Both are gone.
+#
+# Why. This model exists to schedule SUN EXPOSURE. The oral pathway was scope
+# creep (it entered via audit directive 6f to support "naturalistic cohort
+# simulations"), it was never used by any scheduling analysis, and measurement
+# on 2026-08-15 showed its coefficient missed its own documented Cashman target
+# by 3-9x at every dose while its stated worked example was not reproducible.
+# An uncalibrated pathway nobody exercises is a liability, not a feature.
+#
+# What was NOT lost. The oral route was the experimental probe behind the only
+# evidence in this repo that gives `D_max` an interior optimum (Gallagher 2012;
+# MODEL_AND_EVIDENCE.md 'Open decisions' item 3). That evidence SURVIVES this
+# removal, because the saturating step it constrains is hepatic -- downstream
+# of both the cutaneous and the oral route -- so it bounds the systemic
+# feedback ceiling `D_max` regardless of which route delivered the D3. The
+# argument is preserved, self-contained and runnable, in
+# `scripts/dmax_identifiability_gallagher2012.py`, which no longer depends on
+# any oral capability in the model.
+#
+# Do not reintroduce an oral term to "support supplementation advice" without
+# recalibrating the coefficient first -- see that script for what it takes.
 
 # Reference exposed BSA fraction for synthesis normalization.
 # Farrar 2013 (35% BSA); note Bogh 2011 used 6-24% BSA.
@@ -297,8 +312,6 @@ class ModelParams:
     D0_default: float = 25.0
     # WARNING: ORIGIN UNCONFIRMED — not found in Bogh 2010 (PMID 19812604 max was 116 nmol/L)
     D_max: float = 150.0
-    # Daily dietary Vitamin D intake in micrograms (ug/day)
-    dietary_D_daily_ug: float = 0.0
     # [C2] E_source default corresponds to broadband solar reference (1.0).
     # Use SOURCE_CALIBRATION_TABLE and get_E_source() instead of hardcoding.
     E_source: float = 1.0
@@ -700,23 +713,15 @@ def simulate(fst: int,
             # March the state forward in dt-sized sub-steps, advancing current_t
             # each iteration. The recorded samples ARE the state trajectory --
             # there is no separate "big step" to the interval end, which would
-            # double-count the dietary input and decay from a stale origin.
+            # decay from a stale origin. (This structure was originally forced
+            # by a source-term bug in the since-removed oral pathway; it is
+            # still correct and still required for the D3 transit term.)
             dt = 0.5
             t_steps = np.arange(current_t + dt, end_t, dt)
             if len(t_steps) == 0 or t_steps[-1] < end_t:
                 t_steps = np.append(t_steps, end_t)
             for ti in t_steps:
                 delta_time = ti - current_t
-                # Dietary input is a zero-order source over the sub-step, applied
-                # before decay so it is subject to clearance like synthesised D.
-                if params.dietary_D_daily_ug > 0:
-                    # Volumetric dilution applies to oral D3 exactly as it does
-                    # to cutaneous D3 -- it is a distribution-volume effect, not
-                    # a skin effect (Drincic 2012; Ekwaru 2014 dose-response).
-                    D += (params.dietary_D_daily_ug * DIETARY_UG_TO_NMOL_PER_L
-                          * body_weight_dilution_factor(
-                              getattr(params, 'body_weight_kg', None))
-                          * delta_time)
                 # Transit: D3 pool drains into the 25(OH)D compartment.
                 # Applied before decay so newly arrived D3 is subject to
                 # clearance over the remainder of the sub-step.

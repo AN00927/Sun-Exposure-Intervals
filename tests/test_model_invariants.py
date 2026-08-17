@@ -10,53 +10,50 @@ import numpy as np
 import pytest
 
 from vitd_model import (ModelParams, simulate, build_pulse_schedule,
-                        build_weekly_schedule, DIETARY_UG_TO_NMOL_PER_L)
+                        build_weekly_schedule)
 
 
 ALL_FST = [1, 2, 3, 4, 5, 6]
 
 
 # ---------------------------------------------------------------------------
-# Regression: dietary intake drove D to zero
+# The oral / dietary pathway was REMOVED on 2026-08-16
 # ---------------------------------------------------------------------------
-# The sampling loop in simulate() computed delta_time = ti - current_t but
-# never advanced current_t, so delta_time grew to the whole simulation window.
-# The dietary term was added once per sample without being decayed, while the
-# recorded value was decayed over an ever-longer interval. Net effect:
-# dietary_D_daily_ug=25 gave D(365d) = 0.0 nmol/L (underflow from ~1e-267)
-# while the internal accumulator reached 232,849.
-class TestDietaryPathway:
+# This model schedules sun exposure. The oral term was scope creep, was never
+# used by any scheduling analysis, and measurement showed its coefficient
+# missed its own documented Cashman target by 3-9x at every dose.
+#
+# It also silently violated one of this model's own invariants: because the
+# oral term was added straight to D while the feedback factor lives only in
+# synthesis_per_session(), oral input could drive D far above D_max (measured:
+# 441 nmol/L against D_max = 150). test_D_stays_below_D_max below therefore
+# only ever passed because it happened not to use the oral route. With the
+# route gone, that invariant is structurally guaranteed rather than incidental.
+#
+# These tests guard against silent reintroduction. If you are deliberately
+# bringing oral dosing back, delete them -- but recalibrate the coefficient
+# first and see scripts/dmax_identifiability_gallagher2012.py for what that
+# costs.
+class TestOralPathwayRemoved:
 
-    def test_dietary_intake_raises_D_without_UV(self):
-        """1000 IU/day with no UV must raise D, not collapse it to zero."""
-        p = ModelParams(dietary_D_daily_ug=25.0)
-        r = simulate(fst=3, schedule=[], duration_days=365, params=p, D0=25.0)
-        assert r["D"][-1] > 25.0, "dietary intake must raise 25(OH)D"
+    def test_no_dietary_constant(self):
+        import vitd_model
+        assert not hasattr(vitd_model, "DIETARY_UG_TO_NMOL_PER_L")
+
+    def test_no_dietary_param(self):
+        assert not hasattr(ModelParams(), "dietary_D_daily_ug")
+
+    def test_dietary_param_is_rejected_not_ignored(self):
+        """Passing the old kwarg must fail loudly, never be silently dropped."""
+        with pytest.raises(TypeError):
+            ModelParams(dietary_D_daily_ug=25.0)
+
+    def test_no_uv_means_no_synthesis(self):
+        """With no UV and no oral route, D can only decay."""
+        r = simulate(fst=3, schedule=[], duration_days=365,
+                     params=ModelParams(), D0=60.0)
+        assert r["D"][-1] < 60.0, "D rose with no UV and no oral input"
         assert np.all(np.isfinite(r["D"]))
-
-    def test_dietary_response_is_monotone_in_dose(self):
-        """More dietary D3 must give a higher steady state."""
-        finals = []
-        for ug in [0.0, 10.0, 25.0, 50.0]:
-            p = ModelParams(dietary_D_daily_ug=ug)
-            r = simulate(fst=3, schedule=[], duration_days=365, params=p, D0=25.0)
-            finals.append(r["D"][-1])
-        assert finals == sorted(finals), f"non-monotone dietary response: {finals}"
-
-    def test_dietary_magnitude_is_physiological(self):
-        """1000 IU/day should land in a plausible band, not orders out.
-
-        Supplementation trials (Cashman 2008/2011) put 25 ug/day at roughly
-        +1.5-2.0 nmol/L per ug/day at steady state from a low baseline.
-        Band is deliberately wide -- this guards against unit errors, not
-        calibration drift.
-        """
-        p = ModelParams(dietary_D_daily_ug=25.0)
-        r = simulate(fst=3, schedule=[], duration_days=365, params=p, D0=25.0)
-        assert 60.0 < r["D"][-1] < 250.0, f"implausible dietary steady state {r['D'][-1]}"
-
-    def test_dietary_constant_is_documented(self):
-        assert DIETARY_UG_TO_NMOL_PER_L > 0
 
 
 # ---------------------------------------------------------------------------
@@ -173,7 +170,7 @@ class TestConservationAndLimits:
         assert r["D"].max() <= p.D_max + 1e-6
 
     def test_all_states_finite_under_extreme_dosing(self):
-        p = ModelParams(dietary_D_daily_ug=100.0)
+        p = ModelParams()
         sched = build_pulse_schedule(365, 50.0, 1)
         r = simulate(fst=6, schedule=sched, duration_days=365, params=p, D0=10.0)
         for key in ("D", "M", "SC"):
