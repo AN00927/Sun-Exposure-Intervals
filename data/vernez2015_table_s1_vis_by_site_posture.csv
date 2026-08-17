@@ -1,0 +1,41 @@
+# Vernez et al. 2015, J Expo Sci Environ Epidemiol 25:113-118, doi 10.1038/jes.2014.6
+# Supplementary Information, Table S1: "Value of Vis [%] according to body part and body posture"
+#
+# PROVENANCE: extracted 2026-08-17 from the supplementary .doc supplied by the
+# repository owner (Research_Papers/supplementary materials.doc, OLE2 Word
+# document, metadata author 'dvernez', CHUV, created 2013-11-11). These are the
+# paper's INPUT values, obtained from a numeric manikin in 5 postures.
+#
+# This CLOSES data request #13b. It REPLACES VIS_PRESETS_PLACEHOLDER in
+# vitd_physiology.py, which was back-derived by inverting Eq. 1 against the
+# paper's reported exposure ratios -- consistent with the paper's OUTPUTS but
+# never its inputs, and explicitly fenced as not citable.
+#
+# Vis = percentage of the sky hemisphere visible from that body site, the
+# dominant term in Vernez Eq. 1 (sky visibility moves the exposure ratio 11.6x
+# vs 1.18x for solar zenith angle).
+#
+# [VERIFY] 'Top of shoulders' and 'Upper back' carry IDENTICAL values across all
+# five postures (35.9 / 50.3 / 48.6 / 45.7 / 85.3). This is reproduced verbatim
+# from the source and has NOT been altered. It may be a genuine shared manikin
+# mesh region or a copy-paste in the original table. Do not silently
+# de-duplicate; confirm against the rendered document before relying on either
+# row independently.
+#
+# Postures: (a) standing erect arms down, (b) standing erect arms up,
+#           (c) standing bowing, (d) seated, (e) kneeling  [Figure S1]
+#
+body_site,seated,kneeling,standing_erect_arms_down,standing_erect_arms_up,standing_bowing
+Face,53.7,28.7,46.6,44.9,19.2
+Skull,56.2,66.6,61.1,58.4,67.5
+Forearm (external),62.3,56.5,49.4,53.1,62.1
+Upper arm (external),51.7,60.5,45.9,65.3,61.6
+Neck back,58.3,84.3,67.6,65.2,81.6
+Top of shoulders,35.9,50.3,48.6,45.7,85.3
+Belly,58.1,45.1,50.3,49.6,15.2
+Upper back,35.9,50.3,48.6,45.7,85.3
+Hand (back),59.2,58.8,42.4,55.0,58.5
+Shoulder,68.0,62.0,63.0,67.1,64.0
+Upper Leg (front),65.4,45.4,50.9,51.0,43.5
+Lower leg (back),32.8,63.4,49.7,50.3,50.0
+Low back,44.9,51.6,56.6,53.4,86.9

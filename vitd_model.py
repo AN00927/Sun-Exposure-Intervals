@@ -217,10 +217,31 @@ from vitd_physiology import (body_weight_dilution_factor,
 SOURCE_CALIBRATION_TABLE: Dict[str, Tuple[float, float, float]] = {
     # (mean, range_low, range_high)
     # --- SUN ---------------------------------------------------------------
-    # Webb 2021 Table 1 reports VDE:EE for sun at three geometries. They are not
-    # competing estimates of one number: sun VDE:EE genuinely varies with solar
-    # zenith angle and ozone, because ~33% of erythemal weighting comes from
-    # 315-400 nm where the CIE-174 vitamin D spectrum is exactly zero.
+    # Webb 2021 Table 1 reports VDE:EE for sun. They are not competing estimates
+    # of one number: sun VDE:EE genuinely varies with solar zenith angle and,
+    # secondarily, ozone -- Webb says so directly ("The VDE:EE ratio therefore
+    # changes with solar elevation and ranges from about 2 at low latitudes/
+    # mid-summer/noon to around 1 or below at high latitudes/mid-winter").
+    #
+    # CORRECTED 2026-08-17. This comment previously said ~33% of erythemal
+    # weighting comes from 315-400 nm "where the CIE-174 vitamin D spectrum is
+    # exactly zero". The mechanism is right; "exactly zero" is WRONG. This
+    # repo's own data/spectra/vitd_action_spectrum_cie.csv has CIE-174 support
+    # running to 332 nm, with 18 nonzero entries at/above 315 nm (0.045 at 315,
+    # 0.033 at 316, ... ). The overlap contribution is small and the argument
+    # survives, but the stated cut-off is not a fact. Do not requote it.
+    #
+    # INCOMPLETE 2026-08-17. Table 1 carries FOUR sun entries; this table has
+    # three. The missing one is "1.9-1.99 (summer)" from Webb's ref 32 = Joh et
+    # al. 2020, Clin Nutr 39:727-736 (Korea) -- the only INDEPENDENT summer
+    # replicate of Manchester's 1.89. Also note Sun is the only row in Table 1
+    # with a BLANK mean column: Webb deliberately declined to average her own
+    # sun entries. Do not "fix" that by averaging them here.
+    #
+    # These values are pure spectral-integral unit conversions (CIE 174:2006
+    # numerator, CIE erythema reference denominator). NO vitamin D was measured
+    # to produce any of them, so none of them validates anything about human
+    # response. Webb uses them honestly as conversions; so must we.
     "solar_summer":    (1.89, 1.79, 2.00),  # P21: Manchester summer. DEFAULT for sun.
     "solar_summer_nz": (2.01, 2.01, 2.01),  # P21: NZ summer
     "solar_winter_nz": (1.22, 1.22, 1.22),  # P21: NZ winter -- lowest sun value published

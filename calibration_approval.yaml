@@ -236,10 +236,14 @@ parameter_approvals:
 # Live status. Regenerate with: PYTHONIOENCODING=utf-8 python3 run_all.py
 current_validation:
   required: "9 / 10"
-  warning_only: "2 / 2"
-  total: "13 / 14"
-  last_verified: 2026-08-09
+  warning_only: "2 / 3"
+  total: "12 / 15"
+  last_verified: 2026-08-17
   note: >-
+    REFRESHED 2026-08-17 from an actual `PYTHONIOENCODING=utf-8 python3
+    run_all.py` run. The previous block (2/2, 13/14, last_verified 2026-08-09)
+    was stale: it predated the Kallioglu 2024 held-out check being added, so
+    the denominators had moved. No parameter changed between those two runs.
     Sanity 3 moved from FAIL to PASS on 2026-08-09 by repairing the guard, NOT
     by changing any parameter -- K_ATTEN remains 0.00. See pending_approvals
     below: half of that repair still needs sign-off, and the repaired check is
@@ -293,6 +297,175 @@ pending_approvals:
       the reported score, and the value was inconsistent with the model's own
       default feedback_mode = 'linear' (whose Matsuoka deconvolution gives
       ~1.00, which FAILS even the widened band).
+
+standing_directives:
+  # Cross-cutting instructions from the repository owner, 2026-08-17. These
+  # govern HOW every entry below is to be executed, not any single parameter.
+  dark_skin_priority:
+    date: 2026-08-17
+    directive: >-
+      This is a DARK-SKIN-PRIORITY model. Where evidence exists for FST V-VI,
+      prefer it. Where a number is derived from light-skinned participants and
+      extrapolated to darker skin, FLAG IT EXPLICITLY at the point of use. Do
+      not privilege UK/British-population data merely because it is abundant.
+    known_light_skin_extrapolations:
+      - >-
+        Young 2021 revised vitamin D action spectrum: derived from FST I-II
+        volunteers ONLY (n = 75, mean age 26.5). Verified 2026-08-17 by reading
+        the full text in Research_Papers/. Any E_source derived from it is a
+        light-skin extrapolation when applied to FST V-VI.
+      - >-
+        CIE erythemal weighting (which defines the UV Index itself) is anchored
+        to light skin. Any ambient-UVI input path inherits this.
+      - >-
+        Webb 2018 'Colour Counts' (Nutrients 10:457) IS an FST V study, but at
+        UK latitudes. Its FST V physiological targets are among the very few
+        naturalistic dark-skin numbers in existence and are retained; its UK UV
+        climatology is deprioritised as geographically narrow.
+  grounding_requirement:
+    date: 2026-08-17
+    directive: >-
+      Every number, formula and choice must be traceable to a printed source.
+      Mark anything estimated, approximated or chosen with an explicit
+      [ESTIMATE] or [CHOICE] tag at the point of use. Do not invent
+      coefficients; report what a source does not provide rather than filling
+      it in.
+
+decisions_2026_08_17:
+  # Direction decisions that are NOT parameter calibrations, recorded here
+  # because they determine what the model reports.
+  - name: "A1 melanin penalty -- DIAGNOSE FIRST, do not recalibrate yet"
+    date: 2026-08-17
+    decided_by: User (repository owner)
+    status: DIAGNOSIS_IN_PROGRESS
+    decision: >-
+      Three independent sources say the between-skin-type penalty is 2-3x too
+      weak (Webb/Kift 2.5-3.0x vs model 1.40x; Kallioglu VI:I 5.00x vs 1.62x
+      and V:II 2.40x vs 1.43x; NHANES Part B within-change contrast). The owner
+      explicitly chose NOT to change K_const or K_ATTEN yet, and to first
+      quantify how much of the gap is OPTICAL (belongs in K_const/K_ATTEN) and
+      how much is BEHAVIOURAL/EXPOSURE (belongs in a separate term).
+    rationale: >-
+      CORRECTED 2026-08-17, same day it was written. The original rationale
+      recorded here said "Gap 23 establishes that Webb/Kift's 2.5-3.0x is not
+      purely optical -- it bundles clothing, time outdoors and geography".
+      THAT IS THE INVERSE OF WHAT GAP 23 SAYS, and gap 23 is explicitly a
+      correction of that same belief. Webb/Kift's 2.5-3.0x is Farrar 2013
+      simulated sunlight at matched ~35% BSA: lamp-based, matched-dose, NO
+      behaviour. The original rationale also cited Kallioglu as "a pure
+      simulation containing no behaviour" -- true, but irrelevant, because
+      Kallioglu was withdrawn entirely on 2026-08-17 as an erythema MED table.
+      THE DECISION TO DIAGNOSE BEFORE RECALIBRATING STANDS, on better grounds:
+      the separation is measurable, and it was measured. Two independent
+      routes -- within-study matched-dose lab trials (Felton 2016, Young 2020)
+      and field personal-dosimetry inversion (Kift 2013, Darling 2013) --
+      converge on an OPTICAL ratio of 1.7-2.7x, against an incumbent K_const
+      delivering 1.26x and a behaviour-blind figure of 4.3-5.7x. Attributing
+      the whole gap to pigment would overshoot every matched-dose measurement
+      in existence.
+    not_covered: >-
+      No parameter value is approved for change by this entry. A separate
+      approval is required once the diagnosis lands.
+  - name: "A3 primary scheduling metric"
+    date: 2026-08-17
+    decided_by: User (repository owner)
+    status: APPROVED_PENDING_IMPLEMENTATION
+    decision: >-
+      Primary: minimum dose/sessions required to REACH AND HOLD sufficiency --
+      i.e. how little exposure is actually needed. gross_synth_per_SED is
+      retained as a BACKGROUND/secondary metric only. Additionally requested: a
+      formulation for best SED at least spacing and fewest sessions while
+      accounting for skin-cancer risk.
+    rationale: >-
+      gross_synth_per_SED has no interior optimum (gap 19) -- it rises
+      monotonically as dosing approaches zero, and at its reported 21-30 d
+      'optima' final D is BELOW the starting baseline, a net loss. It cannot be
+      the primary metric. MODEL_AND_EVIDENCE.md section 5.3 already recommended
+      the minimum-sessions-to-hold-sufficiency formulation.
+    not_covered: >-
+      The tri-objective form (dose x spacing x cancer risk) is a NEW objective,
+      not a re-weighting of an existing one. The FST susceptibility term in
+      vitd_physiology.cancer_risk remains an order-of-magnitude prior and is NOT
+      anchored by Elwood & Jopson, so cross-skin-type comparisons of risk index
+      VALUES stay unreliable even though interval and minutes columns do not
+      depend on it.
+
+approved_2026_08_17_pending_implementation:
+  # Blanket approval given 2026-08-17 ("my approvals: everything"), conditional
+  # on the grounding_requirement above. NONE of these are implemented yet; each
+  # needs its own parameter_approvals entry with a real derivation when it is.
+  - id: A2
+    name: "D_max = 150 -> saturating feedback form"
+    why: >-
+      Gap 19/20: the feedback term sets the interval ranking, making this the
+      most influential number in the model, and its origin was never found
+      (not in Bogh 2010; PMID 19812604 max was 116 nmol/L). Real 25(OH)D
+      regulation acts on 1,25(OH)2D via CYP24A1 induction, not a hard ceiling.
+  - id: A4
+    name: "A = 2.353 recalibration toward Young 2021 midpoint"
+    why: >-
+      Model gives ~1.85 nmol/L per SED at 85% BSA against Young 2021's reported
+      fair-skin 2.0-5.0. Shifts absolute D roughly 50%; scheduling rankings
+      unchanged. NOTE: Young 2021 is FST I-II only -- see dark_skin_priority.
+  - id: A5
+    name: "Vitamin D action spectrum: CIE-174 vs Young 2021"
+    why: >-
+      CLARIFIED 2026-08-17: neither spectrum is currently in force. The core
+      model does not compute spectral integrals at all -- E_source values are
+      direct table reads from Webb 2021. Only scripts/bogh2012_ablation.py (a
+      retired sensitivity tool) and vitd_dose_conversion.py (which takes the
+      name as an argument) load the CSVs. This choice becomes live only when
+      E_source is derived as a function of solar zenith angle. Defer to that
+      point rather than deciding it in the abstract.
+  - id: A6
+    name: "Retire K_ATTEN as a free parameter"
+    why: >-
+      It is 0.00, swings steady-state D by 0.3% across its full plausible range,
+      and is jointly unidentifiable with both K_SC and K_const (gap 25).
+      Reporting it as separately calibrated overstates the evidence.
+  - id: A7
+    name: "Sanity 3 acceptance band 10-30% -> 0-10%"
+    why: >-
+      Resolves the outstanding NEEDS_VERIFICATION entry in pending_approvals
+      above. Read it together with that entry's consequence clause: the check
+      cannot fail at the current parameter value.
+
+data_requests_closed_2026_08_17:
+  - id: "13b"
+    name: "Vernez 2015 Supplementary Table S1 -- Vis [%] by body site and posture"
+    status: CLOSED
+    source: >-
+      Research_Papers/supplementary materials.doc, supplied by the repository
+      owner 2026-08-17. OLE2 Word document; metadata author 'dvernez', company
+      CHUV, created 2013-11-11. Extracted to
+      data/vernez2015_table_s1_vis_by_site_posture.csv (13 body sites x 5
+      postures).
+    consequence: >-
+      REPLACES VIS_PRESETS_PLACEHOLDER in vitd_physiology.py, which was
+      back-derived by inverting Eq. 1 against the paper's reported exposure
+      ratios -- consistent with the paper's OUTPUTS but never its INPUTS, and
+      fenced as not citable. This is a PLACEHOLDER-TO-SOURCE replacement, not a
+      calibration: the values are transcribed, not fitted.
+    verify: >-
+      'Top of shoulders' and 'Upper back' carry IDENTICAL values across all five
+      postures (35.9 / 50.3 / 48.6 / 45.7 / 85.3). Reproduced verbatim and NOT
+      de-duplicated. May be a shared manikin mesh region or a copy-paste in the
+      source table. Confirm against the rendered document before relying on
+      either row independently.
+  - id: "3a"
+    name: "Webb/Kift tabulated UK UV climatology"
+    status: PAPER_LOCATED_REQUEST_DEPRIORITISED
+    source: >-
+      Webb AR, Kazantzidis A, Kift RC, Farrar MD, Wilkinson J, Rhodes LE.
+      'Colour Counts: Sunlight and Skin Type as Drivers of Vitamin D Deficiency
+      at UK Latitudes.' Nutrients 2018;10(4):457. PMC5946242. Full text was
+      ALREADY IN THE REPO as
+      Research_Papers/Colour Counts; Sunlight and Skin Type as Drivers of.pdf
+      -- the third time this repository has nearly written off a paper it
+      already held.
+    note: >-
+      The climatology itself is deprioritised as UK-specific under
+      dark_skin_priority. The paper's FST V physiological targets are retained.
 
 notes: |
   Bogh 2012 now PASSES (+56.0 vs observed +55.8) after a dose-unit correction,

@@ -20,6 +20,9 @@ References are given inline with the numbers actually used.
 
 from __future__ import annotations
 
+import csv
+import os
+import re
 import warnings
 from typing import Dict, Tuple
 
@@ -157,10 +160,13 @@ def photodegradation_factor(sed: float, d_sat: float = PREVITAMIN_D_SAT_SED) -> 
 #      which IS this project's scenario -- and must NOT be read as a
 #      like-for-like replacement for a behaviourally-averaged dosimeter number.
 #
-# NOT IMPORTED, AND STILL MISSING: Supplementary Table S1 gives typical Vis per
-# posture and body site. It is not in the main PDF (data request #13b). Until it
-# lands, Vis must be supplied by the caller; this module does not guess it.
-# See MODEL_AND_EVIDENCE.md gap 26 and 'Open decisions' item 12.
+# Supplementary Table S1 (typical Vis per posture and body site, data request
+# #13b) IS NOW IN THE REPO -- see VERNEZ_TABLE_S1_VIS / vis_table_s1() below.
+# It is not in the main PDF; it was extracted 2026-08-17 from a supplementary
+# .doc supplied separately. Vis is still never guessed by this module: callers
+# must pass a vis_percent from vis_table_s1() (sourced) or their own estimate.
+# See MODEL_AND_EVIDENCE.md gap 26 / data request 13b, and 'Open decisions'
+# item 5b for the unresolved geometry x BSA coupling this table does not fix.
 
 # Vernez et al. 2015, Equation 1. ER in PERCENT.
 #   ER = -3.396*lnVis_cent + 10.714*Vis_cent - 9.199*cosSZA3_cent + 56.991
@@ -299,59 +305,103 @@ def personal_geometry_factor(solar_elevation_deg: float | None = None,
     return vernez_exposure_ratio(vis_percent, sza)
 
 
-# =========================== PLACEHOLDER ===================================
-# [PLACEHOLDER -- NOT FROM THE PAPER. Recorded 2026-08-16, data request #13b.]
+# ======================= VERNEZ 2015 TABLE S1 (SOURCED) ====================
+# Vernez, Milon, Vuilleumier, Bulliard, Koechlin, Boniol & Dore 2015, J Expo
+# Sci Environ Epidemiol 25:113-118, doi 10.1038/jes.2014.6, Supplementary
+# Information Table S1: "Value of Vis [%] according to body part and body
+# posture" (13 body sites x 5 postures, SimUVEx 3D-manikin simulation).
 #
-# Vernez's Supplementary Table S1 gives typical Vis by posture and body site.
-# It is NOT in the main PDF and has not been obtained. These values are
-# BACK-DERIVED by inverting Eq. 1 at VERNEZ_REF_SZA_DEG against the mean ERs
-# Vernez print in their Results text (see VERNEZ_REPORTED_SITE_ER). That makes
-# them consistent with the paper's own reported outputs, but they are NOT the
-# paper's Vis inputs and must not be cited as such.
+# EXTRACTION PROVENANCE: extracted 2026-08-17 from the supplementary .doc
+# supplied by the repository owner (OLE2 Word document, metadata author
+# 'dvernez', CHUV, created 2013-11-11) to
+# data/vernez2015_table_s1_vis_by_site_posture.csv. That file is the single
+# source of these numbers; read the CSV header before changing anything here.
+# This CLOSES data request #13b (see calibration_approval.yaml,
+# data_requests_closed_2026_08_17).
 #
-# Two further reasons to treat any number derived from these as provisional:
-#   - Vernez ER assumes NO SHADE and continuous exposure (see above), so these
-#     are ceilings, not expected real-world exposure.
-#   - Whole-body presets additionally assume an area weighting across sites
-#     that this repo has not sourced at all. That assumption is cruder than
-#     the Vis inversion itself.
+# This REPLACES the VIS_PRESETS_PLACEHOLDER dict that lived here from
+# 2026-08-16 to 2026-08-17. That dict was back-derived by inverting Eq. 1 at
+# VERNEZ_REF_SZA_DEG against the mean ERs Vernez print in their Results TEXT
+# (VERNEZ_REPORTED_SITE_ER) -- consistent with the paper's OUTPUTS but never
+# its INPUTS. The values below are the paper's actual inputs, transcribed
+# (not inverted, not fitted).
 #
-# Anything reported from these MUST be labelled a placeholder. Replace as soon
-# as Table S1 lands.
-def _vis_for_target_er(er_percent: float) -> float:
-    """Invert Vernez Eq. 1 for Vis at the reference SZA. PLACEHOLDER helper."""
-    lo, hi = 0.01, 100.0
-    for _ in range(200):
-        mid = 0.5 * (lo + hi)
-        if vernez_exposure_ratio(mid, VERNEZ_REF_SZA_DEG) * 100.0 < er_percent:
-            lo = mid
-        else:
-            hi = mid
-    return 0.5 * (lo + hi)
+# [VERIFY] 'Top of shoulders' and 'Upper back' carry IDENTICAL values across
+# ALL FIVE postures in the source table (35.9 / 50.3 / 48.6 / 45.7 / 85.3).
+# This is reproduced verbatim from the source and has NOT been altered here.
+# It may be a genuine shared manikin mesh region or a copy-paste in the
+# original table -- do not silently de-duplicate; confirm against the
+# rendered document before relying on either row independently.
+#
+# Still a ceiling, not expected real-world exposure: Vernez ER (and therefore
+# the Vis that feeds it) assumes NO SHADE and continuous exposure -- see the
+# module comment on vernez_exposure_ratio above.
+VERNEZ_TABLE_S1_POSTURES: Tuple[str, ...] = (
+    "seated", "kneeling", "standing_erect_arms_down",
+    "standing_erect_arms_up", "standing_bowing",
+)
+
+_VERNEZ_TABLE_S1_CSV: str = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "data", "vernez2015_table_s1_vis_by_site_posture.csv",
+)
 
 
-VIS_PRESETS_PLACEHOLDER: Dict[str, float] = {}
+def _normalize_body_site(raw: str) -> str:
+    """'Forearm (external)' -> 'forearm_external'; 'Upper back' -> 'upper_back'."""
+    return re.sub(r"[^a-z0-9]+", "_", raw.strip().lower()).strip("_")
 
 
-def vis_preset(name: str) -> float:
-    """Placeholder sky-visibility percentage for a named exposure scenario.
+def _load_vernez_table_s1(path: str = _VERNEZ_TABLE_S1_CSV) -> Dict[str, Dict[str, float]]:
+    """Parse Vernez 2015 Supplementary Table S1 from the extracted CSV.
 
-    RAISES if `name` is unknown rather than guessing. Every value returned is a
-    PLACEHOLDER back-derived from Vernez's reported ERs -- see the block comment
-    above. Callers that surface a number to a user must say so.
+    The CSV, not this function, is the source of truth for the numbers --
+    this only parses it, so the values are never duplicated in two places.
+    Returns {normalized_body_site: {posture: Vis_percent}}. Raises on a
+    missing/malformed file rather than silently falling back to anything.
     """
-    if not VIS_PRESETS_PLACEHOLDER:
-        VIS_PRESETS_PLACEHOLDER.update({
-            k: _vis_for_target_er(v) for k, v in VERNEZ_REPORTED_SITE_ER.items()
-        })
-    if name not in VIS_PRESETS_PLACEHOLDER:
+    with open(path, "r", encoding="utf-8", newline="") as fh:
+        data_lines = [ln for ln in fh if not ln.lstrip().startswith("#") and ln.strip()]
+    reader = csv.DictReader(data_lines)
+    table: Dict[str, Dict[str, float]] = {}
+    for row in reader:
+        site = _normalize_body_site(row["body_site"])
+        table[site] = {posture: float(row[posture]) for posture in VERNEZ_TABLE_S1_POSTURES}
+    return table
+
+
+# body_site -> {posture -> Vis percent}. Loaded once at import time from
+# data/vernez2015_table_s1_vis_by_site_posture.csv (see provenance above).
+VERNEZ_TABLE_S1_VIS: Dict[str, Dict[str, float]] = _load_vernez_table_s1()
+
+
+def vis_table_s1(body_site: str, posture: str) -> float:
+    """Sourced sky-visibility percentage (Vernez 2015 Table S1) for a body
+    site and posture.
+
+    body_site : e.g. 'face', 'forearm_external', 'top_of_shoulders' (any
+                casing/spacing normalises the same way as the CSV header).
+    posture   : one of VERNEZ_TABLE_S1_POSTURES.
+
+    RAISES on an unknown site or posture rather than guessing. Feed the
+    result into vernez_exposure_ratio() as `vis_percent` for a sourced,
+    site-specific exposure ratio.
+
+    [VERIFY] 'top_of_shoulders' and 'upper_back' return identical numbers for
+    every posture -- see the module comment above; this is not a lookup bug.
+    """
+    site = _normalize_body_site(body_site)
+    if site not in VERNEZ_TABLE_S1_VIS:
         raise KeyError(
-            f"No Vis preset '{name}'. Known placeholders: "
-            f"{sorted(VERNEZ_REPORTED_SITE_ER)}. Vernez Supplementary Table S1 "
-            f"(data request #13b) would replace these with sourced values."
+            f"No Vernez Table S1 entry for body site '{body_site}'. Known: "
+            f"{sorted(VERNEZ_TABLE_S1_VIS)}."
         )
-    return VIS_PRESETS_PLACEHOLDER[name]
-# ========================= END PLACEHOLDER =================================
+    if posture not in VERNEZ_TABLE_S1_POSTURES:
+        raise KeyError(
+            f"Unknown posture '{posture}'. Known: {VERNEZ_TABLE_S1_POSTURES}."
+        )
+    return VERNEZ_TABLE_S1_VIS[site][posture]
+# ===================== END VERNEZ 2015 TABLE S1 (SOURCED) ==================
 
 
 # ---------------------------------------------------------------------------

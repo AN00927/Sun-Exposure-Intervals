@@ -17,7 +17,12 @@ from vitd_physiology import (body_weight_dilution_factor,
                              cancer_risk,
                              _med_sed_by_fst,
                              INTERMITTENT_BURN_EXPONENT,
-                             BODY_WEIGHT_REF_KG)
+                             BODY_WEIGHT_REF_KG,
+                             vis_table_s1,
+                             VERNEZ_TABLE_S1_VIS,
+                             VERNEZ_TABLE_S1_POSTURES,
+                             VERNEZ_REPORTED_SITE_ER,
+                             VERNEZ_REF_SZA_DEG)
 
 
 class TestBodyWeightDilution:
@@ -599,4 +604,108 @@ class TestPersonalGeometryFactor:
         for an averagely-exposed site. This is the caveat, encoded: the two
         numbers are not interchangeable."""
         assert vernez_exposure_ratio(58.0, 45.0) > 0.35
+
+
+class TestVernezTableS1:
+    """Vernez 2015 Supplementary Table S1 (doi 10.1038/jes.2014.6), extracted
+    2026-08-17 to data/vernez2015_table_s1_vis_by_site_posture.csv.
+
+    These pin the REAL, sourced Vis-by-site-and-posture values -- the paper's
+    actual inputs -- replacing the back-derived VIS_PRESETS_PLACEHOLDER dict
+    that lived in vitd_physiology.py from 2026-08-16 to 2026-08-17. Numbers
+    below are transcribed straight from the CSV; a change here should mean the
+    CSV changed, not that someone re-fit anything.
+    """
+
+    def test_thirteen_sites_loaded(self):
+        assert len(VERNEZ_TABLE_S1_VIS) == 13
+
+    def test_five_postures(self):
+        assert len(VERNEZ_TABLE_S1_POSTURES) == 5
+        for site, postures in VERNEZ_TABLE_S1_VIS.items():
+            assert set(postures) == set(VERNEZ_TABLE_S1_POSTURES), site
+
+    def test_pins_face_values(self):
+        assert vis_table_s1("face", "seated") == pytest.approx(53.7)
+        assert vis_table_s1("face", "kneeling") == pytest.approx(28.7)
+        assert vis_table_s1("face", "standing_erect_arms_down") == pytest.approx(46.6)
+        assert vis_table_s1("face", "standing_erect_arms_up") == pytest.approx(44.9)
+        assert vis_table_s1("face", "standing_bowing") == pytest.approx(19.2)
+
+    def test_pins_forearm_and_neck(self):
+        """Sanity spot-check on two more rows so this isn't just the Face row."""
+        assert vis_table_s1("forearm_external", "standing_erect_arms_down") == pytest.approx(49.4)
+        assert vis_table_s1("neck_back", "kneeling") == pytest.approx(84.3)
+        assert vis_table_s1("low_back", "standing_bowing") == pytest.approx(86.9)
+
+    def test_body_site_name_normalises(self):
+        """Raw CSV headers ('Forearm (external)', 'Top of shoulders', ...) and
+        a caller's own casing/spacing must resolve to the same row."""
+        assert (vis_table_s1("Forearm (external)", "seated")
+                == vis_table_s1("forearm_external", "seated"))
+        assert (vis_table_s1("Top of shoulders", "seated")
+                == vis_table_s1("top_of_shoulders", "seated"))
+
+    def test_unknown_site_raises(self):
+        with pytest.raises(KeyError):
+            vis_table_s1("elbow", "seated")
+
+    def test_unknown_posture_raises(self):
+        with pytest.raises(KeyError):
+            vis_table_s1("face", "lying_prone")
+
+    def test_top_of_shoulders_and_upper_back_are_identical(self):
+        """[VERIFY] Reproduced verbatim from the source table across all five
+        postures. This is NOT a lookup bug -- do not 'fix' it by making the
+        rows differ. See the CSV header and the module comment above
+        VERNEZ_TABLE_S1_VIS for the caveat this test encodes."""
+        for posture in VERNEZ_TABLE_S1_POSTURES:
+            assert (vis_table_s1("top_of_shoulders", posture)
+                    == vis_table_s1("upper_back", posture))
+        assert vis_table_s1("top_of_shoulders", "seated") == pytest.approx(35.9)
+        assert vis_table_s1("top_of_shoulders", "kneeling") == pytest.approx(50.3)
+        assert vis_table_s1("top_of_shoulders", "standing_erect_arms_down") == pytest.approx(48.6)
+        assert vis_table_s1("top_of_shoulders", "standing_erect_arms_up") == pytest.approx(45.7)
+        assert vis_table_s1("top_of_shoulders", "standing_bowing") == pytest.approx(85.3)
+
+    def test_all_values_are_valid_vis_percentages(self):
+        """Every Table S1 entry must be a legal vernez_exposure_ratio() input."""
+        for site, postures in VERNEZ_TABLE_S1_VIS.items():
+            for posture, vis in postures.items():
+                assert 0.0 < vis <= 100.0, (site, posture, vis)
+                er = vernez_exposure_ratio(vis, VERNEZ_REF_SZA_DEG)
+                assert 0.0 <= er <= 1.0
+
+    def test_face_bowing_and_neck_back_reproduce_the_papers_own_reported_er(self):
+        """Cross-check against VERNEZ_REPORTED_SITE_ER (mean ERs printed in the
+        paper's Results TEXT, not Table S1): feeding the real Table S1 Vis for
+        the matching posture through Eq. 1 should land close to the paper's
+        own reported point value for the same site. This is the honest version
+        of the check the old back-derivation short-circuited by construction."""
+        face_bowing_vis = vis_table_s1("face", "standing_bowing")
+        er = vernez_exposure_ratio(face_bowing_vis, VERNEZ_REF_SZA_DEG) * 100.0
+        assert er == pytest.approx(VERNEZ_REPORTED_SITE_ER["face_bowing"], abs=2.0)
+
+        neck_vis = vis_table_s1("neck_back", "standing_erect_arms_down")
+        er = vernez_exposure_ratio(neck_vis, VERNEZ_REF_SZA_DEG) * 100.0
+        assert er == pytest.approx(VERNEZ_REPORTED_SITE_ER["back_of_neck"], abs=3.0)
+
+    def test_top_of_shoulders_standing_does_not_reproduce_the_reported_89_percent(self):
+        """Documents a real discrepancy (not a bug to fix here): the paper's
+        text reports 'top of shoulders' ER = 89% for the standing posture, but
+        Table S1's standing_erect Vis values (45.7 / 48.6) give an Eq. 1 ER of
+        only ~46-48%. The reported 89% is far closer to Table S1's
+        standing_bowing Vis (85.3, ER~85%). Recorded so nobody 'fixes' this
+        table to force agreement -- see the geometry/BSA report for context."""
+        vis_down = vis_table_s1("top_of_shoulders", "standing_erect_arms_down")
+        vis_up = vis_table_s1("top_of_shoulders", "standing_erect_arms_up")
+        er_down = vernez_exposure_ratio(vis_down, VERNEZ_REF_SZA_DEG) * 100.0
+        er_up = vernez_exposure_ratio(vis_up, VERNEZ_REF_SZA_DEG) * 100.0
+        reported = VERNEZ_REPORTED_SITE_ER["top_of_shoulders"]
+        assert reported - er_down > 30.0
+        assert reported - er_up > 30.0
+
+        vis_bow = vis_table_s1("top_of_shoulders", "standing_bowing")
+        er_bow = vernez_exposure_ratio(vis_bow, VERNEZ_REF_SZA_DEG) * 100.0
+        assert er_bow == pytest.approx(reported, abs=5.0)
 

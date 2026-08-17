@@ -1,0 +1,156 @@
+# Source: Young AR, Morgan KA, Harrison GI, Lawrence KP, Petersen B, Wulf HC,
+#         Philipsen PA. "A revised action spectrum for vitamin D synthesis by
+#         suberythemal UV radiation exposure in humans in vivo." PNAS 2021
+#         118(40):e2015867118. https://doi.org/10.1073/pnas.2015867118
+#
+# WHAT THIS FILE IS: the CIE-174 (2006) previtamin D3 action spectrum
+# (data/spectra/vitd_action_spectrum_cie.csv), with its wavelength axis
+# rigidly translated -5 nm ("blue shift", toward shorter wavelengths),
+# curve SHAPE UNCHANGED. This is the exact construction Young et al. 2021
+# define and validate -- it is NOT an independently digitized or
+# newly-measured per-wavelength spectrum.
+#
+# WHY: the paper never re-measures or re-shapes the action spectrum. It
+# grid-searches integer-nm shifts of the existing CIE-174 curve and reports
+# which shift best explains serum 25(OH)D3 responses to five UVR sources in
+# 75 human volunteers. Quotes (page/location as extracted by pymupdf from
+# Research_Papers/young-et-al-2021-...-in.pdf, 8pp, PNAS pagination in brackets):
+#
+#   Abstract: "the previtamin D3 action spectrum was not valid when related
+#   to the serum 25(OH)D3 levels, as weighting the UVR doses with this
+#   action spectrum did not result in a common regression line unless it
+#   was adjusted by a blue shift, with 5 nm giving the best fit."
+#
+#   Results [p.3-4]: "We then tested the effect of incremental 1-nm blue
+#   shifts up to 9 nm with the CIE action spectrum for previtamin D3
+#   WITHOUT CHANGING THE SHAPE of CIE action spectrum, the results of which
+#   are shown in Table 3 ... The highest P values were seen with a 5-nm
+#   shift for PB (P = 0.911) and FB (P = 0.326) studies ... the results
+#   described below are for a 5-nm shift."
+#
+#   Results [p.4]: "the nonsignificant range of shifts was 3 to 6 nm for PB
+#   and 4 to 5 nm for FB that gives an indication of the error in our
+#   model." -- i.e., 5 nm is a point estimate; the paper's own stated
+#   uncertainty band is roughly +/-1-2 nm.
+#
+#   Discussion [p.7]: "We therefore propose a 5-nm blue shift for the CIE
+#   spectrum based on our data, as shown in Fig. 1, especially because they
+#   apply to serum 25(OH)D3, which is used to assess vitamin D status."
+#
+# "5 nm" is the paper's own number (repeated in the abstract, Table 3, and
+# discussion, with an explicit P-value/R^2 table across 0-9 nm shifts), not
+# a third party's paraphrase of a "~5 nm" approximation.
+#
+# NO independent per-wavelength weight table, supplementary data table, or
+# fitted-curve coefficient set for a re-shaped spectrum appears anywhere in
+# the 8-page paper or its cited figures (checked all 8 pages via pymupdf
+# text extraction). Fig. 1 plots the shifted curve but the underlying
+# per-wavelength values are not printed there -- only the +5 nm shift
+# amount and "shape unchanged" instruction are printed as text/table data,
+# and that rule is fully sufficient to reconstruct this file without any
+# pixel digitization or estimation, using the CIE-174 curve already present
+# in this repo as the base.
+#
+# EXTRACTION METHOD: weight(w) = CIE_previtD3(w + 5), i.e. every CIE-174
+# grid point (w_cie, v) is relabelled to (w_cie - 5, v). Values below are
+# arithmetic re-labels of data/spectra/vitd_action_spectrum_cie.csv, not
+# estimates read off a plot. [CHOICE] Boundary zero-padding wavelengths
+# (250-280 nm and >=328 nm) are left on round-number grid points rather
+# than also shifted, matching the pre-existing convention in
+# vitd_action_spectrum_young2021.csv (the "synthetic" file this replaces
+# as the cited source) -- these points are 0.0 either way and the choice
+# is cosmetic only.
+#
+# VERIFIED 2026-08-17: this file's rows are numerically identical to
+# data/spectra/vitd_action_spectrum_young2021.csv (53/53 non-padding
+# wavelengths match exactly; peak 297->292 nm; support 289-332 -> 284-327
+# nm; integral against a flat source unchanged, ratio 1.000, as expected
+# for a pure axis translation). That file's numbers were therefore already
+# a correct implementation of Young et al. 2021's stated method -- the
+# defect was in provenance/labeling (it read as an independent digitization
+# of a "Young 2021 spectrum" that does not exist), not in its values. This
+# file is the same transform with full citation and page-referenced quotes
+# attached, per explicit request to keep the original file as evidence of
+# the labeling error. Do not describe either file as an independently
+# measured or digitized Young 2021 curve -- neither is one.
+#
+# STUDY POPULATION [Methods, p.2]: "Normal healthy fair Fitzpatrick skin
+# types (FST) I and II volunteers (n = 75) with a mean age of 26.5 +/- 5
+# (SD) years." Table 1 confirms: 6 FST I + 69 FST II = 75, zero FST III-VI.
+# This spectrum is a LIGHT-SKIN-DERIVED result (FST I-II only).
+#
+# APPLICABILITY TO DARKER SKIN [Discussion, p.7, verbatim]: "A weakness is
+# the lack of data on melanized skin types because photobiological
+# responses are affected by skin type (48-51). ... The results from this
+# study only apply to FST I/II, and it will be important to assess the
+# effect of skin melanin on the action spectrum for 25(OH)D3." The authors
+# explicitly state their revised spectrum has not been validated on
+# melanated skin. Given this model's dark-skin-priority mandate, any use of
+# this file (or the CIE-174 baseline) should carry that caveat forward.
+#
+# Extraction date: 2026-08-17. Extracted by: automated agent, from
+# Research_Papers/young-et-al-2021-a-revised-action-spectrum-for-vitamin-d-
+# synthesis-by-suberythemal-uv-radiation-exposure-in-humans-in.pdf via
+# pymupdf full-text extraction (all 8 pages read; no OCR/digitization of
+# figure pixels was performed or needed).
+wavelength_nm,weight
+250,0.0000
+255,0.0000
+260,0.0000
+265,0.0000
+270,0.0000
+275,0.0000
+280,0.0000
+284,0.0010
+285,0.0050
+286,0.0150
+287,0.0400
+288,0.1000
+289,0.2200
+290,0.4500
+291,0.8000
+292,1.0000
+293,0.9800
+294,0.9200
+295,0.8500
+296,0.7800
+297,0.7000
+298,0.6200
+299,0.5400
+300,0.4600
+301,0.3900
+302,0.3200
+303,0.2600
+304,0.2100
+305,0.1700
+306,0.1350
+307,0.1050
+308,0.0800
+309,0.0600
+310,0.0450
+311,0.0330
+312,0.0240
+313,0.0170
+314,0.0120
+315,0.0085
+316,0.0060
+317,0.0042
+318,0.0030
+319,0.0021
+320,0.0015
+321,0.0010
+322,0.0007
+323,0.0005
+324,0.0003
+325,0.0002
+326,0.0001
+327,0.0001
+328,0.0000
+330,0.0000
+340,0.0000
+350,0.0000
+360,0.0000
+370,0.0000
+380,0.0000
+390,0.0000
+400,0.0000

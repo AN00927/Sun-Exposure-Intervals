@@ -290,3 +290,60 @@ studies:
       It is not a controlled physiological validation of K_ATTEN.
 
     verification_status: NOT_APPLICABLE
+
+  Vernez2015_TableS1:
+    full_citation: "Vernez D, Milon A, Vuilleumier L, Bulliard J-L, Koechlin A, Boniol M, Dore J-F. A general model to predict individual exposure to solar UV by using ambient irradiance data. Journal of Exposure Science and Environmental Epidemiology. 2015;25:113-118."
+
+    source_file: data/vernez2015_table_s1_vis_by_site_posture.csv
+    doi_or_pmid: 10.1038/jes.2014.6
+    table_or_figure: "Supplementary Information, Table S1 ('Value of Vis [%] according to body part and body posture')"
+
+    original_source_document: >-
+      Research_Papers/supplementary materials.doc, supplied by the repository
+      owner 2026-08-17. OLE2 Word document; metadata author 'dvernez',
+      company CHUV, created 2013-11-11.
+    extraction_date: 2026-08-17
+    extraction_method: >-
+      Manual transcription of the table from the rendered .doc into CSV,
+      13 body sites x 5 postures (seated, kneeling, standing_erect_arms_down,
+      standing_erect_arms_up, standing_bowing).
+
+    sample_basis: >-
+      SimUVEx 3D-manikin simulation (n=8515, 3 postures fitted; held out
+      against n=5672, 2 unseen postures, R^2=0.972) -- same simulation
+      underlying the paper's main-text Equation 1. Vis is a geometric
+      sky-visibility fraction from a numeric manikin, not measured on human
+      subjects of any skin type; it is skin-tone-independent input geometry.
+
+    used_by: >-
+      vitd_physiology.py: VERNEZ_TABLE_S1_VIS / vis_table_s1(). Feeds
+      vernez_exposure_ratio() as the `vis_percent` argument for a
+      site-and-posture-specific exposure ratio, replacing the module's
+      earlier back-derived VIS_PRESETS_PLACEHOLDER dict (removed 2026-08-17).
+
+    verification_status: PARTIAL
+    verified_by: "Repository owner supplied the source .doc directly; CSV header records provenance and one verification caveat."
+    verification_date: 2026-08-17
+
+    caveat: >-
+      [VERIFY] 'Top of shoulders' and 'Upper back' carry IDENTICAL values
+      across all five postures (35.9 / 50.3 / 48.6 / 45.7 / 85.3). Reproduced
+      verbatim from the source and NOT de-duplicated. May be a genuine shared
+      manikin mesh region or a copy-paste in the original table. Confirm
+      against the rendered .doc before relying on either row independently.
+
+    notes: |
+      This CLOSES data request #13b (calibration_approval.yaml,
+      data_requests_closed_2026_08_17), previously recorded as "not in the
+      obtained PDF" and only approximated by inverting Eq. 1 against the
+      paper's reported Results-text ER values (VERNEZ_REPORTED_SITE_ER).
+
+      Comparing the real Table S1 Vis (fed through Eq. 1 at the paper's
+      reference SZA) against the paper's own Results-text reported ER for the
+      same named site: face_bowing and back_of_neck land within ~1-3
+      percentage points of the printed value, but top_of_shoulders standing
+      erect (Table S1 Vis 45.7-48.6%, implied ER ~46-48%) does NOT reproduce
+      the paper's reported 89% -- that figure is far closer to Table S1's
+      standing_bowing Vis (85.3%, implied ER ~85%). Recorded here rather than
+      resolved; see tests/test_physiology.py::TestVernezTableS1 for the
+      pinned check.
