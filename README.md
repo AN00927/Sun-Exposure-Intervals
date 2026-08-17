@@ -1,9 +1,49 @@
 # Vitamin D Scheduling Optimization Model
 
-Repository for a vitamin D / UV exposure scheduling model with photoadaptation,
-validation scripts, evidence cards, and generated analysis outputs.
+## Read this before using any output
+
+This model answers two different questions, with very different reliability:
+
+- **"How often should I go outside?"** (the interval) — reliable. Interval
+  rankings depend on the *shape* of the dose-response curve, not its scale,
+  and survive roughly a 7x error in the absolute dose. "Frequent and small
+  beats rare and large" holds up.
+- **"How many minutes?"** — not reliable yet. A single absolute-minutes figure
+  for sun exposure carries an **unexplained ~7.57x band**, driven by two
+  things the model does not currently ask the user for: season and how much
+  skin is uncovered. See `MODEL_AND_EVIDENCE.md`, "The spread did NOT
+  collapse — it changed category," for the full derivation of that number.
+
+**Every validation check run against real, unsimulated sunlight in a real
+population currently either fails outright or passes on a band wide enough
+that it could hardly fail.** Every check that passes *quantitatively* is a
+lamp (Bogh 2012, an NB-UVB hospital cabinet) or a solar simulator (Farrar
+2013, Karppinen 2017) — not sunlight. See `MODEL_AND_EVIDENCE.md`,
+"Validation is lamp-dominated," for the full breakdown by light source.
+
+**This is a health-adjacent tool. Treat the interval it recommends as the
+useful output. Do not treat any absolute-minutes number it produces as a
+dosing instruction** — read it as a rough scale, not a target.
+
+## Known deliberate test failure — this is not a broken build
+
+`run_all.py` reports NHANES Part B (summer steady-state comparison) at
+**4/6**, down from a prior 6/6. This is an accepted, documented cost, not a
+regression: on 2026-08-16 the solar `E_source` default was raised from an
+unmeasured 1.00 to Webb et al. 2021's literature value of 1.89, a correction
+that was directionally necessary (no real solar spectrum has VDE:EE = 1.00;
+Webb's own lowest sun entry is 1.22, in New Zealand winter). The NHANES
+checks use an assumed daily dose that nobody measured, and that assumed dose
+was **deliberately not retuned** to make the check pass again — doing so
+would be calibration through an ungated back door. See
+`calibration_approval.yaml` (`E_SOURCE_SOLAR_DEFAULT`) for the full approval
+record, and `MODEL_AND_EVIDENCE.md` for the diagnosis. **Do not "fix" this
+check** without reading that record first.
 
 ## Overview
+
+Repository for a vitamin D / UV exposure scheduling model with photoadaptation,
+validation scripts, evidence cards, and generated analysis outputs.
 
 The code models serum 25(OH)D, melanin, and stratum corneum dynamics under UV
 exposure schedules. It is organized around the practical scheduling questions
