@@ -530,14 +530,13 @@ longer a prior: it is the measured fraction of DNA damage reaching the
 germinative basal layer, derived from Shih 2018 and Fajuyigbe 2018, and it
 reproduces Gandini 2005's melanoma RR for skin type I vs IV (2.09 measured,
 2.12 derived) without having been fitted to it. Recommended schedules did not
-move; the index values did. See section 14c and MODEL_AND_EVIDENCE.md gap 15.
+move; the index values did. See section 14c.
 
 ### What still needs better data
 
 - **The skin-type penalty**: the real discrepancy is between two *lamp* studies
   (Young 2020's 1.3-1.4x against Farrar 2013's 2.5-3x at equal 25(OH)D gain),
-  not between lamp and naturalistic exposure as previously recorded. See
-  MODEL_AND_EVIDENCE.md gap 23.
+  not between lamp and naturalistic exposure as previously recorded.
 - **`D_max`** drives the headline result and has unconfirmed origin. The
   mechanistic alternative (`feedback_mode='biphasic'`) is implemented but not
   the default, and its ~56 nmol/L inflection is an *output* of a breakpoint
