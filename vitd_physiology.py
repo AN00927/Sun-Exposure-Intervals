@@ -123,7 +123,7 @@ def photodegradation_factor(sed: float, d_sat: float = PREVITAMIN_D_SAT_SED) -> 
 #
 # Vernez et al. 2015 (J Expo Sci Environ Epidemiol 25:113-118, doi
 # 10.1038/jes.2014.6) is now IN THE REPO, full text with printed coefficients:
-#   Papers_and_Datasets/A general model to predict individual exposure to
+#   Research_Papers/A general model to predict individual exposure to
 #   solar UV by.pdf
 # It closes data request #13, which this repo twice recorded as "unobtainable".
 #
@@ -408,7 +408,7 @@ def hydroxylation_efficiency(D: float,
 #
 # Sources: Elwood & Jopson 1997 (Int J Cancer 73:198-203), overview of 29
 # case-control studies of sun exposure and 21 of sunburn, 9,121 incident
-# melanomas. Full text now in Papers_and_Datasets/ and all four ORs verified
+# melanomas. Full text now in Research_Papers/ and all four ORs verified
 # against it: intermittent 1.71 (1.54-1.90), heavy OCCUPATIONAL 0.86
 # (0.77-0.96, i.e. PROTECTIVE), sunburn at any age 1.91 (1.69-2.17), and --
 # the number that most directly constrains this module -- TOTAL exposure only
@@ -507,7 +507,7 @@ def _med_sed_by_fst(fst: int) -> float:
 #
 # THE MEASUREMENT IT IS BUILT FROM, and why it is the right one.
 # Shih, Farrar, ... de Gruijl & Rhodes 2018 (J Invest Dermatol 138:2244-2252;
-# PDF in Papers_and_Datasets/, and already this file's MED source) dosed FST I-VI
+# PDF in Research_Papers/, and already this file's MED source) dosed FST I-VI
 # at 20-80% of each person's own MED -- i.e. exactly the sub-erythemal,
 # fractional-MED regime this model schedules -- and measured cyclobutane
 # pyrimidine dimers (CPD) by epidermal depth. Two findings drive everything here:

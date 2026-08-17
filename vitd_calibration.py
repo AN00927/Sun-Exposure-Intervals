@@ -47,7 +47,8 @@ from vitd_physiology import hydroxylation_efficiency
 # K_ATTEN is in the abstract, and has been in this repository all along. Earlier
 # docs claimed the paper was "missing from the repo" and listed it as an
 # interlibrary-loan request. That was wrong. Before declaring any paper missing,
-# check Papers_and_Datasets/ -- filenames there are unreliable.
+# check Research_Papers/ (PDFs) and Papers_and_Datasets/ (data, abstracts,
+# supplementary) -- filenames in both are unreliable.
 #
 # WHY THE FAMOUS "51%" IS NOT K_ATTEN
 # ------------------------------------

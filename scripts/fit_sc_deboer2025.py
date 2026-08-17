@@ -9,7 +9,7 @@ Run this before trusting any fitted SC parameter.
 BACKGROUND
 ----------
 Table S1 is printed inside
-`Papers_and_Datasets/Effect of Repeated Low-Dose UVR Exposure - de boer et al..pdf`
+`Research_Papers/Effect of Repeated Low-Dose UVR Exposure - de boer et al..pdf`
 (page 12) and is machine-extractable. It has been in the repository all along.
 
 Protocol: 0.8 SED to the lower back, 3x/week, 9 weeks, n=31.

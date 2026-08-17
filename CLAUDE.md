@@ -43,9 +43,11 @@ instead.
   parameter to fit data) — that needs explicit user approval. **Bug fixes**
   (code that does not implement the documented model: unit errors, state-update
   errors, inverted signs) are allowed without approval.
-- Before listing a paper as "missing from the repo", check
-  `Papers_and_Datasets/`. Filenames there are unreliable — one file named
-  "(NO PAPER FOUND)" contained the complete dataset it claimed was absent.
+- Before listing a paper as "missing from the repo", check `Research_Papers/`
+  (PDFs, **gitignored** — present on the user's disk, absent from a fresh
+  clone) and `Papers_and_Datasets/` (datasets, abstracts, supplementary).
+  Filenames in both are unreliable — one file named "(NO PAPER FOUND)"
+  contained the complete dataset it claimed was absent.
 - Run the pipeline with `PYTHONIOENCODING=utf-8 python3 run_all.py`. The local
   `.venv` lacks numpy; `python3` is the interpreter with the dependencies.
 

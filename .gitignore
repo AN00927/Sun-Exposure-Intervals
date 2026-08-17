@@ -24,6 +24,13 @@ reports/melanin_sc_advisor_memo.md
 .claude/
 
 validation_exploratory/
+
+# Research papers. Copyrighted PDFs are not ours to redistribute, so they live
+# outside version control entirely. Datasets (NHANES CSVs etc.) are openly
+# distributable and stay tracked under Papers_and_Datasets/.
+Research_Papers/
+*.pdf
+
 Papers_and_Datasets/additional info.txt
 Papers_and_Datasets/manifest_raw.csv
 Papers_and_Datasets/rename_map.csv
@@ -55,7 +62,6 @@ Papers_and_Datasets/read_xlsx_full.txt
 Papers_and_Datasets/read_xlsx_out.txt
 Papers_and_Datasets/read_deBoer_supp.py
 Papers_and_Datasets/read_xlsx.py
-Papers_and_Datasets/extract_pdfs.py
 
 paper
 modelpaper.pdf
