@@ -711,10 +711,10 @@ ANALYSIS N: joint timing + dose optimisation
   FST    N   spacing       family  gamma      risk  vs unif%   totSED  t->suff
   ----------------------------------------------------------------------------------
     2  104   uniform    two_phase   1.00    1.9431       0.0     94.5      84d
-    2  104      free  exponential   1.35    1.5937      18.0     97.6      83d
+    2  104      free    two_phase   1.15    1.6137      17.0     94.2      84d
 
     2  146   uniform    two_phase   1.00    0.9943       0.0     83.4      85d
-    2  146      free  exponential   1.38    0.8679      12.7     87.2      85d
+    2  146      free  exponential   1.38    0.8678      12.7     87.2      85d
 
     2  183   uniform    two_phase   1.00    0.7333       0.0     79.8      78d
     2  183      free    two_phase   1.28    0.6060      17.4     81.8      85d
@@ -723,16 +723,16 @@ ANALYSIS N: joint timing + dose optimisation
     2  260      free    two_phase   1.55    0.3637       6.8     76.8      86d
 
     3  104   uniform    two_phase   1.00    1.6092       0.0    101.5      84d
-    3  104      free    two_phase   1.32    1.2671      21.3    103.1      83d
+    3  104      free    two_phase   1.32    1.2688      21.2    103.2      83d
 
     3  146   uniform    two_phase   1.00    0.8110       0.0     89.1      85d
-    3  146      free    two_phase   1.36    0.6986      13.9     92.5      83d
+    3  146      free    two_phase   1.36    0.6987      13.8     92.5      83d
 
-    3  183   uniform    two_phase   1.00    0.5498       0.0     84.1      88d
-    3  183      free    two_phase   1.28    0.4945      10.1     87.5      88d
+    3  183   uniform    two_phase   1.00    0.5605       0.0     85.3      88d
+    3  183      free  exponential   1.31    0.4953      11.6     87.7      85d
 
     3  260   uniform    two_phase   1.00    0.3165       0.0     77.8      87d
-    3  260      free  exponential   1.14    0.3291      -4.0     83.3      86d
+    3  260      free  exponential   1.13    0.3273      -3.4     83.2      87d
 
     5  104   uniform    two_phase   1.00    0.3914       0.0    159.2      84d
     5  104      free    two_phase   1.33    0.2716      30.6    158.2      82d
@@ -747,14 +747,14 @@ ANALYSIS N: joint timing + dose optimisation
     5  260      free  exponential   1.29    0.0518       7.3    115.3      87d
 
   Free spacing vs uniform spacing, 12 operating points:
-    median gain +14.71%   best +30.62%   worst -3.99%
-    gamma chosen: median 1.33 (1.00 = uniform), range 1.14-1.55
+    median gain +14.71%   best +30.62%   worst -3.40%
+    gamma chosen: median 1.31 (1.00 = uniform), range 1.13-1.55
 
     A negative entry is not a real loss: gamma = 1 is
     inside the search bounds, so the free arm can reproduce
     the control exactly and cannot truly do worse. The worst
-    entry (-4.0%) therefore bounds solver noise, and
-    gains below roughly 4% should not be read as real.
+    entry (-3.4%) therefore bounds solver noise, and
+    gains below roughly 3% should not be read as real.
 
   Mechanism. Free spacing does NOT win by lowering cumulative dose
   -- total SED is usually slightly HIGHER. It wins by lowering the
@@ -902,7 +902,7 @@ A. LOWEST-RISK SCHEDULE THAT HOLDS SUFFICIENCY, BY SKIN TYPE
     5    7.5  minutes        1d      365      0.46        15      6    64.1    1.95    0.0040    0.0881
     6   15.2  minutes        1d      365      0.51        16      3    64.1    1.18    0.0003    0.0198
 
-  Saved C:\Users\Ahaan\sunresearch\Sun-Exposure-Intervals\tables\risk_aware_schedule_by_fst.csv
+  Saved /mnt/c/Users/Ahaan/sunresearch/Sun-Exposure-Intervals/tables/risk_aware_schedule_by_fst.csv
 
   All skin types land on the shortest interval on the grid (1d). This is not a solver artefact:
   the sufficiency floor eliminates the long intervals outright (they cannot reach the
@@ -917,7 +917,7 @@ A. LOWEST-RISK SCHEDULE THAT HOLDS SUFFICIENCY, BY SKIN TYPE
   anchored by Elwood & Jopson. Interval and minutes columns do not depend on it.
   Minutes carry at least +/-40% geometric uncertainty (gap 26) and assume the UV index
   holds at 6 for the whole session.
-Saved C:\Users\Ahaan\sunresearch\Sun-Exposure-Intervals\figs\deficiency_risk_frontier.png
+Saved /mnt/c/Users/Ahaan/sunresearch/Sun-Exposure-Intervals/figs/deficiency_risk_frontier.png
 
 ```
 
