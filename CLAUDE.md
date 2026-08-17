@@ -27,8 +27,8 @@ Read-only git is fine: `git status`, `git diff`, `git log`, `git show`.
 | You want | Read |
 |---|---|
 | Parameter values + citations | `vitd_model.py` module docstring — **the only canonical source** |
-| Model description, evidence, problem statement, open work, assumptions, parameter history | `MODEL_AND_EVIDENCE.md` |
-| Latest model output | `RESULTS.md` (generated) |
+| Latest model output & results | `RESULTS.md` (generated) |
+| Project overview & usage | `README.md` |
 
 **Do not restate parameter values in prose here or in any other .md file.**
 `K_ATTEN` was previously written out in nine places and `A` in five, including
@@ -56,8 +56,6 @@ instead.
 - **DO** specify dose framing (absolute SED vs fractional MED) in any schedule
   comparison — the two framings give materially different FST response
   patterns.
-- **DO** reference `MODEL_AND_EVIDENCE.md` for evidence on
-  any audit-related claim.
 - **DO** flag parameter priors (`SC_max`, `alpha_SC`, `K_SC`) as uncalibrated
   when presenting absolute D predictions.
 - **DO** recognize that `E_source=1.0` is the solar broadband reference — the
@@ -67,7 +65,7 @@ instead.
   harmonization code.
 - **Do NOT** invent validation counts. Re-run
   `PYTHONIOENCODING=utf-8 python3 run_all.py` before quoting any count.
-- **Do NOT** cite Tadokoro 2005 for tanning decay timescale — see `MODEL_AND_EVIDENCE.md`.
+- **Do NOT** cite Tadokoro 2005 for tanning decay timescale.
 - **Do NOT** cite Matsuoka 1990's "51% attenuation" as a melanin effect.
   Baseline 25(OH)D differed between the tanned and untanned arms (92.1 vs
   56.2 nmol/L), so most of that blunting is D-feedback, not pigment. See
@@ -76,7 +74,6 @@ instead.
 
 Ablation summary (Bogh 2012): the 21-config ablation search (A00–A20) was
 looking for a spectral weighting to close a gap that was actually a
-**dose-unit error** — see `MODEL_AND_EVIDENCE.md`, 'Known issues', #1. Any per-config error
-figures quoted from that old run (e.g. "A03, error 1.86") are **not
-reproducible and must not be cited**. `scripts/bogh2012_ablation.py` is
-retained as a sensitivity tool.
+**dose-unit error**. Any per-config error figures quoted from that old run
+(e.g. "A03, error 1.86") are **not reproducible and must not be cited**.
+`scripts/bogh2012_ablation.py` is retained as a sensitivity tool.
