@@ -17,7 +17,7 @@ venv/
 
 audit_outputs/extracted_text/
 extracted_texts/
-tmp_katten
+tmp_katten/
 
 reports/melanin_sc_advisor_memo.md
 
@@ -48,11 +48,11 @@ paper/*.fdb_latexmk
 .licenses/pubmed_database_LICENSE.txt
 .gitignore
 
-Papers_and_Datasets\extracted_pdfs.txt
-Papers_and_Datasets\de boer 2025 supplementary
-Papers_and_Datasets\read_xlsx_all.txt
-Papers_and_Datasets\read_xlsx_full.txt
-Papers_and_Datasets\read_xlsx_out.txt
+Papers_and_Datasets/extracted_pdfs.txt
+Papers_and_Datasets/de boer 2025 supplementary/
+Papers_and_Datasets/read_xlsx_all.txt
+Papers_and_Datasets/read_xlsx_full.txt
+Papers_and_Datasets/read_xlsx_out.txt
 Papers_and_Datasets/read_deBoer_supp.py
 Papers_and_Datasets/read_xlsx.py
 Papers_and_Datasets/extract_pdfs.py
