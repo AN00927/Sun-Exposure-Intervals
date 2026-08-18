@@ -160,3 +160,130 @@ class TestMinutesForTarget:
                                target=SUFFICIENCY_NMOL_L)
         assert r["reachable"]
         assert r["steady_state_D"] >= SUFFICIENCY_NMOL_L - 1.0
+
+
+# ---------------------------------------------------------------------------
+# The scheduling metric hierarchy (Phase 4b, item A3)
+# ---------------------------------------------------------------------------
+class TestObjectiveHierarchy:
+    """The hierarchy is the thing that stops this repo publishing a headline
+    number from a metric with no interior optimum. These are structural
+    guards, so the ranking cannot quietly grow a second headline or lose the
+    barrier around the diagnostic tier."""
+
+    def test_exactly_one_primary_objective(self):
+        """A hierarchy with two headlines has no headline."""
+        from vitd_objectives import (OBJECTIVE_HIERARCHY, TIER_PRIMARY,
+                                     primary_objective)
+        primaries = [s for s in OBJECTIVE_HIERARCHY if s.tier == TIER_PRIMARY]
+        assert len(primaries) == 1
+        assert primary_objective() is primaries[0]
+
+    def test_primary_is_reach_and_hold_not_a_ratio(self):
+        """The PRIMARY objective must be a constrained minimisation with the
+        sufficiency floor among its constraints -- the property every retired
+        headline metric lacked."""
+        from vitd_objectives import primary_objective
+        spec = primary_objective()
+        assert spec.minimise, "the primary objective must minimise something"
+        assert any("C3" in c for c in spec.subject_to), spec.subject_to
+        assert any("C1" in c for c in spec.subject_to), spec.subject_to
+
+    def test_keys_and_ranks_are_unique(self):
+        from vitd_objectives import OBJECTIVE_HIERARCHY
+        keys = [s.key for s in OBJECTIVE_HIERARCHY]
+        ranks = [s.rank for s in OBJECTIVE_HIERARCHY]
+        assert len(set(keys)) == len(keys)
+        assert len(set(ranks)) == len(ranks)
+
+    def test_ranks_respect_tier_order(self):
+        """PRIMARY outranks SECONDARY outranks DIAGNOSTIC, numerically."""
+        from vitd_objectives import OBJECTIVE_HIERARCHY, TIER_ORDER
+        pos = {t: i for i, t in enumerate(TIER_ORDER)}
+        ordered = sorted(OBJECTIVE_HIERARCHY, key=lambda s: s.rank)
+        tiers = [pos[s.tier] for s in ordered]
+        assert tiers == sorted(tiers), [(s.rank, s.tier) for s in ordered]
+
+    def test_gross_synth_is_diagnostic_only(self):
+        """The specific demotion item A3 asks for."""
+        from vitd_objectives import (objective_tier, TIER_DIAGNOSTIC,
+                                     is_headline)
+        assert objective_tier("gross_synth_per_SED") == TIER_DIAGNOSTIC
+        assert not is_headline("gross_synth_per_SED")
+
+    def test_diagnostics_cannot_be_reported_as_headline(self):
+        """The guard is the point: report code that tries to present a
+        diagnostic as advice must fail loudly rather than print."""
+        from vitd_objectives import (assert_reportable_as_headline,
+                                     OBJECTIVE_HIERARCHY, TIER_DIAGNOSTIC)
+        for spec in OBJECTIVE_HIERARCHY:
+            if spec.tier == TIER_DIAGNOSTIC:
+                with pytest.raises(ValueError):
+                    assert_reportable_as_headline(spec.key)
+            else:
+                assert_reportable_as_headline(spec.key)
+
+    def test_unknown_objective_raises_rather_than_defaults(self):
+        """Defaulting an unplaced metric into some tier is how the ranking
+        drifts; refusing to guess is the whole mechanism."""
+        from vitd_objectives import objective_tier
+        with pytest.raises(KeyError):
+            objective_tier("some_metric_nobody_ranked")
+
+    def test_every_entry_points_at_something_that_exists(self):
+        """`implemented_by` is a promise. Check the promise: each entry names
+        either an importable attribute or a file that is present."""
+        import importlib
+        import os
+        from vitd_objectives import OBJECTIVE_HIERARCHY
+
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        for spec in OBJECTIVE_HIERARCHY:
+            found = False
+            for token in spec.implemented_by.replace("/", " ").split():
+                token = token.strip("(),;")
+                if token.endswith(".py") and os.path.exists(
+                        os.path.join(root, "scripts", token)):
+                    found = True
+                    break
+                if "." not in token:
+                    continue
+                mod, _, attr = token.rpartition(".")
+                try:
+                    if hasattr(importlib.import_module(mod), attr):
+                        found = True
+                        break
+                except Exception:
+                    continue
+            assert found, f"{spec.key}: nothing found for {spec.implemented_by!r}"
+
+    def test_formatted_hierarchy_names_every_objective_in_tier_order(self):
+        from vitd_objectives import (format_objective_hierarchy,
+                                     OBJECTIVE_HIERARCHY, TIER_ORDER)
+        text = format_objective_hierarchy()
+        for spec in OBJECTIVE_HIERARCHY:
+            assert spec.key in text
+        positions = [text.index(t) for t in TIER_ORDER if t in text]
+        assert positions == sorted(positions), "tiers printed out of order"
+
+    def test_report_generator_does_not_hardcode_the_geometry_factor(self):
+        """Drift guard for the bug this phase fixed. run_all.py stated a
+        personal-dose geometry factor of 0.55 while the code held a different
+        value; the fix was to interpolate it. Re-hardcoding it -- with the
+        right value or the wrong one -- puts the drift back."""
+        import io
+        import os
+        from vitd_objectives import PERSONAL_DOSE_GEOMETRY_FACTOR
+
+        path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "run_all.py")
+        src = io.open(path, encoding="utf-8").read()
+        assert "PERSONAL_DOSE_GEOMETRY_FACTOR" in src, (
+            "run_all.py no longer reads the geometry factor from the code")
+        report = src.split("## 17. Interpretation")[-1]
+        assert repr(PERSONAL_DOSE_GEOMETRY_FACTOR) not in report, (
+            "the geometry factor is hardcoded in the generated report again")
+        assert "0.55" not in report.replace(
+            "stated a hardcoded 0.55", ""), (
+            "a stale geometry factor is back in the generated report")

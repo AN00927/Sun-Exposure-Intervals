@@ -38,6 +38,8 @@ Notable real values used below:
 """
 
 import datetime as dt
+import datetime as _dt
+import json as _json
 import json
 import math
 from pathlib import Path
@@ -126,12 +128,36 @@ class TestFetchHappyPath:
         assert result.is_fallback is False
 
     def test_default_when_is_now(self):
-        # No `when` given -> defaults to current UTC time. We can't control
-        # what hour that is, but we CAN assert it doesn't blow up and that
-        # it requested a sane (small) forecast window rather than crashing
-        # on the delta-hours arithmetic.
-        result = fetch_ambient_uvi(34.05, -118.25, http_get=_stub(LA_FIXTURE))
+        # No `when` given -> defaults to current UTC time.
+        #
+        # FIXED 2026-08-18. This previously stubbed the STATIC LA fixture, whose
+        # hourly window is 2026-08-17T00:00..23:00. That made the test a time
+        # bomb: it passed only while the wall clock happened to sit inside that
+        # one calendar day, and began failing with AmbientUVIUnavailable as soon
+        # as real time moved past it. A test whose result depends on when it is
+        # run is not testing the code.
+        #
+        # The intent -- confirm the default-to-now path works and the
+        # delta-hours arithmetic does not crash -- is preserved by synthesising
+        # a response centred on the CURRENT hour, so it holds forever.
+        now = _dt.datetime.now(_dt.timezone.utc).replace(
+            minute=0, second=0, microsecond=0, tzinfo=None)
+        hours = [now + _dt.timedelta(hours=h) for h in range(-6, 7)]
+        payload = {
+            "latitude": 34.05, "longitude": -118.25,
+            "hourly_units": {"uv_index": "", "uv_index_clear_sky": ""},
+            "hourly": {
+                "time": [h.strftime("%Y-%m-%dT%H:%M") for h in hours],
+                "uv_index": [3.0] * len(hours),
+                "uv_index_clear_sky": [4.0] * len(hours),
+            },
+        }
+        result = fetch_ambient_uvi(
+            34.05, -118.25, http_get=_stub(_json.dumps(payload)))
         assert isinstance(result, AmbientUVI)
+        # the matched hour must be the current one, not an arbitrary fixture hour
+        assert result.uv_index_live == 3.0
+        assert result.cloud_modifier == 0.75
 
 
 # ---------------------------------------------------------------------------

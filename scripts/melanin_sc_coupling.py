@@ -31,6 +31,7 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from vitd_model import (ModelParams, simulate, steady_state_D,
+                        allow_retired_parameter_sweep,
                         mean_final_M, mean_final_SC)
 
 HORIZON = 180
@@ -84,7 +85,11 @@ def joint_identifiability(fst: int = 5, n_grid: int = 11):
     for i, x in enumerate(av):
         for j, y in enumerate(bv):
             p = ModelParams()
-            p.K_ATTEN, p.K_SC = float(x), float(y)
+            # K_ATTEN is RETIRED. This grid is the identifiability measurement
+            # that justifies the retirement, so it goes through the named
+            # escape hatch. See vitd_model.RETIRED_PARAMETERS.
+            with allow_retired_parameter_sweep():
+                p.K_ATTEN, p.K_SC = float(x), float(y)
             r = simulate(fst=fst, schedule=_sched(1.0, 3), duration_days=HORIZON,
                          params=p, D0=D0, dose_framing="fixed_per_session_SED")
             Z[i, j] = steady_state_D(r)
@@ -131,8 +136,9 @@ def phenotype_stratification():
         vals = {}
         for fst in (2, 5):
             p = ModelParams()
-            for k, v in overrides.items():
-                setattr(p, k, v)
+            with allow_retired_parameter_sweep():       # ablations set K_ATTEN
+                for k, v in overrides.items():
+                    setattr(p, k, v)
             r = simulate(fst=fst, schedule=_sched(1.0, 3), duration_days=HORIZON,
                          params=p, D0=D0, dose_framing="fixed_per_session_SED")
             vals[fst] = steady_state_D(r)

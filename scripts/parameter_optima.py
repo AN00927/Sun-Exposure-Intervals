@@ -43,7 +43,8 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from vitd_model import (ModelParams, simulate, net_final_D_change_per_SED)
+from vitd_model import (ModelParams, simulate, net_final_D_change_per_SED,
+                        allow_retired_parameter_sweep)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIGS_DIR = os.path.join(ROOT, "figs")
@@ -156,7 +157,11 @@ def sweep_parameter(spec: dict, fst: int) -> dict:
            "mean_D_at_opt": []}
     for v in values:
         p = ModelParams()
-        setattr(p, spec["attr"], float(v))
+        # PARAMETERS still lists RETIRED parameters (K_ATTEN). Sweeping one
+        # here MEASURES its influence; it does not calibrate it. See
+        # vitd_model.RETIRED_PARAMETERS.
+        with allow_retired_parameter_sweep():
+            setattr(p, spec["attr"], float(v))
         # SC_max_by_FST overrides the scalar SC_max inside simulate(), so keep
         # them consistent when SC_max is the swept parameter.
         if spec["attr"] == "SC_max":
@@ -180,7 +185,8 @@ def joint_monte_carlo(fst: int, n_draws: int = 200, seed: int = 0) -> dict:
         p = ModelParams()
         for spec in PARAMETERS:
             v = float(rng.uniform(spec["lo"], spec["hi"]))
-            setattr(p, spec["attr"], v)
+            with allow_retired_parameter_sweep():       # see note above
+                setattr(p, spec["attr"], v)
             if spec["attr"] == "SC_max":
                 p.SC_max_by_FST = {k: v for k in range(1, 7)}
         fb.append(optimum_fixed_budget(fst, p)[0])

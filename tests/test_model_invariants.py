@@ -162,12 +162,60 @@ class TestConservationAndLimits:
         assert b["D"][-1] == pytest.approx(a["D"][-1], rel=1e-9)
 
     @pytest.mark.parametrize("fst", ALL_FST)
-    def test_D_stays_below_D_max(self, fst):
+    def test_D_is_bounded_without_a_hard_ceiling(self, fst):
+        """REWRITTEN 2026-08-18. There is no longer a hard ceiling to test.
+
+        This used to assert `D.max() <= D_max`, which held only because the
+        default feedback form was max(0, 1 - D/D_max) -- a term that switches
+        cutaneous synthesis off outright at 150 nmol/L. That form was withdrawn
+        under approved item A2 (D_max's origin was never found; regulation acts
+        on hydroxylation and CYP24A1 catabolism, not on a synthesis switch), so
+        the old assertion is now testing a property the model deliberately does
+        NOT have. Widening it to `<= D_max * 1.1` would have preserved a green
+        tick while quietly keeping the retired claim, so it is asserted as the
+        new truth instead.
+
+        THE NEW TRUTH: D is bounded by the balance between a saturating
+        synthesis term and the state-dependent clearance k_decay_D ~ D**0.72,
+        not by a ceiling constant. Under a deliberately absurd schedule
+        (15 SED/day, every day, a year, 100% BSA -- roughly 60x a sensible
+        dose) the model tops out at 112-156 nmol/L depending on FST, i.e. it
+        does exceed the old D_max, and it should: an unbounded input does not
+        produce an unbounded serum level here, but neither does synthesis stop.
+        For reference, 15 SED/day is ~5 MED/day; serum 25(OH)D above 250 nmol/L
+        is the usual toxicity watch level and the model stays far below it.
+        """
         p = ModelParams()
         sched = build_pulse_schedule(365, 15.0, 1)
         r = simulate(fst=fst, schedule=sched, duration_days=365, params=p,
                      D0=25.0, exposed_bsa_override=1.0)
-        assert r["D"].max() <= p.D_max + 1e-6
+        peak = float(r["D"].max())
+        assert 100.0 < peak < 200.0, (
+            f"FST {fst}: extreme-dose peak {peak:.1f} nmol/L is outside the "
+            f"recorded 100-200 band")
+        # Graded by pigmentation, as it must be: more melanin, lower plateau.
+        assert np.all(np.diff(r["D"]) > -50.0)   # no numerical blow-down
+
+    def test_pigmentation_orders_the_extreme_dose_plateau(self):
+        """The bound is physiological, not a constant: it must fall with FST."""
+        p = ModelParams()
+        sched = build_pulse_schedule(365, 15.0, 1)
+        peaks = [float(simulate(fst=f, schedule=sched, duration_days=365,
+                                params=p, D0=25.0,
+                                exposed_bsa_override=1.0)["D"].max())
+                 for f in ALL_FST]
+        assert peaks == sorted(peaks, reverse=True), peaks
+
+    def test_legacy_linear_mode_still_enforces_its_ceiling(self):
+        """The retired form is retained and must still behave as documented,
+        so pre-2026-08-18 results stay reproducible by opting into it."""
+        p = ModelParams()
+        p.feedback_mode = "linear"
+        sched = build_pulse_schedule(365, 15.0, 1)
+        for fst in ALL_FST:
+            r = simulate(fst=fst, schedule=sched, duration_days=365, params=p,
+                         D0=25.0, exposed_bsa_override=1.0)
+            assert r["D"].max() <= p.D_max + 1e-6
 
     def test_all_states_finite_under_extreme_dosing(self):
         p = ModelParams()

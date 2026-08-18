@@ -15,10 +15,12 @@ import pandas as pd
 from typing import List, Tuple, Iterator, Optional, Sequence
 from vitd_model import (
     simulate, build_pulse_schedule, steady_state_D,
-    auc_deficit, net_final_D_change_per_SED,
+    auc_deficit, net_final_D_change_per_SED, final_D,
     ModelParams, SOURCE_CALIBRATION_TABLE,
 )
 from vitd_objectives import (SUFFICIENCY_NMOL_L, GAMMA_MED, RAMP_IN_DAYS,
+                             PRACTICAL_MAX_MINUTES,
+                             PERSONAL_DOSE_GEOMETRY_FACTOR,
                              sed_from_minutes, _days_below, time_to_sufficiency)
 from vitd_physiology import _med_sed_by_fst
 
@@ -262,7 +264,10 @@ def evaluate_schedule(
 # to one answer under an explicit constraint set, which is what
 # scripts/skin_type_breakdown.py already does for the deficiency-only problem.
 #
-# Constraints (MODEL_AND_EVIDENCE.md section 4):
+# Constraints. The C-numbers are the repository's standing constraint
+# labels; they are declared alongside the objectives they bind in
+# vitd_objectives.OBJECTIVE_HIERARCHY (the narrative write-up that used
+# to number them, MODEL_AND_EVIDENCE.md, was purged on 2026-08-18):
 #   C1  per-session dose <= GAMMA_MED * MED(F)          (never burns)
 #   C3  D(t) >= target for all t >= ramp_in_days        (sufficiency floor)
 #   C7  per-session dose <= what max_minutes can deliver at this UV index
@@ -843,7 +848,7 @@ def rebuild_joint_schedule(res: dict, horizon_days: int = 365
 
 
 def analysis_joint_schedule(params: Optional[ModelParams] = None,
-                            fsts: Sequence[int] = (2, 3, 5),
+                            fsts: Sequence[int] = (1, 2, 3, 4, 5, 6),
                             session_counts: Sequence[int] = (104, 146, 183, 260)):
     """Does free spacing buy anything once the dose is already free?
 
@@ -851,12 +856,21 @@ def analysis_joint_schedule(params: Optional[ModelParams] = None,
     is whether the spacing exponent is searched or pinned to uniform. Any
     difference is therefore attributable to spacing rather than to search
     effort.
+
+    All six skin types are searched. FST VI is the priority population for this
+    project and FST I is the other end of the range; running only II/III/V left
+    the headline optimisation table silent about both. Several (FST, budget)
+    cells are INFEASIBLE after the 2026-08-17 K_const recalibration -- they are
+    emitted as rows with `feasible = False` and a binding constraint, never
+    dropped, because "this skin type cannot do it at this budget" is the result
+    most worth reporting.
     """
     print("\n" + "=" * 70)
     print("ANALYSIS N: joint timing + dose optimisation")
     print("=" * 70)
-    print("\n  min combined cancer risk  s.t.  min D(t >= ramp) >= 50 nmol/L,")
-    print("  per-session dose <= 0.7 MED, session budget fixed per row.")
+    print(f"\n  min combined cancer risk  s.t.  min D(t >= ramp) >= "
+          f"{SUFFICIENCY_NMOL_L:.0f} nmol/L,")
+    print(f"  per-session dose <= {GAMMA_MED:.0%} MED, session budget fixed per row.")
     print("  Control arm pins spacing to uniform; treatment arm frees the")
     print("  spacing exponent. Same solver and budget in both.")
     print("\n  A session budget is part of the problem: without one the optimum")
@@ -871,9 +885,31 @@ def analysis_joint_schedule(params: Optional[ModelParams] = None,
                                             params=params)
             joint = optimise_joint_schedule(fst, N, free_spacing=True,
                                             params=params)
-            for r in (fixed, joint):
+            for arm_free, r in ((False, fixed), (True, joint)):
                 if r is None:
+                    # Infeasible cells are RESULTS. Attribute the failure with
+                    # the same constraint set the search itself used (C1 only;
+                    # this section does not impose the session-length ceiling),
+                    # probed by the cheap uniform-at-the-ceiling solve.
+                    at_ceiling = optimise_variable_dose(fst, N, "uniform",
+                                                        params=params)
+                    binding = (f"C1 erythema cap ({GAMMA_MED:.0%} MED) at this session budget"
+                               if at_ceiling is None else
+                               "no schedule in the searched dose families")
+                    rows.append({
+                        "fst": fst, "n_sessions": N,
+                        "free_spacing": arm_free,
+                        "feasible": False, "binding_constraint": binding,
+                        "family": "", "gamma": float("nan"),
+                        "combined_risk": float("nan"),
+                        "trough_after_ramp": float("nan"),
+                        "total_sed": float("nan"),
+                        "time_to_sufficiency": float("nan"),
+                        "risk_vs_uniform_spacing_pct": float("nan"),
+                    })
                     continue
+                r["feasible"] = True
+                r["binding_constraint"] = ""
                 if fixed is not None and fixed["combined_risk"] > 0:
                     r["risk_vs_uniform_spacing_pct"] = (
                         100.0 * (fixed["combined_risk"] - r["combined_risk"])
@@ -889,17 +925,25 @@ def analysis_joint_schedule(params: Optional[ModelParams] = None,
     df = pd.DataFrame(rows)
     df.to_csv("tables/joint_schedule_optimization.csv", index=False)
 
-    print(f"\n  {'FST':>3} {'N':>4} {'spacing':>9} {'family':>12} {'gamma':>6} "
+    print(f"\n  {'FST':>4} {'N':>4} {'spacing':>9} {'family':>12} {'gamma':>6} "
           f"{'risk':>9} {'vs unif%':>9} {'totSED':>8} {'t->suff':>8}")
     print("  " + "-" * 82)
     for fst in fsts:
         for N in session_counts:
             sub = df[(df["fst"] == fst) & (df["n_sessions"] == N)]
             for _, r in sub.iterrows():
+                arm = "free" if r["free_spacing"] else "uniform"
+                if not r["feasible"]:
+                    print(f"  {ROMAN_FST[int(r['fst'])]:>4} "
+                          f"{int(r['n_sessions']):>4} {arm:>9} "
+                          f"{'--':>12} {'--':>6} {'--':>9} {'--':>9} "
+                          f"{'--':>8} {'--':>8}   INFEASIBLE: "
+                          f"{r['binding_constraint']}")
+                    continue
                 ttf = ("n/a" if not np.isfinite(r["time_to_sufficiency"])
                        else f"{r['time_to_sufficiency']:.0f}d")
-                print(f"  {int(r['fst']):>3} {int(r['n_sessions']):>4} "
-                      f"{('free' if r['free_spacing'] else 'uniform'):>9} "
+                print(f"  {ROMAN_FST[int(r['fst'])]:>4} {int(r['n_sessions']):>4} "
+                      f"{arm:>9} "
                       f"{r['family']:>12} {r['gamma']:>6.2f} "
                       f"{r['combined_risk']:>9.4f} "
                       f"{r['risk_vs_uniform_spacing_pct']:>9.1f} "
@@ -907,7 +951,24 @@ def analysis_joint_schedule(params: Optional[ModelParams] = None,
             if len(sub):
                 print()
 
-    free = df[df["free_spacing"]]
+    n_cells = len(fsts) * len(session_counts)
+    infeas = df[~df["feasible"].astype(bool)]
+    infeas_cells = sorted({(int(r["fst"]), int(r["n_sessions"]))
+                           for _, r in infeas.iterrows()})
+    print(f"  Feasibility: {n_cells - len(infeas_cells)} of {n_cells} "
+          f"(skin type, session budget) cells admit a schedule.")
+    if infeas_cells:
+        print("  Infeasible cells, reported as results rather than dropped:")
+        for f_, n_ in infeas_cells:
+            b = infeas[(infeas["fst"] == f_) & (infeas["n_sessions"] == n_)]
+            reason = b["binding_constraint"].iloc[0] if len(b) else "?"
+            print(f"    FST {ROMAN_FST[f_]:<4} N = {n_:<5} {reason}")
+        print("  Nothing was relaxed to fill these. They follow from the")
+        print("  2026-08-17 K_const recalibration, are asserted in")
+        print("  tests/test_vitd_optimization.py::TestRecalibratedFeasibility,")
+        print("  and are mapped in scripts/feasibility_map_kconst.py.")
+
+    free = df[df["free_spacing"].astype(bool) & df["feasible"].astype(bool)]
     if len(free):
         gains = free["risk_vs_uniform_spacing_pct"].to_numpy(dtype=float)
         gains = gains[np.isfinite(gains)]
@@ -971,8 +1032,9 @@ def analysis_variable_dose(params: Optional[ModelParams] = None,
     print("\n" + "=" * 70)
     print("ANALYSIS M: variable-dose optimisation")
     print("=" * 70)
-    print("\n  min combined cancer risk  s.t.  min D(t >= ramp) >= 50 nmol/L,")
-    print("  per-session dose <= 0.7 MED, sessions uniformly spaced.")
+    print(f"\n  min combined cancer risk  s.t.  min D(t >= ramp) >= "
+          f"{SUFFICIENCY_NMOL_L:.0f} nmol/L,")
+    print(f"  per-session dose <= {GAMMA_MED:.0%} MED, sessions uniformly spaced.")
     print("  Dose framing: absolute SED per session (not fractional MED).")
 
     rows = []
@@ -1085,13 +1147,13 @@ def _plot_variable_dose(df: pd.DataFrame, params: Optional[ModelParams] = None,
         axes[1].plot(r["t"], r["D"], label=fam, lw=1.8)
 
     axes[0].axhline(cap, color="crimson", ls="--", alpha=0.6,
-                    label=f"0.7 MED cap ({cap:.2f} SED)")
+                    label=f"{GAMMA_MED:.0%} MED cap ({cap:.2f} SED)")
     axes[0].set_xlabel("day"); axes[0].set_ylabel("SED per session")
     axes[0].set_title(f"Dose profile (FST {fst}, {n_sessions} sessions/yr)")
     axes[0].legend(fontsize=8); axes[0].grid(alpha=0.3)
 
     axes[1].axhline(SUFFICIENCY_NMOL_L, color="gray", ls="--", alpha=0.6,
-                    label="sufficiency 50")
+                    label=f"sufficiency {SUFFICIENCY_NMOL_L:.0f}")
     axes[1].axvline(RAMP_IN_DAYS, color="gray", ls=":", alpha=0.6,
                     label=f"ramp-in ends ({RAMP_IN_DAYS}d)")
     axes[1].set_xlabel("day"); axes[1].set_ylabel("25(OH)D (nmol/L)")
@@ -1103,6 +1165,724 @@ def _plot_variable_dose(df: pd.DataFrame, params: Optional[ModelParams] = None,
     plt.close(fig)
     print("  Saved figs/variable_dose_profiles.png")
 
+
+
+# ===========================================================================
+# TIER 1 (PRIMARY). Minimum dose / minimum sessions to REACH AND HOLD
+# sufficiency.
+# ===========================================================================
+# This is the headline objective declared in
+# vitd_objectives.OBJECTIVE_HIERARCHY, and it is the question a person actually
+# asks: not "which schedule is most efficient per SED" (a ratio with no floor,
+# maximised by dosing nothing) but "what is the least I have to do to get to
+# 50 nmol/L and then stay there".
+#
+# Two minima, because they are two different questions and they need not land
+# on the same schedule:
+#   * FEWEST SESSIONS  -- the adherence question. Smallest N on the budget grid
+#                         at which any admissible schedule exists.
+#   * LEAST TOTAL DOSE -- the UV-exposure question. Smallest cumulative SED
+#                         across all admissible budgets.
+# Fewer sessions forces a larger per-session dose, and per-session yield
+# saturates (d_sat * (1 - exp(-sed/d_sat))), so the fewest-sessions answer
+# generally costs MORE total UV than the least-dose answer. Reporting only one
+# of them hides that trade.
+#
+# Constraints are the standing ones, nothing relaxed:
+#   C3  min D(t >= ramp_in_days) >= target
+#   C1  per-session dose <= GAMMA_MED * MED(FST)
+#   C7  per-session dose <= what max_minutes delivers at uv_index
+# An INFEASIBLE (FST, budget) cell is a result, not a hole in the table: it
+# says this skin type cannot hold sufficiency on sun alone at that budget
+# without burning or without a session longer than anyone will sit through.
+def minimum_schedule_for_sufficiency(
+        fst: int,
+        session_budgets: Sequence[int] = (52, 104, 146, 183, 260, 365),
+        horizon_days: int = 365,
+        D0: float = 25.0,
+        target: float = SUFFICIENCY_NMOL_L,
+        ramp_in_days: int = RAMP_IN_DAYS,
+        uv_index: float = 6.0,
+        max_minutes: Optional[float] = PRACTICAL_MAX_MINUTES,
+        gammas: Sequence[float] = (1.0,),
+        params: Optional[ModelParams] = None) -> dict:
+    """Least dose and fewest sessions that reach and hold `target`.
+
+    Parameters
+    ----------
+    uv_index, max_minutes
+        Constraint C7. `max_minutes` None drops C7 and leaves only the
+        erythema ceiling; the default is the practical session ceiling from
+        vitd_objectives, which is what makes FST V-VI infeasibility bind.
+    gammas
+        Spacing exponents to try at each budget (`warp_days`; 1.0 is uniform).
+        The default is uniform ONLY, which is the plain "go outside every N
+        days" schedule and the condition under which
+        tests/test_vitd_optimization.py::TestRecalibratedFeasibility and
+        scripts/feasibility_map_kconst.py state their minimum budgets.
+        Passing a wider grid lowers the minimum budget at some skin types, and
+        it lowers it for a specific reason worth reporting rather than hiding:
+        the C3 floor binds at the RAMP-IN BOUNDARY, not at the end of the year,
+        so a schedule that reaches target faster can hold a budget that uniform
+        spacing misses by a fraction of a nmol/L.
+
+    Returns
+    -------
+    dict with keys
+        rows                every budget on the grid, feasible or not, each
+                            carrying `binding_constraint` when infeasible
+        fewest_sessions     smallest feasible budget (None if none is)
+        least_total_dose    feasible budget with the smallest cumulative SED
+        feasible            whether ANY budget on the grid works
+        note                which constraint eliminated the grid, when empty
+
+    Notes
+    -----
+    Doses are absolute SED, not fractional MED. Absolute 25(OH)D inherits the
+    uncalibrated SC priors (`SC_max`, `alpha_SC`, `K_SC`); the feasibility
+    ORDERING across skin types is far more robust than the levels.
+    """
+    if fst not in range(1, 7):
+        raise ValueError("fst must be 1-6")
+    if not session_budgets:
+        raise ValueError("session_budgets must be non-empty")
+
+    cap_burn = GAMMA_MED * _med_sed_by_fst(fst)
+    sed_per_min = sed_from_minutes(1.0, uv_index)
+    cap_time = (max_minutes * sed_per_min if max_minutes is not None
+                else float("inf"))
+    cap = min(cap_burn, cap_time)
+
+    rows = []
+    for n in sorted(int(n) for n in session_budgets):
+        if n < 1:
+            raise ValueError("session_budgets entries must be >= 1")
+
+        best = None
+        for gamma in gammas:
+            days = warp_days(n, horizon_days, float(gamma))
+
+            def make(x, dd=days, c=cap):
+                return dose_uniform(dd, x * c)
+
+            s = _min_feasible(fst, days, make, horizon_days, D0, target,
+                              ramp_in_days, params)
+            if s is None:
+                continue
+            seds = make(s)
+            risk, trough, total, ttf = _risk_of(fst, days, seds, horizon_days,
+                                                D0, target, ramp_in_days, params)
+            # Smallest total UV wins the budget; ties to the tighter spacing.
+            key = (total, max_gap_days(days, horizon_days))
+            if best is None or key < best[0]:
+                best = (key, gamma, days, s, seds, risk, trough, total, ttf)
+
+        if best is None:
+            # Attribute the failure. If the erythema ceiling alone would have
+            # allowed it, the session-length ceiling is what actually bound.
+            binding = f"C1 erythema ({GAMMA_MED:.0%} MED)"
+            if cap_time < cap_burn:
+                for gamma in gammas:
+                    dd = warp_days(n, horizon_days, float(gamma))
+                    if _min_feasible(fst, dd,
+                                     lambda x, d2=dd: dose_uniform(d2, x * cap_burn),
+                                     horizon_days, D0, target, ramp_in_days,
+                                     params) is not None:
+                        binding = f"C7 session length (>{max_minutes:.0f} min)"
+                        break
+            rows.append({
+                "fst": fst, "n_sessions": n, "feasible": False,
+                "binding_constraint": binding, "gamma": float("nan"),
+                "max_gap_days": float("nan"),
+                "sed_per_session": float("nan"),
+                "minutes_per_session": float("nan"),
+                "total_sed": float("nan"), "trough_after_ramp": float("nan"),
+                "time_to_sufficiency": float("nan"),
+                "combined_risk": float("nan"),
+                "scc_index": float("nan"),
+                "intermittent_index": float("nan"),
+            })
+            continue
+
+        _, gamma, days, s, seds, risk, trough, total, ttf = best
+        sched = build_variable_schedule(days, seds, fst=fst)
+        r = simulate(fst=fst, schedule=sched, duration_days=horizon_days,
+                     params=params, D0=D0,
+                     dose_framing="fixed_per_session_SED")
+        cr = r["cancer_risk"]
+        rows.append({
+            "fst": fst, "n_sessions": n, "feasible": True,
+            "binding_constraint": "", "gamma": float(gamma),
+            "max_gap_days": max_gap_days(days, horizon_days),
+            "sed_per_session": float(s * cap),
+            "minutes_per_session": (float(s * cap / sed_per_min)
+                                    if sed_per_min > 0 else float("nan")),
+            "total_sed": total, "trough_after_ramp": trough,
+            "time_to_sufficiency": ttf,
+            "combined_risk": risk,
+            "scc_index": cr["scc_index"],
+            "intermittent_index": cr["intermittent_index"],
+        })
+
+    ok = [r for r in rows if r["feasible"]]
+    note = None
+    if not ok:
+        binding = {r["binding_constraint"] for r in rows}
+        note = (f"FST {fst}: no session budget on the grid holds {target:.0f} "
+                f"nmol/L within the standing constraints ({'; '.join(sorted(binding))}). "
+                f"This is a result: the constraint set, not the schedule, is "
+                f"what fails.")
+    return {
+        "fst": fst,
+        "rows": rows,
+        "feasible": bool(ok),
+        "fewest_sessions": min(ok, key=lambda r: r["n_sessions"]) if ok else None,
+        "least_total_dose": min(ok, key=lambda r: r["total_sed"]) if ok else None,
+        "sed_cap": cap,
+        "cap_binding": "MED" if cap_burn <= cap_time else "minutes",
+        "target": target,
+        "note": note,
+    }
+
+
+# ===========================================================================
+# TIER 2 (SECONDARY). The tri-objective: best SED at least spacing, fewest
+# sessions, accounting for skin cancer.
+# ===========================================================================
+# Three axes, all minimised, over the schedules that already satisfy the
+# primary feasibility test (so "best SED" is a CONSTRAINT here -- every point
+# on this frontier reaches and holds sufficiency -- and the reported
+# `total_sed` is the dose that constraint actually cost):
+#
+#   A1  n_sessions      how often you have to go outside          (adherence)
+#   A2  max_gap_days    the longest you ever go without a session (spacing)
+#   A3  combined_risk   the skin-cancer index                     (harm)
+#
+# WHY THESE THREE CANNOT BE COLLAPSED. Over a fixed horizon the three axes are
+# in genuine three-way conflict, and each pair conflicts for a different
+# reason:
+#   A1 vs A2  uniform spacing minimises the largest gap (see session_days), so
+#             at a fixed budget the shortest-gap schedule is gamma = 1 exactly;
+#             cutting sessions lengthens every gap proportionally.
+#   A1 vs A3  fewer sessions must carry a larger per-session dose, and the
+#             intermittency term is CUBIC in per-session dose.
+#   A2 vs A3  the risk-minimising schedule front-loads (gamma > 1, section
+#             13c), which shortens the early gaps by lengthening the late ones
+#             -- so buying risk with spacing works in one direction only.
+# A weighted sum would hide all three of those; the frontier shows them.
+#
+# [CHOICE] `max_gap_days` includes the tail gap from the last session to the
+# end of the horizon. A front-loaded schedule that stops in October has a real
+# four-month gap, and excluding it would let gamma > 1 look free on the spacing
+# axis when it is not.
+# [CHOICE] The spacing family is the same one-parameter monotone warp used in
+# section 13c (`warp_days`), so the tri-objective and the 13c comparison are
+# searching the same space and their answers are directly comparable.
+TRI_GAMMA_GRID = (0.7, 1.0, 1.4, 2.0)
+TRI_SESSION_BUDGETS = (52, 104, 146, 183, 260, 365)
+
+
+def max_gap_days(days: np.ndarray, horizon_days: int) -> float:
+    """Longest stretch with no session, including the tail to the horizon."""
+    days = np.asarray(days, dtype=float)
+    if days.size == 0:
+        return float(horizon_days)
+    gaps = np.diff(days) if days.size > 1 else np.zeros(0)
+    tail = float(horizon_days) - float(days[-1])
+    return float(max(gaps.max() if gaps.size else 0.0, tail, float(days[0])))
+
+
+def _min_risk_on_fixed_days(fst: int, days: np.ndarray, cap: float,
+                            horizon_days: int, D0: float, target: float,
+                            ramp_in_days: int,
+                            params: Optional[ModelParams]) -> Optional[dict]:
+    """Lowest-risk feasible dose profile on a FIXED set of session days.
+
+    A small deterministic shape grid rather than differential evolution: the
+    days are already fixed here, so the remaining search is 1-2 dimensional and
+    a grid plus the exact level bisection lands on the floor without the
+    stochastic solver's run-to-run spread. That matters because this frontier
+    is read as a comparison ACROSS cells, and DE noise (bounded at ~4% by
+    section 13c) would swamp the differences between adjacent budgets.
+    """
+    n = int(np.asarray(days).size)
+    if n == 0 or cap <= 0:
+        return None
+
+    cands = [("uniform", lambda x, dd=days, c=cap: dose_uniform(dd, x * c), {})]
+    for k in (max(1, n // 12), max(1, n // 6)):
+        if k >= n:
+            continue
+        t_switch = float(days[k])
+        for load_frac in (0.6, 1.0):
+            cands.append((
+                "two_phase",
+                lambda x, dd=days, c=cap, ts=t_switch, lf=load_frac:
+                    dose_two_phase(dd, lf * c, x * c, ts),
+                {"n_loading": k, "t_switch": t_switch, "load_frac": load_frac},
+            ))
+
+    best = None
+    for family, make, meta in cands:
+        s = _min_feasible(fst, days, make, horizon_days, D0, target,
+                          ramp_in_days, params, iters=24)
+        if s is None:
+            continue
+        seds = make(s)
+        risk, trough, total, ttf = _risk_of(fst, days, seds, horizon_days, D0,
+                                            target, ramp_in_days, params)
+        if trough < target - 1e-6:
+            continue
+        delivered = np.array([v for _, v in
+                              build_variable_schedule(days, seds, fst=fst)])
+        cand = {"family": family, "combined_risk": risk,
+                "trough_after_ramp": trough, "total_sed": total,
+                "time_to_sufficiency": ttf,
+                "peak_sed": float(np.max(delivered)) if delivered.size else 0.0,
+                "n_sessions_delivered": int(delivered.size), **meta}
+        if best is None or cand["combined_risk"] < best["combined_risk"]:
+            best = cand
+    return best
+
+
+def pareto_front_nd(points: Sequence[dict], keys: Sequence[str]) -> List[dict]:
+    """Nondominated set over any number of MINIMISED objectives."""
+    keys = tuple(keys)
+    front = []
+    for p in points:
+        pv = tuple(float(p[k]) for k in keys)
+        dominated = False
+        for q in points:
+            if q is p:
+                continue
+            qv = tuple(float(q[k]) for k in keys)
+            if all(a <= b for a, b in zip(qv, pv)) and any(a < b for a, b in zip(qv, pv)):
+                dominated = True
+                break
+        if not dominated:
+            front.append(p)
+    return front
+
+
+def tri_objective_frontier(
+        fst: int,
+        session_budgets: Sequence[int] = TRI_SESSION_BUDGETS,
+        gammas: Sequence[float] = TRI_GAMMA_GRID,
+        horizon_days: int = 365,
+        D0: float = 25.0,
+        target: float = SUFFICIENCY_NMOL_L,
+        ramp_in_days: int = RAMP_IN_DAYS,
+        uv_index: float = 6.0,
+        max_minutes: Optional[float] = PRACTICAL_MAX_MINUTES,
+        params: Optional[ModelParams] = None) -> dict:
+    """Sessions x spacing x cancer-risk frontier, at held sufficiency.
+
+    Every point returned holds the sufficiency floor after ramp-in (C3) at a
+    non-burning dose (C1) deliverable inside `max_minutes` (C7). Infeasible
+    (budget, gamma) cells are RETURNED, flagged, not dropped.
+    """
+    if fst not in range(1, 7):
+        raise ValueError("fst must be 1-6")
+
+    cap_burn = GAMMA_MED * _med_sed_by_fst(fst)
+    sed_per_min = sed_from_minutes(1.0, uv_index)
+    cap = min(cap_burn, max_minutes * sed_per_min
+              if max_minutes is not None else float("inf"))
+
+    rows = []
+    for n in sorted(int(v) for v in session_budgets):
+        for gamma in gammas:
+            days = warp_days(n, horizon_days, float(gamma))
+            res = _min_risk_on_fixed_days(fst, days, cap, horizon_days, D0,
+                                          target, ramp_in_days, params)
+            base = {"fst": fst, "n_sessions": n, "gamma": float(gamma),
+                    "max_gap_days": max_gap_days(days, horizon_days)}
+            if res is None:
+                rows.append({**base, "feasible": False,
+                             "family": "", "combined_risk": float("nan"),
+                             "total_sed": float("nan"),
+                             "peak_sed": float("nan"),
+                             "minutes_per_session": float("nan"),
+                             "trough_after_ramp": float("nan"),
+                             "time_to_sufficiency": float("nan"),
+                             "on_frontier": False})
+                continue
+            rows.append({**base, "feasible": True,
+                         "family": res["family"],
+                         "combined_risk": res["combined_risk"],
+                         "total_sed": res["total_sed"],
+                         "peak_sed": res["peak_sed"],
+                         "minutes_per_session": (res["peak_sed"] / sed_per_min
+                                                 if sed_per_min > 0 else float("nan")),
+                         "trough_after_ramp": res["trough_after_ramp"],
+                         "time_to_sufficiency": res["time_to_sufficiency"],
+                         "on_frontier": False})
+
+    feas = [r for r in rows if r["feasible"]]
+    front = pareto_front_nd(feas, ("n_sessions", "max_gap_days", "combined_risk"))
+    for r in front:
+        r["on_frontier"] = True
+    front = sorted(front, key=lambda r: (r["n_sessions"], r["max_gap_days"]))
+    return {"fst": fst, "rows": rows, "frontier": front,
+            "feasible": bool(feas), "sed_cap": cap, "target": target,
+            "axes": ("n_sessions", "max_gap_days", "combined_risk")}
+
+
+# ===========================================================================
+# TIER 3 (DIAGNOSTIC). gross_synth_per_SED -- why it is not the headline.
+# ===========================================================================
+def gross_synth_per_SED_diagnostic(
+        fst: int = 3,
+        intervals: Sequence[int] = tuple(range(1, 91)),
+        sed_per_session: float = 1.0,
+        horizon_days: int = 365,
+        D0: float = 25.0,
+        search_bounds: Sequence[int] = (30, 60, 90),
+        params: Optional[ModelParams] = None) -> dict:
+    """Recompute the two failures that demote `gross_synth_per_SED`.
+
+    The metric was deleted from `vitd_model.py` on 2026-07-31 and survives only
+    as a local copy in `scripts/metric_redundancy.py`. It is reproduced here --
+    not quoted -- so that the reason it is DIAGNOSTIC-tier is checked against
+    the CURRENT parameters on every pipeline run, and cannot silently become
+    untrue (or stay true for the wrong reason) as the model is recalibrated.
+
+    Two failures, both machine-checked:
+
+    1. NO INTERIOR OPTIMUM. The argmax is re-evaluated under several search
+       bounds. A real peak does not move when the bound moves; an argmax that
+       tracks the bound is the signature of a monotone objective.
+    2. NET LOSS AT THE OPTIMUM. Final 25(OH)D at the selected interval is
+       compared against the STARTING value. A schedule that ends below where it
+       began has not helped anyone, however efficient the ratio looks.
+    """
+    from vitd_objectives import objective_tier, TIER_DIAGNOSTIC
+    assert objective_tier("gross_synth_per_SED") == TIER_DIAGNOSTIC
+
+    def gross(result) -> float:
+        log = result.get("synthesis_log") or []
+        if not log:
+            return 0.0
+        total_s = sum(item[1] for item in log)
+        total_d = sum(item[2] for item in log)
+        return total_d / total_s if total_s > 0 else 0.0
+
+    rows = []
+    for iv in intervals:
+        iv = int(iv)
+        sched = [(float(d), float(sed_per_session))
+                 for d in range(0, horizon_days, iv)]
+        r = simulate(fst=fst, schedule=sched, duration_days=horizon_days,
+                     params=params, D0=D0,
+                     dose_framing="fixed_per_session_SED")
+        rows.append({"interval_days": iv,
+                     "gross_synth_per_SED": gross(r),
+                     "final_D": final_D(r),
+                     "mean_D": float(np.mean(r["D"])),
+                     "net_D_change": final_D(r) - D0,
+                     "total_sed": float(r["cumulative_SED"])})
+
+    by_iv = {r["interval_days"]: r for r in rows}
+    argmax_by_bound = {}
+    for b in search_bounds:
+        within = [r for r in rows if r["interval_days"] <= b]
+        if within:
+            argmax_by_bound[int(b)] = int(
+                max(within, key=lambda r: r["gross_synth_per_SED"])["interval_days"])
+
+    best = max(rows, key=lambda r: r["gross_synth_per_SED"])
+    tracks_bound = len(set(argmax_by_bound.values())) > 1
+
+    # Trend, not strict monotonicity. The metric is NOT exactly monotone on an
+    # integer interval grid: 365 / interval is not an integer, so stepping the
+    # interval by one day sometimes drops a whole session and shifts where the
+    # last one lands. Those are quantisation wobbles of order 1e-3, not a peak.
+    # Spearman rho against the interval is the honest summary, with the
+    # violation count and the largest violation reported beside it so the
+    # wobble is visible rather than smoothed away.
+    order = sorted(by_iv)
+    series = [by_iv[k]["gross_synth_per_SED"] for k in order]
+    drops = [(a, b, by_iv[a]["gross_synth_per_SED"] - by_iv[b]["gross_synth_per_SED"])
+             for a, b in zip(order, order[1:])
+             if by_iv[b]["gross_synth_per_SED"] < by_iv[a]["gross_synth_per_SED"] - 1e-9]
+    try:
+        from scipy.stats import spearmanr
+        rho = float(spearmanr(order, series).statistic)
+    except Exception:                                       # pragma: no cover
+        rho = float("nan")
+
+    return {
+        "fst": fst, "D0": D0, "rows": rows,
+        "argmax_by_search_bound": argmax_by_bound,
+        "argmax_tracks_search_bound": bool(tracks_bound),
+        "selected_interval_days": int(best["interval_days"]),
+        "final_D_at_selected": best["final_D"],
+        "net_D_change_at_selected": best["net_D_change"],
+        "net_loss_at_selected": bool(best["net_D_change"] < 0.0),
+        "spearman_rho_interval_vs_metric": rho,
+        "n_monotonicity_violations": len(drops),
+        "largest_violation": max((d for _, _, d in drops), default=0.0),
+        "metric_range": (float(min(series)), float(max(series))),
+        "tier": TIER_DIAGNOSTIC,
+    }
+
+
+ROMAN_FST = {1: "I", 2: "II", 3: "III", 4: "IV", 5: "V", 6: "VI"}
+
+
+def analysis_objective_hierarchy(params: Optional[ModelParams] = None,
+                                 fsts: Sequence[int] = (1, 2, 3, 4, 5, 6),
+                                 session_budgets: Sequence[int] = TRI_SESSION_BUDGETS):
+    """PRIMARY objective, plus the diagnostic tier that must not be mistaken for it.
+
+    Prints the hierarchy first so that every number in every later section has
+    a declared tier before the reader meets it.
+    """
+    from vitd_objectives import (format_objective_hierarchy, primary_objective,
+                                 assert_reportable_as_headline)
+
+    print(format_objective_hierarchy())
+
+    spec = primary_objective()
+    assert_reportable_as_headline(spec.key)
+
+    print("\n" + "=" * 74)
+    print("PRIMARY RESULT: least you have to do to reach AND hold sufficiency")
+    print("=" * 74)
+    print(f"\n  {spec.question}")
+    print("\n  Constraints, none relaxed:")
+    for c in spec.subject_to:
+        print(f"    {c}")
+    print(f"\n  Reference conditions for the minutes column: UV index 6.0, "
+          f"{PRACTICAL_MAX_MINUTES:.0f} min ceiling,")
+    print(f"  geometry factor {PERSONAL_DOSE_GEOMETRY_FACTOR} "
+          f"(vitd_objectives.PERSONAL_DOSE_GEOMETRY_FACTOR).")
+
+    # Two spacing regimes, reported side by side. Uniform is the plain
+    # "every N days" schedule and the condition under which
+    # TestRecalibratedFeasibility and scripts/feasibility_map_kconst.py state
+    # their minimum budgets; free spacing is the true minimum of the primary
+    # objective, because nothing in the problem statement requires even gaps.
+    rows = []
+    summary = {}
+    for label, gammas in (("uniform", (1.0,)), ("free", TRI_GAMMA_GRID)):
+        summary[label] = []
+        for fst in fsts:
+            res = minimum_schedule_for_sufficiency(
+                fst=fst, session_budgets=session_budgets, gammas=gammas,
+                params=params)
+            for r in res["rows"]:
+                r["spacing"] = label
+            rows.extend(res["rows"])
+            summary[label].append(res)
+
+    df = pd.DataFrame(rows)
+    df.to_csv("tables/primary_minimum_schedule.csv", index=False)
+
+    print(f"\n  Full grid, UNIFORM spacing. INFEASIBLE cells are results, not gaps.\n")
+    print(f"  {'FST':>4} {'N/yr':>5} {'SED/sesh':>9} {'min/sesh':>9} "
+          f"{'totSED':>8} {'t->suff':>8} {'risk':>9}  status")
+    print("  " + "-" * 78)
+    for res in summary["uniform"]:
+        for r in res["rows"]:
+            if r["feasible"]:
+                ttf = ("n/a" if not np.isfinite(r["time_to_sufficiency"])
+                       else f"{r['time_to_sufficiency']:.0f}d")
+                print(f"  {ROMAN_FST[r['fst']]:>4} {r['n_sessions']:>5} "
+                      f"{r['sed_per_session']:>9.3f} {r['minutes_per_session']:>9.1f} "
+                      f"{r['total_sed']:>8.1f} {ttf:>8} "
+                      f"{r['combined_risk']:>9.4f}  ok")
+            else:
+                print(f"  {ROMAN_FST[r['fst']]:>4} {r['n_sessions']:>5} "
+                      f"{'--':>9} {'--':>9} {'--':>8} {'--':>8} {'--':>9}  "
+                      f"INFEASIBLE: {r['binding_constraint']}")
+        print()
+
+    print("  HEADLINE. Minimum session budget that reaches and holds 50 nmol/L,")
+    print("  under uniform spacing and then with the spacing free:")
+    print(f"  {'FST':>4} {'uniform spacing':>26} {'free spacing':>30} {'gamma':>7}")
+    print("  " + "-" * 72)
+    rescued = []
+    for u, f_ in zip(summary["uniform"], summary["free"]):
+        fst = u["fst"]
+        ua = ("INFEASIBLE on this grid" if not u["feasible"] else
+              "{}/yr, {:.0f} min, {:.0f} SED".format(
+                  u["fewest_sessions"]["n_sessions"],
+                  u["fewest_sessions"]["minutes_per_session"],
+                  u["fewest_sessions"]["total_sed"]))
+        if not f_["feasible"]:
+            fa, g = "INFEASIBLE on this grid", float("nan")
+        else:
+            fw = f_["fewest_sessions"]
+            fa = "{}/yr, {:.0f} min, {:.0f} SED".format(
+                fw["n_sessions"], fw["minutes_per_session"], fw["total_sed"])
+            g = fw["gamma"]
+            if u["feasible"] and fw["n_sessions"] < u["fewest_sessions"]["n_sessions"]:
+                rescued.append((fst, u["fewest_sessions"]["n_sessions"],
+                                fw["n_sessions"], g))
+        gs = "n/a" if not np.isfinite(g) else f"{g:.2f}"
+        print(f"  {ROMAN_FST[fst]:>4} {ua:>26} {fa:>30} {gs:>7}")
+
+    print("\n  Least TOTAL UV (a different question from fewest sessions):")
+    print(f"  {'FST':>4} {'uniform spacing':>26} {'free spacing':>30}")
+    print("  " + "-" * 64)
+    for u, f_ in zip(summary["uniform"], summary["free"]):
+        ua = ("--" if not u["feasible"] else
+              "{}/yr, {:.0f} SED total".format(u["least_total_dose"]["n_sessions"],
+                                               u["least_total_dose"]["total_sed"]))
+        fa = ("--" if not f_["feasible"] else
+              "{}/yr, {:.0f} SED total".format(f_["least_total_dose"]["n_sessions"],
+                                               f_["least_total_dose"]["total_sed"]))
+        print(f"  {ROMAN_FST[u['fst']]:>4} {ua:>26} {fa:>30}")
+
+    u_df = df[df["spacing"] == "uniform"]
+    print(f"\n  {int((~u_df['feasible']).sum())} of {len(u_df)} (skin type, session "
+          f"budget) cells are infeasible under uniform spacing;")
+    f_df = df[df["spacing"] == "free"]
+    print(f"  {int((~f_df['feasible']).sum())} of {len(f_df)} with the spacing free.")
+    for res in summary["free"]:
+        if res["note"]:
+            print(f"    {res['note']}")
+
+    if rescued:
+        print("\n  SPACING CHANGES THE MINIMUM BUDGET -- this is a result, not a")
+        print("  discrepancy with the uniform-spacing figures asserted in")
+        print("  tests/test_vitd_optimization.py::TestRecalibratedFeasibility.")
+        print("  Constraint C3 binds at the RAMP-IN BOUNDARY, not at the end of")
+        print("  the year: under uniform spacing 25(OH)D is still climbing at")
+        print("  day 90 and misses the floor by a fraction of a nmol/L, whereas")
+        print("  a front-loaded schedule is already past it. Same budget, same")
+        print("  ceiling, nothing relaxed -- only the order of the sessions.")
+        for fst, nu, nf, g in rescued:
+            print(f"    FST {ROMAN_FST[fst]:<4} {nu}/yr uniform -> {nf}/yr at "
+                  f"gamma {g:.2f}")
+
+    print("\n  Fewest-sessions and least-total-UV are DIFFERENT answers. Fewer")
+    print("  sessions forces a larger per-session dose, and per-session yield")
+    print("  saturates, so the fewest-sessions schedule generally costs more")
+    print("  cumulative UV. Which one is 'the' minimum depends on whether the")
+    print("  binding cost is getting outside or the UV itself.")
+    print("\n  Saved tables/primary_minimum_schedule.csv")
+
+    # ---- the diagnostic tier, stated as such --------------------------------
+    diag = gross_synth_per_SED_diagnostic(fst=3, params=params)
+    print("\n" + "=" * 74)
+    print("BACKGROUND / DIAGNOSTIC TIER: gross_synth_per_SED")
+    print("=" * 74)
+    print("\n  Reported here so it is on the record, and labelled so it cannot")
+    print("  be read as advice. Both failures are RECOMPUTED from the current")
+    print("  parameters on this run, not quoted from a previous one.")
+    print(f"\n  1. No interior optimum. argmax by search bound: "
+          f"{diag['argmax_by_search_bound']}")
+    print(f"     argmax tracks the search bound: "
+          f"{diag['argmax_tracks_search_bound']}")
+    print(f"     Spearman rho(interval, metric) = "
+          f"{diag['spearman_rho_interval_vs_metric']:+.4f} over "
+          f"{diag['metric_range'][0]:.3f}-{diag['metric_range'][1]:.3f}; "
+          f"{diag['n_monotonicity_violations']} local dips, largest "
+          f"{diag['largest_violation']:.4f}")
+    print("     (the dips are integer-grid quantisation -- 365/interval is not")
+    print("     a whole number of sessions -- not an interior peak)")
+    print(f"\n  2. Net loss at its own optimum. At {diag['selected_interval_days']} d "
+          f"(FST III, 1 SED/session):")
+    print(f"     start 25(OH)D {diag['D0']:.1f} -> final "
+          f"{diag['final_D_at_selected']:.1f} nmol/L "
+          f"(net {diag['net_D_change_at_selected']:+.1f})")
+    print(f"     ends BELOW baseline: {diag['net_loss_at_selected']}")
+    print("\n  A metric maximised by dosing less, whose selected schedule leaves")
+    print("  the person worse off than when they started, is a statement about")
+    print("  the model, not a schedule. It stays DIAGNOSTIC-tier.")
+    return df
+
+
+def analysis_tri_objective(params: Optional[ModelParams] = None,
+                           fsts: Sequence[int] = (1, 2, 3, 4, 5, 6)):
+    """SECONDARY: fewest sessions x least spacing x least skin-cancer risk."""
+    from vitd_objectives import OBJECTIVE_HIERARCHY
+
+    spec = next(s for s in OBJECTIVE_HIERARCHY
+                if s.key == "tri_objective_sessions_spacing_risk")
+
+    print("\n" + "=" * 74)
+    print("SECONDARY: tri-objective frontier -- sessions x spacing x cancer risk")
+    print("=" * 74)
+    print(f"\n  {spec.question}")
+    print("\n  Three axes, all minimised, over schedules that ALREADY hold")
+    print("  sufficiency (so efficacy is a constraint here, not an axis, and")
+    print("  the total-SED column is what that constraint cost):")
+    print("    A1  n_sessions     how often you must get outside")
+    print("    A2  max_gap_days   longest stretch with no session (tail gap")
+    print("                       to the end of the horizon included)")
+    print("    A3  combined_risk  the skin-cancer index")
+    print("\n  Subject to: " + "; ".join(spec.subject_to))
+    print(f"\n  Spacing is the same one-parameter monotone warp as section 13c")
+    print(f"  (gamma = 1 is uniform); grid {TRI_GAMMA_GRID}.")
+
+    all_rows = []
+    for fst in fsts:
+        res = tri_objective_frontier(fst=fst, params=params)
+        all_rows.extend(res["rows"])
+
+        print(f"\n  FST {ROMAN_FST[fst]}")
+        print(f"  {'N/yr':>5} {'gamma':>6} {'maxgap':>7} {'risk':>9} "
+              f"{'totSED':>8} {'peakSED':>8} {'min/sesh':>9} {'t->suff':>8}  front")
+        print("  " + "-" * 78)
+        for r in res["rows"]:
+            if not r["feasible"]:
+                print(f"  {r['n_sessions']:>5} {r['gamma']:>6.2f} "
+                      f"{r['max_gap_days']:>7.1f} {'--':>9} {'--':>8} {'--':>8} "
+                      f"{'--':>9} {'--':>8}  INFEASIBLE")
+                continue
+            ttf = ("n/a" if not np.isfinite(r["time_to_sufficiency"])
+                   else f"{r['time_to_sufficiency']:.0f}d")
+            print(f"  {r['n_sessions']:>5} {r['gamma']:>6.2f} "
+                  f"{r['max_gap_days']:>7.1f} {r['combined_risk']:>9.4f} "
+                  f"{r['total_sed']:>8.1f} {r['peak_sed']:>8.3f} "
+                  f"{r['minutes_per_session']:>9.1f} {ttf:>8}  "
+                  f"{'YES' if r['on_frontier'] else ''}")
+
+        if not res["feasible"]:
+            print(f"    No (budget, spacing) cell is feasible for FST "
+                  f"{ROMAN_FST[fst]} on this grid. Reported, not dropped.")
+            continue
+        print(f"    Nondominated: {len(res['frontier'])} of "
+              f"{sum(1 for r in res['rows'] if r['feasible'])} feasible cells.")
+
+    df = pd.DataFrame(all_rows)
+    df.to_csv("tables/tri_objective_frontier.csv", index=False)
+
+    feas = df[df["feasible"]]
+    print("\n  Reading the frontier. Uniform spacing (gamma = 1) minimises the")
+    print("  largest gap at any budget, so it owns the A2 end of every")
+    print("  frontier; front-loading (gamma > 1) buys risk by lengthening the")
+    print("  late gaps, so it owns the A3 end. Nothing dominates on both, which")
+    print("  is why this is reported as a frontier and not as a recommendation.")
+    if len(feas):
+        n_front = int(feas["on_frontier"].sum())
+        print(f"\n  {n_front} nondominated points across {len(feas)} feasible")
+        print(f"  cells and {int((~df['feasible']).sum())} infeasible ones.")
+
+    # Spacing is not only an optimisation knob here -- at some budgets it
+    # decides feasibility outright. Counted rather than asserted.
+    rescues = []
+    for fst in fsts:
+        sub = df[df["fst"] == fst]
+        for n in sorted(sub["n_sessions"].unique()):
+            cell = sub[sub["n_sessions"] == n]
+            uni = cell[np.isclose(cell["gamma"], 1.0)]
+            if len(uni) and not bool(uni["feasible"].iloc[0]) \
+                    and bool(cell["feasible"].any()):
+                got = cell[cell["feasible"].astype(bool)]["gamma"].tolist()
+                rescues.append((fst, int(n), got))
+    if rescues:
+        print("\n  Budgets where UNIFORM spacing is infeasible but some warped")
+        print("  spacing is not. C3 binds at the ramp-in boundary, so reaching")
+        print("  target faster can rescue a budget uniform spacing misses:")
+        for fst, n, got in rescues:
+            print(f"    FST {ROMAN_FST[fst]:<4} N = {n:<5} feasible at gamma "
+                  f"{', '.join(f'{g:.2f}' for g in got)}")
+    print("\n  Saved tables/tri_objective_frontier.csv")
+    return df
 
 def analysis_constant_sessions(params: Optional[ModelParams] = None):
     """Sweep session counts 1-52 over 365 days with fixed total SED, uniform spacing.

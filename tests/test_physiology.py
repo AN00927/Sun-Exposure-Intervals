@@ -121,13 +121,29 @@ class TestHydroxylationFeedback:
 
     def test_biphasic_mode_differs_from_linear_above_dmax(self):
         pl, pb = ModelParams(), ModelParams()
+        pl.feedback_mode = "linear"          # LEGACY, must be asked for now
         pb.feedback_mode = "biphasic"
         m = pl.M_baseline(3)
         assert synthesis_per_session(1.0, m, m, 200.0, 0.0, pl) == 0.0
         assert synthesis_per_session(1.0, m, m, 200.0, 0.0, pb) > 0.0
 
-    def test_linear_remains_default(self):
-        assert ModelParams().feedback_mode == "linear"
+    def test_biphasic_is_now_the_default(self):
+        """UPDATED 2026-08-18 (approved item A2). This assertion used to read
+        `feedback_mode == "linear"`. The hard-ceiling form was withdrawn as the
+        default: D_max = 150.0 has no located source, and 25(OH)D regulation
+        acts on hydroxylation and CYP24A1-driven catabolism rather than on a
+        switch that stops cutaneous synthesis outright. 'linear' and 'power'
+        are retained so earlier results remain reproducible on request."""
+        assert ModelParams().feedback_mode == "biphasic"
+
+    def test_unknown_feedback_mode_raises_instead_of_silently_going_linear(self):
+        """The dispatch used to fall through to the linear form on any
+        unrecognised string. Harmless while linear WAS the default; a trap now,
+        because a typo would silently reinstate the withdrawn hard ceiling."""
+        p = ModelParams()
+        p.feedback_mode = "bipahsic"
+        with pytest.raises(ValueError):
+            synthesis_per_session(1.0, 0.21, 0.21, 25.0, 0.0, p)
 
 
 class TestTransitDelay:
@@ -453,13 +469,31 @@ class TestBackwardCompatibility:
         assert p.body_weight_kg is None
         assert p.use_photodegradation is False
         assert p.use_transit_delay is False
-        assert p.feedback_mode == "linear"
+        # feedback_mode is NOT in this list any more: it is a scientific choice
+        # with a source, not an opt-in mechanism. See
+        # TestHydroxylationFeedback::test_biphasic_is_now_the_default.
 
     def test_default_run_is_stable(self):
-        """Guards the headline scenario against accidental drift."""
+        """Guards the headline scenario against accidental drift.
+
+        Pin REBASED 2026-08-17: 63.75 -> 49.85 nmol/L. This is a pinned
+        regression value, not an independent measurement, and it moved because
+        `ModelParams.K_const` was recalibrated 0.33 -> 0.98 under the approval
+        in calibration_approval.yaml. The scenario is FST V, so constitutive
+        synthesis falls by exp(-(0.98 - 0.33) * M_baseline(V)) = 0.60 and the
+        84-day endpoint falls with it. Nothing else in the scenario changed.
+
+        Pin REBASED AGAIN 2026-08-18: 49.85 -> 53.64 nmol/L, from the two
+        approved changes landing together. A: 2.353 -> 3.114 (item A4, Young
+        2021 per-SED anchor) raises synthesis by x1.32; the feedback form moved
+        from max(0, 1 - D/150) to the biphasic hydroxylation efficiency (item
+        A2), which is the STEEPER of the two across the 40-55 nmol/L band this
+        scenario occupies and gives most of that back. Net +7.6%. Neither the
+        scenario nor the tolerance changed.
+        """
         r = simulate(fst=5, schedule=build_pulse_schedule(84, 1.0, 1),
                      duration_days=84, params=ModelParams(), D0=25.0)
-        assert r["D"][-1] == pytest.approx(63.75, abs=0.5)
+        assert r["D"][-1] == pytest.approx(53.64, abs=0.5)
 
 
 class TestTwoProcessSC:

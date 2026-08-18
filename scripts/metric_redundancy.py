@@ -36,11 +36,22 @@ from vitd_model import (
 
 
 def gross_synth_per_SED(result):
-    """Local copy of a metric DELETED from vitd_model.py on 2026-07-31.
+    """DIAGNOSTIC TIER. Local copy of a metric DELETED from vitd_model.py on
+    2026-07-31.
 
-    Removed because it ranks schedules at Spearman rho = -0.999 against mean
-    25(OH)D and -0.999 against time-integrated deficiency below 50 nmol/L,
-    i.e. anti-correlated with the clinical outcome it claimed to optimise.
+    Its tier is declared in `vitd_objectives.OBJECTIVE_HIERARCHY`, and
+    `vitd_objectives.assert_reportable_as_headline` refuses to let report code
+    present it as advice. It is BACKGROUND ONLY: it has no interior optimum
+    (it rises monotonically as dosing approaches zero, so its argmax tracks
+    whatever search bound it is given) and at that argmax final 25(OH)D sits
+    BELOW the starting value -- a net loss of vitamin D scored as maximal
+    efficiency. Both failures are recomputed from the current parameters by
+    `vitd_optimization.gross_synth_per_SED_diagnostic` on every pipeline run.
+
+    Removed from the model because it ranks schedules at Spearman rho = -0.999
+    against mean 25(OH)D and -0.999 against time-integrated deficiency below
+    50 nmol/L, i.e. anti-correlated with the clinical outcome it claimed to
+    optimise.
     """
     log = result["synthesis_log"]
     if not log: return 0.0

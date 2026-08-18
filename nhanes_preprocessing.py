@@ -5,14 +5,46 @@ NHANES serum 25(OH)D and demographic preprocessing and harmonization script.
 Implements the requirements of Concrete Recommended Change #8 from the July 2026 Scientific Audit.
 
 Specifically:
-- Uses CDC/NCHS Analytical Note (P27) regression equations to standardize
-  2001-2006 original DiaSorin RIA assays to NIST-traceable LC-MS/MS-equivalent values (LBDVIDMS).
-- Standardizes 2007+ LC-MS/MS total 25(OH)D (LBXVIDMS).
+- Loads 2001-2006 data already on the CDC-standardized LC-MS/MS-equivalent
+  scale (LBDVIDMS) and 2007+ data on the direct LC-MS/MS scale (LBXVIDMS).
+  See "Harmonization status" below -- this is NOT the same as this module
+  applying a RIA->LC-MS/MS transform itself.
 - Explicitly maps RIDEXMON (exam season) per P34/NCHS guidelines:
   1 = November 1 through April 30 (Winter/Spring)
   2 = May 1 through October 31 (Summer/Autumn)
 - Maps race/ethnicity codes (RIDRETH1, RIDRETH3) to consistent categories.
 - Merges laboratory, demographic, and body measures (BMI) files.
+
+Harmonization status (verified 2026-08-17)
+-------------------------------------------
+CLAUDE.md requires: "Do NOT pool NHANES 2001-2006 (LBDVIDMS) with 2007+
+(LBXVIDMS) without harmonization code." Earlier, that rule was satisfied only
+on paper: `harmonize_ria_to_lcms()` below implements the CDC/NCHS P27
+regression equations, but `preprocess_nhanes_data()` never actually calls it
+for any of the ten cycles distributed in Papers_and_Datasets/ -- confirmed by
+diffing `vitd_raw_nmol_L` against `vitd_standardized_nmol_L` in the merged
+output, which are byte-identical in every cycle (2001-2002 through
+2019-2020). A reader could not tell that from the code alone; the function
+looked wired in.
+
+The pooling IS valid, but for a different reason than "this module
+harmonizes it": VID_B.csv/VID_C.csv/VID_D.csv (2001-2006) contain only the
+`LBDVIDMS` column -- CDC's own already-standardized series -- never a raw
+`LBDVIDUS`/`LBXVID` RIA column. CDC did the RIA->LC-MS/MS harmonization
+upstream, once, before distributing the public files this repo uses. So
+2001-2006 (`LBDVIDMS`) and 2007+ (`LBXVIDMS`) are both already on the
+LC-MS/MS-equivalent scale by construction, and no transform is needed on
+this repo's data.
+
+`harmonize_ria_to_lcms()` and its regression equations are kept (not
+deleted) as a documented, guarded fallback for the hypothetical case of a
+future data pull that supplies a genuinely raw, un-standardized RIA column --
+see its docstring. `verify_no_harmonization_needed()` below makes the
+current no-op state an explicit, checked assertion rather than a silent
+assumption: it raises if any cycle's data ever takes the harmonize path, or
+if a row labelled "already standardized" turns out not to be numerically
+identical to its raw value. Call it after `preprocess_nhanes_data()` (the
+`__main__` block does) before treating the pooled dataset as valid.
 """
 
 import os
@@ -22,8 +54,28 @@ import numpy as np
 
 def harmonize_ria_to_lcms(ria_val: float, cycle: str) -> float:
     """
-    Apply CDC/NCHS regression equations (from P27 Analytical Note) to convert
-    original DiaSorin RIA values (nmol/L) to LC-MS/MS-equivalent concentrations.
+    CDC/NCHS regression equations (P27 Analytical Note) converting original
+    DiaSorin RIA 25(OH)D values (nmol/L) to LC-MS/MS-equivalent concentrations.
+
+    STATUS, verified 2026-08-17: NOT invoked by `preprocess_nhanes_data()` for
+    any of the ten NHANES cycles distributed in Papers_and_Datasets/. The
+    2001-2006 files (VID_B.csv, VID_C.csv, VID_D.csv) contain only the
+    `LBDVIDMS` column -- CDC's own pre-standardized series -- never a raw
+    `LBDVIDUS`/`LBXVID` RIA column, so `preprocess_nhanes_data()` always takes
+    the "already standardized" branch and this function is never called from
+    anywhere in this codebase. Confirmed: `vitd_standardized_nmol_L` is
+    byte-identical to `vitd_raw_nmol_L` in all ten pooled cycles.
+
+    Pooling 2001-2006 with 2007+ is valid WITHOUT running this function: both
+    halves are already on the LC-MS/MS-equivalent scale (LBDVIDMS for
+    2001-2006, LBXVIDMS for 2007+) -- CDC harmonized upstream, once, before
+    distributing the public files. This function is kept, not deleted, so the
+    P27 equations have one documented home in this codebase and as a guarded
+    fallback (see the `else` branch of the vitd_raw_col dispatch in
+    `preprocess_nhanes_data()`) for a hypothetical future data pull that
+    supplies a genuinely raw, un-standardized RIA column. If that branch is
+    ever taken, `verify_no_harmonization_needed()` below raises rather than
+    silently pooling a locally-regressed series against CDC's own.
     """
     if pd.isna(ria_val):
         return np.nan
@@ -210,6 +262,14 @@ def preprocess_nhanes_data(data_dir: str, output_dir: str):
         # Drop rows missing both vitamin D and demographics
         final_df = final_df.dropna(subset=["vitd_standardized_nmol_L", "age"], how="all")
         
+        # Explicit, checked no-op verification (see module docstring
+        # "Harmonization status" and harmonize_ria_to_lcms() docstring).
+        # Raises if the RIA-era data ever silently needed the transform.
+        verify_no_harmonization_needed(final_df)
+        print("Harmonization check: PASS -- all 2001-2006 rows already "
+              "CDC-standardized (LBDVIDMS); harmonize_ria_to_lcms() was not "
+              "invoked. Pooling with 2007+ (LBXVIDMS) is valid.")
+
         output_file = os.path.join(output_dir, "nhanes_standardized_processed.csv")
         final_df.to_csv(output_file, index=False)
         print(f"Preprocessing completed. Saved standardized dataset to: {output_file}")
@@ -221,10 +281,61 @@ def preprocess_nhanes_data(data_dir: str, output_dir: str):
         return None
 
 
+def verify_no_harmonization_needed(df: pd.DataFrame) -> None:
+    """Fail loudly if RIA harmonization was silently needed for any cycle.
+
+    This is the explicit, checked version of the "no-op" described in this
+    module's docstring and in `harmonize_ria_to_lcms()`'s docstring. Pooling
+    2001-2006 (LBDVIDMS) with 2007+ (LBXVIDMS) is valid only if every
+    2001-2006 row actually came from an already-standardized column, rather
+    than from `harmonize_ria_to_lcms()`'s locally-fitted regression. This
+    function checks that against the actual merged data instead of assuming
+    it. Call after `preprocess_nhanes_data()` (it already does, at the end of
+    the merge loop) before treating the pooled dataset as valid for any
+    cross-cycle comparison.
+
+    Raises
+    ------
+    AssertionError
+        If any 2001-2006 row took the `harmonize_ria_to_lcms()` path (label
+        mismatch), or if a row labelled "already standardized" is not
+        numerically identical between raw and standardized columns (the
+        no-op did not actually hold).
+    """
+    ria_cycles = {"2001-2002", "2003-2004", "2005-2006"}
+    cycle_rows = df[df["cycle"].isin(ria_cycles)]
+
+    expected_labels = {"LC-MS/MS Direct (already standardized)", "Missing"}
+    bad_method = cycle_rows[~cycle_rows["harmonized_method"].isin(expected_labels)]
+    if not bad_method.empty:
+        raise AssertionError(
+            f"harmonize_ria_to_lcms() was applied to {len(bad_method)} rows "
+            f"(cycles: {sorted(bad_method['cycle'].unique())}, methods seen: "
+            f"{sorted(bad_method['harmonized_method'].unique())}). Pooling "
+            "with 2007+ LBXVIDMS values now mixes a CDC-standardized series "
+            "with a locally regression-standardized one -- this needs "
+            "manual review (check harmonize_ria_to_lcms()'s equations "
+            "against the current CDC P27 Analytical Note) before the pooled "
+            "dataset is used for any cross-cycle comparison.")
+
+    standardized = cycle_rows[
+        cycle_rows["harmonized_method"] == "LC-MS/MS Direct (already standardized)"]
+    both_present = (standardized["vitd_raw_nmol_L"].notna() &
+                    standardized["vitd_standardized_nmol_L"].notna())
+    mismatched = both_present & (standardized["vitd_raw_nmol_L"] !=
+                                 standardized["vitd_standardized_nmol_L"])
+    if mismatched.any():
+        raise AssertionError(
+            f"{int(mismatched.sum())} rows labelled 'already standardized' "
+            "have vitd_raw_nmol_L != vitd_standardized_nmol_L -- the no-op "
+            "assumption is numerically violated; investigate before using "
+            "this data.")
+
+
 if __name__ == "__main__":
     # Local path to datasets
     base_dir = os.path.dirname(os.path.abspath(__file__))
     raw_data_path = os.path.join(base_dir, "Papers_and_Datasets")
     output_path = os.path.join(base_dir, "audit_outputs")
-    
+
     preprocess_nhanes_data(raw_data_path, output_path)

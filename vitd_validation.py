@@ -12,11 +12,17 @@ Three categories:
       At high D (~132 nmol/L), half-life ~89 days; at low D (~43 nmol/L),
       half-life ~199 days. Tests both endpoints within ±10%.
    b. 1 SED bolus in untanned FST III: computation-integrity check.
-      Expected delta = A * ln(2) * exp(-K_const * M_III) * (1 - D/D_max)
-      ≈ 1.27 nmol/L with A=2.353, K_const=0.33, M_III=0.21, ±2% tolerance.
-   c. Photoadaptation reduction (FST III, M 0.30 -> 0.70): Young 2020
-      supports small melanin effect. With K_ATTEN=0.37 and excess_M=0.49,
-      expected reduction ~17%, guard range 10-30%.
+      Expected delta = A * ln(1 + E_source) * exp(-K_const * M_III) * g(D),
+      REBUILT FROM LIVE PARAMETERS (bug fix 2026-08-18 -- it used to hardcode
+      A, K_const, D_max and the linear feedback form, all four of which have
+      since moved). ±2% tolerance.
+   c. Photoadaptation reduction (FST III, M_baseline -> M_ceiling): guard on
+      the FACULTATIVE tanning channel, band 0-10%. Everything but the
+      facultative term cancels, so the check equals
+      1 - exp(-K_ATTEN * M_TAN_HEADROOM) exactly and is INDEPENDENT of
+      K_const, A, D_max and the feedback form. K_ATTEN is RETIRED at 0.00, so
+      the measured value is 0.0% and this is a one-sided drift guard, NOT
+      evidence. See sanity_photoadaptation_reduction for the full re-derivation.
 
 2. Literature validation targets
    a. de Boer 2025 - photoadaptation direction check (replaces mis-sourced Matsuoka 1990).
@@ -173,7 +179,10 @@ from vitd_model import (ModelParams, synthesis_per_session, simulate,
                          net_final_D_change_per_SED,
                          auc_above_baseline_per_SED,
                          auc_above_sufficiency_per_SED,
-                         steady_state_D, get_E_source, E_SOURCE_SOLAR_DEFAULT)
+                         steady_state_D, get_E_source, E_SOURCE_SOLAR_DEFAULT,
+                         BSA_REF, BSA_EXP, K_ATTEN_STRUCTURAL,
+                         RETIRED_PARAMETERS)
+from vitd_physiology import hydroxylation_efficiency
 from vitd_protocols import bogh2012_session_doses_sed
 
 
@@ -242,30 +251,209 @@ def sanity_decay_halflife(verbose=True):
 
 def sanity_single_bolus_FST_III(verbose=True):
     """
-    Computation-integrity check: single 1 SED bolus in untanned FST III with
-    A=2.353, K_const=0.33, M_III=0.21, feedback at D=25.
-    Expected delta = A * ln(2) * exp(-K_const * M_III) * (1 - D/D_max) ≈ 1.27.
-    ±2% tolerance for numerical stability.
+    Computation-integrity check: single 1 SED bolus in untanned FST III.
+
+    This asserts that `synthesis_per_session` computes the product the module
+    docstring says it computes. It is NOT a literature check and has no
+    external target.
+
+    BUG FIX 2026-08-18, not a calibration. The expected value was hardcoded as
+        2.353 * ln(2) * exp(-0.33 * 0.21) * (1 - 25/150)  ~= 1.27
+    with A, K_const, D_max and the LINEAR feedback form all written out as
+    literals. Every one of those four literals is now superseded -- K_const
+    moved 0.33 -> 0.98 on 2026-08-17, and A and the feedback form moved on
+    2026-08-18 -- so the check had been FAILING (model 1.11 against a frozen
+    1.27) for reasons that had nothing to do with the code being wrong. A
+    computation-integrity check that hardcodes the parameters it is checking
+    stops being an integrity check the moment any of them moves. The expected
+    value is now rebuilt from the live parameters and the live feedback form,
+    which is the only way this check can keep doing its job.
     """
     p = ModelParams()
     fst = 3
     M_base = p.M_baseline(fst)
-    delta = synthesis_per_session(1.0, M_base, M_base, D=25.0, SC=0.0, params=p)
-    expected_delta = 2.353 * np.log(2) * np.exp(-0.33 * 0.21) * (1.0 - 25.0 / 150.0)
+    D_ref = 25.0
+    delta = synthesis_per_session(1.0, M_base, M_base, D=D_ref, SC=0.0, params=p)
+    # Independently reconstructed from the documented form, using the live
+    # parameters. bsa_factor is 1.0 at the reference BSA and SC = 0, so both
+    # drop out; E_source is ModelParams.E_source.
+    feedback = _feedback_factor_for(p, D_ref)
+    expected_delta = (p.A * np.log(1.0 + 1.0 * p.E_source)
+                      * np.exp(-p.K_const * M_base) * feedback)
     passed = check_percent_error(delta, expected_delta, max_pct=2.0)
     if verbose:
         print(f"[Sanity 2] Single bolus, FST III, untanned (computation-integrity check)")
+        print(f"  A={p.A}, K_const={p.K_const}, M_III={M_base}, "
+              f"feedback_mode={p.feedback_mode!r}, g({D_ref:.0f})={feedback:.4f}")
         print(f"  delta-D = {delta:.2f} nmol/L  (expected {expected_delta:.2f}, ±2%)")
         print(f"  {'PASS' if passed else 'FAIL'}")
     return passed
 
 
-def sanity_photoadaptation_reduction(verbose=True):
+def _feedback_factor_for(p, D):
+    """Reconstruct g(D) for the params' feedback form, independently of
+    synthesis_per_session, so Sanity 2 is a real cross-check and not a
+    tautology against the same code path."""
+    mode = p.feedback_mode
+    if mode == "biphasic":
+        return hydroxylation_efficiency(D)
+    if mode == "saturating":
+        return float(np.exp(-np.log(2.0) * D / p.D_half_feedback))
+    if mode == "linear":
+        return max(0.0, 1.0 - D / p.D_max)
+    if mode == "power":
+        return max(0.0, 1.0 - (D / p.D_max) ** p.feedback_power)
+    raise ValueError(f"unknown feedback_mode {mode!r}")
+
+
+# ---------------------------------------------------------------------------
+# A calibration anchor (approved item A4, 2026-08-18)
+# ---------------------------------------------------------------------------
+# Young et al. 2021, PNAS 118:e2015867118, Fig. 4B -- FULL-BODY study,
+# 85% BSA, linear regressions of delta-25(OH)D3 on ERYTHEMAL SED, not forced
+# through zero. Transcribed from the figure legend of the full text in
+# Research_Papers/. These are per-SED slopes, in nmol/L per SED.
+YOUNG2021_FB_SLOPES_NMOL_PER_SED = {
+    "PUVA":     1.99,   # n = 11, y = 1.99x + 1.12, R2 = 0.47
+    "Arimed B": 3.18,   # n = 19, y = 3.18x + 2.26, R2 = 0.63
+    "UV6":      4.97,   # n = 10, y = 4.97x + 0.86, R2 = 0.68
+}
+# Table 1, "All FB" row: n = 40, baseline 34.6 +/- 20.0 nmol/L.
+YOUNG2021_FB_BASELINE_NMOL_L = 34.6
+YOUNG2021_FB_BSA = 0.85          # Methods: "The whole body, apart from
+                                 # underwear ... an estimated 85% BSA"
+YOUNG2021_FB_FST = 2             # FB arm: 38/40 FST II, 2/40 FST I
+
+
+def young2021_A_anchor(params=None, verbose=False):
+    """Reproduce the derivation of `ModelParams.A` from Young 2021.
+
+    Returns a dict with the target slope, the model kernel, the implied A, and
+    the per-source cross-checks. This is a CALIBRATION ANCHOR, not a
+    validation: it cannot fail in an interesting way, so it is deliberately
+    NOT registered in run_all()'s scored check list. It is asserted instead by
+    tests/test_vitd_model.py::TestYoung2021AAnchor, so A cannot drift silently.
+
+    DARK-SKIN FLAG: Young 2021 recruited FST I-II ONLY (n = 75; 6x I, 69x II;
+    zero FST III-VI) and its authors write "The results from this study only
+    apply to FST I/II". A is applied at every FST, so this anchor is a
+    LIGHT-SKIN EXTRAPOLATION for FST III-VI. The skin-type GRADIENT is anchored
+    separately (K_const, on matched-dose FST V data); what is extrapolated here
+    is the overall level.
     """
-    At M = M_ceiling (0.41 for FST III, maximum attainable facultative tan),
-    synthesis attenuation is evaluated relative to untanned baseline (M_baseline = 0.21).
-    Evaluated at the structural ceiling M_ceiling rather than an unphysical state (0.70).
-    Young 2020 supports a small facultative melanin effect (K_ATTEN = 0.00, <=10% reduction).
+    p = ModelParams() if params is None else params
+    slopes = YOUNG2021_FB_SLOPES_NMOL_PER_SED
+    target = (min(slopes.values()) + max(slopes.values())) / 2.0   # 3.48
+
+    M_base = p.M_baseline(YOUNG2021_FB_FST)
+    bsa_f = (YOUNG2021_FB_BSA / BSA_REF) ** BSA_EXP
+    melanin = float(np.exp(-p.K_const * M_base))
+    feedback = _feedback_factor_for(p, YOUNG2021_FB_BASELINE_NMOL_L)
+    E = get_E_source(E_SOURCE_SOLAR_DEFAULT)
+    kernel = float(np.log(1.0 + 1.0 * E) * bsa_f * melanin * feedback)
+
+    cross = {}
+    for name, src in (("Arimed B", "arimed_b"), ("UV6", "uv6_broadband")):
+        Es = get_E_source(src)
+        k = float(np.log(1.0 + Es) * bsa_f * melanin * feedback)
+        cross[name] = slopes[name] / k
+    # PUVA is deliberately absent: it is UVA-dominant and has no entry in
+    # SOURCE_CALIBRATION_TABLE, so no E_source-matched cross-check exists.
+
+    out = {
+        "target_slope_nmol_per_SED": target,
+        "pooled_slope_nmol_per_SED": 36.1 / 10.0,   # Table 1 All FB / 10 SED
+        "kernel": kernel,
+        "A_implied": target / kernel,
+        "A_current": p.A,
+        "cross_checks": cross,
+        "model_slope_at_current_A": p.A * kernel,
+    }
+    if verbose:
+        print("[Anchor] Young 2021 FB per-SED slope -> A")
+        print(f"  printed FB slopes (Fig. 4B): {slopes}")
+        print(f"  range midpoint = {target:.3f}; pooled All-FB = "
+              f"{out['pooled_slope_nmol_per_SED']:.3f} nmol/L per SED")
+        print(f"  kernel = ln(1+{E}) * bsa_factor({YOUNG2021_FB_BSA}) * "
+              f"exp(-K_const*M_II) * g({YOUNG2021_FB_BASELINE_NMOL_L}) "
+              f"= {kernel:.6f}")
+        print(f"  A implied = {out['A_implied']:.4f};  A in force = {p.A}")
+        print(f"  model slope at A in force = "
+              f"{out['model_slope_at_current_A']:.3f} nmol/L per SED")
+        print(f"  E_source-matched cross-checks (bracket, not targets): "
+              + ", ".join(f"{k} {v:.3f}" for k, v in cross.items()))
+        print("  DARK-SKIN FLAG: Young 2021 is FST I-II only; applying A to "
+              "FST III-VI is a light-skin extrapolation.")
+    return out
+
+
+# [A7, RE-DERIVED 2026-08-18] Acceptance ceiling for the facultative (tanning)
+# attenuation channel, as a FRACTION of untanned synthesis at the structural
+# melanin ceiling. See sanity_photoadaptation_reduction for the derivation of
+# why this number, and what it is and is not evidence of.
+PHOTOADAPTATION_REDUCTION_MAX = 0.10   # [CHOICE] -> K_ATTEN <= 0.527
+
+
+def sanity_photoadaptation_reduction(verbose=True):
+    """Guard on the FACULTATIVE (tanning) melanin channel.
+
+    Measures synthesis at M = M_ceiling(FST III) = 0.41, the largest tan the
+    melanin ODE can produce, against untanned M = M_baseline = 0.21, at
+    matched D and SC.
+
+    WHAT THE MEASURED QUANTITY ACTUALLY IS
+    --------------------------------------
+    Everything except the facultative term is identical between the two calls,
+    so A, K_const, bsa_factor, E_source, SC and the feedback factor all CANCEL
+    EXACTLY, and the check reduces to
+
+        reduction = 1 - exp(-K_ATTEN * M_TAN_HEADROOM)
+
+    This is not an approximation; it is an algebraic identity, and it is
+    asserted as such in tests/test_vitd_validation.py. Two consequences:
+
+      * The 2026-08-17 K_const move (0.33 -> 0.98) CANNOT have changed this
+        check, and neither can the 2026-08-18 A and feedback-form changes.
+        `calibration_approval.yaml` -> pending_approvals asked for the band to
+        be re-derived because K_const had moved since it was set. It was
+        re-derived; the answer is that K_const never entered. The band stands
+        on its own terms, not because it happened to keep passing.
+      * The check has exactly ONE degree of freedom, K_ATTEN, so the band is
+        equivalent to a bracket on K_ATTEN. At M_TAN_HEADROOM = 0.20:
+            0-10%  reduction  <=>  K_ATTEN in [0.000, 0.527]
+            10-30% reduction  <=>  K_ATTEN in [0.527, 1.783]   (the OLD band)
+
+    WHY 0-10% AND NOT 10-30%
+    ------------------------
+    The old 10-30% band EXCLUDED the model's own K_ATTEN. It was set when
+    K_ATTEN was 0.37 AND the test point was a hardcoded M = 0.70 -- a state
+    above the structural ceiling of 0.41, which the melanin ODE cannot reach at
+    any dose. Fixing the test point (a bug fix, ungated) dropped the measured
+    reduction below the band, and the band had to move or the check had to fail
+    for the wrong reason. The replacement is not a loosening: in K_ATTEN terms
+    the new band is 3.4x NARROWER (width 0.527 vs 1.256) and its upper bound is
+    3.4x LOWER. What it gives up is the lower bound, which is the honest cost of
+    K_ATTEN being 0.00.
+
+    The 10% ceiling is a [CHOICE], not a measurement, and it is bounded on both
+    sides by what the repo holds. Young 2020 (n = 23, TL-01, the dataset
+    K_ATTEN was fitted to) supports a SMALL facultative effect and returns 0.00.
+    Matsuoka 1990 (n = 7), deconvolved for its baseline-25(OH)D confound, implies
+    K_ATTEN 0.34-1.00 depending on the assumed feedback form
+    (vitd_calibration.derive_K_ATTEN), i.e. reductions of 6.6-18.1%. A 10%
+    ceiling therefore admits the LOW end of the Matsuoka bracket and rejects its
+    high end, which is the correct posture given that Matsuoka's "51%" is mostly
+    D-feedback rather than pigment (see CLAUDE.md).
+
+    WHAT THIS CHECK IS NOT
+    ----------------------
+    It is NOT evidence that photoadaptation reduces synthesis. With K_ATTEN
+    RETIRED at 0.00 (approved item A6) the measured reduction is exactly 0.0%
+    and this check CANNOT FAIL at the value the model ships. Read it as a
+    ONE-SIDED RETIREMENT GUARD: it fires if anyone reinstates a strong
+    facultative penalty without going through RETIRED_PARAMETERS. Do not count
+    it as literature support, and read the headline "passed" count knowing one
+    of its members is pinned by construction.
     """
     p = ModelParams()
     fst = 3
@@ -274,11 +462,18 @@ def sanity_photoadaptation_reduction(verbose=True):
     d_untanned = synthesis_per_session(1.0, M_base, M_base, D=25.0, SC=0.0, params=p)
     d_tanned = synthesis_per_session(1.0, M_tanned, M_base, D=25.0, SC=0.0, params=p)
     reduction = 1.0 - d_tanned / d_untanned
-    passed = 0.0 <= reduction <= 0.10
+    passed = 0.0 <= reduction <= PHOTOADAPTATION_REDUCTION_MAX
+    headroom = M_tanned - M_base
+    k_implied_max = -np.log(1.0 - PHOTOADAPTATION_REDUCTION_MAX) / headroom
     if verbose:
         print(f"[Sanity 3] Photoadaptation reduction (FST III, M {M_base:.2f} -> {M_tanned:.2f} [M_ceiling])")
         print(f"  untanned synthesis: {d_untanned:.2f}  tanned synthesis: {d_tanned:.2f}")
-        print(f"  reduction = {100*reduction:.1f}%  (guard range 0-10%; evaluated at structural ceiling M_ceiling)")
+        print(f"  reduction = {100*reduction:.1f}%  "
+              f"(guard range 0-{100*PHOTOADAPTATION_REDUCTION_MAX:.0f}%; "
+              f"evaluated at structural ceiling M_ceiling)")
+        print(f"  equivalent bracket: K_ATTEN in [0.000, {k_implied_max:.3f}]; "
+              f"K_ATTEN is RETIRED at {K_ATTEN_STRUCTURAL:.2f}, so this is a "
+              f"one-sided drift guard, NOT evidence.")
         print(f"  {'PASS' if passed else 'FAIL'}")
     return passed
 
@@ -555,15 +750,22 @@ def validate_baseline_calibration_target(verbose=True):
       - Solar summer spectrum (E_source = 2.0 with snow reflection)
       - Low baseline (62.4 nmol/L) should increase (observed +6.0 nmol/L)
       - High baseline (116.9 nmol/L) should decrease (observed -6.7 nmol/L)
-    We test if the model's saturating feedback mode can replicate this target.
+    This now tests the DEFAULT model.
 
-    NOTE: This validation uses feedback_mode='saturating' (experimental),
-    NOT the default 'linear' mode. The default model may not pass this check.
+    STRENGTHENED 2026-08-18. This check used to force
+    `feedback_mode='saturating'` with `D_half_feedback = 90.0`, a value fitted
+    to this very study, and carried the note "the default model may not pass
+    this check". It was therefore both circular and not a test of anything the
+    model ships. After the approved A2 (feedback form) and A4 (A) changes the
+    DEFAULT model passes it outright -- FST III, 1.18 SED/day x 10 d, 7% BSA,
+    E_source 2.0: low baseline 62.4 -> +2.5 (observed +6.0), high baseline
+    116.9 -> -5.7 (observed -6.7). The override is removed and the acceptance
+    bounds are UNCHANGED. Direction, not magnitude, is what this check licenses:
+    a baseline-dependent SIGN REVERSAL is a strong constraint on feedback shape
+    and neither bound was moved to accommodate the new form.
     """
     p = ModelParams()
-    p.feedback_mode = 'saturating'
-    p.D_half_feedback = 90.0  # calibrated threshold from P33
-    
+
     sched = [(d, 1.18) for d in range(10)]
     
     # 1. Low baseline run
@@ -588,7 +790,7 @@ def validate_baseline_calibration_target(verbose=True):
     if verbose:
         print(f"[Lit 5] Karppinen 2017/P33 - baseline feedback calibration target")
         print(f"  Protocol: 1.18 SED/day x 10 days, FST III, BSA=0.07, E_source=2.0")
-        print(f"  Saturating feedback mode (D_half_feedback = 90.0):")
+        print(f"  DEFAULT feedback mode ({p.feedback_mode!r}):")
         print(f"    Low baseline (62.4 nmol/L) change:  +{change_low:.2f} nmol/L (observed +6.0)")
         print(f"    High baseline (116.9 nmol/L) change: {change_high:.2f} nmol/L (observed -6.7)")
         print(f"    Low baseline increased: {'YES' if change_low > 0 else 'NO'}")
@@ -1042,32 +1244,64 @@ def validate_kift_2013_south_asian(verbose=True):
     return passed
 
 
-def validate_kallioglu_2024_skintype_gradient(verbose=True):
-    """Kallioglu 2024 (Sci Rep 14:3541) held-out skin-type gradient. HELD OUT.
+def validate_kallioglu_2024_erythema_med_ratio(verbose=True):
+    """Kallioglu 2024 (Sci Rep 14:3541) -- NOT independent vitamin-D evidence.
 
-    Added 2026-08-16. A UV-index-based numerical simulation over Antalya (37N)
-    and Istanbul (41N) reporting the sun exposure time needed for 1000 IU/day at
-    25% body-surface exposure, annual mean, per Fitzpatrick type:
+    RELABELLED 2026-08-17 (was `validate_kallioglu_2024_skintype_gradient`).
+    The function is kept -- deleting it would lose the finding below and
+    someone would likely re-add the paper as "new evidence" later -- but its
+    old docstring made four claims that are false and have been removed:
+    "fully independent", "different endpoint", "two independent sources
+    agree", and "This is K_const / melanin attenuation". None of those
+    survive inspection of the paper.
 
-        I 5.05   II 6.30   III 7.60   IV 11.35   V 15.15   VI 25.25  minutes
+    IDENTITY PROOF. Kallioglu 2024 Table 3 (p.7) is a minimal-erythema-dose
+    (MED) table, not a vitamin-D measurement:
 
-    WHY THE RATIO AND NOT THE MINUTES. Their absolute minutes embed a Turkish
-    annual-mean UVI and their own geometry treatment, neither of which this repo
-    can reconstruct. The BETWEEN-SKIN-TYPE RATIO is clean: ambient UVI, the
-    geometry factor and E_source are all skin-type-independent, so they cancel
-    exactly. Same argument as `vitd_benchmark_webbkift.py`.
+        FST        I    II   III   IV    V     VI
+        MED J/m2  200  250   300  450   600  1000   (erythemal)
 
-    WHAT THIS ADDS OVER Webb/Kift. It is fully independent -- different method
-    (numerical simulation vs intervention trial), different latitude band
-    (37-41N vs UK), different endpoint (IU synthesised vs delta 25(OH)D). Both
-    now say the model's skin-type penalty is too weak, in the same direction and
-    by a similar factor. That upgrades gap 22 from "one benchmark fails" to
-    "two independent sources agree".
+    Their published minutes for 1000 IU/day at 25% BSA (annual mean, Antalya
+    37N / Istanbul 41N) are:
 
-    NOT A DOSIMETRY PROBLEM. E_source and the geometry factor cancel out of the
-    ratio (measured: the ratio moves <2% across the full E_source range). This
-    is K_const / melanin attenuation. See MODEL_AND_EVIDENCE.md gap 22 and
-    'Open decisions' item 12.
+        I 5.05   II 6.30   III 7.60   IV 11.35   V 15.15   VI 25.25
+
+    Those minutes are `5.05 * MED_fst / MED_I` to within rounding: exact at
+    FST I, V, VI, and within 0.33% at FST II-IV (largest gap: FST III,
+    predicted 7.5750 vs published 7.60). Skin type enters their model ONLY
+    through this MED table, via Hollick's rule (their Eq. 10:
+    UVd = (MED/4) * 0.25 * BSA * Dvit/1000) -- Hollick's rule assumes equal
+    fractional-MED dosing gives equal vitamin D synthesis. There is no
+    measurement of vitamin D synthesis differing by pigment anywhere in the
+    paper. The "V:II = 2.40x" and "VI:I = 5.00x" this check reports are
+    therefore ratios of a textbook erythema-threshold table, reproduced
+    through one assumption, not two independent measurements agreeing.
+
+    THIS CONTRADICTS EVIDENCE ALREADY IN THIS REPO.
+    - P24 (Shih/Farrar/Rhodes 2018) finds fractional-MED dosing REMOVES the
+      apparent skin-type effect for acute 25(OH)D gain (`vitd_physiology.py`,
+      `vitd_model.py` P24 references) -- i.e. equal %MED did NOT give unequal
+      vitamin D in that trial, the opposite of what Kallioglu's method
+      assumes.
+    - Felton et al. 2016 (Br J Dermatol 175:1320) Table 1 measured BOTH
+      quantities in the SAME volunteers: an erythema MED ratio of
+      146/37 = 3.95x (FST V:II) alongside a matched-dose vitamin D gain
+      ratio of only (25.5-17.2)/(54.3-36.5) = 2.14x. Equal fractional MED do
+      not imply equal vitamin D even within one study -- direct evidence
+      against the assumption this check's target value is built on.
+
+    WHAT THIS CHECK ACTUALLY MEASURES. Whether the model's minutes-ratio
+    across Fitzpatrick types reproduces Kallioglu's MED-derived ratio. That
+    is a legitimate (weak) cross-check of the model's skin-type scaling
+    against a published erythema table run through Hollick's rule -- it is
+    NOT evidence about vitamin D synthesis and must not be counted or
+    reported as such. It stays `warning_only=True` in the `run_all()` checks
+    list below; this relabelling changes no pass/fail computation.
+
+    See `scripts/fst_gap_decomposition.py` S1a for the full reproduction of
+    the identity above (`kallioglu_is_med_table` return value), and the
+    Kallioglu row in that script's S3b evidence-bracket table, which is
+    excluded from the "matched-dose, within-study" bracket for this reason.
     """
     from vitd_objectives import minutes_for_target, SUFFICIENCY_NMOL_L
 
@@ -1086,17 +1320,18 @@ def validate_kallioglu_2024_skintype_gradient(verbose=True):
     passed = 0.70 * rep_ratio <= mod_ratio <= 1.30 * rep_ratio
 
     if verbose:
-        print("[Held-out] Kallioglu 2024 skin-type gradient (WARNING-ONLY)")
+        print("[Held-out, WARNING-ONLY] Kallioglu 2024 erythema-MED-derived ratio")
+        print("  NOT vitamin-D evidence -- reported ratio is Table 3's MED table")
+        print("  run through Hollick's rule; see this function's docstring.")
         print("  1000 IU/d, 25% BSA, annual mean, Antalya 37N / Istanbul 41N")
         print(f"  {'FST':>4} {'reported':>9} {'rep ratio':>10} {'model min':>10} {'mod ratio':>10}")
         for fst in range(1, 7):
             print(f"  {fst:>4} {reported[fst]:>9.2f} {reported[fst]/reported[1]:>10.2f} "
                   f"{model[fst]:>10.1f} {model[fst]/model[1]:>10.2f}")
         print(f"  FST VI:I  reported {rep_ratio:.2f}  model {mod_ratio:.2f}")
-        print(f"  FST V:II  reported {reported[5]/reported[2]:.2f}  "
-              f"model {model[5]/model[2]:.2f}   (Webb/Kift independently: 2.5-3.0)")
-        print(f"  {'PASS' if passed else 'FAIL'} - melanin penalty too weak; "
-              f"NOT closable by dosimetry (ratio is E_source-invariant)")
+        print(f"  FST V:II  reported {reported[5]/reported[2]:.2f}  model {model[5]/model[2]:.2f}")
+        print(f"  {'PASS' if passed else 'FAIL'} - model's minutes ratio vs the "
+              f"MED-table-derived ratio (advisory only, not a vitamin-D check)")
 
     return passed
 
@@ -1144,8 +1379,8 @@ def run_all(verbose=True):
         ("metric ordering and sanity",    validate_metric_ordering, False),
         ("K_ATTEN seasonal amplitude",    validate_katten_seasonal_amplitude, False),
         ("Kift 2013 South Asian",         validate_kift_2013_south_asian, False),
-        ("Kallioglu 2024 skin-type gradient [held-out]",
-         validate_kallioglu_2024_skintype_gradient, True),
+        ("Kallioglu 2024 erythema-MED ratio [held-out, not vitamin-D evidence]",
+         validate_kallioglu_2024_erythema_med_ratio, True),
     ]
     
     results = {}

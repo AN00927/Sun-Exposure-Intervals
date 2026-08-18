@@ -23,7 +23,8 @@ from __future__ import annotations
 import numpy as np
 
 from vitd_model import (ModelParams, simulate, build_pulse_schedule,
-                        steady_state_D, net_final_D_change_per_SED)
+                        steady_state_D, net_final_D_change_per_SED,
+                        allow_retired_parameter_sweep)
 
 # Documented plausible ranges. Sources are in the vitd_model.py docstring and
 # ModelParams.SC_PRIOR_RANGES; ranges here are deliberately WIDE where the
@@ -68,8 +69,14 @@ def one_at_a_time_sensitivity(fst: int = 5, verbose: bool = True) -> list[dict]:
     rows = []
     for name, (lo, hi, note) in PARAM_RANGES.items():
         p_lo, p_hi = ModelParams(), ModelParams()
-        setattr(p_lo, name, lo)
-        setattr(p_hi, name, hi)
+        # PARAM_RANGES still contains RETIRED parameters (K_ATTEN). Sweeping
+        # them here is the point -- this function MEASURES how little they
+        # matter, which is the evidence the retirement rests on. It is not a
+        # calibration, and the named context manager keeps that distinction
+        # visible at the call site.
+        with allow_retired_parameter_sweep():
+            setattr(p_lo, name, lo)
+            setattr(p_hi, name, hi)
         o_lo = _outputs(_default_scenario(p_lo, fst=fst))
         o_hi = _outputs(_default_scenario(p_hi, fst=fst))
         row = {"parameter": name, "low": lo, "high": hi, "note": note}
@@ -117,8 +124,9 @@ def identifiability_pairs(fst: int = 5, n_grid: int = 9,
         for i, x in enumerate(av):
             for j, y in enumerate(bv):
                 p = ModelParams()
-                setattr(p, a, float(x))
-                setattr(p, b, float(y))
+                with allow_retired_parameter_sweep():   # see note above
+                    setattr(p, a, float(x))
+                    setattr(p, b, float(y))
                 Z[i, j] = steady_state_D(_default_scenario(p, fst=fst))
         # Ridge strength: how much of the output variation is explained by a
         # single linear combination of the two parameters. A near-perfect
@@ -162,8 +170,9 @@ def uncertainty_propagation(fst: int = 5, n_draws: int = 400,
     recs = {"steady_state_D": [], "net_per_SED": [], "best_interval": []}
     for i in range(n_draws):
         p = ModelParams()
-        for k in keys:
-            setattr(p, k, float(samples[k][i]))
+        with allow_retired_parameter_sweep():           # see note above
+            for k in keys:
+                setattr(p, k, float(samples[k][i]))
         r = _default_scenario(p, fst=fst)
         o = _outputs(r)
         recs["steady_state_D"].append(o["steady_state_D"])

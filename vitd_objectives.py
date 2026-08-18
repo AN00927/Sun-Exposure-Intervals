@@ -9,8 +9,11 @@ The project's earlier headline metric -- the retired per-SED efficiency
 metric, removed from `vitd_model.py` on 2026-07-31 -- had no interior optimum:
 it rose monotonically as dosing approaches zero, and its reported "optima" sat
 at schedules that END BELOW their starting 25(OH)D. It was also shown by
-ablation to be driven by the `(1 - D/D_max)` feedback term rather than by
-photoadaptation. See MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 19.
+ablation to be driven by the D-feedback term rather than by photoadaptation.
+Both failures are recomputed from the current parameters on every pipeline run
+by `vitd_optimization.gross_synth_per_SED_diagnostic`, so the demotion is
+re-earned rather than remembered. (The narrative write-up this note used to
+cite, MODEL_AND_EVIDENCE.md, was purged on 2026-08-18 and is not a live doc.)
 
 The objectives here are posed the way a person or clinician would pose them:
 
@@ -26,11 +29,20 @@ The objectives here are posed the way a person or clinician would pose them:
 Each returns concrete numbers with units, and each carries the cancer-risk
 indices alongside the vitamin D outcome so a schedule can never be recommended
 on synthesis grounds alone.
+
+Which of these is the HEADLINE is not a matter of taste. `OBJECTIVE_HIERARCHY`
+below fixes it in code: one PRIMARY objective, two SECONDARY ones, and a
+DIAGNOSTIC tier that is barred from ever being reported as a recommendation.
+Anything that prints a schedule as advice should route its label through
+`objective_tier()` / `assert_reportable_as_headline()` so the ranking cannot
+drift back out of sync with the prose.
 """
 
 from __future__ import annotations
 
 import numpy as np
+
+from typing import NamedTuple, Tuple
 
 from vitd_model import (ModelParams, simulate, auc_deficit, steady_state_D,
                         final_D, get_E_source, E_SOURCE_SOLAR_DEFAULT)
@@ -60,6 +72,203 @@ RAMP_IN_DAYS = 90
 # than this are reported but flagged: the model permits them, a person would not
 # do them.
 PRACTICAL_MAX_MINUTES = 120.0
+
+
+# ---------------------------------------------------------------------------
+# THE SCHEDULING METRIC HIERARCHY
+# ---------------------------------------------------------------------------
+# This repo has accumulated eight schedule-scoring functions over its life and
+# has twice reported a headline "optimum" from a metric that had no interior
+# optimum at all. The fix is not another metric -- it is an explicit,
+# machine-readable ranking of the metrics it already has, so that "which number
+# is the answer" stops being a property of whichever section a reader opened
+# first.
+#
+# Three tiers, in strict order:
+#
+#   PRIMARY     One objective. The question a person actually asks: what is the
+#               least I have to do to reach and then hold sufficiency? Minimum
+#               dose, minimum sessions, subject to not burning and to a session
+#               length a person will sit through. Everything reported as
+#               ADVICE comes from this tier.
+#
+#   SECONDARY   Trade-offs the primary answer has to be checked against. These
+#               refine or constrain a recommendation; they never replace it.
+#
+#   DIAGNOSTIC  Metrics kept because they are informative about the MODEL, and
+#               barred from being reported as advice. `gross_synth_per_SED` is
+#               here for a specific, demonstrated reason: it is monotone in the
+#               direction of dosing less, so its argmax is an artefact of the
+#               search bound, and at its reported 21-30 d "optima" the
+#               trajectory ENDS BELOW its own starting 25(OH)D. It scores a net
+#               loss of vitamin D as maximal efficiency. See
+#               vitd_optimization.gross_synth_per_SED_diagnostic(), which
+#               recomputes that failure from the CURRENT parameters rather than
+#               quoting the historical figure.
+#
+# [CHOICE] The ordering is a decision about what the project is FOR, not a
+# result. It is recorded here so that it is arguable in one place instead of
+# being implied differently by each section of the report.
+
+class ObjectiveSpec(NamedTuple):
+    """One entry in the scheduling metric hierarchy."""
+    tier: str                     # PRIMARY | SECONDARY | DIAGNOSTIC
+    rank: int                     # sort order across the whole hierarchy
+    key: str                      # stable identifier used by objective_tier()
+    question: str                 # the question in a person's words
+    minimise: Tuple[str, ...]     # objective axes, all minimised
+    subject_to: Tuple[str, ...]   # constraint labels (the C-numbers)
+    implemented_by: str           # where the number actually comes from
+    status: str                   # what a reader must not over-read
+
+
+TIER_PRIMARY = "PRIMARY"
+TIER_SECONDARY = "SECONDARY"
+TIER_DIAGNOSTIC = "DIAGNOSTIC"
+TIER_ORDER = (TIER_PRIMARY, TIER_SECONDARY, TIER_DIAGNOSTIC)
+
+OBJECTIVE_HIERARCHY: Tuple[ObjectiveSpec, ...] = (
+    ObjectiveSpec(
+        tier=TIER_PRIMARY, rank=1,
+        key="min_dose_min_sessions_to_hold_sufficiency",
+        question=("What is the LEAST I have to do -- fewest sessions, smallest "
+                  "dose -- to reach 50 nmol/L and then stay there?"),
+        minimise=("n_sessions", "total_sed"),
+        subject_to=("C3 sufficiency floor holds for every day after ramp-in",
+                    "C1 per-session dose <= GAMMA_MED * MED(FST)",
+                    "C7 per-session dose deliverable in PRACTICAL_MAX_MINUTES"),
+        implemented_by="vitd_optimization.minimum_schedule_for_sufficiency",
+        status=("HEADLINE. Infeasible cells are a RESULT -- dark skin at low "
+                "session budgets -- not a gap to be filled by relaxing C1/C7."),
+    ),
+    ObjectiveSpec(
+        tier=TIER_SECONDARY, rank=2,
+        key="tri_objective_sessions_spacing_risk",
+        question=("Among the schedules that do work, which trades fewest "
+                  "sessions against shortest gaps against least skin-cancer "
+                  "risk, and how steep is that trade?"),
+        minimise=("n_sessions", "max_gap_days", "combined_risk"),
+        subject_to=("C3 sufficiency floor holds for every day after ramp-in",
+                    "C1 per-session dose <= GAMMA_MED * MED(FST)",
+                    "C7 per-session dose deliverable in PRACTICAL_MAX_MINUTES"),
+        implemented_by="vitd_optimization.tri_objective_frontier",
+        status=("A frontier, not advice. The three axes genuinely conflict: "
+                "fewer sessions forces longer gaps AND a larger per-session "
+                "dose, which the intermittency term punishes cubically."),
+    ),
+    ObjectiveSpec(
+        tier=TIER_SECONDARY, rank=3,
+        key="min_risk_at_fixed_session_budget",
+        question=("I can manage exactly N sessions a year. What is the "
+                  "lowest-cancer-risk way to spend them?"),
+        minimise=("combined_risk",),
+        subject_to=("C3 sufficiency floor holds for every day after ramp-in",
+                    "C1 per-session dose <= GAMMA_MED * MED(FST)",
+                    "session budget fixed by the user"),
+        implemented_by=("vitd_optimization.optimise_joint_schedule / "
+                        "optimise_variable_dose / "
+                        "optimal_interval_risk_constrained"),
+        status=("Conditional on a budget the user supplies. Cross-skin-type "
+                "comparisons of the index VALUES inherit the weaker "
+                "susceptibility axis; rankings within one skin type do not."),
+    ),
+    ObjectiveSpec(
+        tier=TIER_DIAGNOSTIC, rank=4,
+        key="gross_synth_per_SED",
+        question="How much D is synthesised per unit of UV delivered?",
+        minimise=(),
+        subject_to=(),
+        implemented_by=("scripts/metric_redundancy.py (local copy; deleted "
+                        "from vitd_model.py 2026-07-31); failure reproduced by "
+                        "vitd_optimization.gross_synth_per_SED_diagnostic"),
+        status=("BACKGROUND / DIAGNOSTIC ONLY. No interior optimum -- rises "
+                "monotonically as dosing approaches zero, so its argmax tracks "
+                "the search bound. At its reported optimum final 25(OH)D is "
+                "BELOW baseline: a net LOSS of vitamin D scored as maximal "
+                "efficiency. Never a recommendation."),
+    ),
+    ObjectiveSpec(
+        tier=TIER_DIAGNOSTIC, rank=5,
+        key="net_final_D_change_per_SED",
+        question="How much net 25(OH)D does a schedule leave per unit of UV?",
+        minimise=(),
+        subject_to=(),
+        implemented_by="vitd_model.net_final_D_change_per_SED",
+        status=("Diagnostic. It repairs gross_synth's net-loss failure (it is "
+                "signed) but is still a ratio with no floor constraint, so it "
+                "can still prefer a schedule that never reaches sufficiency."),
+    ),
+)
+
+_BY_KEY = {spec.key: spec for spec in OBJECTIVE_HIERARCHY}
+
+
+def objective_tier(key: str) -> str:
+    """Tier of a named objective. Raises for an objective not in the hierarchy.
+
+    Raising rather than defaulting is deliberate: a metric nobody placed in the
+    hierarchy is exactly the situation this module exists to prevent.
+    """
+    try:
+        return _BY_KEY[key].tier
+    except KeyError:
+        raise KeyError(
+            f"{key!r} is not in OBJECTIVE_HIERARCHY. Place it in a tier before "
+            f"reporting it; known keys: {sorted(_BY_KEY)}") from None
+
+
+def is_headline(key: str) -> bool:
+    """True only for the single PRIMARY objective."""
+    return objective_tier(key) == TIER_PRIMARY
+
+
+def assert_reportable_as_headline(key: str) -> None:
+    """Guard for report code. Diagnostics must not be presented as advice."""
+    if objective_tier(key) == TIER_DIAGNOSTIC:
+        raise ValueError(
+            f"{key!r} is {TIER_DIAGNOSTIC}-tier and must not be reported as a "
+            f"recommendation: {_BY_KEY[key].status}")
+
+
+def primary_objective() -> ObjectiveSpec:
+    """The one PRIMARY objective. Raises if the hierarchy grows a second."""
+    primary = [s for s in OBJECTIVE_HIERARCHY if s.tier == TIER_PRIMARY]
+    if len(primary) != 1:
+        raise AssertionError(
+            f"exactly one PRIMARY objective is allowed, found {len(primary)}")
+    return primary[0]
+
+
+def format_objective_hierarchy() -> str:
+    """The hierarchy as plain text, for RESULTS.md and the console.
+
+    Generated from OBJECTIVE_HIERARCHY rather than written out, so the report
+    cannot state a ranking different from the one the code enforces.
+    """
+    out = ["=" * 74,
+           "SCHEDULING METRIC HIERARCHY -- which number is the answer",
+           "=" * 74,
+           "",
+           "Generated from vitd_objectives.OBJECTIVE_HIERARCHY. When a section",
+           "below reports a number, its tier here is what that number means."]
+    for tier in TIER_ORDER:
+        specs = sorted((s for s in OBJECTIVE_HIERARCHY if s.tier == tier),
+                       key=lambda x: x.rank)
+        if not specs:
+            continue
+        out += ["", "-" * 74, tier, "-" * 74]
+        for s in specs:
+            out += ["", f"  [{s.rank}] {s.key}",
+                    f"      asks     : {s.question}"]
+            if s.minimise:
+                out.append(f"      minimise : {', '.join(s.minimise)}")
+            if s.subject_to:
+                out.append(f"      s.t.     : {s.subject_to[0]}")
+                out += [f"                 {c}" for c in s.subject_to[1:]]
+            out += [f"      from     : {s.implemented_by}",
+                    f"      status   : {s.status}"]
+    out.append("")
+    return "\n".join(out)
 
 
 # ---------------------------------------------------------------------------

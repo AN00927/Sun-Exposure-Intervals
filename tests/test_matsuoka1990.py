@@ -8,7 +8,8 @@ lock in the arithmetic and, more importantly, the finding that the widely cited
 import numpy as np
 import pytest
 
-from vitd_model import ModelParams, simulate, steady_state_D
+from vitd_model import (ModelParams, simulate, steady_state_D,
+                        allow_retired_parameter_sweep)
 from vitd_calibration import (
     derive_K_ATTEN, run,
     UNTANNED_RISE, TANNED_RISE, NAIVE_ATTENUATION,
@@ -118,7 +119,12 @@ class TestConsistencyWithModel:
             ss = []
             for k in (out["current_K_ATTEN"], lo, hi):
                 p = ModelParams()
-                p.K_ATTEN = float(k)
+                # K_ATTEN was RETIRED 2026-08-18 (approved item A6). This loop
+                # is exactly the sensitivity sweep the retirement rests on --
+                # it MEASURES how little the parameter matters -- so it goes
+                # through the explicit escape hatch rather than around it.
+                with allow_retired_parameter_sweep():
+                    p.K_ATTEN = float(k)
                 r = simulate(fst=fst, schedule=schedule, duration_days=365,
                              params=p, D0=25.0,
                              dose_framing="fixed_per_session_SED")

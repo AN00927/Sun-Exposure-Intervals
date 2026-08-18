@@ -76,7 +76,10 @@ Section 3.2 (Objectives), and Section 7 (Limitations):
   in near-exact opposition to mean serum 25(OH)D and to avoiding
   time-integrated deficiency (Spearman rho about -0.999 against both), and
   that several of the project's eight scoring functions are exactly
-  rank-identical or rank-inverted to each other.
+  rank-identical or rank-inverted to each other. Both `gross_synth_per_SED`
+  and `net_final_D_change_per_SED` are now formally **DIAGNOSTIC tier** in
+  `vitd_objectives.OBJECTIVE_HIERARCHY` — background metrics, barred in code
+  from being reported as a recommendation.
 - `scripts/parameter_optima.py` shows that `net_final_D_change_per_SED`'s
   three-day optimum is itself a per-SED ratio artifact: under a fixed
   cumulative UV budget (the framing immune to that artifact), the optimal
