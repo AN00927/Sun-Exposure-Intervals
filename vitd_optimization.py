@@ -290,6 +290,7 @@ def optimal_interval_risk_constrained(
         max_minutes: Optional[float] = None,
         uv_index: float = 6.0,
         exposed_bsa: Optional[float] = None,
+        geometry_factor: Optional[float] = None,
         ramp_in_days: int = RAMP_IN_DAYS,
 ) -> dict:
     """Lowest-risk exposure interval that still holds 25(OH)D at/above target.
@@ -314,6 +315,15 @@ def optimal_interval_risk_constrained(
         horizontal-to-personal geometry correction applied.
     exposed_bsa : float, optional
         Exposed body-surface fraction; None uses the model default.
+    geometry_factor : float, optional
+        Horizontal-to-personal geometry correction passed straight through to
+        `sed_from_minutes`. None falls back to that function's own default
+        (the flat 0.35 Cockell scalar) -- pass the location/clothing-specific
+        value from `vitd_exposure.ExposureResult.geometry_factor` to use the
+        real Vernez 2015 geometry for a given site set and solar elevation
+        instead of the flat scalar. Independent of `exposed_bsa`: the two are
+        different mechanisms (this scales dose per minute; exposed_bsa scales
+        synthesis by skin area) and are not redundant with each other.
 
     Returns
     -------
@@ -345,7 +355,7 @@ def optimal_interval_risk_constrained(
         raise ValueError("interval_grid must be non-empty")
 
     med = _med_sed_by_fst(fst)
-    sed_per_min = sed_from_minutes(1.0, uv_index)
+    sed_per_min = sed_from_minutes(1.0, uv_index, geometry_factor)
 
     # Dose ceiling: erythema cap (C1), optionally tightened by session length (C7).
     sed_cap_burn = GAMMA_MED * med
@@ -480,13 +490,15 @@ def optimal_interval_risk_constrained(
 # it returns a schedule that can actually be described to a person.
 def _risk_of(fst: int, days: np.ndarray, seds: np.ndarray, horizon_days: int,
              D0: float, target: float, ramp_in_days: int,
-             params: Optional[ModelParams]) -> Tuple[float, float, float, float]:
+             params: Optional[ModelParams],
+             exposed_bsa: Optional[float] = None) -> Tuple[float, float, float, float]:
     """(combined risk, trough after ramp, total SED, time to sufficiency)."""
     sched = build_variable_schedule(days, seds, fst=fst)
     if not sched:
         return float("inf"), float("-inf"), 0.0, float("nan")
     r = simulate(fst=fst, schedule=sched, duration_days=horizon_days,
-                 params=params, D0=D0, dose_framing="fixed_per_session_SED")
+                 params=params, D0=D0, exposed_bsa_override=exposed_bsa,
+                 dose_framing="fixed_per_session_SED")
     t = np.asarray(r["t"]); D = np.asarray(r["D"])
     mask = t >= ramp_in_days
     trough = float(np.min(D[mask])) if mask.any() else float("-inf")
@@ -495,7 +507,8 @@ def _risk_of(fst: int, days: np.ndarray, seds: np.ndarray, horizon_days: int,
 
 
 def _min_feasible(fst, days, make_seds, horizon_days, D0, target,
-                  ramp_in_days, params, lo=0.0, hi=1.0, iters=28):
+                  ramp_in_days, params, lo=0.0, hi=1.0, iters=28,
+                  exposed_bsa: Optional[float] = None):
     """Smallest scale factor on a dose shape that still clears the floor.
 
     Bisection is valid because trough-after-ramp is monotone increasing in a
@@ -504,13 +517,13 @@ def _min_feasible(fst, days, make_seds, horizon_days, D0, target,
     """
     seds_hi = make_seds(hi)
     _, trough_hi, _, _ = _risk_of(fst, days, seds_hi, horizon_days, D0, target,
-                                  ramp_in_days, params)
+                                  ramp_in_days, params, exposed_bsa)
     if trough_hi < target:
         return None                      # infeasible even at full scale
     for _ in range(iters):
         mid = 0.5 * (lo + hi)
         _, trough, _, _ = _risk_of(fst, days, make_seds(mid), horizon_days, D0,
-                                   target, ramp_in_days, params)
+                                   target, ramp_in_days, params, exposed_bsa)
         if trough < target:
             lo = mid
         else:
@@ -1205,7 +1218,9 @@ def minimum_schedule_for_sufficiency(
         uv_index: float = 6.0,
         max_minutes: Optional[float] = PRACTICAL_MAX_MINUTES,
         gammas: Sequence[float] = (1.0,),
-        params: Optional[ModelParams] = None) -> dict:
+        params: Optional[ModelParams] = None,
+        exposed_bsa: Optional[float] = None,
+        geometry_factor: Optional[float] = None) -> dict:
     """Least dose and fewest sessions that reach and hold `target`.
 
     Parameters
@@ -1214,6 +1229,14 @@ def minimum_schedule_for_sufficiency(
         Constraint C7. `max_minutes` None drops C7 and leaves only the
         erythema ceiling; the default is the practical session ceiling from
         vitd_objectives, which is what makes FST V-VI infeasibility bind.
+    exposed_bsa : float, optional
+        Exposed body-surface fraction passed to `simulate(exposed_bsa_override=...)`.
+        None uses the model default (BSA_REF).
+    geometry_factor : float, optional
+        Horizontal-to-personal geometry correction passed to
+        `sed_from_minutes`. None falls back to the flat 0.35 Cockell scalar.
+        See `optimal_interval_risk_constrained`'s docstring for why this is
+        not redundant with `exposed_bsa`.
     gammas
         Spacing exponents to try at each budget (`warp_days`; 1.0 is uniform).
         The default is uniform ONLY, which is the plain "go outside every N
@@ -1248,7 +1271,7 @@ def minimum_schedule_for_sufficiency(
         raise ValueError("session_budgets must be non-empty")
 
     cap_burn = GAMMA_MED * _med_sed_by_fst(fst)
-    sed_per_min = sed_from_minutes(1.0, uv_index)
+    sed_per_min = sed_from_minutes(1.0, uv_index, geometry_factor)
     cap_time = (max_minutes * sed_per_min if max_minutes is not None
                 else float("inf"))
     cap = min(cap_burn, cap_time)
@@ -1266,12 +1289,13 @@ def minimum_schedule_for_sufficiency(
                 return dose_uniform(dd, x * c)
 
             s = _min_feasible(fst, days, make, horizon_days, D0, target,
-                              ramp_in_days, params)
+                              ramp_in_days, params, exposed_bsa=exposed_bsa)
             if s is None:
                 continue
             seds = make(s)
             risk, trough, total, ttf = _risk_of(fst, days, seds, horizon_days,
-                                                D0, target, ramp_in_days, params)
+                                                D0, target, ramp_in_days, params,
+                                                exposed_bsa)
             # Smallest total UV wins the budget; ties to the tighter spacing.
             key = (total, max_gap_days(days, horizon_days))
             if best is None or key < best[0]:
@@ -1287,7 +1311,7 @@ def minimum_schedule_for_sufficiency(
                     if _min_feasible(fst, dd,
                                      lambda x, d2=dd: dose_uniform(d2, x * cap_burn),
                                      horizon_days, D0, target, ramp_in_days,
-                                     params) is not None:
+                                     params, exposed_bsa=exposed_bsa) is not None:
                         binding = f"C7 session length (>{max_minutes:.0f} min)"
                         break
             rows.append({
@@ -1307,7 +1331,7 @@ def minimum_schedule_for_sufficiency(
         _, gamma, days, s, seds, risk, trough, total, ttf = best
         sched = build_variable_schedule(days, seds, fst=fst)
         r = simulate(fst=fst, schedule=sched, duration_days=horizon_days,
-                     params=params, D0=D0,
+                     params=params, D0=D0, exposed_bsa_override=exposed_bsa,
                      dose_framing="fixed_per_session_SED")
         cr = r["cancer_risk"]
         rows.append({

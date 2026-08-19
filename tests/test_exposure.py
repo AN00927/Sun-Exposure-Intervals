@@ -402,3 +402,144 @@ class TestGeometryConsistencyIsStructural:
         g = _gfp("short_sleeves", _POSTURE)
         with _pytest.raises(ValueError, match="not derivable from sites"):
             _dataclasses.replace(g, posture="standing_bowing")
+
+
+# ---------------------------------------------------------------------------
+# 8. End-to-end: exposure_sed() -> the schedule functions (Problem 1+4 wiring)
+# ---------------------------------------------------------------------------
+# ADDED 2026-08-19. Before this, nothing in the repo fed an ExposureResult's
+# .exposed_bsa/.geometry_factor into minimum_schedule_for_sufficiency /
+# optimal_interval_risk_constrained -- confirmed by grep at the time this plan
+# was written. These are the regression tests that pin the join.
+from vitd_optimization import (            # noqa: E402
+    minimum_schedule_for_sufficiency, optimal_interval_risk_constrained,
+)
+from vitd_objectives import sed_from_minutes as _sed_from_minutes  # noqa: E402
+
+_LAGOS_LAT, _LAGOS_LON = 6.5244, 3.3792
+_LAGOS_WHEN = dt.datetime(2026, 6, 21, 12, 0, tzinfo=UTC)
+
+
+class TestExposureFeedsScheduleFunctions:
+    def test_minimum_schedule_accepts_live_exposure_result(self):
+        r = ve.exposure_sed(_LAGOS_LAT, _LAGOS_LON, _LAGOS_WHEN, minutes=30,
+                            ambient_uv_index=9.0, preset="face_and_hands")
+        res = minimum_schedule_for_sufficiency(
+            fst=5, uv_index=r.ambient_uv_index, exposed_bsa=r.exposed_bsa,
+            geometry_factor=r.geometry_factor, session_budgets=(365,))
+        assert res["fst"] == 5
+        assert len(res["rows"]) == 1
+
+    def test_risk_constrained_accepts_live_exposure_result(self):
+        # interval_grid includes 1 day: at FST 5 with a small face_and_hands
+        # exposed_bsa, weekly+ intervals are genuinely infeasible under the
+        # erythema cap (a real result of the model, not a wiring bug -- see
+        # TestPrimaryMinimumSchedule's monotone-in-pigmentation tests for the
+        # same shape of constraint), so this only asserts SOME interval on
+        # the grid resolves, not that every interval does.
+        r = ve.exposure_sed(_LAGOS_LAT, _LAGOS_LON, _LAGOS_WHEN, minutes=30,
+                            ambient_uv_index=9.0, preset="face_and_hands")
+        res = optimal_interval_risk_constrained(
+            fst=5, uv_index=r.ambient_uv_index, exposed_bsa=r.exposed_bsa,
+            geometry_factor=r.geometry_factor, interval_grid=(1, 7, 14),
+            max_minutes=None)
+        assert res["recommended"] is not None
+
+    def test_no_double_application_of_geometry_or_E_source(self):
+        """A schedule built from ExposureResult.sed must match one built by
+        calling sed_from_minutes directly with the SAME geometry_factor --
+        i.e. exposure_sed()'s geometry correction and the optimizer's own
+        sed_from_minutes(1.0, uv_index, geometry_factor) call must agree
+        exactly, not compound. This is the audit-table regression test."""
+        r = ve.exposure_sed(_LAGOS_LAT, _LAGOS_LON, _LAGOS_WHEN, minutes=30,
+                            ambient_uv_index=9.0, preset="face_and_hands")
+        manual_sed_per_min = _sed_from_minutes(1.0, r.ambient_uv_index,
+                                               r.geometry_factor)
+        assert r.sed == pytest.approx(30 * manual_sed_per_min, rel=1e-9)
+
+        # And the optimizer, given that SAME geometry_factor, must derive an
+        # identical per-minute conversion -- not a second, independent one.
+        res = optimal_interval_risk_constrained(
+            fst=5, uv_index=r.ambient_uv_index, geometry_factor=r.geometry_factor,
+            interval_grid=(7,), max_minutes=None)
+        row = res["evaluated"][0]
+        assert row["minutes_per_session"] * manual_sed_per_min == pytest.approx(
+            row["sed_per_session"], rel=1e-6)
+
+    def test_more_exposed_preset_needs_fewer_minutes_same_location(self):
+        # Daily interval (grid=(1,)): weekly+ intervals are infeasible at
+        # FST 5 for these presets under the erythema cap (see the comment on
+        # test_risk_constrained_accepts_live_exposure_result above), so this
+        # isolates the exposed_bsa effect at an interval both presets can hit.
+        r_small = ve.exposure_sed(_LAGOS_LAT, _LAGOS_LON, _LAGOS_WHEN, minutes=1,
+                                  ambient_uv_index=9.0, preset="face_and_hands")
+        r_large = ve.exposure_sed(_LAGOS_LAT, _LAGOS_LON, _LAGOS_WHEN, minutes=1,
+                                  ambient_uv_index=9.0, preset="shorts_and_tshirt")
+        res_small = optimal_interval_risk_constrained(
+            fst=5, uv_index=9.0, exposed_bsa=r_small.exposed_bsa,
+            geometry_factor=r_small.geometry_factor, interval_grid=(1,),
+            max_minutes=None)["recommended"]
+        res_large = optimal_interval_risk_constrained(
+            fst=5, uv_index=9.0, exposed_bsa=r_large.exposed_bsa,
+            geometry_factor=r_large.geometry_factor, interval_grid=(1,),
+            max_minutes=None)["recommended"]
+        assert res_small is not None and res_large is not None
+        assert res_large["minutes_per_session"] < res_small["minutes_per_session"]
+
+
+# ---------------------------------------------------------------------------
+# 9. exposure_across_months() -- optional, caller-supplied-only seasonal mode
+# ---------------------------------------------------------------------------
+_LAGOS_UTC_OFFSET = 1.0  # West Africa Time, no network involved -- just a plain offset
+
+
+class TestExposureAcrossMonths:
+    def test_matches_exposure_sed_called_per_month(self):
+        monthly = {1: 3.0, 7: 8.5}
+        out = ve.exposure_across_months(_LAGOS_LAT, _LAGOS_LON, 2026, monthly,
+                                        minutes=30, preset="face_and_hands",
+                                        utc_offset_hours=_LAGOS_UTC_OFFSET)
+        assert set(out) == {1, 7}
+        for month, uvi in monthly.items():
+            when = dt.datetime(2026, month, 15, 12, 0)
+            direct = ve.exposure_sed(_LAGOS_LAT, _LAGOS_LON, when, minutes=30,
+                                     ambient_uv_index=uvi, preset="face_and_hands",
+                                     utc_offset_hours=_LAGOS_UTC_OFFSET)
+            assert out[month].sed == pytest.approx(direct.sed)
+
+    def test_exposed_bsa_constant_across_months_geometry_factor_can_vary(self):
+        # Same clothing every month by construction -> exposed_bsa must be
+        # identical; geometry_factor is allowed to differ because solar
+        # elevation genuinely changes month to month.
+        monthly = {1: 5.0, 4: 5.0, 7: 5.0, 10: 5.0}
+        out = ve.exposure_across_months(_LAGOS_LAT, _LAGOS_LON, 2026, monthly,
+                                        minutes=30, preset="shorts_and_tshirt",
+                                        utc_offset_hours=_LAGOS_UTC_OFFSET)
+        bsas = {r.exposed_bsa for r in out.values()}
+        assert len(bsas) == 1
+
+    def test_each_month_independent_of_the_others(self):
+        # Dropping a month from the input must not change any other month's
+        # result -- no cross-month interaction (no dose banking).
+        full = ve.exposure_across_months(_LAGOS_LAT, _LAGOS_LON, 2026,
+                                         {1: 4.0, 7: 9.0}, minutes=30,
+                                         preset="face_and_hands",
+                                         utc_offset_hours=_LAGOS_UTC_OFFSET)
+        partial = ve.exposure_across_months(_LAGOS_LAT, _LAGOS_LON, 2026,
+                                            {7: 9.0}, minutes=30,
+                                            preset="face_and_hands",
+                                            utc_offset_hours=_LAGOS_UTC_OFFSET)
+        assert full[7].sed == pytest.approx(partial[7].sed)
+
+    def test_empty_dict_raises(self):
+        with pytest.raises(ValueError):
+            ve.exposure_across_months(_LAGOS_LAT, _LAGOS_LON, 2026, {},
+                                      minutes=30, preset="face_and_hands",
+                                      utc_offset_hours=_LAGOS_UTC_OFFSET)
+
+    def test_out_of_range_month_key_raises_keyerror(self):
+        with pytest.raises(KeyError):
+            ve.exposure_across_months(_LAGOS_LAT, _LAGOS_LON, 2026,
+                                      {0: 5.0, 13: 5.0}, minutes=30,
+                                      preset="face_and_hands",
+                                      utc_offset_hours=_LAGOS_UTC_OFFSET)

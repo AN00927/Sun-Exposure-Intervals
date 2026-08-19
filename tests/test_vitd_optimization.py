@@ -738,6 +738,104 @@ class TestPrimaryMinimumSchedule:
 
 
 # ---------------------------------------------------------------------------
+# Problem 1+4: location/clothing-specific geometry threaded through both
+# schedule functions. `geometry_factor`/`exposed_bsa` default to None, so
+# every pre-existing caller must be a byte-for-byte no-op; a non-None
+# geometry_factor must move the result exactly the way calling
+# sed_from_minutes with that same geometry_factor would -- never twice.
+# ---------------------------------------------------------------------------
+class TestLocationAwareGeometryWiring:
+    def test_none_geometry_factor_is_a_no_op_for_risk_constrained(self):
+        explicit = optimal_interval_risk_constrained(fst=3, uv_index=6.0,
+                                                      geometry_factor=None)
+        default = optimal_interval_risk_constrained(fst=3, uv_index=6.0)
+        assert explicit["recommended"] == default["recommended"]
+
+    def test_none_geometry_and_bsa_is_a_no_op_for_minimum_schedule(self):
+        # Rows can carry NaN (infeasible cells), and NaN != NaN under `==`,
+        # so a plain dict-equality check would fail even for identical rows.
+        # Compare field-by-field, treating NaN as equal to NaN.
+        from math import isnan
+        from vitd_optimization import minimum_schedule_for_sufficiency
+        explicit = minimum_schedule_for_sufficiency(fst=3, uv_index=6.0,
+                                                     exposed_bsa=None,
+                                                     geometry_factor=None)
+        default = minimum_schedule_for_sufficiency(fst=3, uv_index=6.0)
+        assert len(explicit["rows"]) == len(default["rows"])
+        for row_a, row_b in zip(explicit["rows"], default["rows"]):
+            assert row_a.keys() == row_b.keys()
+            for key in row_a:
+                a, b = row_a[key], row_b[key]
+                if isinstance(a, float) and isinstance(b, float) and isnan(a) and isnan(b):
+                    continue
+                assert a == b, (key, a, b)
+
+    def test_higher_geometry_factor_lowers_minutes_needed_risk_constrained(self):
+        """More horizontal UV actually reaching skin should let the same
+        capped dose be delivered in fewer minutes -- the same relationship
+        sed_from_minutes itself embodies (max_minutes=None isolates this from
+        the session-length ceiling, which does depend on geometry_factor)."""
+        low = optimal_interval_risk_constrained(fst=3, uv_index=6.0,
+                                                 geometry_factor=0.2,
+                                                 max_minutes=None)["recommended"]
+        high = optimal_interval_risk_constrained(fst=3, uv_index=6.0,
+                                                  geometry_factor=0.6,
+                                                  max_minutes=None)["recommended"]
+        assert low is not None and high is not None
+        assert high["minutes_per_session"] < low["minutes_per_session"]
+
+    def test_risk_constrained_geometry_factor_matches_manual_sed_from_minutes(self):
+        """No double-application: with max_minutes=None the erythema-capped
+        sed_per_session is independent of geometry_factor, so the ratio
+        between two geometry_factor runs' minutes_per_session must equal the
+        ratio sed_from_minutes gives directly for those two factors."""
+        from vitd_objectives import sed_from_minutes
+        r1 = optimal_interval_risk_constrained(fst=3, uv_index=6.0,
+                                               geometry_factor=0.2,
+                                               interval_grid=(7,), max_minutes=None)
+        r2 = optimal_interval_risk_constrained(fst=3, uv_index=6.0,
+                                               geometry_factor=0.6,
+                                               interval_grid=(7,), max_minutes=None)
+        row1, row2 = r1["evaluated"][0], r2["evaluated"][0]
+        assert row1["sed_per_session"] == pytest.approx(row2["sed_per_session"], rel=1e-9)
+        expected_ratio = (sed_from_minutes(1.0, 6.0, 0.2)
+                          / sed_from_minutes(1.0, 6.0, 0.6))
+        actual_ratio = row2["minutes_per_session"] / row1["minutes_per_session"]
+        assert actual_ratio == pytest.approx(expected_ratio, rel=1e-9)
+
+    def test_exposed_bsa_changes_minimum_schedule_dose(self):
+        """exposed_bsa scales synthesis -- a different mechanism than
+        geometry_factor, which scales dose per minute -- confirm it actually
+        reaches simulate(): more exposed skin needs less dose per session to
+        reach the same target."""
+        from vitd_optimization import minimum_schedule_for_sufficiency
+        small_bsa = minimum_schedule_for_sufficiency(
+            fst=3, uv_index=6.0, exposed_bsa=0.10, max_minutes=None,
+            session_budgets=(365,))["rows"][0]
+        large_bsa = minimum_schedule_for_sufficiency(
+            fst=3, uv_index=6.0, exposed_bsa=0.60, max_minutes=None,
+            session_budgets=(365,))["rows"][0]
+        assert small_bsa["feasible"] and large_bsa["feasible"]
+        assert large_bsa["sed_per_session"] < small_bsa["sed_per_session"]
+
+    def test_minimum_schedule_geometry_factor_matches_manual_sed_from_minutes(self):
+        from vitd_optimization import minimum_schedule_for_sufficiency
+        from vitd_objectives import sed_from_minutes
+        r1 = minimum_schedule_for_sufficiency(
+            fst=3, uv_index=6.0, geometry_factor=0.2, max_minutes=None,
+            session_budgets=(365,))["rows"][0]
+        r2 = minimum_schedule_for_sufficiency(
+            fst=3, uv_index=6.0, geometry_factor=0.6, max_minutes=None,
+            session_budgets=(365,))["rows"][0]
+        assert r1["feasible"] and r2["feasible"]
+        assert r1["sed_per_session"] == pytest.approx(r2["sed_per_session"], rel=1e-6)
+        expected_ratio = (sed_from_minutes(1.0, 6.0, 0.2)
+                          / sed_from_minutes(1.0, 6.0, 0.6))
+        actual_ratio = r2["minutes_per_session"] / r1["minutes_per_session"]
+        assert actual_ratio == pytest.approx(expected_ratio, rel=1e-6)
+
+
+# ---------------------------------------------------------------------------
 # SECONDARY objective: the tri-objective frontier
 # ---------------------------------------------------------------------------
 class TestTriObjective:

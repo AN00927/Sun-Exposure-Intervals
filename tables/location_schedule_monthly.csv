@@ -1,0 +1,13 @@
+location,preset,fst,month,ambient_uv_index,geometry_factor,feasible,n_sessions_per_year,minutes_per_session
+"Lagos, Nigeria",face_and_hands,2,1,5.0,0.44608862109202174,True,183,43.78587827070993
+"Lagos, Nigeria",face_and_hands,2,7,10.0,0.42744064881783267,True,183,22.848063368685896
+"Lagos, Nigeria",face_and_hands,5,1,5.0,0.44608862109202174,True,260,102.76586785912514
+"Lagos, Nigeria",face_and_hands,5,7,10.0,0.42744064881783267,True,260,53.62461965146593
+"Lagos, Nigeria",face_and_hands,6,1,5.0,0.44608862109202174,True,365,83.86102303862572
+"Lagos, Nigeria",face_and_hands,6,7,10.0,0.42744064881783267,True,260,85.77066734433174
+"Lagos, Nigeria",shorts_and_tshirt,2,1,5.0,0.459029150430897,True,104,29.226799358159944
+"Lagos, Nigeria",shorts_and_tshirt,2,7,10.0,0.440381178156708,True,104,15.232205126641933
+"Lagos, Nigeria",shorts_and_tshirt,5,1,5.0,0.459029150430897,True,146,64.39870253205301
+"Lagos, Nigeria",shorts_and_tshirt,5,7,10.0,0.440381178156708,True,104,63.53326545028876
+"Lagos, Nigeria",shorts_and_tshirt,6,1,5.0,0.459029150430897,True,146,99.24681723117828
+"Lagos, Nigeria",shorts_and_tshirt,6,7,10.0,0.440381178156708,True,104,107.32398077845573

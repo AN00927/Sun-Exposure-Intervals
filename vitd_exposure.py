@@ -613,3 +613,65 @@ def exposure_sed_live(latitude: float, longitude: float, when: dt.datetime,
     return exposure_sed(latitude, longitude, when, minutes,
                         ambient.effective_uv_index,
                         sites=sites, preset=preset, posture=posture)
+
+
+# ---------------------------------------------------------------------------
+# 7. Seasonal variation -- OPTIONAL, caller-supplied only. See module
+#    docstring point 2 below for why this repo never invents this table.
+# ---------------------------------------------------------------------------
+def exposure_across_months(latitude: float, longitude: float, year: int,
+                           monthly_uv_index: Dict[int, float], minutes: float,
+                           *, sites: Optional[Iterable[str]] = None,
+                           preset: Optional[str] = None,
+                           posture: str = "standing_erect_arms_down",
+                           utc_offset_hours: Optional[float] = None,
+                           day_of_month: int = 15
+                           ) -> Dict[int, ExposureResult]:
+    """One ExposureResult per month in `monthly_uv_index` (keys 1-12), all at
+    `day_of_month` of `year` -- the caller-supplied seasonal extension of
+    exposure_sed(). Requires a real monthly UV Index PER MONTH from the
+    caller (e.g. a live vitd_ambient.fetch_ambient_uvi()/OPEN_METEO_HISTORICAL_URL
+    fetch for each month, or a transcribed printed climatology). This module
+    NEVER invents that table itself -- see module docstring "WHAT THIS MODULE
+    DOES NOT DO" -- and no caller in this repo currently supplies one:
+    run_all.py's own report skips this function entirely rather than pass a
+    fabricated profile (see run_all.py section 11d).
+
+    The SAME `sites`/`preset`/`posture` -- hence the SAME `exposed_bsa` -- is
+    used for every month (a person's chosen clothing doesn't vary by this
+    function's own logic; a caller modelling seasonal clothing changes would
+    call exposure_sed() directly per month with a different preset).
+    `geometry_factor` DOES vary month to month even though clothing does not,
+    because solar elevation genuinely changes with `when` and Vernez's
+    regression has a (small) solar-zenith-angle term -- see exposure_sed().
+
+    NOT MODELLED: this only varies ambient UV Index INTENSITY by month. The
+    solar E_source (vitamin-D spectral effectiveness) this repo uses is a
+    single Manchester-summer value applied year-round -- see
+    calibration_approval.yaml parameter_approvals.E_SOURCE_SOLAR_DEFAULT.not_covered.
+    A caller combining this function's output with vitd_model.simulate()
+    inherits that limitation; this function does not fix it.
+
+    Each month is computed INDEPENDENTLY (same as calling exposure_sed() once
+    per month) -- there is no cross-month interaction here or in any
+    downstream schedule function that consumes this output.
+
+    Raises
+    ------
+    ValueError if `monthly_uv_index` is empty.
+    KeyError if any key of `monthly_uv_index` is outside 1-12.
+    """
+    if not monthly_uv_index:
+        raise ValueError("monthly_uv_index must be non-empty")
+    bad_months = sorted(m for m in monthly_uv_index if not (1 <= m <= 12))
+    if bad_months:
+        raise KeyError(f"monthly_uv_index has invalid month keys: {bad_months}; "
+                       "expected integers 1-12")
+
+    out: Dict[int, ExposureResult] = {}
+    for month, uvi in sorted(monthly_uv_index.items()):
+        when = dt.datetime(year, month, day_of_month, 12, 0)
+        out[month] = exposure_sed(latitude, longitude, when, minutes, uvi,
+                                  sites=sites, preset=preset, posture=posture,
+                                  utc_offset_hours=utc_offset_hours)
+    return out

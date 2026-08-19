@@ -744,6 +744,96 @@ Diffey 1987) -- that inheritance is not corrected anywhere in this chain.
 
 Full table (all locations × presets, every intermediate value): `tables/location_exposure_chain.csv`.
 
+## 11c. Location-based schedule recommendation — PHASE 1+2 wired together
+
+11b above stops at SED and gets "minutes needed" from a hand-rolled linear division, bypassing the feedback/dose-response model entirely. This section threads the SAME `exposure_sed()` geometry_factor and exposed_bsa into `vitd_optimization.minimum_schedule_for_sufficiency` (the PRIMARY objective, section 0) and `.optimal_interval_risk_constrained` (section 14b's function) instead — the real model, not an estimate. Nothing here is a calibration change (see CLAUDE.md/calibration_approval.yaml); both functions' new `exposed_bsa`/`geometry_factor` parameters default to `None` and leave every existing caller unchanged.
+
+The behavioural reality-check lines are reference numbers from measured UK field cohorts (`vitd_behaviour.py`), valid only for FST II/V — never combined into the recommendation above them.
+
+```
+==========================================================================
+PHASE 1+2 CHAIN: location + date/time + clothing + skin type -> schedule
+==========================================================================
+Same exposure_sed() call as 11b, but geometry_factor and exposed_bsa now feed the PRIMARY objective (minimum_schedule_for_sufficiency, section 0) and the risk-scored counterpart (optimal_interval_risk_constrained, section 14b) instead of 11b's hand-rolled linear division -- the real feedback/dose-response model, not an estimate. The ambient UV Index is still the SAME FIXED INPUT 11b uses (8) for every curated location, for the same offline-reproducibility reason 11b states; the final row below uses a manually-supplied UV Index instead, to show that path.
+
+  Schedule recommendation by location, preset and skin type (2026-03-20, local noon):
+    location                         preset             FST   n/yr  min/sess interval d  risk idx
+    Lagos, Nigeria                   face_and_hands       2    183      29.0          1      2.70
+    Lagos, Nigeria                   face_and_hands       5    260      68.0          1      2.44
+    Lagos, Nigeria                   face_and_hands       6    260     108.7          1      1.09
+    Lagos, Nigeria                   shorts_and_tshirt    2    104      19.3          1      0.28
+    Lagos, Nigeria                   shorts_and_tshirt    5    104      80.5          1      0.15
+    Lagos, Nigeria                   shorts_and_tshirt    6    146      65.5          1      0.05
+    Nairobi, Kenya                   face_and_hands       2    183      29.3          1      2.70
+    Nairobi, Kenya                   face_and_hands       5    260      68.8          1      2.44
+    Nairobi, Kenya                   face_and_hands       6    260     110.0          1      1.09
+    Nairobi, Kenya                   shorts_and_tshirt    2    104      19.5          1      0.28
+    Nairobi, Kenya                   shorts_and_tshirt    5    104      81.4          1      0.15
+    Nairobi, Kenya                   shorts_and_tshirt    6    146      66.3          1      0.05
+    Mumbai, India                    face_and_hands       2    183      28.3          1      2.70
+    Mumbai, India                    face_and_hands       5    260      66.3          1      2.44
+    Mumbai, India                    face_and_hands       6    260     106.1          1      1.09
+    Mumbai, India                    shorts_and_tshirt    2    104      18.9          1      0.28
+    Mumbai, India                    shorts_and_tshirt    5    104      78.6          1      0.15
+    Mumbai, India                    shorts_and_tshirt    6    146      64.0          1      0.05
+    Atlanta, USA                     face_and_hands       2    183      26.8          1      2.70
+    Atlanta, USA                     face_and_hands       5    260      62.9          1      2.44
+    Atlanta, USA                     face_and_hands       6    260     100.7          1      1.09
+    Atlanta, USA                     shorts_and_tshirt    2    104      17.9          1      0.28
+    Atlanta, USA                     shorts_and_tshirt    5    104      74.7          1      0.15
+    Atlanta, USA                     shorts_and_tshirt    6    146      60.8          1      0.05
+    Oslo, Norway                     face_and_hands       2    183      24.7          1      2.70
+    Oslo, Norway                     face_and_hands       5    260      58.1          1      2.44
+    Oslo, Norway                     face_and_hands       6    260      92.9          1      1.09
+    Oslo, Norway                     shorts_and_tshirt    2    104      16.6          1      0.28
+    Oslo, Norway                     shorts_and_tshirt    5    104      69.1          1      0.15
+    Oslo, Norway                     shorts_and_tshirt    6    104     116.7          1      0.05
+    User-supplied example (arbitrary location) face_and_hands       2    183      28.1          1      2.70
+    User-supplied example (arbitrary location) face_and_hands       5    260      65.9          1      2.44
+    User-supplied example (arbitrary location) face_and_hands       6    260     105.4          1      1.09
+    User-supplied example (arbitrary location) shorts_and_tshirt    2    104      18.8          1      0.28
+    User-supplied example (arbitrary location) shorts_and_tshirt    5    104      78.3          1      0.15
+    User-supplied example (arbitrary location) shorts_and_tshirt    6    146      63.7          1      0.05
+
+  'n/yr'/'min/sess' are the PRIMARY objective's fewest-sessions
+  answer (minimum_schedule_for_sufficiency); 'interval d'/'risk
+  idx' are the risk-scored counterpart (optimal_interval_risk_
+  constrained). 'infeas.' means this skin type cannot hold
+  sufficiency on sun alone at this location/clothing without
+  burning or an unreasonably long session -- a RESULT, not a
+  gap (see section 0).
+
+  Behavioural reality-check (reference only, never fed back into
+  the recommendation above -- see vitd_behaviour.py). Shown for
+  the first (Lagos, face_and_hands) row at each skin type:
+  FST 2:
+    behavioural reality-check (kift2013, Webb 2010 white, Manchester 53.5N): a measured field population received 3.40 SED/summer-week; this schedule prescribes 4.01 SED/week. DIFFERENT quantities (a population average vs. an individual prescription) shown side by side for reference -- never combined into the recommendation above.
+    behavioural reality-check (darling2013, Darling 2013 Caucasian F, Surrey 51.3N): a measured field population received 6.39 SED/summer-week; this schedule prescribes 4.01 SED/week. DIFFERENT quantities (a population average vs. an individual prescription) shown side by side for reference -- never combined into the recommendation above.
+  FST 5:
+    behavioural reality-check (kift2013, Kift 2013 South Asian FST V, Manchester 53.5N): a measured field population received 1.00 SED/summer-week; this schedule prescribes 13.26 SED/week. DIFFERENT quantities (a population average vs. an individual prescription) shown side by side for reference -- never combined into the recommendation above.
+    behavioural reality-check (darling2013, Darling 2013 South Asian F, Surrey 51.3N): a measured field population received 2.00 SED/summer-week; this schedule prescribes 13.26 SED/week. DIFFERENT quantities (a population average vs. an individual prescription) shown side by side for reference -- never combined into the recommendation above.
+  FST 6:
+    behavioural reality-check: NOT AVAILABLE for FST 6 -- vitd_behaviour.py has field dosimetry only for FST II and FST V, both UK latitude (Kift 2013, Darling 2013). No extrapolation is made here; see calibration_approval.yaml a1_diagnosis_result_2026_08_17.cannot_be_resolved.
+
+  Full table: tables/location_schedule.csv
+
+```
+
+Full table: `tables/location_schedule.csv`.
+
+## 11d. Seasonal variation (optional)
+
+Skipped by default — see the section's own output below for why `run_all.py` never fabricates a monthly UV climatology, and `vitd_exposure.exposure_across_months()` for the mechanism any caller with real monthly numbers can use directly.
+
+```
+==========================================================================
+PHASE 1+2 CHAIN, SEASONAL (OPTIONAL, section 11d)
+==========================================================================
+No monthly UV profile supplied for any location, so this section is SKIPPED rather than showing a fabricated seasonal table. A real per-location monthly climatology requires either a live fetch (vitd_ambient.fetch_ambient_uvi / OPEN_METEO_HISTORICAL_URL) or a transcribed printed source -- this repository does not have a sourced one, and RESULTS.md must reproduce byte-for-byte offline (see section 11c's prose), so a live fetch cannot go here either. vitd_exposure.exposure_across_months() implements the mechanism and is exercised with a synthetic profile in tests/test_exposure.py::TestExposureAcrossMonths -- any caller with real numbers (from an interactive live fetch, or a source they supply) can call it directly.
+
+
+```
+
 ## 12. Example trajectories
 
 D(t) and M(t) under three representative schedules at fixed 1 SED per session. Shows the temporal dynamics directly.
