@@ -1,8 +1,8 @@
 """
 fit_sc_deboer2025.py
 ====================
-Attempted fit of the stratum-corneum parameters to de Boer 2025 Supp Table S1,
-and a demonstration of why it FAILS.
+Fit of the stratum-corneum parameters to de Boer 2025 Supp Table S1,
+and a demonstration of why it fails.
 
 Run this before trusting any fitted SC parameter.
 
@@ -161,7 +161,7 @@ def best_achievable_fit(stratum: str, verbose: bool = True) -> dict:
 
 
 def fractional_med_trend(verbose: bool = True) -> dict:
-    """Show that the fractional-MED insult FALLS during the study.
+    """Show that the fractional-MED insult falls during the study.
 
     Constant 0.8 SED against a rising MED means the relative insult declines.
     """

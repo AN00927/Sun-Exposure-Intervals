@@ -1,11 +1,10 @@
 """
 fit_katten_young2020.py
-========================
+=======================
 Fit K_ATTEN (melanin attenuation coefficient for facultative tanning)
 using per-person data from Young 2020 (P9, xlsx sheet 'TL01 irradiated', n=23 subjects).
 
-Optimizes K_ATTEN by minimizing MSE between model-predicted and observed final 25(OH)D
-across all subjects at their individual baseline D0 and BSA.
+Optimizes K_ATTEN by minimizing MSE between model-predicted and observed final 25(OH)D.
 Computes 95% confidence intervals via subject-level bootstrap (B=1000).
 """
 
@@ -39,7 +38,7 @@ def load_young2020_tl01_data(xlsx_path: str) -> pd.DataFrame:
     return df
 
 def run_fit(df: pd.DataFrame, n_bootstrap: int = 1000):
-    """Precompute predictions and run fast vectorized grid search + bootstrap."""
+    """Precompute predictions and run vectorized grid search + bootstrap."""
     params = ModelParams()
     E_tl01 = get_E_source("tl01_nb_uvb")
     

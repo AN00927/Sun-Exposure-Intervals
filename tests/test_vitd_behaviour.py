@@ -1,13 +1,13 @@
 """Tests for vitd_behaviour -- the behavioural exposure term.
 
-The contract this module has to keep is narrow and load-bearing:
+Three invariants:
 
-  1. it is NEUTRAL by default, so turning it on changes nothing until asked;
-  2. it reproduces the measured field cohorts when explicitly enabled;
-  3. it REFUSES to invent a cohort that was never measured.
+  1. NEUTRAL by default -- turning it on changes nothing until asked;
+  2. reproduces the measured field cohorts when explicitly enabled;
+  3. refuses to invent a cohort that was never measured.
 
 (3) matters as much as (1). Every behavioural measurement in this repo is UK,
-FST II vs FST V, South Asian ancestry for the dark arm. Silently interpolating
+FST II vs FST V, South Asian ancestry for the dark arm. Interpolating
 an FST VI factor would put a fabricated number in front of exactly the users
 the project prioritises.
 """
@@ -42,7 +42,7 @@ def test_apply_to_schedule_is_identity_at_default():
 
 
 def test_simulation_is_bit_identical_under_default_factor():
-    """The whole point of defaulting to 1.0: model output must not move."""
+    """Defaulting to 1.0: model output must not move."""
     sched = [(d * 2.0, 1.3) for d in range(9)]
     base = simulate(fst=5, schedule=sched, duration_days=20,
                     params=ModelParams(), D0=25.0,
@@ -55,7 +55,7 @@ def test_simulation_is_bit_identical_under_default_factor():
 
 
 def test_scheduling_mode_rejects_a_cohort():
-    """Passing a cohort in scheduling mode is a mistake, not a silent upgrade."""
+    """Passing a cohort in scheduling mode is a mistake."""
     with pytest.raises(ValueError, match="scheduling mode"):
         vb.behaviour_factor(vb.MODE_SCHEDULING, cohort="kift2013_south_asian")
 
@@ -89,8 +89,8 @@ def test_cohort_factor_by_fst():
 
 
 def test_measured_dose_ratios_bracket_the_reported_range():
-    """fst_gap_decomposition S2 reports 2.6x-4.0x for the dose ratio; the two
-    within-study pairs must sit inside that."""
+    """fst_gap_decomposition S2 reports 2.6x-4.0x for the dose ratio.
+    Both within-study pairs must sit inside that range."""
     for study in vb.COHORT_PAIRS:
         assert 2.6 <= vb.measured_dose_ratio(study) <= 4.0
 
@@ -103,9 +103,8 @@ def test_behaviour_share_matches_the_approved_diagnosis():
 
 
 def test_behaviour_is_not_time_outdoors():
-    """The dark cohort spent MORE time outdoors and still got less UV. If this
-    ever flips, the module's whole framing (shade and clothing, not hours)
-    would need rewriting."""
+    """The dark cohort spent more time outdoors and still got less UV. If this
+    flips, the module's framing (shade and clothing, not hours) needs rewriting."""
     w = vb.COHORTS["kift2013_white"]
     s = vb.COHORTS["kift2013_south_asian"]
     assert s.minutes_outdoors_per_day >= w.minutes_outdoors_per_day
@@ -114,8 +113,8 @@ def test_behaviour_is_not_time_outdoors():
 
 def test_personal_dose_is_orders_of_magnitude_below_unshaded_sky_visibility():
     """Kift's cohorts received 0.9-2.9% of ambient. Vernez 2015's unshaded
-    sky-visibility values are tens of percent. That gap is why the term is
-    shade, not posture geometry."""
+    sky-visibility values are tens of percent. Shade explains the gap, not posture
+    geometry."""
     for key in ("kift2013_white", "kift2013_south_asian"):
         lo, hi = vb.COHORTS[key].pct_of_ambient
         assert 0.0 < lo <= hi < 5.0
@@ -147,7 +146,7 @@ def test_no_cohort_factor_for_unmeasured_skin_types(fst):
 
 
 def test_fst_vi_is_explicitly_unavailable():
-    """The dark-skin priority case: FST VI has no field dosimetry anywhere."""
+    """FST VI has no field dosimetry anywhere."""
     with pytest.raises(ValueError) as exc:
         vb.cohort_factor(6, "darling2013")
     assert "no FST VI measurement" in str(exc.value)
@@ -198,7 +197,7 @@ def test_describe_states_the_dark_skin_caveat():
 
 def test_module_does_not_import_the_optical_model():
     """Behaviour must not reach into the pigment parameters. If this module
-    ever needs ModelParams, the split has leaked."""
+    imports ModelParams, the split has leaked."""
     import inspect
     src = inspect.getsource(vb)
     assert "from vitd_model" not in src

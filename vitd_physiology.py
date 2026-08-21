@@ -3,15 +3,19 @@ vitd_physiology.py
 ==================
 Mechanistic sub-models added July 2026 after an external-literature pass.
 
-Each function here replaces something the core model previously handled with a
-phenomenological stand-in. They are opt-in via ModelParams flags so that every
-change is separately ablatable -- the earlier lesson of this project is that a
-mechanism which cannot be switched off cannot be shown to matter.
+Each function replaces something the core model previously handled with a
+phenomenological stand-in. Opt-in via ModelParams flags so every change is
+separately ablatable — a mechanism that cannot be switched off cannot be
+shown to matter.
 
 Contents
 --------
 1. body_weight_dilution_factor  -- volumetric dilution by body size
 2. photodegradation_factor      -- previtamin-D3 photostationary plateau
+2b. personal_geometry_factor    -- ambient horizontal dose -> personal anatomical
+                                   dose, via Vernez 2015 (simulated, sky
+                                   visibility) or a measured per-activity ERTA
+                                   table (Schmalwieser 2025, jogging)
 3. hydroxylation_efficiency     -- biphasic 25-hydroxylation (replaces D_max)
 4. cancer_risk                  -- SCC (cumulative) + BCC/melanoma (intermittent)
 
@@ -33,24 +37,23 @@ import numpy as np
 # 1. Volumetric dilution by body size
 # ---------------------------------------------------------------------------
 # Drincic 2012 (Obesity 20:1444-8, N=686) tested linear vs hyperbolic fits of
-# 25(OH)D against body size. A HYPERBOLIC fit on TOTAL BODY WEIGHT removed the
-# entire obesity-related component of inter-individual variance, and beat every
-# linear model AND every BMI-based model. So:
-#   - the right covariate is body weight, not BMI
-#   - the right functional form is 1/weight (a dilution volume), not a linear
-#     offset
-# Mechanism is dilution of a fixed amount of vitamin D into a larger
-# distribution volume, not sequestration (Drincic 2012; Walsh 2017 review;
+# 25(OH)D against body size. HYPERBOLIC fit on TOTAL BODY WEIGHT removed the
+# entire obesity-related inter-individual variance, beating every linear model
+# AND every BMI-based model. So:
+#   - right covariate is body weight, not BMI
+#   - right functional form is 1/weight (dilution volume), not a linear offset
+# Mechanism is dilution of fixed vitamin D into a larger distribution volume,
+# not sequestration (Drincic 2012; Walsh 2017 review;
 # Pannu 2016 meta-regression shows weight loss raises 25(OH)D).
 #
 # Reference weight 70 kg. A 100 kg adult gets 0.70x the 25(OH)D rise per unit
 # of cutaneous synthesis; a 55 kg adult gets 1.27x.
 #
-# Cross-check against oral dosing (the effect should be the same regardless of
-# whether D3 arrives from skin or gut): Ekwaru 2014 (N=17,614) found obese
-# subjects need 2-3x and overweight 1.5x the dose of normal-weight subjects for
-# the same 25(OH)D. Weight ratio 100/70 = 1.43x dilution here; BMI 35 vs 22 at
-# fixed height implies ~1.6x. Same order, slightly conservative.
+# Cross-check against oral dosing (effect should be the same regardless of
+# D3 route): Ekwaru 2014 (N=17,614) found obese subjects need 2-3x and
+# overweight 1.5x the dose of normal-weight subjects for the same 25(OH)D.
+# Weight ratio 100/70 = 1.43x dilution here; BMI 35 vs 22 at fixed height
+# implies ~1.6x. Same order, slightly conservative.
 BODY_WEIGHT_REF_KG: float = 70.0
 
 
@@ -58,8 +61,8 @@ def body_weight_dilution_factor(weight_kg: float | None,
                                 ref_kg: float = BODY_WEIGHT_REF_KG) -> float:
     """Multiplicative factor on 25(OH)D gain per unit of vitamin D input.
 
-    Hyperbolic in total body weight (Drincic 2012). Returns 1.0 when weight is
-    unknown or equals the reference, so existing scenarios are unchanged.
+    Hyperbolic in total body weight (Drincic 2012). Returns 1.0 when weight
+    is unknown or equals the reference, so existing scenarios are unchanged.
     """
     if weight_kg is None or weight_kg <= 0:
         return 1.0
@@ -70,24 +73,23 @@ def body_weight_dilution_factor(weight_kg: float | None,
 # 2. Previtamin-D3 photodegradation plateau
 # ---------------------------------------------------------------------------
 # Holick 1981 (Science 211:590-3): during prolonged simulated-solar exposure,
-# previtamin-D3 rises to a PLATEAU at 10-15% of the original 7-DHC content,
+# previtamin-D3 rises to a PLATEAU at 10-15% of original 7-DHC content,
 # after which further UV photoisomerises it to inert lumisterol3 and
-# tachysterol3. Pigmentation and latitude change the TIME to reach the plateau
-# but NOT the plateau height -- i.e. this is a photostationary state, and it is
-# the reason sun exposure cannot be banked in one long session.
+# tachysterol3. Pigmentation and latitude change TIME to plateau but NOT
+# plateau height — a photostationary state, and the reason sun exposure
+# cannot be banked in one long session.
 #
-# van Dijk 2016 (Photochem Photobiol Sci) quantifies the consequence: the
-# effective action spectrum changes shape with accumulated dose, and net
+# van Dijk 2016 (Photochem Photobiol Sci) quantifies the consequence: net
 # production is "largely cancelled" by ~7.5 SED on previously unexposed skin.
 # Their modified-QUT spectrum turns negative for longer UVB wavelengths after
 # as little as 1.25 SED.
 #
-# Model: a per-session saturating factor on synthesis,
+# Model: per-session saturating factor on synthesis,
 #     f(sed) = (1 - exp(-sed / D_SAT)) / (sed / D_SAT)
-# i.e. the average of exp(-s/D_SAT) over the session, which is what you get if
-# instantaneous yield decays exponentially as the substrate pool is driven
-# toward its photostationary state. f -> 1 as sed -> 0 (no change at low dose)
-# and f ~ D_SAT/sed at high dose (yield plateaus in ABSOLUTE terms).
+# average of exp(-s/D_SAT) over the session — instantaneous yield decays
+# exponentially as the substrate pool approaches its photostationary state.
+# f -> 1 as sed -> 0 (no change at low dose) and f ~ D_SAT/sed at high dose
+# (yield plateaus in ABSOLUTE terms).
 #
 # D_SAT = 7.5 SED anchors to van Dijk's "net production largely cancelled at
 # 7.5 SED" on unexposed skin. [PRIOR] Single-source; van Dijk is a modelling
@@ -98,13 +100,13 @@ PREVITAMIN_D_SAT_SED: float = 7.5
 def photodegradation_factor(sed: float, d_sat: float = PREVITAMIN_D_SAT_SED) -> float:
     """Session-averaged yield reduction from previtamin-D3 photodegradation.
 
-    Returns 1.0 for vanishing dose and falls as ~d_sat/sed for large dose, so
-    total per-session yield saturates instead of growing without bound.
+    Returns 1.0 for vanishing dose and falls as ~d_sat/sed for large dose,
+    so total per-session yield saturates instead of growing without bound.
 
-    This is the mechanism that makes splitting a UV budget across sessions
-    genuinely better than taking it in one hit -- a real interior optimum,
-    unlike the feedback-driven artifact documented in MODEL_AND_EVIDENCE.md,
-    'Remaining gaps', gap 19.
+    This mechanism makes splitting a UV budget across sessions genuinely
+    better than taking it in one hit — a real interior optimum, unlike the
+    feedback-driven artifact in MODEL_AND_EVIDENCE.md, 'Remaining gaps',
+    gap 19.
     """
     if sed <= 0.0:
         return 1.0
@@ -119,10 +121,44 @@ def photodegradation_factor(sed: float, d_sat: float = PREVITAMIN_D_SAT_SED) -> 
 # ---------------------------------------------------------------------------
 # REPLACED 2026-08-16. The previous form here was `0.15 + 0.30*cos(theta)`,
 # attributed to Schmalwieser & Siani 2018 and Parisi 2000/2003. A full-text read
-# (gap 26) established that no source supports it: Schmalwieser & Siani's own
-# measured curve is non-monotonic, and their conclusion is that the ratio as a
-# function of solar elevation is not currently derivable. It was carried as a
-# PLACEHOLDER only because nothing better was obtainable.
+# (gap 26) established that no source supports THAT SPECIFIC FORM. It was
+# carried as a PLACEHOLDER only because nothing better was obtainable.
+# [CORRECTED 2026-08-20] Schmalwieser & Siani 2018 (full text now in
+# Research_Papers/) is narrower than the previous comment here claimed: they do
+# NOT conclude the elevation-dependence is undeliverable in general -- their
+# Fig. 2 plots exactly that (face ERTA vs solar elevation) for activities they
+# had data for. Their actual conclusion is coverage, not derivability: "for
+# most activities, we still lack the possibility to predict the UV exposure of
+# exposed body sites under any condition because ERTAs are not fully
+# available" -- i.e. per-activity, per-site curves exist piecemeal, not a
+# general-purpose one.
+#
+# [PARTIALLY CLOSED 2026-08-20] One of the two papers named here as worth
+# acquiring is now IN THE REPO and IMPLEMENTED: Schmalwieser et al. 2025
+# (Photochem Photobiol, jogging, solar elevation 20-60 deg) -- see the
+# ACTIVITY-SPECIFIC MEASURED ERTA section further down this file, exposed as
+# activity_erta() and as personal_geometry_factor(activity='jogging', ...).
+# So elevation dependence is no longer unsourced: for ONE activity, at seven
+# body sites, it is measured.
+#
+# WHAT IS STILL OPEN, and why this is "partially", not "closed":
+#   - ONE activity out of the many people actually do, from ONE subject. The
+#     other paper named here, Weihs et al. 2024 (Atmosphere, cycling, SZA up to
+#     65 deg), is still NOT in the repo and would be the obvious next
+#     acquisition.
+#   - NOT TRANSFERABLE ACROSS ACTIVITIES. Weihs et al. 2013 (walking/sitting/
+#     lying, same city, overlapping authors, now in the repo) reports a
+#     shoulders:forehead contrast of 1.7x while walking, against 2.5x for
+#     jogging over the same solar elevations -- and a different site ordering
+#     once the posture changes, the lower legs taking the lead while lying and
+#     sitting up. Schmalwieser & Siani's coverage objection therefore stands in
+#     full: what exists is still piecemeal per-activity curves, not a general
+#     model. [CORRECTED 2026-08-20] this bullet previously claimed a "5x"
+#     disagreement, taken from a Figure 6 digitization since withdrawn -- see
+#     the WEIHS et al. 2013 block further down.
+#   - THE FLAT FALLBACK IS UNCHANGED. personal_geometry_factor() with no
+#     activity= still returns the 0.35 Cockell scalar; nothing about the default
+#     model output moved.
 #
 # Vernez et al. 2015 (J Expo Sci Environ Epidemiol 25:113-118, doi
 # 10.1038/jes.2014.6) is now IN THE REPO, full text with printed coefficients:
@@ -276,28 +312,71 @@ def vernez_exposure_ratio(vis_percent: float,
 
 
 def personal_geometry_factor(solar_elevation_deg: float | None = None,
-                             vis_percent: float | None = None) -> float:
+                             vis_percent: float | None = None,
+                             activity: str | None = None,
+                             body_site: str | None = None) -> float:
     """Ratio of personal anatomical UV dose to ambient horizontal UV.
 
-    vis_percent supplied -> Vernez 2015 Eq. 1 (sourced, R^2 = 0.988).
-    vis_percent omitted  -> 0.35, the Cockell 2001 measured central value for
+    Three mutually exclusive routes, in order of how much the caller knows:
+
+      vis_percent supplied -> Vernez 2015 Eq. 1 (MODELLED, R^2 = 0.988; a
+                            3D-manikin simulation, unshaded ceiling).
+      activity supplied    -> the MEASURED ERTA table for that activity
+                            (Schmalwieser 2025 for 'jogging'), interpolated at
+                            solar_elevation_deg, for `body_site` or the
+                            unweighted mean over the paper's measured sites.
+                            Requires solar_elevation_deg.
+      neither              -> 0.35, the Cockell 2001 measured central value for
                             upright activity. [PRIOR] Scalar, behaviourally
                             averaged, and it directly scales every minutes
                             recommendation, so sweep it first.
 
-    solar_elevation_deg is converted to zenith angle for the Vernez path. On its
-    own it no longer does anything: the elevation-only form previously returned
-    here was withdrawn on 2026-08-16 as unsourced (gap 26), and Vernez shows
-    solar geometry is the ~1.18x term while posture is the ~11.6x term.
+    Passing BOTH vis_percent and activity RAISES. They are two different
+    estimates of the same ratio -- one simulated from sky visibility, one
+    measured on a jogger -- and silently preferring either would hide which
+    one produced the answer.
+
+    [NOT A CALIBRATION OF THE DEFAULT] 2026-08-20: the activity route was added
+    without moving the 0.35 fallback, even though every jogging ERTA sits above
+    it. Jogging ERTAs (n = 1, forward lean, continuous direct sun) and Cockell's
+    behaviourally-averaged scalar measure different regimes, and Weihs 2013
+    reports ERs from 0.05 to 1.0 across six sites and four postures in direct
+    sun at 46-64 deg -- a spread that straddles 0.35 in both directions. The
+    measured spread across activities and sites is wider than the gap to 0.35,
+    so no single replacement is defensible. See calibration_approval.yaml,
+    parameter_approvals.PERSONAL_DOSE_GEOMETRY_FACTOR.
+
+    solar_elevation_deg is converted to zenith angle for the Vernez path and
+    used directly for the activity path. On its own -- no vis_percent, no
+    activity -- it still does nothing: the elevation-only form previously
+    returned here was withdrawn on 2026-08-16 as unsourced (gap 26), and Vernez
+    shows solar geometry is the ~1.18x term while posture is the ~11.6x term.
     """
+    if vis_percent is not None and activity is not None:
+        raise ValueError(
+            "personal_geometry_factor: pass vis_percent OR activity, not both. "
+            "Vernez 2015 (simulated, sky-visibility driven) and the measured "
+            "activity ERTA tables are competing estimates of the same ratio; "
+            "choose one explicitly."
+        )
+    if activity is not None:
+        return activity_erta(activity,
+                             _MEAN_SITE_KEY if body_site is None else body_site,
+                             solar_elevation_deg)
+    if body_site is not None:
+        raise ValueError(
+            "personal_geometry_factor: body_site is only meaningful with "
+            "activity=. For the Vernez route, select the site by passing its "
+            "vis_percent from vis_table_s1(body_site, posture)."
+        )
     if vis_percent is None:
         if solar_elevation_deg is not None:
             warnings.warn(
                 "personal_geometry_factor: solar_elevation_deg alone no longer "
                 "changes the result. The `0.15 + 0.30*cos(theta)` form was "
-                "withdrawn 2026-08-16 as unsourced (MODEL_AND_EVIDENCE.md gap "
-                "26). Pass vis_percent to use the Vernez 2015 model; returning "
-                "the 0.35 Cockell scalar.",
+                "withdrawn 2026-08-16 as unsourced (gap 26). Pass vis_percent "
+                "for the Vernez 2015 model, or activity= for a measured ERTA "
+                "table; returning the 0.35 Cockell scalar.",
                 UserWarning, stacklevel=2,
             )
         return 0.35
@@ -326,12 +405,15 @@ def personal_geometry_factor(solar_elevation_deg: float | None = None,
 # its INPUTS. The values below are the paper's actual inputs, transcribed
 # (not inverted, not fitted).
 #
-# [VERIFY] 'Top of shoulders' and 'Upper back' carry IDENTICAL values across
-# ALL FIVE postures in the source table (35.9 / 50.3 / 48.6 / 45.7 / 85.3).
-# This is reproduced verbatim from the source and has NOT been altered here.
-# It may be a genuine shared manikin mesh region or a copy-paste in the
-# original table -- do not silently de-duplicate; confirm against the
-# rendered document before relying on either row independently.
+# [CLOSED 2026-08-20, was VERIFY] 'Top of shoulders' and 'Upper back' carry
+# IDENTICAL values across ALL FIVE postures in the source table (35.9 / 50.3 /
+# 48.6 / 45.7 / 85.3). Confirmed against Vernez 2015's own supplementary .doc
+# (Research_Papers/supplementary materials.doc, transcribed and diffed
+# cell-by-cell against VERNEZ_TABLE_S1_VIS below -- all 65 values match). The
+# duplication is IN THE SOURCE DOCUMENT, not a transcription error here.
+# Whether it reflects a genuine shared manikin mesh region or an upstream
+# copy-paste in Vernez's own table remains unknown -- still do not silently
+# de-duplicate, since the source itself is ambiguous on this point.
 #
 # Still a ceiling, not expected real-world exposure: Vernez ER (and therefore
 # the Vis that feeds it) assumes NO SHADE and continuous exposure -- see the
@@ -387,8 +469,9 @@ def vis_table_s1(body_site: str, posture: str) -> float:
     result into vernez_exposure_ratio() as `vis_percent` for a sourced,
     site-specific exposure ratio.
 
-    [VERIFY] 'top_of_shoulders' and 'upper_back' return identical numbers for
-    every posture -- see the module comment above; this is not a lookup bug.
+    [CLOSED 2026-08-20] 'top_of_shoulders' and 'upper_back' return identical
+    numbers for every posture -- see the module comment above; this is not a
+    lookup bug, confirmed against Vernez's own supplementary source document.
     """
     site = _normalize_body_site(body_site)
     if site not in VERNEZ_TABLE_S1_VIS:
@@ -402,6 +485,423 @@ def vis_table_s1(body_site: str, posture: str) -> float:
         )
     return VERNEZ_TABLE_S1_VIS[site][posture]
 # ===================== END VERNEZ 2015 TABLE S1 (SOURCED) ==================
+
+
+# ============ ACTIVITY-SPECIFIC MEASURED ERTA (SOURCED, 2026-08-20) ========
+# Schmalwieser, Danhel, Schmalwieser, Reimoser, Rummel, Loy, Heydenreich &
+# Weihs 2025, "Erythemal UV radiation exposure during jogging", Photochem
+# Photobiol, doi 10.1111/php.14114. Full text in the repo:
+#   Research_Papers/Schmalwieser_2025_Photo.pdf
+#
+# WHAT ERTA IS, AND WHY IT IS NOT THE SAME OBJECT AS VERNEZ ER.
+# ERTA (exposure ratio to ambient) = E_i(h) / E_ambient(h): erythemally
+# weighted irradiance MEASURED on a body site, over erythemally weighted
+# irradiance measured simultaneously on a horizontal reference. Both numerator
+# and denominator come from CIE-erythema-matched detectors, so the erythema
+# action spectrum CANCELS and what survives is pure anatomical/angular
+# geometry. That is the same quantity Vernez Eq. 1 PREDICTS, but here it is
+# MEASURED on a moving human rather than simulated on a static 3D manikin, and
+# it is resolved by activity and solar elevation rather than by sky visibility.
+#
+# WHAT THE STUDY IS. ONE volunteer wearing 12 SunSaver dosimeters at 7 body
+# sites, jogging on asphalt on the Danube Island, Vienna (48.247 N, 165 m),
+# cloud-free, 18-19 June 2025 (319/325 DU ozone), at solar elevations 60, 50,
+# 40, 30 and 20 deg. Four cardinal-direction runs of ~1 min each per elevation
+# were averaged to represent a "random pathway"; left/right sites were pooled
+# except forehead and nape. Posture was the textbook jogging lean (upper body
+# slightly forward, forearms at 90 deg, arms not crossing the midline).
+#
+# N = 1. ONE SUBJECT, ONE POSTURE, ONE CITY, ONE GROUND ALBEDO (asphalt/grass,
+# 5-11%). This is not a population estimate and must never be presented as one.
+#
+# UNCERTAINTY THE AUTHORS THEMSELVES STATE:
+#   +/-15% about the mean from dosimeter MOUNTING (left/right differences on
+#     runs directly toward/away from the sun, where both sides should read
+#     alike, ran 0.5-30%; largest at the shoulders, 30%).
+#   +/-10% field accuracy of the SunSaver itself (+/-2% under lab control).
+#   +/-25% swing in clear-sky UV index at fixed solar elevation from total
+#     ozone, relative to the 320 DU during their measurements. This one moves
+#     the AMBIENT term, not ERTA, so it does not enter here.
+#
+# NUMBERS BELOW ARE DIGITIZED FROM FIGURE 5, not transcribed from a table --
+# the paper prints no ERTA table. Read off the published raster at 4x zoom to
+# a precision of about +/-0.02, then rounded to 2 dp, which is already finer
+# than the +/-15% the authors claim. Every series was cross-checked against the
+# values the paper states in PROSE, and all seven agree:
+#   Abstract: "the top of the shoulder is the most exposed body site by
+#     receiving 80% of ambient UVR on average and up to 110%"; "All other body
+#     parts receive up to 55% on average".
+#   Results: shoulders "highest on average at a level of 0.8 with no dependence
+#     on solar elevation"; forearms and forehead "no clear tendency ... at a
+#     level of 0.5 and 0.3"; upper arms, calves, thighs and nape "decreases with
+#     increasing solar elevation, starting with a value of 0.5 at 20 deg down to
+#     around 0.4 and 0.3 at 60 deg".
+# If these constants are ever disputed, re-digitize Figure 5 -- do NOT re-fit.
+SCHMALWIESER_2025_ERTA_ELEVATIONS_DEG: Tuple[float, ...] = (20.0, 30.0, 40.0, 50.0, 60.0)
+
+# body_site -> ERTA at each elevation in SCHMALWIESER_2025_ERTA_ELEVATIONS_DEG.
+# "Random pathway": mean over the four cardinal running directions and both
+# hemibodies. For a path that holds ONE orientation to the sun (a riverside
+# route, a track), these means understate the sun-facing side -- see
+# SCHMALWIESER_2025_JOGGING_ERTA_MAX below.
+SCHMALWIESER_2025_JOGGING_ERTA: Dict[str, Tuple[float, ...]] = {
+    "shoulders":  (0.80, 0.82, 0.82, 0.80, 0.80),   # flat; most exposed site at every elevation
+    "forearms":   (0.52, 0.45, 0.44, 0.49, 0.52),   # U-shaped, no monotone trend
+    "forehead":   (0.32, 0.29, 0.34, 0.29, 0.36),   # lowest; face is tilted slightly down
+    "upper_arms": (0.55, 0.56, 0.56, 0.45, 0.35),   # falls above 40 deg
+    "calves":     (0.50, 0.50, 0.48, 0.49, 0.42),   # falls above 50 deg
+    "nape":       (0.50, 0.46, 0.45, 0.38, 0.35),   # falls monotonically
+    "thighs":     (0.49, 0.42, 0.45, 0.37, 0.34),   # falls monotonically
+}
+
+# DIRECTIONAL MAXIMUM, from the paper's Discussion (Figure 6 shows the full
+# per-direction spread). Jogging TOWARD the sun at 40-60 deg elevation puts the
+# shoulders at ERTA 1.17 -- ABOVE ambient horizontal irradiance, because the
+# torso leans forward and presents a surface closer to normal to the beam. Not
+# used by any function here; recorded because a monotonous route is a real
+# scenario and a ratio > 1 is the fact that makes it one.
+SCHMALWIESER_2025_JOGGING_ERTA_MAX: Dict[str, float] = {"shoulders": 1.17}
+
+# Relative measurement uncertainty the authors state (mounting), applied
+# symmetrically about the mean by activity_erta_interval().
+SCHMALWIESER_2025_ERTA_REL_UNCERTAINTY: float = 0.15
+
+# The elevation band the measurements cover. The authors are explicit that the
+# results "may not be necessarily applicable at higher solar elevations as
+# found at subtropical and tropical latitudes", which is exactly where several
+# of these series are still falling when the data runs out.
+SCHMALWIESER_2025_ERTA_VALID_ELEVATION_DEG: Tuple[float, float] = (20.0, 60.0)
+
+# Unweighted mean over a paper's measured sites, COMPUTED from its own table so
+# it cannot drift from it. Exposed as body_site='mean_measured_sites'.
+#
+# READ THE CAVEAT BEFORE USING IT. This is NOT a body-surface-area-weighted
+# whole-body exposure ratio. The 7 sites are the ones sportswear leaves bare,
+# each counted once, so the shoulders -- ~2% of BSA and by far the most exposed
+# site -- carry 1/7 of the weight. Nothing represents the trunk at all: the
+# sternum was tested and DROPPED as a mounting position. A genuine whole-body
+# number needs the BSA weighting in vitd_exposure.py, applied to whichever
+# sites the person actually leaves uncovered.
+_MEAN_SITE_KEY: str = "mean_measured_sites"
+
+
+def _with_site_mean(table: Dict[str, Tuple[float, ...]]) -> Dict[str, Tuple[float, ...]]:
+    """Copy of `table` with the unweighted across-site mean added. The measured
+    table itself is left untouched, so the sourced constant keeps exactly the
+    sites the paper measured and nothing else."""
+    n_elev = len(SCHMALWIESER_2025_ERTA_ELEVATIONS_DEG)
+    out = dict(table)
+    out[_MEAN_SITE_KEY] = tuple(
+        sum(vals[i] for vals in table.values()) / len(table) for i in range(n_elev)
+    )
+    return out
+
+
+# Registry so a second activity (e.g. Weihs et al. 2024, cycling, not yet in
+# the repo) slots in without touching the lookup function.
+ACTIVITY_ERTA_TABLES: Dict[str, Dict[str, Tuple[float, ...]]] = {
+    "jogging": _with_site_mean(SCHMALWIESER_2025_JOGGING_ERTA),
+}
+
+# ---------------------------------------------------------------------------
+# DOUBLE-COUNTING WITH E_source (VDE:EE): WHY THESE TWO TERMS MULTIPLY CLEANLY
+# ---------------------------------------------------------------------------
+# The concern is real and worth stating in full, because both ERTA and the
+# vitamin-D-to-erythema effectiveness ratio (vitd_model.SOURCE_CALIBRATION_TABLE,
+# Webb 2021) depend on solar zenith angle, and multiplying two SZA-dependent
+# factors looks like applying the same physics twice.
+#
+# It is not. The dose chain factorises as
+#
+#   D3-effective dose = SED_ambient_horizontal          [ambient, has cos(SZA)]
+#                     x ERTA(site, activity, elevation) [anatomical GEOMETRY]
+#                     x E_source (VDE:EE)               [SPECTRAL weighting]
+#
+# and each factor is a ratio of two DIFFERENT things:
+#   ERTA     = erythemal irradiance on the body / erythemal irradiance on a
+#              horizontal plane. Same spectral weighting top and bottom, so the
+#              action spectrum cancels; what remains is the angle between the
+#              skin and the sky. Its elevation dependence is the changing
+#              geometric relationship between a tilted body surface and the
+#              horizontal reference plane, NOT a change in spectrum.
+#   VDE:EE   = vitamin-D-weighted / erythema-weighted integral of the SAME
+#              irradiance. A pure unit conversion between action spectra. Its
+#              elevation dependence is the changing UVB:UVA composition of the
+#              beam, NOT a change in geometry.
+# So the two are orthogonal by construction and both may vary with elevation
+# without either being counted twice.
+#
+# THE RESIDUAL THAT IS NOT RESOLVED, and is left as a documented caveat:
+# E_source is measured for the spectrum on a HORIZONTAL plane, but ERTA moves
+# the dose onto a TILTED anatomical surface which sees a different direct:diffuse
+# mix -- more direct beam on a vertical surface at low sun, more diffuse sky at
+# high sun. Direct and diffuse differ in UVB:UVA, so the true VDE:EE at the skin
+# is not exactly the horizontal VDE:EE. The correction is the ratio
+# VDE:EE(site) / VDE:EE(horizontal), which NO source in this repo measures --
+# Webb 2021 reports only horizontal-plane values, and Schmalwieser 2025 measured
+# with erythemal detectors only, never a spectroradiometer at the skin. It is
+# second-order (the whole horizontal VDE:EE range across Webb's sun entries is
+# 1.22-2.01, and the direct/diffuse split moves a fraction of that) and it is
+# NOT corrected here. Any absolute D prediction using activity ERTA carries it.
+#
+# The practical rule: use ERTA for geometry and E_source for spectrum, never one
+# to stand in for the other, and do NOT "compensate" a falling ERTA at high sun
+# with a rising VDE:EE. They are not offsetting corrections to one quantity;
+# they are two independent quantities that happen to share an argument.
+
+
+def activity_erta(activity: str,
+                  body_site: str = _MEAN_SITE_KEY,
+                  solar_elevation_deg: float | None = None) -> float:
+    """Measured exposure-ratio-to-ambient for a named ACTIVITY and body site.
+
+    activity            : key of ACTIVITY_ERTA_TABLES ('jogging').
+    body_site           : one of the measured sites, or 'mean_measured_sites'
+                          for the unweighted mean over them (read the caveat
+                          above ACTIVITY_ERTA_TABLES -- it is NOT BSA-weighted).
+    solar_elevation_deg : required. Linearly interpolated between the measured
+                          elevations; CLAMPED at 20 and 60 deg with a warning,
+                          because the source refuses to extrapolate above 60.
+
+    RAISES on an unknown activity or site rather than guessing. Returns the
+    erythemally-weighted GEOMETRIC ratio only -- combine it with E_source for
+    the spectral step, and see the double-counting note above before doing so.
+    """
+    if activity not in ACTIVITY_ERTA_TABLES:
+        raise KeyError(
+            f"No measured ERTA table for activity '{activity}'. Known: "
+            f"{sorted(ACTIVITY_ERTA_TABLES)}. Activity ERTAs are measured per "
+            "activity and are not transferable between them -- see the "
+            "Weihs 2013 comparison in the module comment."
+        )
+    table = ACTIVITY_ERTA_TABLES[activity]
+    site = _normalize_body_site(body_site)
+    if site not in table:
+        raise KeyError(
+            f"No {activity} ERTA for body site '{body_site}'. Measured sites: "
+            f"{sorted(k for k in table if k != _MEAN_SITE_KEY)}, or "
+            f"'{_MEAN_SITE_KEY}'."
+        )
+    if solar_elevation_deg is None:
+        raise ValueError(
+            "activity_erta requires solar_elevation_deg: the table is "
+            "elevation-resolved and four of its seven sites vary with it."
+        )
+    lo_deg, hi_deg = SCHMALWIESER_2025_ERTA_VALID_ELEVATION_DEG
+    elev = float(solar_elevation_deg)
+    if not lo_deg <= elev <= hi_deg:
+        warnings.warn(
+            f"activity_erta: solar elevation {elev:.1f} deg is outside the "
+            f"measured band {lo_deg:.0f}-{hi_deg:.0f} deg (Schmalwieser 2025); "
+            "clamping. The authors state the results 'may not be necessarily "
+            "applicable at higher solar elevations as found at subtropical and "
+            "tropical latitudes'.",
+            UserWarning, stacklevel=2,
+        )
+        elev = min(hi_deg, max(lo_deg, elev))
+    return float(np.interp(elev, SCHMALWIESER_2025_ERTA_ELEVATIONS_DEG, table[site]))
+
+
+def activity_erta_interval(activity: str,
+                           body_site: str = _MEAN_SITE_KEY,
+                           solar_elevation_deg: float | None = None,
+                           ) -> Tuple[float, float]:
+    """(low, high) ERTA at the source's own stated measurement uncertainty.
+
+    +/-15% about the mean, which is the mounting uncertainty Schmalwieser 2025
+    derives from left/right disagreement on runs straight toward and away from
+    the sun. Like vernez_er_interval(), this is the honest object to report to
+    a person; the point value is for arithmetic. It does NOT include the n = 1
+    between-subject variance, which is unmeasured and larger.
+    """
+    mid = activity_erta(activity, body_site, solar_elevation_deg)
+    u = SCHMALWIESER_2025_ERTA_REL_UNCERTAINTY
+    return mid * (1.0 - u), mid * (1.0 + u)
+
+
+# ---------------------------------------------------------------------------
+# WEIHS et al. 2013 -- PROSE-SOURCED SITE RATIOS. NO ABSOLUTE ERTA TABLE.
+# ---------------------------------------------------------------------------
+# Weihs, Schmalwieser, Reinisch, Meraner, Walisch & Harald 2013, "Measurements
+# of Personal UV Exposure on Different Parts of the Body During Various
+# Activities", Photochem Photobiol 89:1004-1007 (Research Note), full text in
+#   Research_Papers/Measurements of Personal UV Exposure on Different Parts
+#   of the Body During Various Activities.pdf
+# Ten X2000-10 optoelectronic dosimeters mounted on a suit, reading six body
+# parts (forehead, shoulders, arms, chest, thighs, lower legs) across four
+# activities (walking, sitting, lying, sitting up). Vienna, campus of the
+# Veterinary Medicine University (48.25 N, 150 m), May and July 2010; seven
+# sequences of 30-40 min, six of them cloud-free and those six are what the
+# means below average. Study subject always in direct sun, low albedo (brick,
+# asphalt, grass), solar elevations 46-64 deg. Dosimeter inclination adjustable
+# only to "roughly +/-10%". ERs reported across all sites and activities: 0.05
+# to 1.0. Same city and an overlapping author group as Schmalwieser 2025 above
+# (Schmalwieser and Weihs are coauthors on both).
+#
+# [PROVENANCE 2026-08-20] TWO READS OF THIS PAPER EXIST AND ONLY ONE IS GOOD.
+#
+#   PROSE -- USED, HIGH CONFIDENCE. The Results section "Average UV exposure"
+#     states the between-site ratios directly, as sentences, and the Discussion
+#     independently repeats the ordering. Extracted as text (not from any
+#     image), transcribed into WEIHS_2013_PROSE_SITE_RATIOS below, and pinned
+#     by tests/test_physiology.py::TestWeihs2013ProseRatios.
+#
+#   FIGURE 6 -- ABANDONED, DO NOT CITE. An earlier pass digitized Figure 6 into
+#     per-site ER values and this file quoted them (a walking site mean of
+#     "~0.26", walking lower leg "~0.10", sitting-up lower leg equal to the
+#     forehead at "~0.6"). Figure 6 is a grouped range-bar chart -- six sites x
+#     four activities, min-max bars with a black dot for the mean, series
+#     distinguished only by grayscale hatching, with shoulders and lower legs
+#     hatched the same way in opposite directions. At the resolution of the copy
+#     held here it cannot be read to that precision. Those digitized numbers are
+#     NOT REPRODUCIBLE and must not be quoted anywhere; they have been withdrawn
+#     from vitd_objectives.py and calibration_approval.yaml as well.
+#     The paper does NOT contradict itself -- the figure read was wrong. Its
+#     Discussion confirms its own Results text: "The highest ERs occurred on the
+#     lower legs while lying and sitting up. In these positions the lower legs
+#     are oriented horizontally like the device for ambient UV measurements."
+#     That is the same claim the abandoned digitization appeared to refute.
+#
+# [TODO 2026-08-20 :: WEIHS-2013-VOR] REVISIT WHEN THE VERSION OF RECORD LANDS.
+# The PDF in the repo is the "Accepted Article" early-view proof and prints its
+# own warning about "differences between this version and the Version of
+# Record". If the VoR renders Figure 6 in colour, at higher resolution, or ships
+# a supplementary data table, redo the digitization and attempt a full per-site
+# quantitative entry in ACTIVITY_ERTA_TABLES for 'walking' / 'sitting' /
+# 'lying' / 'sitting_up', cross-validating every series against the prose ratios
+# below exactly the way Schmalwieser 2025's Figure 5 was cross-validated against
+# its Results text. A new predictive table IS a calibration step and needs
+# approval -- the same marker WEIHS-2013-VOR is filed in
+# calibration_approval.yaml under parameter_approvals.PERSONAL_DOSE_GEOMETRY_
+# FACTOR.open_items. Grep WEIHS-2013-VOR to find both ends.
+#
+# WHY THERE IS STILL NO TABLE, EVEN WITH GOOD PROSE. The text gives RATIOS
+# BETWEEN SITES WITHIN ONE ACTIVITY and nothing else: no absolute ER for any
+# single site, and no elevation resolution (all six sequences sit inside one
+# 46-64 deg band and are reported as single "random orientation" means). An
+# ACTIVITY_ERTA_TABLES entry needs absolute, elevation-resolved values. Scaling
+# these ratios against an assumed forehead ER would invent the one number the
+# paper never states -- a calibration decision, not a transcription. Do not.
+
+# The measured band. Narrow, and entirely inside the upper half of the
+# Schmalwieser 2025 jogging band (20-60 deg); the overlap is 46-60 deg.
+WEIHS_2013_SOLAR_ELEVATION_BAND_DEG: Tuple[float, float] = (46.0, 64.0)
+
+# Discussion: "ER values obtained within the scope of the present study are
+# between 0.05 and 1." Across six sites and four activities, in direct sun.
+WEIHS_2013_REPORTED_ER_RANGE: Tuple[float, float] = (0.05, 1.0)
+
+# Discussion: dosimeter inclinations "may therefore only be adjusted with an
+# accuracy of roughly +/-10%".
+WEIHS_2013_MOUNTING_ACCURACY: float = 0.10
+
+# activity -> (elevated_site, reference_site) -> ratio of mean ERs.
+#
+# RATIOS ONLY. These are NOT exposure ratios to ambient and carry no absolute
+# magnitude; each is one site's mean ER over another site's mean ER, in the same
+# activity, over the same six clear-sky sequences. Transcribed verbatim from the
+# sentences quoted beside each block. Never feed one of these into a dose
+# calculation as if it were an ERTA.
+WEIHS_2013_PROSE_SITE_RATIOS: Dict[str, Dict[Tuple[str, str], float]] = {
+    # "During walking, the study subject receives the highest exposures on the
+    #  shoulders which is 70% higher than the exposure of the chest and the
+    #  forehead."
+    "walking": {
+        ("shoulders", "chest"): 1.70,
+        ("shoulders", "forehead"): 1.70,
+    },
+    # "During sitting the highest UV exposures are received by the thighs and
+    #  the shoulders. Exposures are 60% higher than on the forehead and on the
+    #  chest."
+    "sitting": {
+        ("thighs", "forehead"): 1.60,
+        ("thighs", "chest"): 1.60,
+        ("shoulders", "forehead"): 1.60,
+        ("shoulders", "chest"): 1.60,
+    },
+    # "During sitting up and lying the exposures are highest on the lower legs
+    #  (respectively 115% and 55% higher than on forehead)." Corroborated by the
+    #  Discussion: "The highest ERs occurred on the lower legs while lying and
+    #  sitting up."
+    "sitting_up": {("lower_legs", "forehead"): 2.15},
+    "lying": {("lower_legs", "forehead"): 1.55},
+}
+
+
+def weihs2013_prose_ratio(activity: str, site: str, reference_site: str) -> float:
+    """Weihs 2013 between-site mean-ER ratio, as stated in the paper's text.
+
+    A RATIO, not an exposure ratio to ambient: it says how much more UV `site`
+    received than `reference_site` during `activity`, and says nothing about
+    either one's absolute level. There is no absolute anchor anywhere in the
+    paper's prose, which is why Weihs has no ACTIVITY_ERTA_TABLES entry -- see
+    the comment block above, and the WEIHS-2013-VOR marker for the condition
+    under which that could change.
+
+    RAISES on any combination the paper does not state, rather than inverting
+    or chaining the ones it does.
+    """
+    if activity not in WEIHS_2013_PROSE_SITE_RATIOS:
+        raise KeyError(
+            f"No Weihs 2013 prose ratios for activity '{activity}'. Known: "
+            f"{sorted(WEIHS_2013_PROSE_SITE_RATIOS)}."
+        )
+    pair = (_normalize_body_site(site), _normalize_body_site(reference_site))
+    table = WEIHS_2013_PROSE_SITE_RATIOS[activity]
+    if pair not in table:
+        raise KeyError(
+            f"Weihs 2013 states no {activity} ratio for {pair[0]} vs "
+            f"{pair[1]}. Stated pairs: {sorted(table)}. Do not invert or chain "
+            "the stated pairs -- the paper prints only these."
+        )
+    return table[pair]
+
+
+# CROSS-STUDY SANITY CHECK, computed 2026-08-20 from
+# SCHMALWIESER_2025_JOGGING_ERTA above. Nothing in either source was adjusted to
+# make this line up; the numbers are recomputed by
+# tests/test_physiology.py::TestWeihs2013ProseRatios so this comment cannot go
+# stale.
+#
+# The two studies share one comparable statement -- shoulders against forehead,
+# upright locomotion, overlapping solar elevation (Weihs 46-64, Schmalwieser
+# 20-60, overlap 46-60 deg):
+#   Weihs 2013,        WALKING: shoulders / forehead = 1.70 (prose)
+#   Schmalwieser 2025, JOGGING: shoulders / forehead = 2.61 at 46 deg,
+#                               2.76 at 50 deg, 2.22 at 60 deg; 2.52 mean
+#                               across the overlap band (digitized Fig. 5)
+#
+# VERDICT: ORDERING CORROBORATED, MAGNITUDE NOT. Both find the shoulders the
+# most exposed site and the forehead among the least, by a wide margin, with
+# different dosimeters 15 years apart -- so the shoulder result does not rest on
+# Schmalwieser's single subject alone. But the jogging contrast is ~1.5x the
+# walking contrast (2.52 vs 1.70), a gap far outside either paper's stated
+# measurement uncertainty (+/-15% mounting for Schmalwieser, +/-10% for Weihs).
+# The mechanism is the posture and is the point of the whole activity-resolved
+# approach: the jogging lean tilts the shoulders toward the beam and the face
+# further down, while walking is upright. It is evidence AGAINST, not for,
+# borrowing one activity's table for another -- which is why activity_erta()
+# raises on an unknown activity instead of substituting jogging.
+#
+# WHAT IT IS USED FOR, AND IT IS LOAD-BEARING FOR TWO CONCLUSIONS:
+#  1. INDEPENDENT CORROBORATION OF THE SHOULDER RESULT, as just above.
+#  2. THE REASON PERSONAL_DOSE_GEOMETRY_FACTOR WAS NOT RAISED. Weihs reports ERs
+#     "between 0.05 and 1" across his six sites and four activities, every one
+#     of them in continuous direct sun at 46-64 deg. That 20-fold spread
+#     straddles the 0.35 Cockell scalar in both directions, while every jogging
+#     ERTA (0.29-0.82) sits above it. WHICH SITE IS BARE AND WHICH POSTURE IS
+#     HELD move the ratio further than the distance from 0.35 to either study's
+#     central value, so no single measured number replaces a fallback whose
+#     whole job is to answer when the activity is unknown -- which is why the
+#     jogging table above is opt-in behind activity= and the flat fallback was
+#     left where it was.
+#     [CORRECTED 2026-08-20] This argument previously rested on a digitized
+#     walking site mean of "~0.26" and a claimed 5x jogging-vs-walking
+#     disagreement at the calves. Both came from the abandoned Figure 6 read and
+#     are withdrawn (see PROVENANCE above). The conclusion is unchanged, the
+#     0.35 default did not move, and the restatement above uses only numbers the
+#     paper prints as text.
+# ========== END ACTIVITY-SPECIFIC MEASURED ERTA (SOURCED, 2026-08-20) ======
 
 
 # ---------------------------------------------------------------------------
@@ -593,8 +1093,8 @@ def _med_sed_by_fst(fst: int) -> float:
 # comes from measured pigment, not from an assumed decay rate.
 #
 # THE ONE FITTED NUMBER. kappa is fixed by Fajuyigbe et al. 2018 (FASEB J
-# 32:3700-3706, PMID 29394104; abstract only, full text not obtained), which
-# measured CPD protection factors in FST VI versus fair Europeans by epidermal
+# 32:3700-3706, PMID 29394104; full text in Research_Papers/ as of 2026-08-20),
+# which measured CPD protection factors in FST VI versus fair Europeans by epidermal
 # depth: whole epidermis 8.0x, upper 5.0x, middle 16.5x, BASAL LAYER 59.0x.
 # The quantity this model needs is the basal:whole ratio, 59.0/8.0 = 7.375 --
 # and because it is a ratio of two protection factors measured on the SAME
@@ -612,15 +1112,28 @@ def _med_sed_by_fst(fst: int) -> float:
 #      whole-epidermal CPD really depends only on fractional MED, then at equal
 #      PHYSICAL dose the whole-epidermis protection factor must be that same
 #      7.24. Fajuyigbe measured 8.0. Two labs, two assays, ~10% apart.
+#      Now DIRECTLY supported, not just cross-checked: Fajuyigbe's own full text
+#      reports the whole-epidermal DeltaCPD-vs-MED slopes for SPT I/II and SPT VI
+#      are statistically indistinguishable (P=0.68) -- i.e. the premise was
+#      independently tested and passed within that single study, not just
+#      inferred by comparing it against Shih's separate cohort.
 #   3. Shih's own pooled basal:whole slope ratio, 0.08/0.13 = 0.615 at the
 #      study's mean melanin of 12.56%. This curve implies 0.70 -- comfortably
 #      inside the interval those two wide CIs permit (0.05 to 1.0).
 #   For contrast the retired prior gave I:IV = 3.9 against Gandini's 2.09.
 #
 # HONEST LIMITS -- read before quoting a cross-skin-type absolute index:
-#   - Fajuyigbe is ABSTRACT-ONLY here, and is a small extreme-phenotype study
-#     (black West Africans vs fair Europeans). Its 59x basal figure carries the
-#     whole calibration. Getting the full text is data request #12.
+#   - Fajuyigbe is a small extreme-phenotype study (n=3 SPT I, n=3 SPT II,
+#     n=6 SPT VI, all Nigerian; black West Africans vs fair Europeans). Its 59x
+#     basal figure carries the whole calibration. Full text confirms the design
+#     and numbers transcribed here; it does not add FST III/IV/V data, so the
+#     mid-phototype gradient still comes only from Shih 2018's melanin percentages.
+#   - Corroboration available in the full text but not yet wired into
+#     skin_type_susceptibility_check(): the paper's own discussion independently
+#     ties basal DNA-PF (59x) to South African BCC white:black incidence (60x)
+#     and middle-layer DNA-PF (16.5x) to SCC incidence (20x). Same-authors, not
+#     independent of Fajuyigbe itself, but a second concrete number beyond
+#     Gandini 2005.
 #   - Shih's melanin percentages rest on n = 5, 6, 6, 5, 3 and 1 volunteers for
 #     FST I-VI. FST VI is a single person.
 #   - Shih found basal CPD UNDETECTABLE in FST IV-VI, whereas this curve assigns
@@ -652,7 +1165,8 @@ SHIH2018_WHOLE_EPIDERMAL_CPD_SLOPE: float = 0.13   # 95% CI 0.03-0.19
 SHIH2018_BASAL_LAYER_CPD_SLOPE: float = 0.08       # 95% CI 0.01-0.14
 
 # Fajuyigbe et al. 2018 CPD protection factors, FST VI vs fair European, by
-# epidermal depth (FASEB J 32:3700-3706, PMID 29394104; abstract only).
+# epidermal depth (FASEB J 32:3700-3706, PMID 29394104; full text in
+# Research_Papers/).
 FAJUYIGBE2018_PROTECTION: dict = {
     "whole": 8.0, "upper": 5.0, "middle": 16.5, "basal": 59.0,
 }

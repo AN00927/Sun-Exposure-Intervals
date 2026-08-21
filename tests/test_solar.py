@@ -4,15 +4,13 @@ tests/test_solar.py
 Pins vitd_solar.py against:
   (a) NOAA Global Monitoring Division's "General Solar Position
       Calculations" (https://gml.noaa.gov/grad/solcalc/solareqns.PDF), the
-      CANONICAL coefficient source for this module (see vitd_solar.py module
-      docstring) -- transcribed directly into TestNOAACrossCheck below, with
-      the fetched text reproduced there for anyone auditing this file
-      without net access;
+      canonical coefficient source for this module (see vitd_solar.py module
+      docstring) -- transcribed directly into TestNOAACrossCheck below;
   (b) values and identities PRINTED in Kallioglu et al. 2024 (Sci Rep
       14:3541, Eqs. 1-8), the in-repo route by which this algorithm was
       found -- the same style as
       test_physiology.py::TestPersonalGeometryFactor pins Vernez 2015 --
-      including two TWO measured ERRATA: Eq. 7's sin/cos swap
+      including two measured ERRATA: Eq. 7's sin/cos swap
       (TestErratumEq7) and four typo'd coefficients in Eqs. 2/4
       (TestErratumCoefficients);
   (c) plain orbital-mechanics facts that depend on neither source (Earth's
@@ -257,11 +255,11 @@ class TestErratumCoefficients:
 class TestErratumEq7:
     """Kallioglu 2024's printed Eq. 7 has "sin(delta)" in its first term where
     every other source (Duffie & Beckman; NOAA; the paper's OWN Eq. 8) has
-    "cos(delta)". This class proves that numerically, using nothing but the
-    paper's own printed Eq. 8 and its own printed identity
-    theta_z + alpha_s = 90 deg (text immediately below Eq. 8, p.5) -- i.e.
-    the paper is used to catch its own typo, exactly as the task required
-    ("Verify this yourself against Eq. 8... record the verification").
+    "cos(delta)". This class proves that numerically, using the paper's own
+    printed Eq. 8 and its own printed identity theta_z + alpha_s = 90 deg
+    (text immediately below Eq. 8, p.5) -- the paper catches its own typo,
+    exactly as the task required ("Verify this yourself against Eq. 8...
+    record the verification").
     """
 
     def test_corrected_form_is_the_only_one_consistent_with_eq8(self):
@@ -361,22 +359,18 @@ def _noaa_zenith_deg(lat, lon, n, hour, minute, timezone_hours):
 
 
 class TestNOAACrossCheck:
-    """Kallioglu's own equations are not the only check used here: this
-    class implements NOAA's independently-published equivalent algorithm
-    from scratch (see the module-level comment above) and compares outputs.
+    """Compares outputs against NOAA's independently-published equivalent
+    algorithm, implemented from scratch (see the module-level comment above).
 
-    This module's public functions now implement NOAA's coefficients
-    DIRECTLY as their canonical default (module docstring, ERRATUM 2) -- the
-    earlier ~0.1 deg tolerance here existed only to absorb the
-    Kallioglu-vs-NOAA coefficient rounding, which no longer applies to the
-    public functions (it is still tracked, against the PRIVATE as-printed
-    functions, in TestErratumCoefficients). With that source of discrepancy
-    gone, agreement is expected to float precision (measured residual
-    ~1e-14 deg, pure floating-point noise from evaluating the same formula
-    two different ways -- see B/n=day-1 here vs NOAA's gamma with an
-    hour=12 term that cancels to the same value). A loose tolerance with no
-    remaining reason to be loose would hide a future regression instead of
-    catching one, so it is tightened here.
+    The public functions now implement NOAA's coefficients directly as their
+    canonical default (module docstring, ERRATUM 2). The earlier ~0.1 deg
+    tolerance existed only to absorb Kallioglu-vs-NOAA coefficient rounding,
+    which no longer applies to the public functions (it is still tracked
+    against the PRIVATE as-printed functions in TestErratumCoefficients).
+    With that source of discrepancy gone, agreement is expected to float
+    precision (measured residual ~1e-14 deg, pure floating-point noise from
+    evaluating the same formula two different ways -- see B/n=day-1 here vs
+    NOAA's gamma with an hour=12 term that cancels to the same value).
     """
 
     def test_declination_agrees_with_noaa_to_float_precision(self):
@@ -439,7 +433,7 @@ class TestGeometricSanityChecks:
         """At delta=0 (equinox) and omega=0 (solar noon), Eq. 7's corrected
         bracket reduces to cos(theta_z) = cos(phi), i.e. theta_z = |phi|.
         This is a pure spherical-trigonometry identity, independent of
-        either Kallioglu or NOAA's specific coefficients -- it only assumes
+        either Kallioglu or NOAA's specific coefficients. It only assumes
         the (uncontested) functional FORM of Eq. 7/8, not their Fourier
         coefficients."""
         decl_at_equinox = solar_declination_deg(day_of_year(MARCH_21))  # ~0
@@ -448,9 +442,9 @@ class TestGeometricSanityChecks:
             assert zenith == pytest.approx(lat, abs=0.1)
 
     def test_declination_matches_known_obliquity_of_the_ecliptic_at_solstice(self):
-        """Earth's axial tilt is ~23.44 deg (23 deg 26') -- a physical
+        """Earth's axial tilt is ~23.44 deg (23 deg 26'), a physical
         constant independent of this paper, this repo, or NOAA's specific
-        Fourier fit (also stated explicitly in the paper's own prose, p.4:
+        Fourier fit (stated explicitly in the paper's own prose, p.4:
         "derived from the 23 deg 27' value of the Earth's axis of
         rotation"). The declination formula must reproduce it at the
         solstice to within its own stated tolerance."""

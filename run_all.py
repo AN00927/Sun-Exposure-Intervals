@@ -65,9 +65,8 @@ def _report_decision_problems():
             b = r["best"]
             if b is None:
                 continue
-            # Show the spread across spacings so it is visible whether the
-            # objective can actually discriminate, or whether every spacing
-            # ties (which happens when the target is unreachable at this dose).
+            # Spacing spread shows whether the objective discriminates or all
+            # spacings tie (unreachable target at this dose).
             spread = (max(row["mean_D"] for row in r["table"])
                       - min(row["mean_D"] for row in r["table"]))
             print(f"    {n:>8} {b['gap_days']:>8}d {b['mean_D']:>8.1f} "
@@ -128,32 +127,21 @@ def _report_decision_problems():
     print("  rather than silently returning the search bound.")
 
 
-# Fixed illustrative UV Index used by _report_location_exposure(). It is the
-# SAME number at every location so the table isolates what changes with
-# latitude and clothing (solar elevation, sky-visibility, exposed BSA) from
-# what would change with real, location-specific cloud/ozone -- which is
-# exactly what vitd_ambient's live Open-Meteo path is for, and exactly what
-# this offline report does not attempt to reproduce. It is NOT a forecast or
-# a measurement for any of the cities below; treat it as a dial, not data.
+# Fixed UV Index for _report_location_exposure() -- same everywhere so
+# latitude/clothing changes show clearly, not cloud/ozone. A dial, not data;
+# not a forecast or measurement for any city below.
 _LOCATION_UV_INDEX_FIXED = 8.0
-# 1.0 SED/session matches the dose used in Q1 above (_report_decision_problems),
-# so the "minutes" column here is directly comparable to that section.
+# 1.0 SED/session matches Q1's dose, so the minutes column is directly
+# comparable.
 _LOCATION_TARGET_SED = 1.0
 _LOCATION_REF_MINUTES = 60.0
-# Equinox local noon: solar declination ~ 0 deg on this date, so the solar
-# elevation differences across the location table below reflect latitude
-# alone, not a seasonal tilt that would happen to favour whichever
-# hemisphere is in its own summer.
+# Equinox local noon: declination ~ 0°, so elevation differences reflect
+# latitude alone, not seasonal tilt.
 _LOCATION_WHEN_LOCAL = _dt.datetime(2026, 3, 20, 12, 0)
 _LOCATION_PRESETS = ("face_and_hands", "shorts_and_tshirt")
-# Dark-skin-priority location set (CLAUDE.md): FST V-VI populations are
-# concentrated at low and equatorial latitudes, so most of this table is
-# drawn from there instead of defaulting to the UK/Europe-heavy locations
-# common in the underlying photobiology literature. One high-latitude city
-# (Oslo) is included ONLY as contrast, not as the reference case. UTC
-# offsets are each location's STANDARD time (no daylight saving applied,
-# for reproducibility -- a real March 20 clock reading could differ by an
-# hour where DST is in effect).
+# Dark-skin-priority locations: FST V-VI populations cluster at low/equatorial
+# latitudes, so most cities are drawn from there. Oslo is contrast only. UTC
+# offsets are standard time (no DST) for reproducibility.
 _LOCATIONS = (
     # name,             lat,      lon,      utc_offset_hours, why chosen
     ("Lagos, Nigeria",     6.5244,   3.3792,  1.0,
@@ -171,10 +159,8 @@ _LOCATIONS = (
 
 
 def _report_location_exposure():
-    """Exercise the PHASE 1 chain end to end: (latitude, longitude, date/time,
-    clothing) -> solar geometry (vitd_solar) -> personal SED
-    (vitd_exposure.exposure_sed). This is the non-network path -- see the
-    printed caveats below for exactly what that trades away.
+    """Exercises the PHASE 1 chain: (lat/lon/date/time/clothing) -> solar
+    geometry -> personal SED. Non-network path; caveats below.
     """
     print("=" * 74)
     print("PHASE 1 CHAIN: location + date/time -> solar geometry -> personal SED")
@@ -211,10 +197,8 @@ def _report_location_exposure():
         "chain.\n"
     )
 
-    # Preset geometry (vis_percent, exposed_bsa) depends only on which sites
-    # are bare and the posture, not on location -- shown once so the reader
-    # sees what each preset resolves to before the per-location table mixes
-    # it with solar geometry.
+    # Preset geometry depends on bare sites and posture, not location -- shown
+    # once before the per-location table mixes it with solar geometry.
     print("  Preset -> resolved geometry (posture = standing_erect_arms_down,")
     print("            independent of location and date/time):")
     print(f"    {'preset':<20} {'exposed BSA':>12} {'vis_percent':>12}   description")
@@ -291,24 +275,15 @@ def _report_location_exposure():
     print(f"\n  Full table: {csv_path}")
 
 
-# ---------------------------------------------------------------------------
-# Section 11c: PRIMARY + risk-scored schedule recommendation, wired to the
-# SAME location/date/clothing chain 11b already exercises. 11b stops at SED
-# and gets "minutes needed" from a hand-rolled linear division (see its
-# `minutes_needed` line above), bypassing simulate()'s feedback/dose-response
-# model entirely. This calls the real schedule functions instead.
-# ---------------------------------------------------------------------------
-_LOCATION_SCHEDULE_FST_GRID = (2, 5, 6)  # light-skin reference + the two
-# dark-skin-priority types (standing_directives.dark_skin_priority). A full
-# FST I-VI grid would be 2x the rows here for little extra insight.
+# Section 11c: PRIMARY + risk-scored schedule, wired to the same chain 11b
+# exercises. 11b stops at SED with hand-rolled linear division; this calls
+# the real schedule functions.
+_LOCATION_SCHEDULE_FST_GRID = (2, 5, 6)  # light-skin reference + two
+# dark-skin-priority types. Full FST I-VI grid would double rows for little
+# extra insight.
 
-# An example NOT drawn from _LOCATIONS or _LOCATION_UV_INDEX_FIXED, to make
-# visible that this pipeline works anywhere a caller can supply a latitude/
-# longitude and a UV Index -- it does not require a location to be curated
-# into the table above, and nothing here computes UV from location
-# internally (see vitd_exposure.exposure_sed's `ambient_uv_index` parameter,
-# always caller-supplied, and vitd_ambient.uvi_from_user_input, the
-# no-network "I read this off a weather app" path this row stands in for).
+# Example NOT drawn from _LOCATIONS -- shows the pipeline works anywhere a
+# caller supplies lat/lon and UV Index, without a curated location.
 _LOCATION_OVERRIDE_DEMO_NAME = "User-supplied example (arbitrary location)"
 _LOCATION_OVERRIDE_DEMO_LAT = 40.0
 _LOCATION_OVERRIDE_DEMO_LON = -105.0
@@ -321,14 +296,11 @@ _LOCATION_OVERRIDE_DEMO_WHY = (
 
 
 def _behaviour_reality_check_line(fst: int, sed_per_week) -> str:
-    """One line (or a few): the recommended schedule's SED/week next to a
-    measured UK field cohort's SED/week for the SAME skin type, if one
-    exists. This is REFERENCE ONLY -- it never feeds back into the
-    recommendation (see plan's double-counting audit: nothing here reaches
-    simulate() or sed_from_minutes()) -- and is only ever valid for FST II
-    and FST V, both UK latitude. For every other skin type this returns an
-    explicit "not available" line rather than omitting the row silently, or
-    interpolating a number vitd_behaviour.py itself refuses to invent.
+    """Prints the recommended SED/week next to a measured UK field cohort's
+    SED/week for the same skin type, if available. Reference only -- never
+    feeds back into recommendations. Valid for FST II and FST V only (UK
+    latitude, Kift 2013 / Darling 2013). Returns "not available" for other
+    skin types rather than silently omitting or interpolating.
     """
     if fst not in (2, 5):
         return (
@@ -361,14 +333,10 @@ def _behaviour_reality_check_line(fst: int, sed_per_week) -> str:
 
 
 def _report_location_schedule():
-    """Section 11c: the real schedule recommendation for the same
-    location/date/clothing chain 11b builds, instead of 11b's linear-division
-    estimate. Wires vitd_exposure.exposure_sed()'s geometry_factor and
-    exposed_bsa into vitd_optimization.minimum_schedule_for_sufficiency
-    (PRIMARY objective, section 0) and .optimal_interval_risk_constrained
-    (section 14b's function). No calibration parameter is touched by this
-    section -- see CLAUDE.md / calibration_approval.yaml; this is wiring and
-    reporting only.
+    """Section 11c: real schedule recommendation for the 11b location chain.
+    Wires geometry_factor and exposed_bsa into minimum_schedule_for_sufficiency
+    (PRIMARY, section 0) and optimal_interval_risk_constrained (section 14b).
+    Wiring and reporting only -- no calibration changes.
     """
     print("=" * 74)
     print("PHASE 1+2 CHAIN: location + date/time + clothing + skin type -> schedule")
@@ -401,8 +369,7 @@ def _report_location_schedule():
                 lat, lon, _LOCATION_WHEN_LOCAL, _LOCATION_REF_MINUTES,
                 uvi, preset=preset, utc_offset_hours=utc_off)
             for fst in _LOCATION_SCHEDULE_FST_GRID:
-                # FST is an explicit, separate input -- never inferred from
-                # location, even though _LOCATIONS is dark-skin-priority.
+                # FST is an explicit input, never inferred from location.
                 primary = minimum_schedule_for_sufficiency(
                     fst, uv_index=exp.ambient_uv_index,
                     exposed_bsa=exp.exposed_bsa,
@@ -478,21 +445,13 @@ def _report_location_schedule():
     print(f"\n  Full table: {csv_path}")
 
 
-# ---------------------------------------------------------------------------
-# Section 11d, OPTIONAL: seasonal variation via vitd_exposure.
-# exposure_across_months(). Skipped entirely unless a caller supplies a real
-# per-location monthly UV Index profile -- run_all.py's own call below
-# passes None, and the section explains why in its own printed output rather
-# than silently vanishing.
-# ---------------------------------------------------------------------------
+# Section 11d (optional): seasonal variation via exposure_across_months().
+# Skipped unless a caller supplies a real monthly UV Index profile.
 def _report_location_schedule_monthly(location_monthly_uv=None, year=2026):
-    """Section 11d: month-by-month schedule variation, built the cheapest
-    honest way -- N independent calls to the SAME single-UVI functions 11c
-    already uses, once per month, rather than a new optimizer that natively
-    ingests a UV(t) curve (that stays future work; see prose below and the
-    plan). `location_monthly_uv` maps a `_LOCATIONS` name to a
-    {month(1-12): uv_index} dict; `run_all.py` never populates one (see
-    the skip-path message for why).
+    """Section 11d: month-by-month schedule via N independent calls to the
+    single-UVI functions 11c already uses, once per month. `location_monthly_uv`
+    maps a location name to {month(1-12): uv_index}; run_all.py never populates
+    one (see skip-path message for why).
     """
     print("=" * 74)
     print("PHASE 1+2 CHAIN, SEASONAL (OPTIONAL, section 11d)")
@@ -616,8 +575,8 @@ def main():
         analysis_constant_sessions,
         analysis_variable_dose,
         analysis_joint_schedule,
-        # The objective hierarchy runs LAST but is REPORTED FIRST (section 0),
-        # so that a reader meets the ranking before meeting any number.
+        # Objective hierarchy runs last but reports first (section 0) -- reader
+        # meets the ranking before any number.
         analysis_objective_hierarchy,
         analysis_tri_objective,
     ]
@@ -627,13 +586,12 @@ def main():
             capture_log(fn) for fn in analyses
         ]
 
-    # 2b. Location-based exposure chain (PHASE 1: lat/lon/date/time -> SED),
-    # offline/deterministic -- see _report_location_exposure() docstring.
+    # 2b. Location exposure chain (PHASE 1: lat/lon/date/time -> SED),
+    # offline/deterministic (see _report_location_exposure() docstring).
     location_log = capture_log(_report_location_exposure)
-    # 2c. PHASE 1+2: the same chain wired into the real schedule functions
-    # (section 11c), plus the optional seasonal mode (11d, skipped here --
-    # see _report_location_schedule_monthly() docstring for why run_all.py
-    # itself never populates a monthly UV profile).
+    # 2c. PHASE 1+2: chain wired into real schedule functions (11c), plus
+    # optional seasonal mode (11d, skipped -- see
+    # _report_location_schedule_monthly() docstring).
     location_schedule_log = capture_log(_report_location_schedule)
     location_schedule_monthly_log = capture_log(_report_location_schedule_monthly)
 
@@ -660,12 +618,8 @@ def main():
     print(joint_log)
 
     # 3. Markdown report.
-    # Every constant quoted in the prose below is INTERPOLATED FROM THE CODE,
-    # never typed out. This report previously stated a personal-dose geometry
-    # factor, a K_ATTEN and an E_source that the code had all moved past, and
-    # described a constant-sessions protocol the code no longer runs -- the
-    # documentation drift CLAUDE.md warns about, in the one file that generates
-    # the public report. Interpolation makes that class of bug impossible here.
+    # Every constant below is interpolated from code, never typed out --
+    # prevents the documentation drift CLAUDE.md warns about.
     from vitd_objectives import (PERSONAL_DOSE_GEOMETRY_FACTOR, GAMMA_MED,
                                  SUFFICIENCY_NMOL_L, RAMP_IN_DAYS,
                                  PRACTICAL_MAX_MINUTES)
@@ -1051,18 +1005,15 @@ def main():
     )
     report.append("\n```\n" + tri_log + "\n```\n")
 
-    # ---- Decision problems, held-out benchmark, and uncertainty -------------
-    # These are the sections to read first. The sweeps above used to optimise
-    # the retired per-SED efficiency metric (removed from the code on
-    # 2026-07-31; see vitd_model.py), which had no interior optimum -- they
-    # now select by steady_state_D instead; everything below is posed as a
+    # Decision problems, held-out benchmark, and uncertainty. Read first.
+    # Sweeps now select by steady_state_D; everything below is posed as a
     # real decision.
     import vitd_objectives
     import vitd_benchmark_webbkift
     import vitd_sensitivity
 
-    # The Q2 frontier above is printed as a text table. This turns it into one
-    # actionable schedule per skin type and saves the frontier figure.
+    # Collapses the Q2 frontier to one actionable schedule per skin type and
+    # saves the frontier figure.
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                     "scripts"))
     import risk_aware_scheduling
@@ -1244,9 +1195,11 @@ move; the index values did. See section 14c.
   report time). Its inflection is an *output* of a breakpoint fitted on the
   vitamin D3 axis (Scholze 2026, Commun Med 6:105), not a regressor -- the Hill
   exponent cannot be fitted from that paper at all.
-- **Fajuyigbe 2018 (FASEB J 32:3700)** is abstract-only and its basal:whole CPD
-  protection ratio is the single fitted number behind the whole skin-type risk
-  axis.
+- **Fajuyigbe 2018 (FASEB J 32:3700)** -- full text now in Research_Papers/
+  (previously miscited as abstract-only) -- and its basal:whole CPD protection
+  ratio remains the single fitted number behind the whole skin-type risk axis.
+  It covers only extreme phototypes (SPT I/II vs VI); FST III/IV/V still rest
+  on Shih 2018's melanin percentages alone.
 - **de Boer 2025 individual-level SC/MI trajectories** would break the
   `alpha_SC ~ SC_max` and `K_ATTEN ~ K_SC` ridges.
 - **Ambient-to-personal UV dosimetry** for upright activity:
@@ -1259,8 +1212,8 @@ move; the index values did. See section 14c.
   again.
 """)
 
-    # encoding is explicit: the report contains non-ASCII (arrows, mu, +/-) and
-    # Windows would otherwise default to cp1252 and crash on write.
+    # Encoding is explicit: the report contains non-ASCII; Windows defaults
+    # to cp1252 and crashes on write.
     with open(REPORT_PATH, "w", encoding="utf-8") as f:
         f.write("".join(report))
 

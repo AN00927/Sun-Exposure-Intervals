@@ -50,9 +50,9 @@ def test_harmonize_ria_to_lcms_nan_passthrough():
 
 
 def test_harmonize_ria_to_lcms_unknown_cycle_passthrough():
-    # Cycles outside 2001-2006 (e.g. already-LC-MS/MS eras) are passed
-    # through unchanged -- this branch exists for robustness, not because
-    # it is expected to be hit with a non-RIA cycle in practice.
+    # Cycles outside 2001-2006 (e.g. already-LC-MS/MS eras) pass through
+    # unchanged. This branch exists for robustness, not because a non-RIA
+    # cycle is expected in practice.
     assert harmonize_ria_to_lcms(50.0, "2007-2008") == 50.0
 
 
@@ -101,8 +101,8 @@ def test_verify_raises_if_raw_and_standardized_diverge_despite_label():
 
 
 def test_verify_ignores_non_ria_cycles():
-    # 2007+ rows should not be checked by this function at all -- it only
-    # gates the RIA-era cycles.
+    # 2007+ rows bypass this function entirely -- it only gates the RIA-era
+    # cycles.
     df = pd.DataFrame({
         "cycle": ["2007-2008"],
         "harmonized_method": ["some future label that would fail if checked"],
@@ -122,9 +122,9 @@ def test_verify_ignores_non_ria_cycles():
 def test_real_nhanes_data_harmonization_is_a_verified_noop(tmp_path):
     df = preprocess_nhanes_data(DATA_DIR, str(tmp_path))
     assert df is not None
-    # preprocess_nhanes_data() already calls verify_no_harmonization_needed()
-    # internally and would have raised; re-running it here pins the contract
-    # even if that internal call is ever removed by accident.
+    # preprocess_nhanes_data() calls verify_no_harmonization_needed()
+    # internally and would have raised; re-running here pins the contract
+    # in case that internal call is removed later.
     verify_no_harmonization_needed(df)
 
     ria_cycles = {"2001-2002", "2003-2004", "2005-2006"}

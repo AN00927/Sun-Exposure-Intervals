@@ -1,5 +1,5 @@
 """
-Tests for vitd_validation.py — comparison utilities and check structure.
+Tests for vitd_validation.py -- comparison utilities and check structure.
 
 These tests verify the validation framework itself, not the model science.
 They do not assert any scientific thresholds or literature targets.

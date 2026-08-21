@@ -3,9 +3,8 @@ vitd_calibration.py
 ====================
 Calibration checks against published data. These are CALIBRATION checks, not
 independent validation, wherever a parameter was derived from the same source
-being checked -- each function's own docstring says which.
+being checked -- each function's docstring says which.
 
-Two checks live here:
   - derive_K_ATTEN / run(): Matsuoka 1990 K_ATTEN deconvolution.
   - young2020_calibration_check(): Young 2020 FST II:VI ratio check.
   - elwood1997_intermittency_check(): Elwood & Jopson 1997 OR anchoring for
@@ -42,12 +41,11 @@ from vitd_physiology import hydroxylation_efficiency
 #   midsummer (tanned):   serum D3  9.6 +/- 2.8 -> 14.3 +/- 4.1 ng/ml (p>0.1, ns)
 #   baseline 25(OH)D:     22.5 +/- 2.9 (untanned) vs 36.9 +/- 4.7 (tanned), p<0.02
 #
-# The file was previously named "(NO PAPER FOUND)", which was true of the full
-# text but badly misleading about the data: every number needed to constrain
-# K_ATTEN is in the abstract, and has been in this repository all along. Earlier
-# docs claimed the paper was "missing from the repo" and listed it as an
-# interlibrary-loan request. That was wrong. Before declaring any paper missing,
-# check Research_Papers/ (PDFs) and Papers_and_Datasets/ (data, abstracts,
+# The file was previously named "(NO PAPER FOUND)", badly misleading: every
+# number constraining K_ATTEN is in the abstract and has been in this repo all
+# along. Earlier docs claimed the paper was "missing" and listed it as an
+# interlibrary-loan request. Wrong. Before declaring any paper missing, check
+# Research_Papers/ (PDFs) and Papers_and_Datasets/ (data, abstracts,
 # supplementary) -- filenames in both are unreliable.
 #
 # WHY THE FAMOUS "51%" IS NOT K_ATTEN
@@ -63,8 +61,8 @@ from vitd_physiology import hydroxylation_efficiency
 # remainder is melanin. Most of the 51% is feedback, not melanin: melanin-only
 # attenuation is 7-18% depending on feedback form, implying K_ATTEN 0.34-1.00.
 #
-# So the abstract constrains the PRODUCT (feedback x melanin), and splitting it
-# requires committing to a feedback form. That makes the derived K_ATTEN
+# The abstract constrains the PRODUCT (feedback x melanin), and splitting it
+# requires committing to a feedback form. K_ATTEN is therefore
 # feedback-model-dependent, which this module reports explicitly rather than
 # hiding behind a single number.
 #
@@ -211,13 +209,12 @@ def run(verbose: bool = True) -> dict:
 # STATUS: CALIBRATION_CHECK_ONLY -- not independent validation.
 
 def young2020_calibration_check():
-    """
-    Run the Young 2020 FST II:VI calibration check.
+    """Run the Young 2020 FST II:VI calibration check.
 
     Young 2020 reports FST II:VI vitamin D slope ratios of approximately
     1.29-1.43 (Arimed B: 1.29, TL01: 1.43).
 
-    However, this is NOT independent validation if K_ATTEN was derived from Young 2020.
+    NOT independent validation if K_ATTEN was derived from Young 2020.
     """
     try:
         from vitd_model import ModelParams, simulate, build_weekly_schedule
@@ -266,12 +263,11 @@ def young2020_calibration_check():
     else:
         result_status = "CALIBRATION_CHECK_FAIL"
 
-    # (Previously this substring-matched
-    # "verification_status: VERIFIED" against a hard-coded per-study YAML path;
-    # merging the per-study files without this fix would have made the check
-    # silently degrade to UNVERIFIED regardless of the actual status, since a
-    # naive substring match against a missing path fails closed with no error.
-    # This does a real parse keyed by study_id instead.)
+    # (Previously this substring-matched "verification_status: VERIFIED"
+    # against a hard-coded per-study YAML path; merging the per-study files
+    # without this fix would have silently degraded to UNVERIFIED regardless
+    # of actual status, since a naive substring match against a missing path
+    # fails closed with no error. This does a real parse keyed by study_id.)
     import yaml
 
     provenance_path = "data_provenance.yaml"
@@ -396,9 +392,7 @@ def deboer2025_vitd_check():
 # Elwood & Jopson 1997 -- INTERMITTENT_BURN_EXPONENT anchoring
 # ===========================================================================
 #
-# Source (NOT IN THE REPO -- cited values only; see MODEL_AND_EVIDENCE.md,
-# 'Remaining gaps', gap 15, which lists the skin-cancer dose-response papers as
-# an outstanding acquisition):
+# Source (full text in Research_Papers/ as of 2026-08-20):
 #     Elwood JM, Jopson J. "Melanoma and sun exposure: an overview of published
 #     studies." Int J Cancer. 1997;73(2):198-203.
 #     Meta-analysis of 29 case-control studies. Odds ratios for melanoma:

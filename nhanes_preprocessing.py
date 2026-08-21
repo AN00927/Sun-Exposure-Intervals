@@ -1,50 +1,94 @@
 """
 nhanes_preprocessing.py
 =======================
-NHANES serum 25(OH)D and demographic preprocessing and harmonization script.
-Implements the requirements of Concrete Recommended Change #8 from the July 2026 Scientific Audit.
+NHANES serum 25(OH)D and demographic preprocessing and harmonization.
+Implements Concrete Recommended Change #8 from the July 2026 Scientific Audit.
 
-Specifically:
-- Loads 2001-2006 data already on the CDC-standardized LC-MS/MS-equivalent
-  scale (LBDVIDMS) and 2007+ data on the direct LC-MS/MS scale (LBXVIDMS).
-  See "Harmonization status" below -- this is NOT the same as this module
-  applying a RIA->LC-MS/MS transform itself.
-- Explicitly maps RIDEXMON (exam season) per P34/NCHS guidelines:
-  1 = November 1 through April 30 (Winter/Spring)
-  2 = May 1 through October 31 (Summer/Autumn)
-- Maps race/ethnicity codes (RIDRETH1, RIDRETH3) to consistent categories.
-- Merges laboratory, demographic, and body measures (BMI) files.
+Loads 2001-2006 data on the CDC-standardized LC-MS/MS-equivalent scale
+(LBDVIDMS) and 2007+ data on the direct LC-MS/MS scale (LBXVIDMS).
+See "Harmonization status" below -- this module does NOT apply a
+RIA->LC-MS/MS transform itself.
+
+Maps RIDEXMON (exam season) per P34/NCHS guidelines:
+1 = November 1 through April 30 (Winter/Spring)
+2 = May 1 through October 31 (Summer/Autumn)
+
+Maps race/ethnicity codes (RIDRETH1, RIDRETH3) to consistent categories.
+Merges laboratory, demographic, body measures (BMI) and dermatology
+questionnaire (DEQ) files.
+
+NHANES cycle letters (corrected 2026-08-20)
+-------------------------------------------
+The `cycles` dict below previously labelled cycle letter "L" as
+"2019-2020". That was WRONG. Cycle "L" is CDC's **August 2021 - August
+2023** release. Three independent checks agree:
+
+  * CDC publishes DEMO_L under its 2021 folder
+    (wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2021/DataFiles/DEMO_L.htm).
+  * DEMO_L.csv/VID_L.csv/DEQ_L.csv in Papers_and_Datasets/ carry SEQN
+    130378-142310. The 2017-2018 cycle (J) ends at SEQN 102956; a genuine
+    2019-2020 file would continue from there, not skip ~27k sequence
+    numbers.
+  * DEMO_L.csv has SDDSRVYR = 12 uniformly. NHANES codes 10 = 2017-2018
+    and 12 = Aug 2021-Aug 2023. There is no SDDSRVYR = 11, because...
+
+...cycle letter "K" (the true 2019-2020) was NEVER released as a
+standalone public file. COVID interrupted fieldwork in March 2020, so
+2019-2020 data exists ONLY folded into the "P_"-prefixed 2017-March-2020
+pre-pandemic combined files (P_DEMO, P_VID, ...). Those use a different
+naming convention and different survey weights (WTMECPRP, not WTMEC2YR),
+so they cannot be dropped into the `cycles` loop as another two-year
+cycle without weight-harmonization code that does not exist here.
+
+Do NOT "restore" a 2019-2020 row to `cycles`. There is no such file.
+
+Two copies of the same data (investigated 2026-08-20)
+------------------------------------------------------
+Papers_and_Datasets/ holds the flat CDC convention (DEMO_B.csv ...
+DEMO_L.csv) that THIS module reads -- `preprocess_nhanes_data()` is called
+with data_dir = Papers_and_Datasets (run_all.py), NOT the nhanes/ subdir.
+
+Papers_and_Datasets/nhanes/ holds descriptively-named files
+(NHANES_2001-2002_Serum_VitaminD.csv ...). These are NOT a second,
+independent data pull. Papers_and_Datasets/rename_map.csv is the explicit
+derivation: VID_L.csv -> NHANES_2019-2020_Serum_VitaminD.csv, and so on.
+Verified by content: the two files have identical row counts, identical
+SEQN ranges, and compare equal on their shared columns.
+
+So `NHANES_2019-2020_Serum_VitaminD.csv` IS `VID_L.csv` under another
+name, and it inherits the same mislabel -- it is 2021-2023 data. The
+descriptive copy is unused by the pipeline; only the audit inventory in
+audit_outputs/ references it. Renaming that copy is left as a follow-up
+(it would invalidate the checked-in inventory CSVs), but nothing
+scientific depends on it.
 
 Harmonization status (verified 2026-08-17)
 -------------------------------------------
 CLAUDE.md requires: "Do NOT pool NHANES 2001-2006 (LBDVIDMS) with 2007+
-(LBXVIDMS) without harmonization code." Earlier, that rule was satisfied only
-on paper: `harmonize_ria_to_lcms()` below implements the CDC/NCHS P27
-regression equations, but `preprocess_nhanes_data()` never actually calls it
-for any of the ten cycles distributed in Papers_and_Datasets/ -- confirmed by
-diffing `vitd_raw_nmol_L` against `vitd_standardized_nmol_L` in the merged
-output, which are byte-identical in every cycle (2001-2002 through
-2019-2020). A reader could not tell that from the code alone; the function
-looked wired in.
+(LBXVIDMS) without harmonization code." That rule was previously satisfied
+only on paper: `harmonize_ria_to_lcms()` below implements the CDC/NCHS P27
+regression equations, but `preprocess_nhanes_data()` never actually calls
+it for any of the ten cycles distributed in Papers_and_Datasets/ --
+confirmed by diffing `vitd_raw_nmol_L` against `vitd_standardized_nmol_L`
+in the merged output, which are byte-identical in every cycle (2001-2002
+through 2021-2023). The function looked wired in but was not.
 
-The pooling IS valid, but for a different reason than "this module
-harmonizes it": VID_B.csv/VID_C.csv/VID_D.csv (2001-2006) contain only the
-`LBDVIDMS` column -- CDC's own already-standardized series -- never a raw
-`LBDVIDUS`/`LBXVID` RIA column. CDC did the RIA->LC-MS/MS harmonization
-upstream, once, before distributing the public files this repo uses. So
-2001-2006 (`LBDVIDMS`) and 2007+ (`LBXVIDMS`) are both already on the
-LC-MS/MS-equivalent scale by construction, and no transform is needed on
-this repo's data.
+The pooling is valid for a different reason: VID_B.csv/VID_C.csv/VID_D.csv
+(2001-2006) contain only the `LBDVIDMS` column -- CDC's own
+already-standardized series -- never a raw `LBDVIDUS`/`LBXVID` RIA column.
+CDC did the RIA->LC-MS/MS harmonization upstream, once, before distributing
+the public files this repo uses. Both 2001-2006 (`LBDVIDMS`) and 2007+
+(`LBXVIDMS`) are already on the LC-MS/MS-equivalent scale by construction.
 
-`harmonize_ria_to_lcms()` and its regression equations are kept (not
-deleted) as a documented, guarded fallback for the hypothetical case of a
-future data pull that supplies a genuinely raw, un-standardized RIA column --
-see its docstring. `verify_no_harmonization_needed()` below makes the
-current no-op state an explicit, checked assertion rather than a silent
-assumption: it raises if any cycle's data ever takes the harmonize path, or
-if a row labelled "already standardized" turns out not to be numerically
-identical to its raw value. Call it after `preprocess_nhanes_data()` (the
-`__main__` block does) before treating the pooled dataset as valid.
+`harmonize_ria_to_lcms()` and its regression equations are kept as a
+documented, guarded fallback for a hypothetical future data pull that
+supplies a genuinely raw, un-standardized RIA column -- see its docstring.
+`verify_no_harmonization_needed()` makes the current no-op state an
+explicit, checked assertion: it raises if any cycle's data ever takes the
+harmonize path, or if a row labelled "already standardized" is not
+numerically identical to its raw value. Call it after
+`preprocess_nhanes_data()` (the `__main__` block does) before treating the
+pooled dataset as valid.
 """
 
 import os
@@ -52,26 +96,68 @@ import pandas as pd
 import numpy as np
 
 
+# --- Dermatology questionnaire (DEQ) coding ------------------------------
+# DED031: "reaction to the sun after several months of not being in the
+# sun" -- a Fitzpatrick-reaction-type proxy. Valid ordinal responses are
+# 1..5, increasing = less burn / more tolerance:
+#   1 = severe sunburn with blisters       4 = mild sunburn, turns tan
+#   2 = severe sunburn, peeling            5 = nothing happens (no burn)
+#   3 = mild sunburn, some tan
+# Everything else is a non-response and MUST become NaN, not a number:
+#   6  = "never goes out in the sun"  (not a reaction severity at all)
+#   77 = refused,  99 = don't know
+#   0  = undocumented; appears 1-4 times per cycle in the raw files and is
+#        not in the codebook's 1-5 range, so it is dropped as invalid.
+DED031_VALID = (1, 2, 3, 4, 5)
+
+# DED120 / DED125: self-reported minutes spent outside on a work/school day
+# and on a non-work day (renamed from DEQ120/DEQ125 on public release).
+# 3333 is a SENTINEL, not a duration -- it encodes "does not go outside" /
+# "does not work or go to school" (and in the DED125 branch, "at work
+# 9-to-5 seven days a week"). Treating it as 3333 minutes (55 hours) would
+# corrupt any average. It is common: 355-640 respondents per cycle on
+# DED120. 7777 = refused, 9999 = don't know.
+# NOTE: 480 is a legitimate TOP-CODE (8 h), not a sentinel -- it is kept.
+DEQ_MINUTES_SENTINELS = (3333, 7777, 9999)
+
+
+def _recode_deq_minutes(series: pd.Series) -> pd.Series:
+    """DED120/DED125 raw codes -> minutes, with sentinels dropped to NaN.
+
+    See DEQ_MINUTES_SENTINELS above: 3333/7777/9999 are non-durations and
+    become NaN. Negative values (none observed, but cheap to guard) are
+    also dropped.
+    """
+    out = pd.to_numeric(series, errors="coerce")
+    out = out.where(~out.isin(DEQ_MINUTES_SENTINELS))
+    return out.where(out >= 0)
+
+
+def _recode_ded031(series: pd.Series) -> pd.Series:
+    """DED031 raw codes -> 1..5 ordinal, non-responses dropped to NaN."""
+    out = pd.to_numeric(series, errors="coerce")
+    return out.where(out.isin(DED031_VALID))
+
+
 def harmonize_ria_to_lcms(ria_val: float, cycle: str) -> float:
     """
     CDC/NCHS regression equations (P27 Analytical Note) converting original
     DiaSorin RIA 25(OH)D values (nmol/L) to LC-MS/MS-equivalent concentrations.
 
-    STATUS, verified 2026-08-17: NOT invoked by `preprocess_nhanes_data()` for
-    any of the ten NHANES cycles distributed in Papers_and_Datasets/. The
-    2001-2006 files (VID_B.csv, VID_C.csv, VID_D.csv) contain only the
+    STATUS (verified 2026-08-17): NOT invoked by `preprocess_nhanes_data()`
+    for any of the ten NHANES cycles distributed in Papers_and_Datasets/.
+    The 2001-2006 files (VID_B.csv, VID_C.csv, VID_D.csv) contain only the
     `LBDVIDMS` column -- CDC's own pre-standardized series -- never a raw
-    `LBDVIDUS`/`LBXVID` RIA column, so `preprocess_nhanes_data()` always takes
-    the "already standardized" branch and this function is never called from
-    anywhere in this codebase. Confirmed: `vitd_standardized_nmol_L` is
-    byte-identical to `vitd_raw_nmol_L` in all ten pooled cycles.
+    `LBDVIDUS`/`LBXVID` RIA column, so `preprocess_nhanes_data()` always
+    takes the "already standardized" branch and this function is never
+    called. Confirmed: `vitd_standardized_nmol_L` is byte-identical to
+    `vitd_raw_nmol_L` in all ten pooled cycles.
 
-    Pooling 2001-2006 with 2007+ is valid WITHOUT running this function: both
-    halves are already on the LC-MS/MS-equivalent scale (LBDVIDMS for
-    2001-2006, LBXVIDMS for 2007+) -- CDC harmonized upstream, once, before
-    distributing the public files. This function is kept, not deleted, so the
-    P27 equations have one documented home in this codebase and as a guarded
-    fallback (see the `else` branch of the vitd_raw_col dispatch in
+    Pooling 2001-2006 with 2007+ is valid WITHOUT this function: both halves
+    are already on the LC-MS/MS-equivalent scale (LBDVIDMS for 2001-2006,
+    LBXVIDMS for 2007+) -- CDC harmonized upstream, once, before
+    distributing the public files. Kept as a documented fallback (see the
+    `else` branch of the vitd_raw_col dispatch in
     `preprocess_nhanes_data()`) for a hypothetical future data pull that
     supplies a genuinely raw, un-standardized RIA column. If that branch is
     ever taken, `verify_no_harmonization_needed()` below raises rather than
@@ -98,6 +184,9 @@ def preprocess_nhanes_data(data_dir: str, output_dir: str):
     """
     Loads, standardizes, and merges NHANES files across cycles.
     """
+    # Cycle-letter -> survey years. See "NHANES cycle letters" in the module
+    # docstring before editing: cycle "L" is August 2021 - August 2023, NOT
+    # 2019-2020, and there is no standalone 2019-2020 cycle to add here.
     cycles = {
         "2001-2002": "B",
         "2003-2004": "C",
@@ -108,7 +197,7 @@ def preprocess_nhanes_data(data_dir: str, output_dir: str):
         "2013-2014": "H",
         "2015-2016": "I",
         "2017-2018": "J",
-        "2019-2020": "L",  # 2019-2020 pre-pandemic cycle L
+        "2021-2023": "L",  # Aug 2021-Aug 2023; SDDSRVYR=12. NOT 2019-2020.
     }
     
     merged_dfs = []
@@ -253,7 +342,36 @@ def preprocess_nhanes_data(data_dir: str, output_dir: str):
             return "food-only"
         
         df_cycle["dietary_source_flag"] = df_cycle.apply(_classify_dietary, axis=1)
-        
+
+        # 6. Dermatology questionnaire (DEQ) -- sun-reaction and outdoor time.
+        # Column availability is NOT uniform across cycles, so every field is
+        # pre-filled with NaN and only overwritten where the column exists
+        # (same pattern as DR1TOT/DS1TOT above). Verified against the raw
+        # files 2026-08-20:
+        #   DED031          present in B, C, D, F, G, H, I, J  (absent: L)
+        #   DED120/DED125   present in F, G, H, I, J only      (2009-2018)
+        # DEQ_E (2007-2008) does not exist publicly -- it is RDC
+        # limited-access only -- so cycle E simply has no DEQ file. That is
+        # expected, not a missing download.
+        # DEQ is administered to ages 20-59 only, so even where the file
+        # exists these columns are NaN for most children and older adults.
+        df_cycle["deq_skin_reaction"] = np.nan
+        df_cycle["deq_outdoor_minutes_workday"] = np.nan
+        df_cycle["deq_outdoor_minutes_nonworkday"] = np.nan
+
+        deq_file = os.path.join(data_dir, f"DEQ_{letter}.csv")
+        if os.path.exists(deq_file):
+            df_deq = pd.read_csv(deq_file).set_index("SEQN")
+            if "DED031" in df_deq.columns:
+                df_cycle["deq_skin_reaction"] = _recode_ded031(
+                    df_deq["DED031"])
+            if "DED120" in df_deq.columns:
+                df_cycle["deq_outdoor_minutes_workday"] = (
+                    _recode_deq_minutes(df_deq["DED120"]))
+            if "DED125" in df_deq.columns:
+                df_cycle["deq_outdoor_minutes_nonworkday"] = (
+                    _recode_deq_minutes(df_deq["DED125"]))
+
         df_cycle = df_cycle.reset_index()
         merged_dfs.append(df_cycle)
         
@@ -264,7 +382,6 @@ def preprocess_nhanes_data(data_dir: str, output_dir: str):
         
         # Explicit, checked no-op verification (see module docstring
         # "Harmonization status" and harmonize_ria_to_lcms() docstring).
-        # Raises if the RIA-era data ever silently needed the transform.
         verify_no_harmonization_needed(final_df)
         print("Harmonization check: PASS -- all 2001-2006 rows already "
               "CDC-standardized (LBDVIDMS); harmonize_ria_to_lcms() was not "
@@ -284,23 +401,20 @@ def preprocess_nhanes_data(data_dir: str, output_dir: str):
 def verify_no_harmonization_needed(df: pd.DataFrame) -> None:
     """Fail loudly if RIA harmonization was silently needed for any cycle.
 
-    This is the explicit, checked version of the "no-op" described in this
-    module's docstring and in `harmonize_ria_to_lcms()`'s docstring. Pooling
-    2001-2006 (LBDVIDMS) with 2007+ (LBXVIDMS) is valid only if every
-    2001-2006 row actually came from an already-standardized column, rather
-    than from `harmonize_ria_to_lcms()`'s locally-fitted regression. This
-    function checks that against the actual merged data instead of assuming
-    it. Call after `preprocess_nhanes_data()` (it already does, at the end of
-    the merge loop) before treating the pooled dataset as valid for any
-    cross-cycle comparison.
+    Checks the explicit, verified no-op described in the module docstring
+    and in `harmonize_ria_to_lcms()`'s docstring. Pooling 2001-2006
+    (LBDVIDMS) with 2007+ (LBXVIDMS) is valid only if every 2001-2006 row
+    came from an already-standardized column, rather than from
+    `harmonize_ria_to_lcms()`'s locally-fitted regression. Call after
+    `preprocess_nhanes_data()` (the `__main__` block does) before treating
+    the pooled dataset as valid.
 
     Raises
     ------
     AssertionError
         If any 2001-2006 row took the `harmonize_ria_to_lcms()` path (label
         mismatch), or if a row labelled "already standardized" is not
-        numerically identical between raw and standardized columns (the
-        no-op did not actually hold).
+        numerically identical between raw and standardized columns.
     """
     ria_cycles = {"2001-2002", "2003-2004", "2005-2006"}
     cycle_rows = df[df["cycle"].isin(ria_cycles)]

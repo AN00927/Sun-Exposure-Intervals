@@ -74,7 +74,7 @@ class TestConsistencyWithModel:
     History: K_ATTEN was 0.37, taken from Young 2020's FST II:VI ratio, and it
     happened to sit inside the range Matsuoka implies. It was later refitted to
     the Young 2020 per-person dataset (n=23, TL01 arm) by 1D MSE minimisation on
-    individual delta 25(OH)D, which drove it to 0.0 -- baseline 25(OH)D and BSA
+    individual delta 25(OH)D, which drove it to 0.0; baseline 25(OH)D and BSA
     absorb the whole FST II:VI difference, leaving no residual for facultative
     melanin. See vitd_model.ModelParams for the canonical value and citation.
 
@@ -88,7 +88,7 @@ class TestConsistencyWithModel:
     """
 
     def test_current_K_ATTEN_sits_below_the_matsuoka_facultative_range(self):
-        """The headline check, stated in the direction that is actually true.
+        """The headline check, stated in the direction that is true.
 
         The model assigns ZERO facultative-melanin penalty, which is strictly
         below anything Matsuoka's residual can support under any feedback form.
@@ -120,9 +120,9 @@ class TestConsistencyWithModel:
             for k in (out["current_K_ATTEN"], lo, hi):
                 p = ModelParams()
                 # K_ATTEN was RETIRED 2026-08-18 (approved item A6). This loop
-                # is exactly the sensitivity sweep the retirement rests on --
-                # it MEASURES how little the parameter matters -- so it goes
-                # through the explicit escape hatch rather than around it.
+                # is exactly the sensitivity sweep the retirement rests on, it
+                # MEASURES how little the parameter matters, so it goes through
+                # the explicit escape hatch rather than around it.
                 with allow_retired_parameter_sweep():
                     p.K_ATTEN = float(k)
                 r = simulate(fst=fst, schedule=schedule, duration_days=365,

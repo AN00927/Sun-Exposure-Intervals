@@ -475,27 +475,59 @@ SED_PER_MIN_PER_UVI: float = 0.015
 # [PRIOR] Scalar, not elevation-dependent. Directly scales every minutes
 # recommendation, so it is the first thing to sweep. Higher (~0.5-0.7) for
 # supine sunbathing, which presents a near-horizontal surface.
+#
+# [REVIEWED AND DELIBERATELY LEFT AT 0.35, 2026-08-20] Two body-worn dosimetry
+# papers were acquired and integrated on this date -- Schmalwieser et al. 2025
+# (jogging, 7 sites, solar elevation 20-60 deg) and Weihs et al. 2013 (walking/
+# sitting/lying, 6 sites). Elevation dependence IS now sourced, per activity,
+# in vitd_physiology (ACTIVITY_ERTA_TABLES / activity_erta), and reachable from
+# this function via `activity=`. The SCALAR DEFAULT DID NOT MOVE, on the
+# evidence rather than out of caution: jogging site ERTAs run 0.29-0.82 and sit
+# ABOVE 0.35, while Weihs reports ERs from 0.05 to 1.0 across six sites and four
+# postures, straddling 0.35 in both directions -- in continuous direct sun both
+# times. The spread ACROSS activities and sites is wider than the distance from
+# 0.35 to either of them, so no single measured number replaces a
+# behaviourally-averaged fallback. Callers who know the activity should say so
+# instead of relying on this constant.
+# [CORRECTED 2026-08-20] this note previously cited a Weihs "walking site mean
+# ~0.26". That came from a Figure 6 digitization since withdrawn as unreadable;
+# see the WEIHS et al. 2013 block in vitd_physiology.py. The conclusion and the
+# value are unchanged -- only the number cited for it.
 PERSONAL_DOSE_GEOMETRY_FACTOR: float = 0.35
 
 
 def sed_from_minutes(minutes: float, uv_index: float,
                      geometry_factor: float | None = None,
                      solar_elevation_deg: float | None = None,
-                     vis_percent: float | None = None) -> float:
+                     vis_percent: float | None = None,
+                     activity: str | None = None,
+                     body_site: str | None = None) -> float:
     """Erythemal SED delivered to exposed skin by `minutes` at a given UV Index.
 
     Applies the horizontal-to-personal geometry correction. Precedence:
       1. explicit `geometry_factor` (pass 1.0 for a supine sunbather);
       2. `vis_percent` -> Vernez 2015 Eq. 1, optionally trimmed by
          `solar_elevation_deg` (see vitd_physiology.vernez_exposure_ratio);
-      3. otherwise 0.35, the Cockell 2001 scalar.
+      3. `activity` (+ required `solar_elevation_deg`, optional `body_site`) ->
+         the measured per-activity ERTA table
+         (vitd_physiology.activity_erta; 'jogging' = Schmalwieser 2025);
+      4. otherwise 0.35, the Cockell 2001 scalar.
+    Passing both `vis_percent` and `activity` raises.
 
     `solar_elevation_deg` on its own no longer changes the result -- the
     elevation-only form was withdrawn 2026-08-16 as unsourced (gap 26).
+
+    The returned SED is ERYTHEMAL. The spectral step to vitamin-D-effective dose
+    is E_source (vitd_model.SOURCE_CALIBRATION_TABLE), applied downstream. ERTA
+    and E_source are independent factors -- geometry and spectrum -- and do not
+    double-count each other even though both depend on solar elevation; the
+    argument, and the one residual it leaves open, is written out above
+    vitd_physiology.activity_erta.
     """
     if geometry_factor is None:
         geometry_factor = personal_geometry_factor(solar_elevation_deg,
-                                                   vis_percent)
+                                                   vis_percent,
+                                                   activity, body_site)
     return max(0.0, minutes) * uv_index * SED_PER_MIN_PER_UVI * float(geometry_factor)
 
 
@@ -509,7 +541,9 @@ def minutes_for_target(fst: int,
                        params: ModelParams | None = None,
                        max_minutes: float = 240.0,
                        geometry_factor: float | None = None,
-                       solar_elevation_deg: float | None = None) -> dict:
+                       solar_elevation_deg: float | None = None,
+                       activity: str | None = None,
+                       body_site: str | None = None) -> dict:
     """Minutes of sun per session needed to reach a 25(OH)D target.
 
     Answers "how long outside?" and simultaneously reports whether that
@@ -520,6 +554,10 @@ def minutes_for_target(fst: int,
     the solar E_source (Webb 2021 Manchester summer), not the neutral 1.0. This
     is a SUN function; 1.0 was never a solar measurement. It roughly halves the
     minutes. Pass `params` explicitly to override.
+
+    `activity` / `body_site` select a measured per-activity geometry ratio (see
+    sed_from_minutes); with `activity='jogging'`, `solar_elevation_deg` becomes
+    REQUIRED because that table is elevation-resolved.
     """
     if params is None:
         params = ModelParams()
@@ -529,7 +567,9 @@ def minutes_for_target(fst: int,
     days = list(range(0, horizon_days, interval))
 
     def achieved(minutes: float):
-        sed = sed_from_minutes(minutes, uv_index, geometry_factor, solar_elevation_deg)
+        sed = sed_from_minutes(minutes, uv_index, geometry_factor,
+                               solar_elevation_deg, activity=activity,
+                               body_site=body_site)
         sched = [(float(d), sed) for d in days]
         r = simulate(fst=fst, schedule=sched, duration_days=horizon_days,
                      params=params, D0=D0,
@@ -551,7 +591,9 @@ def minutes_for_target(fst: int,
             hi = mid
     minutes = hi
     ss, r = achieved(minutes)
-    sed = sed_from_minutes(minutes, uv_index, geometry_factor, solar_elevation_deg)
+    sed = sed_from_minutes(minutes, uv_index, geometry_factor,
+                           solar_elevation_deg, activity=activity,
+                           body_site=body_site)
     risk = cancer_risk([sed] * len(days), fst)
     return {
         "minutes": minutes,

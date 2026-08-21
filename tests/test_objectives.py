@@ -166,10 +166,8 @@ class TestMinutesForTarget:
 # The scheduling metric hierarchy (Phase 4b, item A3)
 # ---------------------------------------------------------------------------
 class TestObjectiveHierarchy:
-    """The hierarchy is the thing that stops this repo publishing a headline
-    number from a metric with no interior optimum. These are structural
-    guards, so the ranking cannot quietly grow a second headline or lose the
-    barrier around the diagnostic tier."""
+    """Structural guards preventing the ranking from quietly growing a second
+    headline or losing the barrier around the diagnostic tier."""
 
     def test_exactly_one_primary_objective(self):
         """A hierarchy with two headlines has no headline."""
@@ -181,7 +179,7 @@ class TestObjectiveHierarchy:
 
     def test_primary_is_reach_and_hold_not_a_ratio(self):
         """The PRIMARY objective must be a constrained minimisation with the
-        sufficiency floor among its constraints -- the property every retired
+        sufficiency floor among its constraints, the property every retired
         headline metric lacked."""
         from vitd_objectives import primary_objective
         spec = primary_objective()
@@ -269,8 +267,8 @@ class TestObjectiveHierarchy:
     def test_report_generator_does_not_hardcode_the_geometry_factor(self):
         """Drift guard for the bug this phase fixed. run_all.py stated a
         personal-dose geometry factor of 0.55 while the code held a different
-        value; the fix was to interpolate it. Re-hardcoding it -- with the
-        right value or the wrong one -- puts the drift back."""
+        value; the fix was to interpolate it. Re-hardcoding the value,
+        right or wrong, puts the drift back."""
         import io
         import os
         from vitd_objectives import PERSONAL_DOSE_GEOMETRY_FACTOR

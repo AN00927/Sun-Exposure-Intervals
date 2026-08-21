@@ -66,6 +66,15 @@ instead.
 - **DO** recognize that `E_source=1.0` is the solar broadband reference — the
   model works for sun exposure out of the box. TL-01/sunbed sources are
   volatile; sun exposure is preferred for clinical conclusions.
+- **DO** flag it to the user when a source figure/image is hard to read (low
+  resolution, small text, ambiguous gridlines) instead of silently digitizing
+  a best guess or writing the source off as unusable. A paper judged "not
+  useful" because its evidence sits in an image you struggled to read is a
+  false negative — say so explicitly so the user can decide whether to get a
+  cleaner copy or transcribe it by hand. This has already cost real signal
+  once (Weihs et al. 2013, Fig. 6). The bar for flagging is low: even mild
+  uncertainty about legibility is worth a one-line note — flag it and keep
+  going, don't stop and wait for a reply.
 - **Do NOT** pool NHANES 2001-2006 (`LBDVIDMS`) with 2007+ (`LBXVIDMS`) without
   harmonization code.
 - **Do NOT** invent validation counts. Re-run

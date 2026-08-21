@@ -31,7 +31,7 @@ ALL_FST = [1, 2, 3, 4, 5, 6]
 # route gone, that invariant is structurally guaranteed rather than incidental.
 #
 # These tests guard against silent reintroduction. If you are deliberately
-# bringing oral dosing back, delete them -- but recalibrate the coefficient
+# bringing oral dosing back, delete them, but recalibrate the coefficient
 # first and see scripts/dmax_identifiability_gallagher2012.py for what that
 # costs.
 class TestOralPathwayRemoved:
@@ -166,7 +166,7 @@ class TestConservationAndLimits:
         """REWRITTEN 2026-08-18. There is no longer a hard ceiling to test.
 
         This used to assert `D.max() <= D_max`, which held only because the
-        default feedback form was max(0, 1 - D/D_max) -- a term that switches
+        default feedback form was max(0, 1 - D/D_max), a term that switches
         cutaneous synthesis off outright at 150 nmol/L. That form was withdrawn
         under approved item A2 (D_max's origin was never found; regulation acts
         on hydroxylation and CYP24A1 catabolism, not on a synthesis switch), so
@@ -178,7 +178,7 @@ class TestConservationAndLimits:
         THE NEW TRUTH: D is bounded by the balance between a saturating
         synthesis term and the state-dependent clearance k_decay_D ~ D**0.72,
         not by a ceiling constant. Under a deliberately absurd schedule
-        (15 SED/day, every day, a year, 100% BSA -- roughly 60x a sensible
+        (15 SED/day, every day, a year, 100% BSA, roughly 60x a sensible
         dose) the model tops out at 112-156 nmol/L depending on FST, i.e. it
         does exceed the old D_max, and it should: an unbounded input does not
         produce an unbounded serum level here, but neither does synthesis stop.

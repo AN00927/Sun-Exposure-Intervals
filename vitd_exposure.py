@@ -1,21 +1,21 @@
 """
 vitd_exposure.py
-=================
+================
 PHASE 1 entry point: turns real-world inputs into a UV dose.
 
     (latitude, longitude, datetime, exposed body sites, posture) -> SED
 
-Before this module, nothing in the repo connected the two links that already
-existed -- vitd_solar.py (where is the sun) and vitd_ambient.py (what is the
-ambient UV Index) -- to the personal-dose machinery in vitd_physiology.py and
-vitd_objectives.py. A caller had to already know a UV Index, a geometry
-factor, and separately keep an `exposed_bsa` fraction consistent with
-whatever body sites that geometry factor implied. This module is that join.
-It computes nothing new scientifically: every number below is produced by an
-existing, sourced function in vitd_solar.py, vitd_ambient.py,
-vitd_physiology.py or vitd_objectives.py. This module's only job is asking
-the two questions a real person can actually answer -- "what date/time and
-where" and "what's uncovered" -- and wiring the answers through consistently.
+This module connects the two links that already existed -- vitd_solar.py
+(where is the sun) and vitd_ambient.py (what is the ambient UV Index) -- to
+the personal-dose machinery in vitd_physiology.py and vitd_objectives.py. A
+caller had to already know a UV Index, a geometry factor, and separately keep
+an `exposed_bsa` fraction consistent with whatever body sites that geometry
+factor implied. This module is that join. It computes nothing new
+scientifically: every number below is produced by an existing, sourced function
+in vitd_solar.py, vitd_ambient.py, vitd_physiology.py or vitd_objectives.py.
+This module's only job is asking the two questions a real person can actually
+answer -- "what date/time and where" and "what's uncovered" -- and wiring the
+answers through consistently.
 
 THE CRUX THIS MODULE EXISTS TO FIX (repo open item 5b)
 --------------------------------------------------------
@@ -652,7 +652,7 @@ def exposure_across_months(latitude: float, longitude: float, year: int,
     A caller combining this function's output with vitd_model.simulate()
     inherits that limitation; this function does not fix it.
 
-    Each month is computed INDEPENDENTLY (same as calling exposure_sed() once
+    Each month is computed independently (same as calling exposure_sed() once
     per month) -- there is no cross-month interaction here or in any
     downstream schedule function that consumes this output.
 

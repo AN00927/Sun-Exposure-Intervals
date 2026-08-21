@@ -4,9 +4,9 @@ plot_sc_deboer2025.py
 Visualizes the stratum-corneum thinning-then-overshoot finding from
 de Boer 2025 Supp Table S1 against the model's SC(t) trajectory.
 
-Companion to fit_sc_deboer2025.py, which establishes (numerically) that no
-parameter choice fits both the dip and the overshoot -- best achievable fit
-misses by 71-75% of signal amplitude. This script makes that mismatch visible.
+fit_sc_deboer2025.py establishes that no parameter choice fits both the dip
+and the overshoot — best achievable fit misses by 71-75% of signal amplitude.
+This script makes that mismatch visible.
 
 Saves figs/sc_deboer2025_fit.png.
 """
@@ -44,13 +44,13 @@ def sc_trajectory_um(fit: dict, t0_um: float):
     r = simulate(fst=fit["fst"], schedule=sched, duration_days=PROTOCOL_DURATION,
                  params=p, D0=25.0, SC_max_override=fit["SC_max"])
     t, sc_frac = r["t"], r["SC"]
-    # SC state is a fractional change from baseline; convert back to um using T0.
+    # SC state is fractional change from baseline; convert back to um with T0.
     sc_um = t0_um * (1.0 + np.array(sc_frac))
     return np.array(t), sc_um
 
 
 def envelope(t: np.ndarray, y: np.ndarray, window_days: float = 6.0):
-    """Rolling midpoint of the sawtooth (dose-and-decay cycle), for a clean trend line."""
+    """Rolling midpoint of the sawtooth (dose-and-decay cycle)."""
     t_grid = np.linspace(t.min(), t.max(), 300)
     mid = np.empty_like(t_grid)
     for i, tc in enumerate(t_grid):
@@ -72,10 +72,10 @@ def main():
 
     fig, ax = plt.subplots(figsize=(9, 6))
 
-    # Raw sawtooth, faint.
+    # Raw sawtooth, low alpha.
     ax.plot(t_model, sc_model_um, color=COLORS[stratum], lw=0.6, alpha=0.35,
             label="model, raw (each dose bumps SC, then decays)")
-    # Trend line -- the thing to actually compare against the data.
+    # Trend line — what matters for comparison against the data.
     ax.plot(t_env, sc_env, color=COLORS[stratum], lw=2.5,
             label="model trend (best achievable fit)")
 

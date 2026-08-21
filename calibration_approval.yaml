@@ -24,10 +24,31 @@ allowed_calibration_parameters:
   - INTERMITTENT_BURN_EXPONENT
   - SCC_DOSE_EXPONENT
   - MELANIN_ATTENUATION_KAPPA
+  - PERSONAL_DOSE_GEOMETRY_FACTOR
+  - SCHMALWIESER_2025_JOGGING_ERTA
 calibration_set:
   - Elwood & Jopson 1997 (Int J Cancer 73:198) odds ratios
   - Moan et al. 1989 (Cancer Res 49:5207) biological amplification factors
   - Fajuyigbe et al. 2018 (FASEB J 32:3700) basal:whole CPD protection ratio
+  - >-
+    Schmalwieser et al. 2025 (Photochem Photobiol, doi 10.1111/php.14114)
+    exposure-ratio-to-ambient by body site and solar elevation, jogging.
+    QUANTITATIVE: Figure 5 is digitized into
+    vitd_physiology.SCHMALWIESER_2025_JOGGING_ERTA.
+  - >-
+    Weihs et al. 2013 (Photochem Photobiol 89:1004) personal UV exposure by body
+    site and posture. NO PREDICTIVE CONSTANT TAKES A VALUE FROM IT. What is
+    transcribed, as of 2026-08-20, is the set of BETWEEN-SITE RATIOS the paper
+    states in its Results prose (vitd_physiology.WEIHS_2013_PROSE_SITE_RATIOS):
+    walking shoulders 1.70x chest and forehead; sitting thighs and shoulders
+    1.60x forehead and chest; sitting-up lower legs 2.15x forehead; lying lower
+    legs 1.55x forehead. Ratios only -- the prose gives no absolute ER for any
+    site and no elevation resolution, so these cannot populate
+    ACTIVITY_ERTA_TABLES and no dose calculation reads them. The paper is
+    load-bearing for a DECISION (leaving PERSONAL_DOSE_GEOMETRY_FACTOR at 0.35)
+    and for corroborating the shoulder finding, not for a number. See
+    vitd_physiology, "WEIHS et al. 2013 -- PROSE-SOURCED SITE RATIOS", and note
+    that the earlier Figure 6 digitization quoted in this file is WITHDRAWN.
 validation_set:
   # Held out from every fit above. Used only to score the result.
   - Gandini et al. 2005 III (Eur J Cancer 41:2040) melanoma RR by skin type
@@ -481,6 +502,190 @@ parameter_approvals:
       (3) Geometry x BSA are coupled and the model treats them as independent:
       which sites are uncovered sets BOTH the exposed area and the mean ER.
       Not addressed.
+
+  PERSONAL_DOSE_GEOMETRY_FACTOR:
+    approved_by: User (repository owner)
+    approval_date: 2026-08-20
+    change: >-
+      value UNCHANGED at 0.35; a THIRD, measured, activity-specific and
+      elevation-resolved route is added ALONGSIDE it. New in vitd_physiology:
+      SCHMALWIESER_2025_JOGGING_ERTA (7 body sites x 5 solar elevations),
+      ACTIVITY_ERTA_TABLES, activity_erta(), activity_erta_interval(); and new
+      `activity=` / `body_site=` arguments on personal_geometry_factor(),
+      vitd_objectives.sed_from_minutes() and minutes_for_target(). Nothing
+      selects the new route unless a caller names an activity, so DEFAULT MODEL
+      OUTPUT IS UNCHANGED by this entry.
+    source: >-
+      Schmalwieser, Danhel, Schmalwieser, Reimoser, Rummel, Loy, Heydenreich &
+      Weihs 2025, "Erythemal UV radiation exposure during jogging", Photochem
+      Photobiol, doi 10.1111/php.14114. Full text in
+      Research_Papers/Schmalwieser_2025_Photo.pdf. ONE volunteer, 12 SunSaver
+      dosimeters at 7 sites, cloud-free Vienna (48.247 N), 18-19 June 2025,
+      solar elevations 20/30/40/50/60 deg, four cardinal-direction runs averaged
+      per elevation. Corroborated on the shoulder finding, and CONTRADICTED on
+      magnitude, by Weihs et al. 2013 (Photochem Photobiol 89:1004), also in
+      Research_Papers/ -- see not_covered.
+    derivation: >-
+      None -- no fit. The paper prints no ERTA table, so Figure 5 was DIGITIZED
+      from the published raster at 4x zoom (read precision ~+/-0.02, rounded to
+      2 dp, already finer than the authors' own +/-15%) and every series was
+      then cross-checked against the values the paper states in prose:
+      shoulders "0.8 with no dependence on solar elevation" (table mean 0.808,
+      spread 0.02); forearms and forehead "0.5 and 0.3" (0.484, 0.320); upper
+      arms, calves, nape and thighs "starting with a value of 0.5 at 20 deg down
+      to around 0.4 and 0.3 at 60 deg" (in that site order, 0.55/0.50/0.50/0.49
+      at 20 deg and 0.35/0.42/0.35/0.34 at 60 deg). Pinned prose-fact by prose-fact in
+      tests/test_physiology.py::TestSchmalwieser2025JoggingERTA. If the numbers
+      are ever disputed, re-digitize Figure 5 -- do not re-fit.
+    status: >-
+      SOURCED AND MEASURED, BUT DELIBERATELY NOT PROMOTED TO THE DEFAULT, and
+      that non-promotion is the substance of this approval. Every jogging site
+      ERTA (0.29-0.82) sits ABOVE the 0.35 Cockell scalar, which looks like a
+      case for raising it. It is not, for two reasons that only appear once both
+      papers are read. (1) DIFFERENT REGIMES: Schmalwieser measures continuous,
+      deliberate, unshaded exposure in one posture; Cockell's 0.35 is a
+      behaviourally-averaged dosimeter number, and this repo already refuses the
+      same substitution for Vernez ER (see VERNEZ_GEOMETRY_MODEL.not_covered).
+      (2) THE OTHER DIRECTION EXISTS: Weihs 2013 reports ERs "between 0.05 and
+      1" across six body sites and four activities, all in continuous direct sun
+      at 46-64 deg elevation -- a 20-fold spread that straddles 0.35 in BOTH
+      directions. Its walking shoulders:forehead contrast is 1.70 against 2.52
+      for jogging over the same elevations, and the site ORDERING itself changes
+      with posture (lower legs lead while lying and sitting up, shoulders while
+      walking). ACTIVITY AND POSTURE DOMINATE. The measured spread across
+      activities and sites is wider than the distance from 0.35 to either study,
+      so no single measured value replaces a fallback whose whole job is to
+      answer when the activity is unknown.
+      [CORRECTED 2026-08-20] Clause (2) previously cited per-site walking means
+      digitized from Weihs's Figure 6 (an unweighted "~0.26", lower leg "0.10",
+      and a claimed 5x calves disagreement). That figure cannot be read to that
+      precision in the copy held here and the digitization is WITHDRAWN; the
+      restatement above uses only ratios and ranges the paper prints as text.
+      The approval, the conclusion and the value are unchanged -- only the
+      evidence cited for them. Also corrected in the first sentence: the jogging
+      range is 0.29-0.82, not 0.32-0.82 (the forehead series reaches 0.29).
+      Pinned by
+      tests/test_physiology.py::TestPersonalGeometryFactor::test_flat_fallback_is_still_0_35_after_the_2025_papers
+      so it cannot be quietly undone in either direction.
+    double_counting_with_E_source: >-
+      RESOLVED BY CONSTRUCTION, WITH ONE NAMED RESIDUAL. The risk was that ERTA
+      and the vitamin-D-to-erythema ratio (SOURCE_CALIBRATION_TABLE, Webb 2021)
+      both depend on solar zenith angle, so multiplying them might apply the
+      same physics twice. They do not: ERTA is erythemal-on-body over
+      erythemal-on-horizontal, both measured with CIE-erythema-matched
+      detectors, so the action spectrum CANCELS and only the angle between skin
+      and sky survives; VDE:EE is two different action spectra applied to the
+      SAME irradiance, so only spectral composition survives. Geometry and
+      spectrum, orthogonal, both legitimately elevation-dependent.
+      THE RESIDUAL, NOT CORRECTED: E_source is measured on a HORIZONTAL plane
+      while ERTA moves the dose onto a TILTED surface seeing a different
+      direct:diffuse mix, which differs in UVB:UVA. The correction is
+      VDE:EE(site) / VDE:EE(horizontal) and NO source in this repo measures it
+      -- Webb 2021 reports horizontal only, and Schmalwieser used erythemal
+      detectors, never a spectroradiometer at the skin. Second-order and carried
+      by any absolute D prediction that uses activity ERTA. Written out in full
+      above vitd_physiology.activity_erta, with the operational rule: never let
+      a falling ERTA at high sun be "compensated" by a rising VDE:EE. They are
+      not offsetting corrections to one quantity.
+    not_covered: >-
+      (1) n = 1. ONE subject, ONE posture (the textbook jogging forward lean),
+      ONE city, ONE ground albedo (asphalt/grass, 5-11%). The +/-15% interval
+      from activity_erta_interval() is MOUNTING uncertainty only; between-subject
+      variance is unmeasured and larger.
+      (2) NOT TRANSFERABLE BETWEEN ACTIVITIES. activity_erta() raises on any
+      activity it has no table for rather than substituting jogging. Weihs et
+      al. 2024 (Atmosphere, cycling, SZA to 65 deg) would be the obvious next
+      acquisition and is still not in the repo.
+      (3) ABOVE 60 DEG IS REFUSED, NOT EXTRAPOLATED. The authors state the
+      results "may not be necessarily applicable at higher solar elevations as
+      found at subtropical and tropical latitudes" -- exactly where four of the
+      seven series are still falling when the data runs out. activity_erta()
+      clamps with a warning, which under dark_skin_priority matters: the
+      latitudes this table cannot reach are disproportionately the ones where
+      FST V-VI populations live.
+      (4) ERYTHEMAL, NOT VITAMIN-D WEIGHTED. See double_counting_with_E_source.
+      (5) 'mean_measured_sites' IS NOT A WHOLE-BODY RATIO. It counts the
+      shoulders -- ~2% of BSA and the most exposed site -- equally with
+      everything else, and represents the trunk not at all, because the sternum
+      was tested and dropped as a mounting position. A real whole-body number
+      needs the BSA weighting in vitd_exposure.py over the sites a person
+      actually leaves bare. The geometry x BSA coupling flagged in
+      VERNEZ_GEOMETRY_MODEL.not_covered (3) is NOT closed by this entry.
+      (6) WEIHS 2013 CONTRIBUTES NO PREDICTIVE CONSTANT, AND THE REASON CHANGED
+      ON 2026-08-20. It is NOT that the paper contradicts itself -- this entry
+      previously said that, on the strength of a Figure 6 digitization that has
+      since been withdrawn as unreadable. The paper's Results prose and its
+      Discussion agree with each other, and are transcribed into
+      vitd_physiology.WEIHS_2013_PROSE_SITE_RATIOS. The real limitation is that
+      the prose gives RATIOS BETWEEN SITES ONLY: no absolute ER for any single
+      site, and no elevation resolution (all six sequences fall in one 46-64 deg
+      band, reported as single random-orientation means). An
+      ACTIVITY_ERTA_TABLES entry needs absolute, elevation-resolved values, so
+      scaling these ratios against an assumed anchor site would invent the one
+      number the paper never states. That is a calibration decision, not a
+      transcription, and it is NOT approved here. See open_items below.
+    consequence: >-
+      NONE to any reported number. No default changed, no existing call site
+      passes activity=, and the full suite is green (558 tests on 2026-08-20;
+      567 after the Weihs prose-ratio transcription added
+      tests/test_physiology.py::TestWeihs2013ProseRatios, still all passing).
+      What changed is
+      what a caller CAN ask for: a jogger at a known solar elevation can now get
+      a measured, site-resolved geometry ratio with a published uncertainty
+      interval instead of a behaviourally-averaged scalar. Worked contrast at
+      40 deg elevation: shoulders 0.82, across-site mean 0.51, forehead 0.34,
+      against the flat 0.35 -- i.e. up to 2.3x the dose per minute depending
+      only on WHICH SKIN IS BARE.
+    open_items:
+      # Forward-looking. NOT approved -- filed so a later session finds the
+      # condition and the required approval step instead of re-deriving both.
+      - marker: WEIHS-2013-VOR
+        date: 2026-08-20
+        status: BLOCKED_ON_SOURCE
+        blocked_on: >-
+          The Weihs et al. 2013 PDF in Research_Papers/ is the "Accepted
+          Article" early-view proof and prints its own warning about
+          "differences between this version and the Version of Record". Its
+          Figure 6 is a grouped range-bar chart -- six sites x four activities,
+          min-max bars with a black dot for the mean, series separated only by
+          grayscale hatching, shoulders and lower legs hatched identically in
+          opposite directions -- and at that resolution it CANNOT be read to
+          per-site precision. This is a legibility limit of the copy held, not
+          a defect in the paper. The repository owner may be able to obtain the
+          Version of Record.
+        what_unblocks_it: >-
+          A VoR that renders Figure 6 in colour, at higher resolution, or ships
+          a supplementary data table with the per-site means.
+        then_do: >-
+          Re-digitize Figure 6 and attempt a full per-site quantitative entry in
+          vitd_physiology.ACTIVITY_ERTA_TABLES for 'walking' / 'sitting' /
+          'lying' / 'sitting_up', cross-validating every series against
+          WEIHS_2013_PROSE_SITE_RATIOS exactly the way Schmalwieser 2025's
+          Figure 5 was cross-validated against its Results text. The prose
+          ratios are the acceptance test: a digitization that does not
+          reproduce walking shoulders/forehead = 1.70, sitting thighs/forehead =
+          1.60, sitting-up lower_legs/forehead = 2.15 and lying
+          lower_legs/forehead = 1.55 has been misread again.
+        approval_required: >-
+          YES. A new predictive per-activity ERTA table is a CALIBRATION, not a
+          documentation fix, and needs its own parameter_approvals entry. It
+          must NOT be added on the strength of this open item. Anchoring the
+          existing ratios to an assumed absolute ER, without a VoR figure, is
+          the specific thing this item exists to prevent.
+        grep_for: >-
+          WEIHS-2013-VOR. The other end of this marker is the [TODO 2026-08-20]
+          block in vitd_physiology.py, section "WEIHS et al. 2013 --
+          PROSE-SOURCED SITE RATIOS".
+    gap_26_status: >-
+      PARTIALLY CLOSED, NOT CLOSED. The elevation dependence withdrawn on
+      2026-08-16 as unsourced now HAS a source -- for one activity, at seven
+      sites, from one subject. Schmalwieser & Siani 2018's actual objection was
+      coverage ("for most activities, we still lack the possibility to predict
+      the UV exposure of exposed body sites under any condition because ERTAs
+      are not fully available") and that objection stands in full: what exists
+      is still piecemeal per-activity curves, not a general model. The comment
+      block in vitd_physiology section 2b was updated to say exactly this and
+      must not be upgraded to "closed" on the strength of one activity.
 
 # Live status. Regenerate with: PYTHONIOENCODING=utf-8 python3 run_all.py
 current_validation:

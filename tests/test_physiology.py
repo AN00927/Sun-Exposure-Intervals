@@ -1,7 +1,7 @@
 """Tests for the mechanistic sub-models added in the July 2026 literature pass.
 
-Each test states the literature fact it encodes, so a future change that breaks
-one has to argue with a paper rather than with a number.
+Each test states the literature fact it encodes. Wrong code fails against a
+paper, not a magic number.
 """
 
 import numpy as np
@@ -19,10 +19,23 @@ from vitd_physiology import (body_weight_dilution_factor,
                              INTERMITTENT_BURN_EXPONENT,
                              BODY_WEIGHT_REF_KG,
                              vis_table_s1,
+                             activity_erta,
+                             activity_erta_interval,
+                             ACTIVITY_ERTA_TABLES,
+                             SCHMALWIESER_2025_JOGGING_ERTA,
+                             SCHMALWIESER_2025_JOGGING_ERTA_MAX,
+                             SCHMALWIESER_2025_ERTA_ELEVATIONS_DEG,
+                             SCHMALWIESER_2025_ERTA_REL_UNCERTAINTY,
+                             SCHMALWIESER_2025_ERTA_VALID_ELEVATION_DEG,
                              VERNEZ_TABLE_S1_VIS,
                              VERNEZ_TABLE_S1_POSTURES,
                              VERNEZ_REPORTED_SITE_ER,
-                             VERNEZ_REF_SZA_DEG)
+                             VERNEZ_REF_SZA_DEG,
+                             weihs2013_prose_ratio,
+                             WEIHS_2013_PROSE_SITE_RATIOS,
+                             WEIHS_2013_REPORTED_ER_RANGE,
+                             WEIHS_2013_MOUNTING_ACCURACY,
+                             WEIHS_2013_SOLAR_ELEVATION_BAND_DEG)
 
 
 class TestBodyWeightDilution:
@@ -462,7 +475,7 @@ class TestSCCDoseExponent:
 
 
 class TestBackwardCompatibility:
-    """All new mechanisms default off/neutral."""
+    """All new mechanisms default off or neutral."""
 
     def test_defaults_neutral(self):
         p = ModelParams()
@@ -502,8 +515,8 @@ class TestTwoProcessSC:
 
     The old single multiplicative form (`SC *= exp(-k_damage*sed)`) could only
     shrink SC toward zero, so no k_damage could ever reproduce that. These tests
-    lock in the corrected structure -- and lock in that k_damage stays 0.0,
-    because fixing the structure did NOT make the parameter identifiable.
+    pin the corrected structure -- and pin that k_damage stays 0.0, because
+    fixing the structure did not make the parameter identifiable.
     """
 
     def test_k_damage_still_zero_by_default(self):
@@ -528,8 +541,8 @@ class TestTwoProcessSC:
         assert r["SC"].min() < 0.0
 
     def test_old_form_could_not_go_below_zero(self):
-        """Guards the diagnosis: a multiplicative damage term is sign-preserving,
-        so it can only ever shrink a non-negative SC toward zero."""
+        """Guards the diagnosis: a multiplicative damage term preserves sign,
+        so it shrinks a non-negative SC toward zero but never below it."""
         sc = 0.2
         for _ in range(200):
             sc = sc * np.exp(-0.5 * 0.8)
@@ -596,6 +609,51 @@ class TestPersonalGeometryFactor:
         with pytest.warns(UserWarning, match="withdrawn"):
             assert personal_geometry_factor(60.0) == 0.35
 
+    def test_activity_route_returns_the_measured_erta(self):
+        """activity= must reach the Schmalwieser 2025 table, not the scalar."""
+        assert personal_geometry_factor(40.0, activity="jogging",
+                                        body_site="shoulders") == pytest.approx(0.82)
+        assert personal_geometry_factor(60.0, activity="jogging",
+                                        body_site="thighs") == pytest.approx(0.34)
+
+    def test_activity_defaults_to_the_across_site_mean(self):
+        assert (personal_geometry_factor(40.0, activity="jogging")
+                == pytest.approx(activity_erta("jogging",
+                                               "mean_measured_sites", 40.0)))
+
+    def test_vis_percent_and_activity_together_raise(self):
+        """Two competing estimates of one ratio: the caller must choose. Silently
+        preferring either would hide which source produced the answer."""
+        with pytest.raises(ValueError, match="not both"):
+            personal_geometry_factor(40.0, vis_percent=58.0, activity="jogging")
+
+    def test_body_site_without_activity_raises(self):
+        """The Vernez route selects a site through vis_table_s1(), not here."""
+        with pytest.raises(ValueError, match="body_site"):
+            personal_geometry_factor(40.0, vis_percent=58.0, body_site="forehead")
+
+    def test_flat_fallback_is_still_0_35_after_the_2025_papers(self):
+        """[REGRESSION, 2026-08-20] Schmalwieser 2025 and Weihs 2013 were both
+        integrated WITHOUT moving the Cockell scalar, and that decision is the
+        substance of the calibration approval -- so it is pinned.
+
+        Jogging ERTAs sit above 0.35; Weihs reports ERs from 0.05 to 1.0 across
+        six sites and four postures, straddling it in both directions. The
+        spread across activities and sites is wider than the distance from 0.35
+        to either, so no single measured number replaces the fallback.
+
+        [CORRECTED 2026-08-20] this docstring previously cited a Weihs "walking
+        site mean (~0.26)" taken from a Figure 6 digitization since withdrawn as
+        unreadable. Conclusion and value unchanged; see TestWeihs2013ProseRatios.
+        """
+        from vitd_objectives import PERSONAL_DOSE_GEOMETRY_FACTOR
+        assert PERSONAL_DOSE_GEOMETRY_FACTOR == 0.35
+        assert personal_geometry_factor() == 0.35
+        jogging_mean = activity_erta("jogging", "mean_measured_sites", 40.0)
+        assert jogging_mean > 0.35, (
+            "if this ever fails the 'jogging sits above the scalar' half of the "
+            "argument has changed and the approval needs revisiting")
+
     def test_intercept_reproduces_at_centring_point(self):
         """Vernez centres on Vis=58%; there ER == the printed intercept 56.991%."""
         from vitd_physiology import VERNEZ_REF_SZA_DEG
@@ -638,6 +696,293 @@ class TestPersonalGeometryFactor:
         for an averagely-exposed site. This is the caveat, encoded: the two
         numbers are not interchangeable."""
         assert vernez_exposure_ratio(58.0, 45.0) > 0.35
+
+
+class TestSchmalwieser2025JoggingERTA:
+    """Schmalwieser et al. 2025, Photochem Photobiol, doi 10.1111/php.14114,
+    "Erythemal UV radiation exposure during jogging". Full text in
+    Research_Papers/Schmalwieser_2025_Photo.pdf.
+
+    The constants are DIGITIZED FROM FIGURE 5 (the paper prints no ERTA table),
+    so every test below cross-checks them against a statement the paper makes in
+    PROSE. A failure here should mean someone re-digitized the figure, never
+    that someone re-fitted anything.
+
+    n = 1 subject, one posture, Vienna, solar elevation 20-60 deg, stated
+    measurement uncertainty +/-15%.
+    """
+
+    def test_seven_measured_sites_and_five_elevations(self):
+        """The paper measured 12 dosimeters at 7 sites; left/right were pooled."""
+        assert len(SCHMALWIESER_2025_JOGGING_ERTA) == 7
+        assert SCHMALWIESER_2025_ERTA_ELEVATIONS_DEG == (20.0, 30.0, 40.0, 50.0, 60.0)
+        for site, vals in SCHMALWIESER_2025_JOGGING_ERTA.items():
+            assert len(vals) == 5, site
+
+    def test_the_sourced_table_is_not_polluted_by_the_derived_mean(self):
+        """'mean_measured_sites' is COMPUTED and lives only in the lookup
+        registry. The transcribed constant must keep exactly the paper's sites."""
+        assert "mean_measured_sites" not in SCHMALWIESER_2025_JOGGING_ERTA
+        assert "mean_measured_sites" in ACTIVITY_ERTA_TABLES["jogging"]
+        assert len(ACTIVITY_ERTA_TABLES["jogging"]) == 8
+
+    def test_shoulders_are_the_most_exposed_site_at_every_elevation(self):
+        """Abstract: "the top of the shoulder is the most exposed body site".
+        Discussion: "at all solar elevations and for all running directions"."""
+        for i, elev in enumerate(SCHMALWIESER_2025_ERTA_ELEVATIONS_DEG):
+            shoulders = SCHMALWIESER_2025_JOGGING_ERTA["shoulders"][i]
+            for site, vals in SCHMALWIESER_2025_JOGGING_ERTA.items():
+                if site != "shoulders":
+                    assert vals[i] < shoulders, (site, elev)
+
+    def test_shoulders_average_80_percent_of_ambient_and_are_flat(self):
+        """Abstract: "receiving 80% of ambient UVR on average". Results: "highest
+        on average at a level of 0.8 with NO DEPENDENCE on solar elevation"."""
+        vals = SCHMALWIESER_2025_JOGGING_ERTA["shoulders"]
+        assert sum(vals) / len(vals) == pytest.approx(0.80, abs=0.02)
+        assert max(vals) - min(vals) <= 0.03, "must stay flat across elevation"
+
+    def test_forearm_and_forehead_levels(self):
+        """Results: forearms and forehead show "no clear tendency ... at a level
+        of 0.5 and 0.3, respectively"."""
+        fore = SCHMALWIESER_2025_JOGGING_ERTA["forearms"]
+        head = SCHMALWIESER_2025_JOGGING_ERTA["forehead"]
+        assert sum(fore) / len(fore) == pytest.approx(0.5, abs=0.06)
+        assert sum(head) / len(head) == pytest.approx(0.3, abs=0.05)
+        assert min(head) == min(SCHMALWIESER_2025_JOGGING_ERTA[s][i]
+                                for s in SCHMALWIESER_2025_JOGGING_ERTA
+                                for i in range(5)), "forehead holds the minimum"
+
+    def test_four_sites_fall_with_rising_solar_elevation(self):
+        """Results: upper arms, calves, thighs and nape "decrease with increasing
+        solar elevation, starting with a value of 0.5 at 20 deg down to around
+        0.4 and 0.3 at 60 deg".
+
+        This is the result the flat 0.35 scalar could not express: for a tilted
+        anatomical surface the ratio to a HORIZONTAL reference falls as the sun
+        climbs. This is geometry, not spectrum -- see the double-counting note in
+        vitd_physiology.
+        """
+        for site in ("upper_arms", "calves", "nape", "thighs"):
+            vals = SCHMALWIESER_2025_JOGGING_ERTA[site]
+            assert vals[0] == pytest.approx(0.5, abs=0.06), site
+            assert 0.30 <= vals[-1] <= 0.45, site
+            assert vals[-1] < vals[0], site
+
+    def test_all_random_path_means_stay_at_or_below_ambient(self):
+        """Mean over a random pathway must not exceed 1.0; only the DIRECTIONAL
+        maximum does, and that is a separate constant."""
+        for site, vals in SCHMALWIESER_2025_JOGGING_ERTA.items():
+            for v in vals:
+                assert 0.0 < v <= 1.0, (site, v)
+        assert SCHMALWIESER_2025_JOGGING_ERTA_MAX["shoulders"] > 1.0
+
+    def test_directional_shoulder_maximum_exceeds_ambient(self):
+        """Discussion: "When jogging toward the sun, the UVR exposure may reach
+        up to 117% ... caused by the torso bending slightly forward"."""
+        assert SCHMALWIESER_2025_JOGGING_ERTA_MAX["shoulders"] == pytest.approx(1.17)
+
+    def test_interpolates_between_measured_elevations(self):
+        mid = activity_erta("jogging", "nape", 45.0)
+        assert mid == pytest.approx(0.5 * (0.45 + 0.38))
+
+    def test_clamps_outside_the_measured_band_with_a_warning(self):
+        """The authors: results "may not be necessarily applicable at higher
+        solar elevations as found at subtropical and tropical latitudes". Silent
+        extrapolation to a tropical noon is exactly what must not happen."""
+        lo, hi = SCHMALWIESER_2025_ERTA_VALID_ELEVATION_DEG
+        with pytest.warns(UserWarning, match="outside the measured band"):
+            assert (activity_erta("jogging", "calves", 85.0)
+                    == activity_erta("jogging", "calves", hi))
+        with pytest.warns(UserWarning, match="outside the measured band"):
+            assert (activity_erta("jogging", "calves", 5.0)
+                    == activity_erta("jogging", "calves", lo))
+
+    def test_interval_uses_the_papers_own_stated_uncertainty(self):
+        """+/-15%, derived by the authors from left/right disagreement on runs
+        straight toward and away from the sun (0.5-30%, worst at the shoulders)."""
+        assert SCHMALWIESER_2025_ERTA_REL_UNCERTAINTY == 0.15
+        lo, hi = activity_erta_interval("jogging", "shoulders", 40.0)
+        mid = activity_erta("jogging", "shoulders", 40.0)
+        assert lo == pytest.approx(mid * 0.85)
+        assert hi == pytest.approx(mid * 1.15)
+
+    def test_across_site_mean_is_computed_not_typed(self):
+        for i, elev in enumerate(SCHMALWIESER_2025_ERTA_ELEVATIONS_DEG):
+            expected = (sum(v[i] for v in SCHMALWIESER_2025_JOGGING_ERTA.values())
+                        / len(SCHMALWIESER_2025_JOGGING_ERTA))
+            assert activity_erta("jogging", "mean_measured_sites", elev) == pytest.approx(expected)
+
+    def test_across_site_mean_is_not_bsa_weighted(self):
+        """Encodes the caveat rather than the number: the mean counts the
+        shoulders (~2% of BSA, most exposed site) equally with everything else
+        and represents the trunk not at all -- the sternum was dropped as a
+        mounting position. It must therefore sit well above the site-count-free
+        truth for a mostly-limb exposure."""
+        mean40 = activity_erta("jogging", "mean_measured_sites", 40.0)
+        limbs = [activity_erta("jogging", s, 40.0)
+                 for s in ("forearms", "upper_arms", "calves", "thighs")]
+        assert mean40 > sum(limbs) / len(limbs)
+
+    def test_unknown_activity_site_or_missing_elevation_raise(self):
+        with pytest.raises(KeyError):
+            activity_erta("cycling", "forehead", 40.0)
+        with pytest.raises(KeyError):
+            activity_erta("jogging", "elbow", 40.0)
+        with pytest.raises(ValueError):
+            activity_erta("jogging", "nape", None)
+
+    def test_body_site_names_normalise_like_the_vernez_table(self):
+        assert (activity_erta("jogging", "Upper arms", 40.0)
+                == activity_erta("jogging", "upper_arms", 40.0))
+
+    def test_geometry_and_spectral_terms_stay_separable(self):
+        """The double-counting guard, encoded. ERTA is a GEOMETRY factor that
+        multiplies the erythemal dose; E_source (VDE:EE) is a SPECTRAL factor
+        applied downstream. sed_from_minutes must return an erythemal SED that
+        is exactly linear in the ERTA and carries no spectral weighting at all,
+        so the two never collapse into one another.
+        """
+        from vitd_objectives import sed_from_minutes
+        base = sed_from_minutes(30.0, 6.0, geometry_factor=1.0)
+        for site in ("shoulders", "thighs"):
+            erta = activity_erta("jogging", site, 40.0)
+            got = sed_from_minutes(30.0, 6.0, solar_elevation_deg=40.0,
+                                   activity="jogging", body_site=site)
+            assert got == pytest.approx(base * erta)
+
+
+class TestWeihs2013ProseRatios:
+    """Weihs, Schmalwieser, Reinisch, Meraner, Walisch & Harald 2013, Photochem
+    Photobiol 89:1004-1007, "Measurements of Personal UV Exposure on Different
+    Parts of the Body During Various Activities". Full text in Research_Papers/.
+
+    UNLIKE the Schmalwieser class above, NOTHING here is digitized. Every number
+    is transcribed from a sentence in the paper's Results or Discussion, because
+    its Figure 6 cannot be read to per-site precision in the copy held (see the
+    PROVENANCE block in vitd_physiology.py; an earlier Figure 6 digitization was
+    withdrawn). A failure here should mean someone retyped the prose wrong.
+
+    These are RATIOS BETWEEN SITES, never exposure ratios to ambient. The paper
+    states no absolute ER for any single site and no elevation dependence, which
+    is exactly why there is no Weihs entry in ACTIVITY_ERTA_TABLES -- pinned by
+    test_weihs_must_not_become_an_erta_table below.
+    """
+
+    def test_walking_shoulders_are_70_percent_above_chest_and_forehead(self):
+        """Results: "During walking, the study subject receives the highest
+        exposures on the shoulders which is 70% higher than the exposure of the
+        chest and the forehead"."""
+        assert weihs2013_prose_ratio("walking", "shoulders", "chest") == 1.70
+        assert weihs2013_prose_ratio("walking", "shoulders", "forehead") == 1.70
+
+    def test_sitting_thighs_and_shoulders_are_60_percent_above(self):
+        """Results: "During sitting the highest UV exposures are received by the
+        thighs and the shoulders. Exposures are 60% higher than on the forehead
+        and on the chest"."""
+        for site in ("thighs", "shoulders"):
+            for ref in ("forehead", "chest"):
+                assert weihs2013_prose_ratio("sitting", site, ref) == 1.60
+
+    def test_lying_and_sitting_up_are_led_by_the_lower_legs(self):
+        """Results: "During sitting up and lying the exposures are highest on
+        the lower legs (respectively 115% and 55% higher than on forehead)".
+
+        Corroborated by the Discussion, which is why this survived while the
+        figure read did not: "The highest ERs occurred on the lower legs while
+        lying and sitting up. In these positions the lower legs are oriented
+        horizontally like the device for ambient UV measurements."
+        """
+        assert weihs2013_prose_ratio("sitting_up", "lower_legs", "forehead") == 2.15
+        assert weihs2013_prose_ratio("lying", "lower_legs", "forehead") == 1.55
+
+    def test_the_posture_reorders_the_body(self):
+        """The finding that makes a single geometry scalar indefensible: which
+        site leads DEPENDS ON THE POSTURE. Shoulders lead upright locomotion,
+        the lower legs lead once the body is horizontal."""
+        assert (weihs2013_prose_ratio("sitting_up", "lower_legs", "forehead")
+                > weihs2013_prose_ratio("walking", "shoulders", "forehead"))
+        for activity, table in WEIHS_2013_PROSE_SITE_RATIOS.items():
+            for (site, ref), ratio in table.items():
+                assert ratio > 1.0, (activity, site, ref)
+
+    def test_reported_range_accuracy_and_elevation_band(self):
+        """Discussion: ERs "between 0.05 and 1"; inclinations adjustable to
+        "roughly +/-10%". Methods: "solar elevations between 46 and 64 degrees".
+
+        The 0.05-1.0 spread is what carries the non-promotion argument for
+        PERSONAL_DOSE_GEOMETRY_FACTOR: it straddles 0.35 in both directions.
+        """
+        lo, hi = WEIHS_2013_REPORTED_ER_RANGE
+        assert (lo, hi) == (0.05, 1.0)
+        assert lo < 0.35 < hi, "the straddle IS the argument; see vitd_objectives"
+        assert WEIHS_2013_MOUNTING_ACCURACY == 0.10
+        assert WEIHS_2013_SOLAR_ELEVATION_BAND_DEG == (46.0, 64.0)
+
+    def test_weihs_must_not_become_an_erta_table(self):
+        """[REGRESSION, 2026-08-20] The prose gives ratios with NO absolute
+        anchor and NO elevation resolution, so it cannot populate an ERTA table.
+        Building one would require inventing an absolute value for some site --
+        a calibration, gated by calibration_approval.yaml. If this fails, either
+        that approval was granted (check the WEIHS-2013-VOR open item) or
+        someone anchored the ratios to a guess.
+        """
+        for activity in WEIHS_2013_PROSE_SITE_RATIOS:
+            assert activity not in ACTIVITY_ERTA_TABLES, activity
+        assert set(ACTIVITY_ERTA_TABLES) == {"jogging"}
+        with pytest.raises(KeyError):
+            activity_erta("walking", "shoulders", 50.0)
+
+    def test_accessor_normalises_site_names_and_refuses_the_rest(self):
+        """Raises rather than inverting or chaining: the paper prints only the
+        pairs it prints."""
+        assert (weihs2013_prose_ratio("walking", "Shoulders", "Forehead")
+                == weihs2013_prose_ratio("walking", "shoulders", "forehead"))
+        with pytest.raises(KeyError, match="Do not invert or chain"):
+            weihs2013_prose_ratio("walking", "forehead", "shoulders")
+        with pytest.raises(KeyError, match="Do not invert or chain"):
+            weihs2013_prose_ratio("walking", "thighs", "forehead")
+        with pytest.raises(KeyError, match="No Weihs 2013 prose ratios"):
+            weihs2013_prose_ratio("cycling", "shoulders", "forehead")
+
+    def test_cross_study_shoulders_forehead_contrast(self):
+        """Recomputes the cross-study comparison written above
+        weihs2013_prose_ratio in vitd_physiology.py, so that comment cannot go
+        stale if the Schmalwieser table is ever re-digitized.
+
+        Overlap band: Weihs 46-64 deg, Schmalwieser 20-60 deg -> 46-60 deg.
+        """
+        ratio = lambda e: (activity_erta("jogging", "shoulders", e)
+                           / activity_erta("jogging", "forehead", e))
+        assert ratio(46.0) == pytest.approx(2.61, abs=0.01)
+        assert ratio(50.0) == pytest.approx(2.76, abs=0.01)
+        assert ratio(60.0) == pytest.approx(2.22, abs=0.01)
+        band = [ratio(e) for e in np.linspace(46.0, 60.0, 15)]
+        assert sum(band) / len(band) == pytest.approx(2.52, abs=0.01)
+
+    def test_two_studies_agree_on_ordering_not_on_magnitude(self):
+        """The verdict, encoded. Both papers put the shoulders far above the
+        forehead during upright locomotion -- independent corroboration of
+        Schmalwieser's headline finding, which otherwise rests on n = 1. They do
+        NOT agree on how far: the jogging contrast is ~1.5x the walking one, a
+        gap well outside either paper's stated measurement uncertainty
+        (+/-15% mounting for Schmalwieser, +/-10% for Weihs). Posture, not
+        measurement error. Evidence AGAINST borrowing one activity's table for
+        another.
+        """
+        walking = weihs2013_prose_ratio("walking", "shoulders", "forehead")
+        jogging = [activity_erta("jogging", "shoulders", e)
+                   / activity_erta("jogging", "forehead", e)
+                   for e in np.linspace(46.0, 60.0, 15)]
+        jogging_mean = sum(jogging) / len(jogging)
+        assert walking > 1.0 and min(jogging) > 1.0, "ordering must agree"
+        combined_uncertainty = (1.0 + SCHMALWIESER_2025_ERTA_REL_UNCERTAINTY
+                                + WEIHS_2013_MOUNTING_ACCURACY)
+        assert jogging_mean / walking > combined_uncertainty, (
+            "if these ever reconcile inside the stated uncertainties, the "
+            "'activity and posture dominate' argument for keeping the flat "
+            "0.35 fallback needs re-examining")
+        assert jogging_mean / walking == pytest.approx(1.48, abs=0.02)
 
 
 class TestVernezTableS1:

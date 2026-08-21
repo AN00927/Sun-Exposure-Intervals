@@ -1806,9 +1806,11 @@ move; the index values did. See section 14c.
   report time). Its inflection is an *output* of a breakpoint fitted on the
   vitamin D3 axis (Scholze 2026, Commun Med 6:105), not a regressor -- the Hill
   exponent cannot be fitted from that paper at all.
-- **Fajuyigbe 2018 (FASEB J 32:3700)** is abstract-only and its basal:whole CPD
-  protection ratio is the single fitted number behind the whole skin-type risk
-  axis.
+- **Fajuyigbe 2018 (FASEB J 32:3700)** -- full text now in Research_Papers/
+  (previously miscited as abstract-only) -- and its basal:whole CPD protection
+  ratio remains the single fitted number behind the whole skin-type risk axis.
+  It covers only extreme phototypes (SPT I/II vs VI); FST III/IV/V still rest
+  on Shih 2018's melanin percentages alone.
 - **de Boer 2025 individual-level SC/MI trajectories** would break the
   `alpha_SC ~ SC_max` and `K_ATTEN ~ K_SC` ridges.
 - **Ambient-to-personal UV dosimetry** for upright activity:

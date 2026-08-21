@@ -3,11 +3,11 @@ feasibility_map_kconst.py
 =========================
 CONSEQUENCE MAP for a calibration change, expressed as scheduling feasibility.
 
-Originally written for the 2026-08-17 K_const recalibration (0.33 -> 0.98).
-Since 2026-08-18 it sweeps an arbitrary SET of parameters, because the K_const
-result turned out not to be separable: raising `A` (approved item A4) moves
-feasibility in the OPPOSITE direction, so the honest map is the COMBINED one.
-The single-parameter behaviour is unchanged and is still the default.
+Written for the 2026-08-17 K_const recalibration (0.33 -> 0.98). Since
+2026-08-18 it sweeps an arbitrary SET of parameters, because the K_const result
+turned out not to be separable: raising `A` (approved item A4) moves feasibility
+in the OPPOSITE direction, so the honest map is the COMBINED one. The
+single-parameter behaviour is unchanged and is still the default.
 
 Question
 --------
@@ -75,7 +75,7 @@ HORIZON = 365
 # 260 = five per week, 365 = daily. 52 was added 2026-08-18 so that a minimum
 # of 104 can be pinned from BELOW as well as from above.
 N_GRID = (52, 104, 146, 183, 260, 365)
-# [CHOICE] Reference conditions for the minutes conversion. UV index 6 and a
+# Reference conditions for the minutes conversion. UV index 6 and a
 # 120-minute ceiling are the values tests/test_vitd_optimization.py and
 # optimal_interval_risk_constrained already use; they are held fixed here so
 # the map isolates the calibration change.
@@ -100,9 +100,9 @@ def hr(t):
 
 
 def make_params(**overrides):
-    """A default ModelParams with `overrides` applied.
+    """Default ModelParams with `overrides` applied.
 
-    Values are cast to the type the dataclass default already has, so
+    Casts values to the type the dataclass default already has, so
     `--before K_const=0.33,A=2.353` and `--before feedback_mode=linear` both
     work without the caller quoting types.
     """
@@ -175,7 +175,7 @@ def table(params, label, n_grid=N_GRID):
 def minimum_budgets(cell_map, n_grid=N_GRID):
     """Smallest N on the grid that is feasible, per FST, and the N below it.
 
-    Returned as {fst: (n_min, n_below)}; n_min is None when no N on the grid
+    Returns {fst: (n_min, n_below)}; n_min is None when no N on the grid
     works, n_below is None when n_min is the smallest grid point.
     """
     mins = {}

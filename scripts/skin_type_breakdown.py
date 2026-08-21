@@ -1,7 +1,7 @@
 """
 skin_type_breakdown.py
 ======================
-Per-skin-type answers to the two questions the model is actually asked:
+Per-skin-type answers to the two questions the model actually answers:
 
   A. "Every few days is optimal -- at what dose, and for which skin type?"
      Sweeps FST I-VI against per-session dose under both dose framings, and
@@ -17,9 +17,9 @@ statement' section 3.3.
 It has an interior answer, unlike maximising 25(OH)D under a free UV budget,
 which always returns "go out daily".
 
-Dose framing is reported explicitly throughout. Absolute SED and fractional MED
-give materially different skin-type patterns, and the two literatures only
-appear to disagree because papers rarely state which they used.
+Dose framing appears explicitly throughout. Absolute SED and fractional MED
+give different skin-type patterns, and the two literatures disagree because
+papers rarely state which they used.
 
 Outputs
 -------
@@ -60,8 +60,7 @@ MED_FRACTIONS = [0.1, 0.25, 0.5]
 INTERVALS = list(range(1, 31))
 
 # GAMMA_MED (sub-erythemal ceiling), RAMP_IN_DAYS and PRACTICAL_MAX_MINUTES are
-# model-level constraints and now live in vitd_objectives, so that
-# vitd_optimization can share them without importing from scripts/.
+# model-level constraints in vitd_objectives, shared with vitd_optimization.
 # Reference conditions for the minutes translation.
 UV_INDEX_REF = 6.0
 EXPOSED_BSA_REF = 0.35
@@ -98,8 +97,7 @@ def breakdown_by_skin_type():
             for dose in doses:
                 sed = dose if framing == "absolute_SED" else dose * med
                 # Best interval under the fixed-budget-equivalent objective:
-                # maximise mean 25(OH)D. Dose per session is held, so this is
-                # the "how often, at this dose" question.
+                # maximise mean 25(OH)D. Dose per session is held.
                 best_iv, best_mean, best_r = None, -np.inf, None
                 for iv in INTERVALS:
                     r = _run(fst, sed, iv)
@@ -165,8 +163,8 @@ def min_sessions_for_sufficiency(target: float = SUFFICIENCY_NMOL_L,
             sed = min(sed_burn, sed_time)
             binding = "MED" if sed_burn <= sed_time else "minutes"
 
-        # min D after ramp-in is monotone non-decreasing in session count for
-        # uniform spacing, so bisect on the number of sessions.
+        # min D after ramp-in is monotone non-decreasing in session count
+        # for uniform spacing, so bisect on the number of sessions.
         def feasible(n_sessions: int):
             if n_sessions < 1:
                 return False, None
@@ -220,14 +218,14 @@ def min_sessions_for_sufficiency(target: float = SUFFICIENCY_NMOL_L,
     _write_csv(path, rows)
     print(f"\n  Saved {path}")
 
-    # The MED cap scales with skin type, so darker skin is permitted a much
-    # larger per-session dose, and the solver spends it. Check whether the
-    # resulting session length is something a person could actually do.
+    # The MED cap scales with skin type, so darker skin gets a much larger
+    # per-session dose — and the solver spends it. Check whether the resulting
+    # session length is something a person could actually do.
     impractical = [r for r in rows
                    if r["reachable"] and r["minutes_per_session"] > PRACTICAL_MAX_MINUTES]
     if impractical:
-        print(f"\n  WARNING: the {GAMMA_MED:.0%}-MED cap alone does not produce a "
-              f"usable recommendation for every skin type.")
+        print(f"\n  WARNING: the {GAMMA_MED:.0%}-MED cap alone does not produce a"
+              f" usable recommendation for every skin type.")
         for r in impractical:
             print(f"    FST {r['fst']}: {r['minutes_per_session']:.0f} min/session "
                   f"exceeds the {PRACTICAL_MAX_MINUTES:.0f} min practical ceiling.")

@@ -1,21 +1,19 @@
 """
 vitd_model.py
 =============
-Three-state ODE model of serum 25(OH)D dynamics under UV exposure schedules,
-accounting for photoadaptation (melanin upregulation and stratum corneum thickening)
-in darker skin types.
+Three-state ODE model of serum 25(OH)D dynamics under UV exposure schedules.
+Models photoadaptation (melanin upregulation and stratum corneum thickening)
+for darker skin types.
 
 State variables
 ---------------
-D(t)  : effective serum 25(OH)D, nmol/L
-        Single compartment representing the time-integrated plasma + adipose
-        reservoir relevant for week-to-month scheduling dynamics.
-M(t)  : effective melanin index, dimensionless 0-1
-        (Datta 2019 reflectance scale; 0.0 = FST I, 1.0 = FST VI)
-SC(t) : additional stratum corneum thickness, dimensionless (above baseline 0)
-        (representing epidermal thickening/hyperplasia photoadaptation channel;
-        [C8] this state is ACTIVE in the model -- SC is NOT unmodeled;
-        remaining task is FST/source-specific calibration, not implementation)
+    D(t)  : effective serum 25(OH)D, nmol/L
+        Time-integrated plasma + adipose reservoir for week-to-month scheduling.
+    M(t)  : effective melanin index, dimensionless 0-1
+        Datta 2019 reflectance scale; 0.0 = FST I, 1.0 = FST VI.
+    SC(t) : additional stratum corneum thickness, dimensionless (above baseline 0)
+        [C8] ACTIVE state variable. Remaining task: FST/source-specific
+        calibration, not implementation.
 
 Governing equations
 -------------------
@@ -32,7 +30,7 @@ Synthesis function (logarithmic dose-response in effective D3-weighted dose SED 
                               exp(-K_ATTEN * max(0, M - M_baseline(F))) *
                               exp(-K_SC * SC) * g(D)
 
-    g(D) is the FEEDBACK FACTOR and is selected by `feedback_mode`. The DEFAULT
+    g(D) is the FEEDBACK FACTOR, selected by `feedback_mode`. DEFAULT
     is 'biphasic' (see the feedback-form entry below):
         g(D) = 1 / (1 + (D / 56.0) ** 2)          # 'biphasic'  DEFAULT
         g(D) = max(0, 1 - D / D_max)              # 'linear'    LEGACY
@@ -41,12 +39,12 @@ Synthesis function (logarithmic dose-response in effective D3-weighted dose SED 
                                                   #   not adopted; see below
 
     bsa_factor(bsa) = (bsa / BSA_REF) ** BSA_EXP
-        where BSA_REF = 0.35 (Farrar 2013 (35% BSA); note Bogh 2011 used 6-24% BSA),
-        BSA_EXP = 0.50 (sub-linear scaling; P5 ln-BSA coefficient supports
-        diminishing returns above ~35% BSA; Matsuoka 1990 P8 shows plateau above 33%).
-        Default bsa = BSA_REF so existing scenarios are unchanged (factor = 1.0).
+        where BSA_REF = 0.35 (Farrar 2013, 35% BSA; Bogh 2011 used 6-24% BSA),
+        BSA_EXP = 0.50 (sub-linear; P5 ln-BSA supports diminishing returns
+        above ~35% BSA; Matsuoka 1990 P8 shows plateau above 33%).
+        Default bsa = BSA_REF, existing scenarios unchanged (factor = 1.0).
 
-Parameter & Source Sourcing
+Parameters & Sources
 ---------------------------
 - k_decay_D(D) = ln(2) / (2953 * D^(-0.72)):
     State-dependent D decay rate from Datta 2017 power-law fit (DOI: 10.1039/c6pp00258g).
@@ -56,7 +54,7 @@ Parameter & Source Sourcing
 - A = 3.114:
     Synthesis scaling factor.
     [CALIBRATION 2026-08-18, user-approved item A4] Raised from 2.353.
-    Derivation is reproducible in one line of arithmetic and is asserted by
+    Reproducible in one line of arithmetic; asserted by
     `vitd_validation.young2021_A_anchor()` and
     `tests/test_vitd_model.py::TestYoung2021AAnchor`.
 
@@ -82,82 +80,79 @@ Parameter & Source Sourcing
           = 3.48 / [ 1.061257 * 1.558387 * 0.933700 * 0.723721 ]
           = 3.48 / 1.117569 = 3.1139  ->  3.114
 
-    WHAT THE OLD 2.353 WAS: it preserved a 1.27 nmol/L rise for 1 SED in
-    untanned FST III at 35% BSA, D = 25, computed at K_const = 0.33. That
-    reference number stopped being reproducible when K_const moved to 0.98 on
-    2026-08-17 (the same expression now returns 1.11), so 2.353 was already an
-    orphaned constant before this change.
+    WHAT 2.353 WAS: preserved a 1.27 nmol/L rise for 1 SED in untanned
+    FST III at 35% BSA, D = 25, computed at K_const = 0.33. That reference
+    stopped being reproducible when K_const moved to 0.98 on 2026-08-17
+    (the same expression now returns 1.11), so 2.353 was already orphaned
+    before this change.
 
     THE "~1.85 vs 2.0-5.0" GAP WAS PARTLY A SPECTRAL ARTEFACT, NOT A BIOLOGICAL
-    ONE. The 1.85 figure that motivated this recalibration is computed at
-    E_source = 1.00 — the "solar_broadband" entry DEPRECATED on 2026-08-16
-    because no solar spectrum has VDE:EE = 1.00. At the current solar default
-    (1.89) the incumbent A = 2.353 already yields 2.63 nmol/L per SED, i.e.
-    already INSIDE Young's 2.0-5.0 band. This calibration therefore moves A by
-    x1.32, not the x1.5-1.9 that the pre-2026-08-16 framing implied.
+    ONE. The 1.85 figure is computed at E_source = 1.00 — the
+    "solar_broadband" entry DEPRECATED on 2026-08-16 because no solar spectrum
+    has VDE:EE = 1.00. At the current solar default (1.89) the incumbent
+    A = 2.353 already yields 2.63 nmol/L per SED, already INSIDE Young's
+    2.0-5.0 band. This calibration moves A by x1.32, not the x1.5-1.9 that
+    the pre-2026-08-16 framing implied.
 
     STATUS: CENTRE OF A WIDE, SOURCE-DEPENDENT RANGE, NOT A MEASURED CONSTANT.
-    Young's three FB slopes span 2.5x (1.99-4.97) and that spread is the
-    paper's own headline finding: SED is a poor spectral predictor of vitamin D
-    synthesis. Pairing each arm with its own E_source from
-    SOURCE_CALIBRATION_TABLE gives A = 2.90 (Arimed B, E = 1.83) and A = 5.06
-    (UV6, E = 1.54) — a 1.74x disagreement, and in the WRONG ORDER: those
-    E_source values (Webb 2021, unshifted CIE-174) predict UV6 slightly weaker
-    than Arimed B, while Young measures it 56% stronger. The adopted value sits
-    between them. Read 3.114 as the centre of roughly 2.9-5.1.
+    Young's three FB slopes span 2.5x (1.99-4.97); the spread is the paper's
+    headline finding: SED is a poor spectral predictor of vitamin D synthesis.
+    Pairing each arm with its own E_source from SOURCE_CALIBRATION_TABLE gives
+    A = 2.90 (Arimed B, E = 1.83) and A = 5.06 (UV6, E = 1.54) — a 1.74x
+    disagreement, and in the WRONG ORDER: those E_source values (Webb 2021,
+    unshifted CIE-174) predict UV6 slightly weaker than Arimed B, while Young
+    measures it 56% stronger. The adopted value sits between them. Read 3.114
+    as the centre of roughly 2.9-5.1.
 
     DARK-SKIN FLAG (standing_directives.dark_skin_priority). Young 2021 is
-    FST I-II ONLY (n = 75 overall, 6x I + 69x II, zero FST III-VI) and its
-    authors explicitly disclaim generalisation: "The results from this study
-    only apply to FST I/II". A is a WHOLE-MODEL synthesis scalar applied at
-    every FST, so calibrating it on this study and using it for FST V-VI is a
-    LIGHT-SKIN EXTRAPOLATION. It is mitigated but not removed by the fact that
-    the between-FST penalty itself (K_const) is anchored separately on
-    matched-dose FST V data (Felton 2016, Young 2020, Kift 2013, Darling 2013),
-    so what is extrapolated here is the overall level, not the skin-type
-    gradient. Any absolute 25(OH)D prediction for FST V-VI must carry this flag.
+    FST I-II ONLY (n = 75 overall, 6x I + 69x II, zero FST III-VI); its
+    authors disclaim generalisation: "The results from this study only apply
+    to FST I/II". A is a WHOLE-MODEL synthesis scalar applied at every FST,
+    so calibrating it on this study and using it for FST V-VI is a
+    LIGHT-SKIN EXTRAPOLATION. Mitigated but not removed by the fact that
+    K_const is anchored separately on matched-dose FST V data (Felton 2016,
+    Young 2020, Kift 2013, Darling 2013), so what is extrapolated is the
+    overall level, not the skin-type gradient. Any absolute 25(OH)D
+    prediction for FST V-VI must carry this flag.
 
     MEASURED CONSEQUENCES (2026-08-18, both changes A2 + A4 in force):
       Farrar 2013 (FST V, the only dark-skin quantitative check in the suite)
-        moves from FAIL to PASS: delta +8.7 -> +11.2 nmol/L against an observed
-        +21.7 and an acceptance band of 10-35.
-      Bogh 2012 (light-skin NB-UVB, labelled DEBUGGING_TARGET) stays PASS:
-        +48.0 -> +51.6 against an observed +55.8, band 45.8-65.8.
-      Karppinen 2017 now passes in the DEFAULT feedback mode, so the
+        moves from FAIL to PASS: delta +8.7 -> +11.2 nmol/L against observed
+        +21.7, acceptance band 10-35.
+      Bogh 2012 (light-skin NB-UVB, DEBUGGING_TARGET) stays PASS:
+        +48.0 -> +51.6 against observed +55.8, band 45.8-65.8.
+      Karppinen 2017 now passes in DEFAULT feedback mode; the
         experimental-mode override was removed from that check.
       Required validation score 8/10 -> 10/10.
-    NOT COVERED: A cannot reproduce Young's FB protocol END-TO-END. Simulating
-    the actual 5 x 2 SED protocol needs A ~ 8.3 (Arimed B arm) to reach the
-    observed +38.6, and the PB (3.7% BSA) arms need more still. The model
-    under-predicts Young's absolute rises by 2.7x (FB) to 6.2x (PB) at any A
-    that keeps Bogh 2012 and Farrar 2013 in band. Young 2021 and Bogh 2012 are
-    MUTUALLY INCOMPATIBLE inside this dose-response structure: Bogh delivered
-    ~6.7x Young's D3-effective dose from a LOWER baseline and produced only
-    1.45x the rise. This calibration matches Young's per-SED SLOPE, which is
-    what the approval asked for; it does not resolve that conflict, and no
-    value of A can. Young's own within-study BSA contrast (85% vs 3.7% BSA,
-    3.28x response for a 23x area ratio) also implies BSA_EXP ~ 0.38 rather
+    NOT COVERED: A cannot reproduce Young's FB protocol END-TO-END. The
+    actual 5 x 2 SED protocol needs A ~ 8.3 (Arimed B arm) to reach
+    observed +38.6, and PB (3.7% BSA) arms need more. The model
+    under-predicts Young's absolute rises by 2.7x (FB) to 6.2x (PB) at
+    any A that keeps Bogh 2012 and Farrar 2013 in band. Young 2021 and
+    Bogh 2012 are MUTUALLY INCOMPATIBLE: Bogh delivered ~6.7x Young's
+    D3-effective dose from a LOWER baseline and produced only 1.45x the
+    rise. This calibration matches Young's per-SED SLOPE (what the
+    approval asked for); it does not resolve that conflict, and no value
+    of A can. Young's own within-study BSA contrast (85% vs 3.7% BSA,
+    3.28x response for a 23x area ratio) implies BSA_EXP ~ 0.38 rather
     than the model's 0.50 — recorded here, NOT acted on.
 - K_const = 0.98:
-    Baseline (constitutive) inhibition coefficient. Delivers an FST V:II optical
-    factor of 2.01x and FST VI:I of 2.66x.
+    Baseline (constitutive) inhibition coefficient. FST V:II optical factor
+    of 2.01x, FST VI:I of 2.66x.
     [CALIBRATION 2026-08-17, user-approved] Raised from 0.33. Derivation:
-    `scripts/kconst_recalibration.py`; the diagnosis it rests on is
-    `scripts/fst_gap_decomposition.py`; the approval is
-    `calibration_approval.yaml`. Fitted by equal-weight least squares in log
-    ratio space to FOUR independent WITHIN-STUDY estimates of the same
-    quantity, two by lab matched-dose and two by field personal dosimetry with
-    the measured behavioural dose difference removed: Felton 2016 (1.473),
-    Young 2020 both arms (0.278), Kift 2013 (0.788), Darling 2013 (1.387).
-    SD across the four routes is 0.56, so treat 0.98 as a central estimate of
-    a 0.3-1.5 range, not a measured constant.
-    WHAT THE OLD 0.33 WAS: ln(1.36) / (M_VI - M_II), a static-optics inversion
-    of one Young 2020 ratio that ignored feedback and protocol entirely. On
-    Felton 2016's within-study matched-dose protocol it did not merely
-    under-predict the skin-type gap, it INVERTED it (model FST II:V 0.96 vs
-    observed 2.14), because FST V's lower baseline buys more headroom under
-    (1 - D/D_max) than the melanin term took away. That inversion is gone at
-    0.98 (model 1.49), on every matched-dose contrast in the repo.
+    `scripts/kconst_recalibration.py`; diagnosis: `scripts/fst_gap_decomposition.py`;
+    approval: `calibration_approval.yaml`. Fitted by equal-weight least squares
+    in log ratio space to four independent WITHIN-STUDY estimates, two by lab
+    matched-dose and two by field personal dosimetry with behavioural dose
+    difference removed: Felton 2016 (1.473), Young 2020 both arms (0.278),
+    Kift 2013 (0.788), Darling 2013 (1.387). SD across routes 0.56; treat
+    0.98 as a central estimate of a 0.3-1.5 range, not a measured constant.
+    WHAT 0.33 WAS: ln(1.36) / (M_VI - M_II), a static-optics inversion of
+    one Young 2020 ratio that ignored feedback and protocol entirely. On
+    Felton 2016's matched-dose protocol it INVERTED the skin-type gap (model
+    FST II:V 0.96 vs observed 2.14), because FST V's lower baseline buys
+    more headroom under (1 - D/D_max) than the melanin term took away. That
+    inversion is gone at 0.98 (model 1.49), on every matched-dose contrast.
     NOT COVERED: behaviour. Shade, clothing and time outdoors are a SEPARATE
     2.1-2.4x factor and live in `vitd_behaviour.py`, defaulting to 1.0.
     Folding them in here would need 4.3-5.7x, above every matched-dose
@@ -168,66 +163,63 @@ Parameter & Source Sourcing
     unvalidated group-level prior.
     See K_ATTEN note below.
 - feedback_mode = 'biphasic'  (was 'linear' with D_max = 150.0):
-    [CALIBRATION 2026-08-18, user-approved item A2] The hard synthesis ceiling
-    is WITHDRAWN as the default and replaced by a saturating form.
+    [CALIBRATION 2026-08-18, user-approved item A2] Hard synthesis ceiling
+    WITHDRAWN as default, replaced by saturating form.
 
-    WHY THE LINEAR FORM WENT. max(0, 1 - D/D_max) asserts that cutaneous
-    synthesis stops OUTRIGHT at D = D_max. No such switch exists: 25(OH)D
-    homeostasis is exerted downstream, on 1,25(OH)2D, by CYP24A1 induction and
-    by substrate-driven catabolism — the latter already carried here by the
-    state-dependent k_decay_D. D_max = 150.0 also never had a source: it is not
-    in Bogh 2010, and PMID 19812604's observed maximum was 116 nmol/L.
+    WHY THE LINEAR FORM WENT. max(0, 1 - D/D_max) asserts cutaneous synthesis
+    stops OUTRIGHT at D = D_max. No such switch exists: 25(OH)D homeostasis
+    acts downstream on 1,25(OH)2D via CYP24A1 induction and substrate-driven
+    catabolism — the latter already carried here by k_decay_D. D_max = 150.0
+    had no source: absent from Bogh 2010, and PMID 19812604's observed
+    maximum was 116 nmol/L.
 
     THE ADOPTED FORM is `vitd_physiology.hydroxylation_efficiency`:
         g(D) = 1 / (1 + (D / D_inflect) ** n),  D_inflect = 56.0, n = 2.0
-    Scholze et al. 2026, Commun Med 6:105, with bimonthly sampling, report that
-    conversion of cutaneous D3 to plasma 25(OH)D3 is efficient at low 25(OH)D3
-    and "decreases markedly" above an inflection at 25(OH)D3 = 56 nmol/L.
-    [ESTIMATE] 56.0 is an OUTPUT of a breakpoint fitted on the vitamin D3 axis,
-    not a regressor, so it carries the breakpoint's own (unpublished) width.
-    [CHOICE] n = 2.0 is NOT fittable from that paper — it cannot be estimated
-    from a single reported breakpoint. It is chosen as the gentlest integer
-    knee: g = 0.5 at the inflection, 0.80 at half of it, 0.20 at twice it.
-    g(D) is never exactly zero, which is the whole point.
+    Scholze et al. 2026, Commun Med 6:105, bimonthly sampling, reports
+    conversion of cutaneous D3 to plasma 25(OH)D3 is efficient at low
+    25(OH)D3 and "decreases markedly" above inflection at 25(OH)D3 = 56 nmol/L.
+    [ESTIMATE] 56.0 is a fitted OUTPUT (breakpoint on vitamin D3 axis), not
+    a regressor, so it carries the breakpoint's own (unpublished) width.
+    [CHOICE] n = 2.0 is NOT fittable from that paper — single reported
+    breakpoint cannot estimate it. Chosen as the gentlest integer knee:
+    g = 0.5 at inflection, 0.80 at half, 0.20 at twice. g(D) is never
+    exactly zero — the whole point.
 
     WHAT WAS INVESTIGATED AND NOT ADOPTED. `feedback_mode='saturating'`,
-    g(D) = exp(-ln2 * D / D_half_feedback), already existed and was used only
-    inside the Karppinen check. It was rejected on two grounds. (1) Its scale
-    parameter has no source: the default D_half_feedback = 50.0 is unattributed,
-    and the 90.0 used in the Karppinen check was FITTED to Karppinen, so
-    adopting it would have made that check circular. (2) An exponential is
-    already at its steepest fractional decline as D -> 0, which contradicts
-    Scholze's finding that hydroxylation is EFFICIENT below the inflection and
-    falls above it. Measured cost of adopting it anyway, at the A that the
-    Young 2021 anchor then requires (A = 3.641): the Karppinen check FAILS
-    (low-baseline rise overshoots its 10 nmol/L bound). The mode is retained,
-    unchanged, for sensitivity work.
+    g(D) = exp(-ln2 * D / D_half_feedback), existed for Karppinen check only.
+    Rejected on two grounds. (1) Scale parameter has no source: default
+    D_half_feedback = 50.0 is unattributed, and the 90.0 used in Karppinen
+    was FITTED to Karppinen — adopting it makes that check circular. (2) An
+    exponential is steepest at D -> 0, contradicting Scholze's finding that
+    hydroxylation is EFFICIENT below the inflection and falls above it.
+    Cost of adopting anyway (A = 3.641 from Young 2021 anchor): Karppinen
+    FAILS (low-baseline rise overshoots its 10 nmol/L bound). Retained
+    unchanged for sensitivity work.
 
-    WHAT HAPPENS TO D_max. It is NOT deleted: 'linear' and 'power' still read
-    it, and vitd_sensitivity/scripts still sweep it. But it is OUT OF FORCE in
-    the default model, so `D_max_override=` is INERT unless feedback_mode is
-    explicitly set to 'linear' or 'power'. Any sensitivity result reporting
-    D_max as influential is describing a non-default configuration.
+    WHAT HAPPENS TO D_max. NOT deleted: 'linear' and 'power' still read it,
+    and vitd_sensitivity/scripts still sweep it. But OUT OF FORCE in the
+    default model, so `D_max_override=` is INERT unless feedback_mode is
+    explicitly 'linear' or 'power'. Any sensitivity result reporting D_max as
+    influential describes a non-default configuration.
 
     MEASURED EFFECT ON THE HEADLINE, REPORTED IN FULL BECAUSE IT MOVES IT.
     The interval optimum under net_final_D_change_per_SED (FST III, 1 SED,
-    84 d, D0 = 25) goes 3 d -> 5 d, and the band within 5% of the peak goes
-    [2,3,4] -> [3,4,5,6]. DECOMPOSED: the feedback form ALONE (biphasic at the
-    old A) leaves the FST III optimum at 3 d and widens the band to [2,3,4,5];
-    the A recalibration ALONE (linear at A = 2.930) also leaves it at 3 d with
-    band [2,3,4,5]. The shift to 5 d is their INTERACTION — more synthesis per
-    session raises steady-state D, which sits further up the feedback curve.
-    The optimum remains graded by pigmentation and gets SHORTER with darker
-    skin: FST I-II 5 d, III 5 d, IV 4 d, V-VI 2 d (incumbent: 3/3/3/2/2/1 d).
-    Interval ORDERING is near-invariant (Spearman rho 0.964-0.999 against the
-    incumbent across FST II/III/V/VI); it is the ARGMAX that moves. The claim
-    that recalibrating A leaves "scheduling rankings unchanged" is therefore
-    TRUE for the ordering and FALSE for the reported optimum.
-    IMPORTANT: the claim in run_all.py section 17 that the ordering "comes from
-    the (1 - D/D_max) feedback term" is now measured to be too specific. The
-    ordering comes from HAVING a decreasing feedback factor at all: at the
-    incumbent A the argmax is 3 d under linear, biphasic AND both saturating
-    variants alike.
+    84 d, D0 = 25) goes 3 d -> 5 d, and the band within 5% of peak goes
+    [2,3,4] -> [3,4,5,6]. DECOMPOSED: feedback form ALONE (biphasic, old A)
+    leaves FST III optimum at 3 d, band [2,3,4,5]; A recalibration ALONE
+    (linear, A = 2.930) also leaves it at 3 d, band [2,3,4,5]. The shift to
+    5 d is their INTERACTION — more synthesis per session raises steady-state
+    D, which sits further up the feedback curve. Optimum remains graded by
+    pigmentation and gets SHORTER with darker skin: FST I-II 5 d, III 5 d,
+    IV 4 d, V-VI 2 d (incumbent: 3/3/3/2/2/1 d). Interval ORDERING is
+    near-invariant (Spearman rho 0.964-0.999 against incumbent across
+    FST II/III/V/VI); the ARGMAX moves. The claim that recalibrating A
+    leaves "scheduling rankings unchanged" is TRUE for ordering and FALSE
+    for reported optimum.
+    IMPORTANT: the claim in run_all.py section 17 that ordering "comes from
+    the (1 - D/D_max) feedback term" is too specific. Ordering comes from
+    HAVING a decreasing feedback factor: at incumbent A the argmax is 3 d
+    under linear, biphasic AND both saturating variants alike.
 - D_max = 150.0 nmol/L:
     LEGACY. Ceiling of the withdrawn 'linear'/'power' feedback modes; see the
     feedback_mode entry above. Not in force in the default model.
@@ -278,38 +270,37 @@ Parameter & Source Sourcing
     Osmancevic 2009 (P18) shows broadband UVB can outperform NB-UVB per SED in
     psoriasis, confirming these cannot be universal
 - K_ATTEN = 0.00  --  RETIRED AS A FREE PARAMETER, 2026-08-18 (approved item A6):
-    Facultative (tanning) melanin attenuation coefficient. It is now a FIXED
-    STRUCTURAL CONSTANT, `K_ATTEN_STRUCTURAL`, registered in
-    `RETIRED_PARAMETERS`. The MECHANISM IS NOT REMOVED — exp(-K_ATTEN * excess_M)
-    is still evaluated on every session — but the coefficient can no longer be
-    assigned a different value without a deliberate code change: ModelParams
-    raises RetiredParameterError, and the only way through is the explicitly
-    named `allow_retired_parameter_sweep()` context manager, which exists for
-    ablation and sensitivity work and is not a calibration route.
+    Facultative (tanning) melanin attenuation coefficient. Now a FIXED
+    STRUCTURAL CONSTANT (`K_ATTEN_STRUCTURAL`, in `RETIRED_PARAMETERS`).
+    MECHANISM NOT REMOVED — exp(-K_ATTEN * excess_M) is still evaluated on
+    every session — but the coefficient can no longer be assigned a different
+    value without deliberate code change: ModelParams raises
+    RetiredParameterError; the only path is `allow_retired_parameter_sweep()`,
+    which exists for ablation and sensitivity work and is not a calibration
+    route.
 
     WHY RETIRED, in the order the evidence lands.
-    (1) NOT IDENTIFIABLE. It is jointly unidentifiable with K_SC and with
-        K_const (vitd_sensitivity.py: >99% of the response surface of each pair
-        is explained by a single linear combination). Only combinations are
-        constrained, so reporting K_ATTEN as separately calibrated overstates
-        the evidence.
-    (2) IMMATERIAL. Across its full plausible range it swings steady-state D by
-        0.3%, against 36% for A. It is the best-cited and least consequential
-        number in the model.
+    (1) NOT IDENTIFIABLE. Jointly unidentifiable with K_SC and K_const
+        (vitd_sensitivity.py: >99% of each pair's response surface is one
+        linear combination). Only combinations are constrained; reporting
+        K_ATTEN as separately calibrated overstates the evidence.
+    (2) IMMATERIAL. Swings steady-state D by 0.3% across its full plausible
+        range, against 36% for A. Best-cited, least consequential number in
+        the model.
     (3) THE FIT THAT PRODUCED 0.00 IS NOT AN ESTIMATE. 1D MSE minimisation on
-        the Young 2020 per-person dataset (n = 23, TL-01 arm) returns 0.00 with
+        Young 2020 per-person data (n = 23, TL-01 arm) returns 0.00 with
         CI [0.00, 0.00], but the objective is flat to 0.08% across
-        K_ATTEN in [0.00, 0.33] on that acute 7.5 SED protocol. The CI is an
-        artefact of bound-constrained fitting against a flat surface, not tight
-        estimation. Baseline 25(OH)D and BSA explain that trial's FST II:VI
-        response without any facultative term.
-    RETIREMENT IS NOT A CLAIM THAT TANNING DOES NOTHING. It is a claim that this
+        K_ATTEN in [0.00, 0.33] on that acute 7.5 SED protocol. The CI is
+        a bound artefact of flat-surface fitting, not tight estimation.
+        Baseline 25(OH)D and BSA explain that trial's FST II:VI response
+        without any facultative term.
+    RETIREMENT IS NOT A CLAIM THAT TANNING DOES NOTHING. It claims this
     repository's data cannot measure it. Matsuoka 1990 (n = 7), deconvolved,
-    implies 0.34-1.00 depending on the assumed feedback form
-    (vitd_calibration.derive_K_ATTEN); that divergence is documented, immaterial
-    at present, and guarded by `vitd_validation.sanity_photoadaptation_reduction`
-    and tests/test_matsuoka1990.py. To reinstate it as a free parameter, remove
-    it from RETIRED_PARAMETERS and supply a dataset that separates it from K_SC.
+    implies 0.34-1.00 depending on assumed feedback form
+    (vitd_calibration.derive_K_ATTEN); divergence documented, immaterial at
+    present, guarded by `vitd_validation.sanity_photoadaptation_reduction`
+    and tests/test_matsuoka1990.py. To reinstate as a free parameter, remove
+    from RETIRED_PARAMETERS and supply a dataset separating it from K_SC.
 - M_baseline_by_FST:
     [C7] Anchored to ITA_Unexposed means from trial CSVs (ArimedB trial data,
     N=44). Mapping: M = 1 - (ITA_U + 30) / 85, clipped to [0, 1].
@@ -357,6 +348,16 @@ Parameter & Source Sourcing
     #   Status: CENTRE OF A 2.9-5.1 RANGE. The spread is source-dependent and is
     #   Young's own finding that SED is a poor spectral predictor. LIGHT-SKIN
     #   EXTRAPOLATION when applied to FST III-VI (Young 2021 is FST I-II only).
+    #   [NOTE 2026-08-20] McKenzie et al. 2012 (Photochem Photobiol Sci 11:1174;
+    #   full text in Research_Papers/) fits delta-D = m*ln(1+dose), the same
+    #   functional FORM as A*ln(1+UV*E_source) here, on n=119 including FST IV-VI
+    #   (n=41+33 -- the largest dark-skin dose-response cohort this repo has
+    #   seen). CORROBORATES the log form, does NOT independently set A: their m is
+    #   in nmol/L per solaria SDD, not per-SED, and is not directly convertible
+    #   without their booth's own spectral RDE. Also reports second-6-week
+    #   response falling to LESS THAN HALF the first 6 weeks at equal or larger
+    #   dose -- a real empirical target for k_decay_D's feedback interaction,
+    #   currently anchored only to Karppinen. Not yet used quantitatively.
     #
     # Gap 4 — K_const:
     #   Current value: 0.98 (2026-08-17 recalibration; see the K_const entry above)
@@ -419,11 +420,11 @@ from vitd_physiology import (body_weight_dilution_factor,
 # ---------------------------------------------------------------------------
 # Evidence-derived D3-effective dose weighting factors per UV source.
 # Sources: Webb 2021 (P21), Grigalavicius 2015 (P35).
-# IMPORTANT: Treat these as priors until recalculated from measured spectra.
-# Young 2021 PNAS (P20) shows the CIE previtamin-D3 action spectrum needs a ~5 nm
-# blue shift, which will change all of these values. Osmancevic 2009 (P18)
-# shows broadband UVB can outperform NB-UVB per SED in psoriasis patients,
-# confirming source-specific variation cannot be collapsed to a single constant.
+# TREAT AS PRIORS until recalculated from measured spectra. Young 2021 PNAS
+# (P20) shows the CIE previtamin-D3 action spectrum needs a ~5 nm blue shift,
+# which will change all values. Osmancevic 2009 (P18) shows broadband UVB can
+# outperform NB-UVB per SED in psoriasis, confirming source-specific variation
+# cannot be collapsed to a single constant.
 #
 # Keys: source name (str). Values: (E_source_mean, E_source_range_low, E_source_range_high).
 # Use E_source_mean for point estimates; report range in sensitivity analyses.
@@ -458,6 +459,13 @@ SOURCE_CALIBRATION_TABLE: Dict[str, Tuple[float, float, float]] = {
     "solar_summer":    (1.89, 1.79, 2.00),  # P21: Manchester summer. DEFAULT for sun.
     "solar_summer_nz": (2.01, 2.01, 2.01),  # P21: NZ summer
     "solar_winter_nz": (1.22, 1.22, 1.22),  # P21: NZ winter -- lowest sun value published
+    # [NOTE 2026-08-20] McKenzie et al. 2012 (Photochem Photobiol Sci 11:1174,
+    # "Serum 25-hydroxyvitamin-D responses to multiple UV exposures from
+    # solaria"; full text in Research_Papers/) Table 2 reports 45S solar
+    # RDE(=VDE:EE) of 1.22 winter / 2.01 summer -- numerically identical to the
+    # two NZ entries above. Almost certainly the SAME underlying measurement
+    # chain via Webb 2021, not an independent replicate -- do not double-count
+    # as corroboration for solar_summer_nz/solar_winter_nz specifically.
     # DEPRECATED 2026-08-16, retained so old scripts fail loudly rather than
     # silently. 1.00 was never a measurement of anything: it was the backward
     # compatibility default when E_source was introduced (audit tag [C2]) and was
@@ -466,6 +474,10 @@ SOURCE_CALIBRATION_TABLE: Dict[str, Tuple[float, float, float]] = {
     # Using it for sun under-weights vitamin D effectiveness by ~1.9x.
     "solar_broadband": (1.00, 0.90, 1.10),
     # --- LAMPS -------------------------------------------------------------
+    # [NOTE 2026-08-20] McKenzie et al. 2012 (see solar_summer_nz note above)
+    # Table 2 gives a THIRD, genuinely independent TL-01 NB-UVB (booth B)
+    # RDE estimate of 2.27 -- inside this range, near the floor. Corroborating,
+    # not fitted to; the range/midpoint below are unchanged.
     "tl01_nb_uvb":    (2.44, 2.24, 2.63),  # P21: 2.24; P35: 2.63; use midpoint
     "tl12_bb_uvb":    (1.24, 1.23, 1.25),  # P21/P35 agree
     "uv6_broadband":  (1.54, 1.54, 1.55),  # P21/P35 agree
@@ -473,39 +485,38 @@ SOURCE_CALIBRATION_TABLE: Dict[str, Tuple[float, float, float]] = {
     "sunbed_uvb":     (1.18, 1.18, 1.18),  # P35 (Grigalavicius 2015 Table 2); P21 Wolff Life Sun = 1.85
 }
 
-# The value every sun-facing entry point uses unless told otherwise.
-# [CALIBRATION 2026-08-16, user-approved] Changed from the implicit 1.00 to
+# Default sun-facing E_source, used unless overridden.
+# [CALIBRATION 2026-08-16, user-approved] Changed from implicit 1.00 to
 # Webb's Manchester summer measurement. See calibration_approval.yaml and
 # MODEL_AND_EVIDENCE.md 'Open decisions' item 12(a) for the cost: NHANES
-# Part B drops from 6/6 to 4/6 because those checks feed an ASSUMED daily SED
-# that nobody measured, which makes solar E_source unidentifiable from them.
-# That assumed dose was deliberately NOT retuned to keep the check green.
+# Part B drops 6/6 -> 4/6 because those checks feed an ASSUMED daily SED
+# nobody measured, making solar E_source unidentifiable from them. That
+# assumed dose was deliberately NOT retuned to keep the check green.
 E_SOURCE_SOLAR_DEFAULT: str = "solar_summer"
 
 # ORAL / DIETARY VITAMIN D: REMOVED 2026-08-16.
 #
-# `DIETARY_UG_TO_NMOL_PER_L` and `ModelParams.dietary_D_daily_ug` used to live
-# here and fed a zero-order oral source term in `simulate()`. Both are gone.
+# `DIETARY_UG_TO_NMOL_PER_L` and `ModelParams.dietary_D_daily_ug` fed a
+# zero-order oral source term in `simulate()`. Both gone.
 #
-# Why. This model exists to schedule SUN EXPOSURE. The oral pathway was scope
-# creep (it entered via audit directive 6f to support "naturalistic cohort
-# simulations"), it was never used by any scheduling analysis, and measurement
-# on 2026-08-15 showed its coefficient missed its own documented Cashman target
-# by 3-9x at every dose while its stated worked example was not reproducible.
-# An uncalibrated pathway nobody exercises is a liability, not a feature.
+# Why. This model schedules SUN EXPOSURE. The oral pathway was scope creep
+# (entered via audit directive 6f for "naturalistic cohort simulations"),
+# never used by any scheduling analysis, and measurement on 2026-08-15 showed
+# its coefficient missed its own documented Cashman target by 3-9x at every
+# dose while its stated worked example was not reproducible. An uncalibrated
+# pathway nobody exercises is a liability, not a feature.
 #
 # What was NOT lost. The oral route was the experimental probe behind the only
-# evidence in this repo that gives `D_max` an interior optimum (Gallagher 2012;
-# MODEL_AND_EVIDENCE.md 'Open decisions' item 3). That evidence SURVIVES this
-# removal, because the saturating step it constrains is hepatic -- downstream
-# of both the cutaneous and the oral route -- so it bounds the systemic
-# feedback ceiling `D_max` regardless of which route delivered the D3. The
-# argument is preserved, self-contained and runnable, in
+# evidence that gives `D_max` an interior optimum (Gallagher 2012;
+# MODEL_AND_EVIDENCE.md 'Open decisions' item 3). That evidence SURVIVES: the
+# saturating step it constrains is hepatic -- downstream of both cutaneous and
+# oral routes -- so it bounds systemic feedback ceiling `D_max` regardless of
+# route. The argument is preserved, self-contained and runnable, in
 # `scripts/dmax_identifiability_gallagher2012.py`, which no longer depends on
 # any oral capability in the model.
 #
-# Do not reintroduce an oral term to "support supplementation advice" without
-# recalibrating the coefficient first -- see that script for what it takes.
+# Do not reintroduce an oral term without recalibrating the coefficient first
+# -- see that script for what it takes.
 
 # Reference exposed BSA fraction for synthesis normalization.
 # Farrar 2013 (35% BSA); note Bogh 2011 used 6-24% BSA.
@@ -517,20 +528,19 @@ BSA_EXP: float = 0.50
 # ---------------------------------------------------------------------------
 # Retired parameters
 # ---------------------------------------------------------------------------
-# A RETIRED parameter is one this repository has stopped treating as
-# calibratable. It keeps its mechanism and its value; what it loses is the
-# status of a number that may be moved to improve agreement with data. The
-# machinery below is what makes "retired" mean something the code enforces
-# rather than something a comment asserts.
+# A RETIRED parameter keeps its mechanism and value but loses calibratable
+# status — it can no longer be moved to improve agreement with data. The
+# machinery below makes "retired" enforceable in code, not just asserted in a
+# comment.
 #
 # Rules:
-#   - the value lives in a module-level constant, named here;
+#   - value lives in a module-level constant, named here;
 #   - ModelParams refuses to hold any other value for it;
 #   - ablation and sensitivity work goes through
-#     `allow_retired_parameter_sweep()`, which is deliberately verbose at the
-#     call site so a sweep can never be mistaken for a calibration;
+#     `allow_retired_parameter_sweep()`, deliberately verbose at the call
+#     site so a sweep can never be mistaken for a calibration;
 #   - reinstating a parameter means deleting its RETIRED_PARAMETERS entry,
-#     which is a code change, reviewable in a diff, and gated by
+#     a code change reviewable in a diff, gated by
 #     calibration_approval.yaml like any other calibration.
 
 # [RETIRED 2026-08-18, approved item A6] Facultative-melanin attenuation
@@ -562,9 +572,9 @@ class allow_retired_parameter_sweep:
     """Context manager permitting temporary assignment to retired parameters.
 
     For ABLATION AND SENSITIVITY ANALYSIS ONLY. Entering this block does not
-    make a retired parameter calibratable: a value discovered inside it has no
-    standing until the parameter is removed from RETIRED_PARAMETERS and given
-    its own `parameter_approvals` entry in calibration_approval.yaml.
+    make a retired parameter calibratable: values discovered inside it have
+    no standing until removed from RETIRED_PARAMETERS and given a
+    `parameter_approvals` entry in calibration_approval.yaml.
 
         with allow_retired_parameter_sweep():
             p.K_ATTEN = 0.4          # measuring, not calibrating
@@ -780,10 +790,9 @@ class ModelParams:
     def __setattr__(self, name, value):
         """Refuse to hold a non-structural value for a RETIRED parameter.
 
-        [A6, 2026-08-18] This is what makes retirement enforceable rather than
-        advisory. Assigning the pinned value is always allowed (the dataclass
-        __init__ does exactly that). Assigning anything else raises unless the
-        caller has said, in so many words, that it is running a sweep.
+        [A6, 2026-08-18] Retirement is enforceable, not advisory. Assigning
+        the pinned value is always allowed (the dataclass __init__ does that).
+        Anything else raises unless the caller is running a sweep.
         """
         if name in RETIRED_PARAMETERS and _retired_sweep_depth == 0:
             pinned = _RETIRED_VALUES[name]
@@ -807,12 +816,11 @@ class ModelParams:
         """Maximum attainable melanin index for this FST (fully tanned).
 
         Always M_baseline(fst) + M_TAN_HEADROOM, so UV exposure increases
-        melanin for EVERY FST. Deliberately NOT capped at 1.0: 1.0 is the
-        *constitutive* FST VI reference on the Datta 2019 reflectance scale,
-        not a physical ceiling. FST VI does undergo facultative melanogenesis,
-        so a fully tanned FST VI sits above untanned FST VI (M = 1.20 here).
-        Capping at 1.0 would silently make tanning a no-op for FST VI --
-        different from the old inversion bug, but equally wrong.
+        melanin for EVERY FST. NOT capped at 1.0: 1.0 is the *constitutive*
+        FST VI reference on the Datta 2019 reflectance scale, not a physical
+        ceiling. FST VI undergoes facultative melanogenesis, so a fully tanned
+        FST VI sits above untanned FST VI (M = 1.20 here). Capping at 1.0
+        silently makes tanning a no-op for FST VI.
 
         Synthesis attenuation stays well-behaved above 1.0: only the
         difference (M - M_baseline) enters exp(-K_ATTEN * excess_M).

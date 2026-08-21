@@ -23,7 +23,7 @@ def bogh2012_session_doses(
         - Never exceed cap_j_per_cm2.
         - Once the cap is reached, all remaining sessions use cap_j_per_cm2.
 
-    This rule is PROVISIONAL until verified from the primary source.
+    PROVISIONAL until verified from the primary source.
     """
     doses = []
     current_dose = start_j_per_cm2
@@ -70,8 +70,8 @@ def bogh2012_session_doses_sed(
 ) -> list[float]:
     """Bogh 2012 per-session doses in CIE erythemal SED.
 
-    This is the ONLY correct entry point for driving the model with the Bogh
-    2012 protocol. `simulate()` expects erythemal SED, and E_source then
+    The ONLY correct entry point for driving the model with the Bogh 2012
+    protocol. `simulate()` expects erythemal SED, and E_source then
     converts erythemal SED -> vitamin-D-effective dose. Passing the raw
     J/cm2 numbers straight in as SED (as earlier validation code did)
     understates the dose by the 5.5x factor above.

@@ -1,8 +1,8 @@
 """
 risk_aware_scheduling.py
 ========================
-The deficiency-vs-cancer-risk trade-off, turned into one actionable schedule
-per skin type, plus the figure of the trade-off it was picked from.
+One actionable schedule per skin type from the deficiency-vs-cancer-risk
+trade-off, plus the frontier figure the schedule was picked from.
 
   A. "How often should I go out, and for how long, to stay sufficient at the
       least skin-cancer risk?"
@@ -61,13 +61,13 @@ FSTS = [1, 2, 3, 4, 5, 6]
 UV_INDEX_REF = 6.0
 EXPOSED_BSA_REF = 0.35
 
-# Candidate spacings. Denser at the short end, where the sufficiency floor and
-# the risk objective both concentrate.
+# Denser at the short end, where the sufficiency floor and
+# risk objective both concentrate.
 INTERVAL_GRID = (1, 2, 3, 4, 5, 7, 10, 14, 21, 28)
 
-# Report-only frontier grid. Deliberately NOT the default in
+# Report-only frontier grid. NOT the default in
 # deficiency_vs_risk_frontier(): denser grids cost one full 365-day simulate()
-# per point and the existing callers and tests do not need them.
+# per point and existing callers/tests do not need them.
 FRONTIER_SED_GRID = (0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0)
 FRONTIER_INTERVAL_GRID = (1, 2, 3, 4, 5, 7, 10, 14, 21, 28)
 
@@ -158,9 +158,9 @@ def recommend_by_skin_type(risk_cap: float | None = None,
 
 
 def _interpret(results):
-    """State what the constrained problem actually did, including where it is
-    degenerate. A recommender that always returns the grid endpoint should say
-    so rather than let the reader infer an interior optimum."""
+    """State what the constrained problem did, including degenerate cases.
+    A recommender that always returns the grid endpoint should say so
+    rather than let the reader infer an interior optimum."""
     chosen = [(fst, r["recommended"]["interval_days"])
               for fst, r in results.items() if r["recommended"]]
     if not chosen:
@@ -168,25 +168,23 @@ def _interpret(results):
     shortest = min(INTERVAL_GRID)
     if all(iv == shortest for _, iv in chosen):
         print(f"\n  All skin types land on the shortest interval on the grid "
-              f"({shortest}d). This is not a solver artefact:")
-        print("  the sufficiency floor eliminates the long intervals outright "
-              "(they cannot reach the")
-        print("  target within the erythema and session-length caps), and among "
-              "what survives, the")
-        print("  intermittent term is steeply increasing in per-session dose, so "
-              "the most frequent")
-        print("  schedule is also the lowest-risk one. Deficiency and cancer risk "
-              "point the SAME way")
-        print("  here; the Pareto frontier over the unconstrained grid still "
-              "trades off, but the")
-        print("  constrained problem does not. C9 therefore acts as a feasibility "
-              "test, not a selector.")
-    print("\n  Cross-skin-type comparisons of the risk index VALUES rest on the "
-          "FST susceptibility")
-    print("  prior in vitd_physiology.cancer_risk, which is an order-of-magnitude "
-          "guess and is NOT")
-    print("  anchored by Elwood & Jopson. Interval and minutes columns do not "
-          "depend on it.")
+              f"({shortest}d). Not a solver artefact:")
+        print("  the sufficiency floor kills long intervals (they cannot reach the"
+              " target within the")
+        print("  erythema and session-length caps), and among surviving options, "
+              "the intermittent term")
+        print("  rises steeply with per-session dose, so the most frequent "
+              "schedule is also the lowest-risk.")
+        print("  Deficiency and cancer risk point the same way here; the "
+              "Pareto frontier over the")
+        print("  unconstrained grid still trades off, but the constrained "
+              "problem does not.")
+        print("  C9 therefore acts as a feasibility test, not a selector.")
+    print("\n  Cross-skin-type comparisons of the risk index VALUES rest on the"
+          " FST susceptibility")
+    print("  prior in vitd_physiology.cancer_risk — an order-of-magnitude guess"
+          " NOT anchored by")
+    print("  Elwood & Jopson. Interval and minutes columns do not depend on it.")
     print("  Minutes carry at least +/-40% geometric uncertainty (gap 26) and "
           "assume the UV index")
     print(f"  holds at {UV_INDEX_REF:.0f} for the whole session.")
@@ -217,8 +215,8 @@ def plot_frontiers(results, out_path):
                 "o-", color="#2C6E9B", lw=1.8, ms=5, zorder=2,
                 label=f"Pareto frontier (n={len(front)})")
 
-        # The recommendation only has to hold the floor AFTER the loading period,
-        # so it necessarily carries ~RAMP_IN_DAYS on the x-axis. Without this
+        # The recommendation only has to hold the floor AFTER the loading
+        # period, so it carries ~RAMP_IN_DAYS on the x-axis. Without this
         # line the star reads as a badly deficient point rather than a
         # fully-sufficient one that started below target.
         ax.axvline(RAMP_IN_DAYS, color="grey", ls=":", lw=1.2, zorder=0)

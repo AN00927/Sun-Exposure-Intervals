@@ -3,8 +3,8 @@ melanin_sc_coupling.py
 ======================
 Are pigmentation and stratum-corneum thickening the same channel?
 
-Answers a specific question: does melanin covary with barrier thickening, and
-can the model tell the two apart? Three tests:
+Does melanin covary with barrier thickening, and can the model tell the two
+apart? Three tests:
 
   1. Trajectory coupling  -- correlation of M(t) and SC(t) under a common UV
      schedule. Both states are driven by the same input through the same

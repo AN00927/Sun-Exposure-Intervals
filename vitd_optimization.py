@@ -77,12 +77,12 @@ def schedule_random(N: int, T_days: int, sed: float,
 # clipping to the erythema ceiling is the caller's job, via
 # build_variable_schedule.
 #
-# Why this is worth searching at all: at a FIXED total budget and session count
-# the intermittency term sum (d_i/MED)^BURN_EXPONENT is convex in the doses, so
-# by Jensen equal doses strictly minimise it -- variable dose can never win on
-# the risk axis alone. The gain comes from *reducing the budget*: one constant
-# dose has to both climb to the target and hold there, so it necessarily
-# overshoots in steady state. Splitting those two jobs is what pays.
+# At a FIXED total budget and session count the intermittency term sum
+# (d_i/MED)^BURN_EXPONENT is convex in the doses, so by Jensen equal doses
+# strictly minimise it -- variable dose can never win on the risk axis alone.
+# The gain comes from reducing the budget: one constant dose has to both climb
+# to the target and hold there, so it necessarily overshoots in steady state.
+# Splitting those two jobs is what pays.
 def session_days(N: int, T_days: int) -> np.ndarray:
     """Uniformly spaced session days -- the spacing that minimises the largest gap."""
     if N <= 0:
@@ -121,14 +121,14 @@ def dose_seasonal(days: np.ndarray, d0: float, amp: float,
                   phase_day: float = 80.0) -> np.ndarray:
     """Sinusoidal annual modulation. 2 free parameters (+ phase).
 
-    NOTE ON INTERPRETATION. Treated as a free *choice* this family loses to
-    constant dosing, because the model's ambient UV does not vary: modulating
-    dose then only adds intermittency for nothing. Its real use is as a
-    *constraint* -- outside the tropics the achievable dose is seasonal whether
-    or not the schedule wants it to be, so a schedule that is flat in behaviour
-    is already sinusoidal in delivered SED. Reading a loss here as "seasonality
-    does not matter" inverts the finding. `phase_day` defaults to a spring
-    ascending zero-crossing, putting the peak near midsummer.
+    Treated as a free *choice* this family loses to constant dosing, because
+    the model's ambient UV does not vary: modulating dose then only adds
+    intermittency for nothing. Its real use is as a *constraint* -- outside
+    the tropics the achievable dose is seasonal whether or not the schedule
+    wants it to be, so a schedule that is flat in behaviour is already
+    sinusoidal in delivered SED. Reading a loss here as "seasonality does not
+    matter" inverts the finding. `phase_day` defaults to a spring ascending
+    zero-crossing, putting the peak near midsummer.
     """
     days = np.asarray(days, dtype=float)
     w = 1.0 + float(amp) * np.sin(2.0 * np.pi * (days - float(phase_day)) / 365.0)
@@ -140,8 +140,8 @@ def dose_gap_coupled(days: np.ndarray, d_ref: float, p: float) -> np.ndarray:
 
     1 parameter beyond the constant-dose baseline, which it recovers at p = 0.
     Generalises schedule_frontloaded / schedule_backloaded, which vary spacing
-    at fixed dose: here spacing and dose co-vary, so an unavoidably long gap can
-    be compensated rather than simply tolerated.
+    at fixed dose: here spacing and dose co-vary, so an unavoidably long gap
+    gets compensated rather than simply tolerated.
     """
     days = np.asarray(days, dtype=float)
     if days.size == 0:
@@ -275,10 +275,9 @@ def evaluate_schedule(
 #
 # Objective: minimise the combined risk index subject to all of the above.
 #
-# Why minimum dose per interval, rather than sweeping dose freely: both risk
-# indices are strictly increasing in per-session dose at a fixed interval, so the
-# lowest-risk feasible dose is always the smallest one that still satisfies C3.
-# One bisection per interval therefore replaces a dose grid without loss.
+# At a fixed interval both risk indices are strictly increasing in per-session
+# dose, so the lowest-risk feasible dose is always the smallest one that still
+# satisfies C3. One bisection per interval replaces a dose grid without loss.
 def optimal_interval_risk_constrained(
         fst: int,
         target: float = SUFFICIENCY_NMOL_L,
@@ -317,13 +316,12 @@ def optimal_interval_risk_constrained(
         Exposed body-surface fraction; None uses the model default.
     geometry_factor : float, optional
         Horizontal-to-personal geometry correction passed straight through to
-        `sed_from_minutes`. None falls back to that function's own default
-        (the flat 0.35 Cockell scalar) -- pass the location/clothing-specific
-        value from `vitd_exposure.ExposureResult.geometry_factor` to use the
-        real Vernez 2015 geometry for a given site set and solar elevation
-        instead of the flat scalar. Independent of `exposed_bsa`: the two are
-        different mechanisms (this scales dose per minute; exposed_bsa scales
-        synthesis by skin area) and are not redundant with each other.
+        `sed_from_minutes`. None falls back to the flat 0.35 Cockell scalar --
+        pass the location/clothing-specific value from
+        `vitd_exposure.ExposureResult.geometry_factor` to use the real
+        Vernez 2015 geometry for a given site set and solar elevation
+        instead of the flat scalar. Independent of `exposed_bsa`: the two
+        scale different things (dose per minute vs synthesis by skin area).
 
     Returns
     -------
@@ -342,10 +340,10 @@ def optimal_interval_risk_constrained(
     with photodegradation on, since per-session yield
     d_sat * (1 - exp(-sed/d_sat)) is itself increasing in dose.
 
-    The risk indices this ranks on carry different evidence status on their two
-    axes -- see vitd_physiology.cancer_risk. Rankings within one skin type are
-    unaffected by the weaker (susceptibility) axis; cross-skin-type comparisons
-    of the index VALUES are not.
+    The risk indices carry different evidence status on their two axes -- see
+    vitd_physiology.cancer_risk. Rankings within one skin type are unaffected by
+    the weaker (susceptibility) axis; cross-skin-type comparisons of the index
+    VALUES are not.
     """
     if params is None:
         params = ModelParams()
@@ -685,9 +683,9 @@ VARIABLE_DOSE_FAMILIES = ("uniform", "two_phase", "exponential",
 # under a normality condition, with reweighting (Candes, Wakin & Boyd 2008,
 # J Fourier Anal Appl 14:877-905) tightening the approximation. That equivalence
 # is proved for linear dynamics and is NOT established for this nonlinear
-# system, so it is used here as motivation for the formulation, not as a
-# guarantee -- scripts/joint_schedule_freesolve.py checks the low-dimensional
-# answer against a direct sparse solve rather than assuming it.
+# system, so it motivates the formulation but does not guarantee it --
+# scripts/joint_schedule_freesolve.py checks the low-dimensional answer against
+# a direct sparse solve rather than assuming it.
 #
 # SPACING FAMILY. Session days are warped by a single monotone exponent:
 #     t_i = T * (i / N) ** gamma

@@ -4,46 +4,41 @@ vitd_solar.py
 Solar position (declination, equation of time, hour angle, solar zenith
 angle, solar elevation angle) from latitude, longitude, date and clock time.
 
-This is the first link of the dosimetry chain that was previously entirely
-missing from this repo: everything upstream of vitd_model.py currently takes
-UV dose (SED) as a direct input, with no way to derive it from where and when
-someone actually stood in the sun. This module does not compute UV dose or
-vitamin D synthesis -- it only answers "where is the sun", which is what any
-future irradiance/UV-index model needs as its first input.
+First link of the dosimetry chain that was previously missing: everything
+upstream of vitd_model.py takes UV dose (SED) as direct input, with no way
+to derive it from where and when someone stood in the sun. This module
+computes solar position only — no UV dose or vitamin D synthesis.
 
-Coefficient source (canonical) and in-repo route to it
---------------------------------------------------------
-The formulas' STRUCTURE and printed coefficients were first located in this
-repo via Kallioglu et al. 2024, Sci Rep 14:3541 (doi 10.1038/s41598-024-54188-5),
-"UV index-based model for predicting synthesis of (pre-)vitamin D3 in the
-mediterranean basin" -- section "Materials and methods / Solar position
-calculation" (paper pp. 4-5), Eqs. 1-8. PDF:
+Coefficient source (canonical) and in-repo route
+-------------------------------------------------
+The formulas' STRUCTURE and printed coefficients were first located via
+Kallioglu et al. 2024, Sci Rep 14:3541 (doi 10.1038/s41598-024-54188-5),
+section "Materials and methods / Solar position calculation" (pp. 4-5),
+Eqs. 1-8. PDF:
 Research_Papers/Kallioglu 2024 SciRep 14-3541 - UV index-based model for
 vitamin D3 in the mediterranean basin.pdf
 
-That paper turned out to be a TRANSCRIPTION of NOAA Global Monitoring
-Division's published Spencer-family solar-position algorithm, with four
-coefficient digits dropped/rounded in transit (see ERRATUM 2 below) and one
-sin/cos swap in Eq. 7 (ERRATUM 1). NOAA's document is therefore the CANONICAL
-coefficient source implemented by this module's public functions:
+That paper transcribed NOAA Global Monitoring Division's published
+Spencer-family solar-position algorithm, with four coefficient digits
+dropped/rounded in transit (see ERRATUM 2) and one sin/cos swap in Eq. 7
+(ERRATUM 1). NOAA's document is the CANONICAL coefficient source:
 
     NOAA Global Monitoring Division, "General Solar Position Calculations",
     https://gml.noaa.gov/grad/solcalc/solareqns.PDF
 
-Kallioglu 2024 remains cited throughout because it is how this repo found
-the algorithm and because Eqs. 1, 3, 5, 6, 8 (time correction, fractional
-year, hour angle, LST, elevation) are unaffected by either erratum and are
-reproduced faithfully from its printed form. Eqs. 1-3/7-8 are, in turn, cited
-BY Kallioglu 2024 to Duffie & Beckman, "Solar Engineering of Thermal
-Processes" (paper ref. 70) and Iqbal, "An Introduction to Solar Radiation"
-(ref. 72); Eq. 4 (declination) is cited to Cooper 1969 (ref. 71) via Iqbal
-(ref. 72) -- consistent with this being the well-known Spencer (1971)-family
-Fourier-series approximation reproduced in many solar-engineering texts, of
-which NOAA's document is one canonical modern restatement.
+Kallioglu 2024 remains cited because it is how this repo found the
+algorithm and because Eqs. 1, 3, 5, 6, 8 (time correction, fractional
+year, hour angle, LST, elevation) carry no coefficient erratum and are
+reproduced faithfully. Eqs. 1-3/7-8 are cited by Kallioglu 2024 to Duffie
+& Beckman (ref. 70) and Iqbal (ref. 72); Eq. 4 (declination) to Cooper
+1969 (ref. 71) via Iqbal — consistent with this being the well-known
+Spencer (1971)-family Fourier-series approximation reproduced in many
+solar-engineering texts, of which NOAA's document is one canonical modern
+restatement.
 
 The eight equations as PRINTED in Kallioglu 2024 (transcribed verbatim,
-confirmed by direct visual inspection of the equation images, not just PDF
-text-layer extraction -- both errata below were caught this way):
+confirmed by direct visual inspection of equation images — both errata
+below were caught this way):
 
     (1) TC = solartime - standardtime = 4(Lst - Lloc) + E
     (2) E = 229.2[0.00075 + 0.001868 cos(B) - 0.032077 sin(B)
@@ -62,15 +57,13 @@ text-layer extraction -- both errata below were caught this way):
         [ERRATUM 1 -- see below. NOT implemented this way.]
     (8) alpha_s = sin^-1[sin(delta) sin(phi) + cos(delta) cos(phi) cos(omega)]
 
-ERRATUM 1 -- Eq. 7's sin(delta)/cos(delta) swap (already established by this
-repo before this module was written; verified independently below, not just
-asserted)
+ERRATUM 1 -- Eq. 7's sin(delta)/cos(delta) swap (established by this repo
+before this module was written; verified independently below)
 ------------------------------------------------------------------------
 Eq. 7's first term is printed "sin(delta) . cos(phi) cos(omega)". Every other
-source for this identity (Duffie & Beckman; Iqbal; NOAA, see CROSS-CHECK
-below) has cos(delta) in that term, not sin(delta). Independent proof, using
-only the paper's OWN Eq. 8 (printed correctly) and the printed identity
-theta_z + alpha_s = 90 deg (paper's own text, immediately below Eq. 8):
+source (Duffie & Beckman; Iqbal; NOAA, see CROSS-CHECK) has cos(delta) in
+that term. Independent proof using the paper's own Eq. 8 (printed correctly)
+and the printed identity theta_z + alpha_s = 90 deg:
     cos(theta_z) = cos(90 - alpha_s) = sin(alpha_s)
                  = sin(delta) sin(phi) + cos(delta) cos(phi) cos(omega)   [Eq 8's bracket]
 So the correct Eq. 7 must read:
@@ -92,14 +85,11 @@ ERRATUM 2 -- four coefficient digits dropped/rounded in Eqs. 2 and 4
 ------------------------------------------------------------------------
 Kallioglu 2024 prints:  0.00075, 229.2, 0.04089 (Eq. 2), 0.39912 (Eq. 4)
 NOAA GML prints:        0.000075, 229.18, 0.040849 (Eq. 2), 0.399912 (Eq. 4)
-Every OTHER coefficient in Eqs. 2 and 4 (0.001868, 0.032077, 0.014615,
-0.070257, 0.006918, 0.006758, 0.000907, 0.002697, 0.00148) matches NOAA's
-value exactly. That pattern -- five-of-nine exact matches, four near-misses
-each differing by a single dropped or rounded digit -- is the signature of a
-transcription error, not an independent re-derivation or a different
-formulation. Visually confirmed against the printed PDF equation images
-(Research_Papers/Kallioglu...pdf, p.4-5), so this is a genuine feature of the
-published paper, not an artifact of this repo's PDF text extraction.
+Every OTHER coefficient in Eqs. 2 and 4 matches NOAA exactly. The pattern —
+five-of-nine exact matches, four near-misses each differing by a single
+dropped/rounded digit — is the signature of a transcription error, not an
+independent re-derivation or different formulation. Visually confirmed
+against printed PDF equation images (Research_Papers/Kallioglu...pdf, p.4-5).
 Consequently this module implements NOAA's coefficients as the CANONICAL
 default in equation_of_time_minutes() and solar_declination_deg(). The
 as-printed Kallioglu coefficients are kept in
@@ -128,11 +118,10 @@ the NOAA-vs-Kallioglu correction was large; it was not.
 CROSS-CHECK against an independent source (not Kallioglu's own equations)
 ---------------------------------------------------------------------------
 NOAA Global Monitoring Division, "General Solar Position Calculations"
-(https://gml.noaa.gov/grad/solcalc/solareqns.PDF -- fetched and read directly
-for this module; a copy of the extracted text is reproduced in
-tests/test_solar.py) publishes the SAME Spencer-family fractional-year /
-equation-of-time / declination / zenith-angle formulas, derived independently
-of this paper:
+(https://gml.noaa.gov/grad/solcalc/solareqns.PDF — fetched and read directly
+for this module; copy in tests/test_solar.py) publishes the SAME
+Spencer-family fractional-year / equation-of-time / declination / zenith-angle
+formulas, derived independently:
 
     gamma = (2*pi/365) * (day_of_year - 1 + (hour-12)/24)              [radians]
     eqtime = 229.18*(0.000075 + 0.001868 cos(gamma) - 0.032077 sin(gamma)
@@ -143,15 +132,13 @@ of this paper:
     cos(zenith) = sin(lat) sin(decl) + cos(lat) cos(decl) cos(hour_angle)
 
 This confirms, independently of Kallioglu 2024:
-  1. The zenith-angle formula's first term uses cos(declination), not
-     sin(declination) -- independent confirmation of Erratum 1.
-  2. The four coefficients in Erratum 2 -- independent confirmation that
-     NOAA's values, not Kallioglu's, are the coefficients actually derived
-     from the underlying Spencer/Fourier fit.
-  3. Eq. 1's TC formula matches NOAA's "time_offset" formula exactly once the
+  1. Zenith-angle first term uses cos(declination), not sin(declination) —
+     independent confirmation of Erratum 1.
+  2. Four coefficients in Erratum 2 — NOAA's, not Kallioglu's, are the values
+     derived from the underlying Spencer/Fourier fit.
+  3. Eq. 1's TC formula matches NOAA's "time_offset" formula exactly once
      longitude sign convention is translated (see time_correction_minutes()
-     docstring below) -- independent confirmation Eq. 1/5/6 are implemented
-     with the right sign.
+     docstring) — independent confirmation Eq. 1/5/6 have the right sign.
 Since this module's public functions now implement NOAA's own coefficients
 directly, tests/test_solar.py::TestNOAACrossCheck asserts agreement to float
 precision (not a loose tolerance) wherever the two formulations are

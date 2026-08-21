@@ -17,7 +17,7 @@ from vitd_model import ModelParams, simulate, get_E_source
 # (calibration_approval.yaml, a1_diagnosis_result_2026_08_17).
 APPROVED_BAND = (1.7, 2.7)
 # What dumping the behavioural share into K_const would have required. The
-# calibration must stay clear of it -- that is the whole point of the split.
+# calibration must stay clear of it, that is the whole point of the split.
 BEHAVIOUR_BLIND_FLOOR = 4.28
 
 
@@ -56,7 +56,7 @@ def test_penalty_is_monotone_in_skin_type():
 
 
 # ---------------------------------------------------------------------------
-# The sign fix -- the sharpest single result of the diagnosis
+# The sign fix: the sharpest single result of the diagnosis
 # ---------------------------------------------------------------------------
 # Felton et al. 2016, Br J Dermatol 175:1320, Table 1. Within-study, matched
 # dose (1.3 SED x3/wk x6 wk), matched ~35% BSA, same cabinet both arms, both
@@ -90,7 +90,7 @@ def test_felton_direction_is_no_longer_inverted():
 
 def test_old_k_const_did_invert_felton():
     """Pins the defect the recalibration was for, so the guard above cannot be
-    passed by a change that merely makes the protocol un-simulatable."""
+    passed by a change that only makes the protocol un-simulatable."""
     ratio = _felton_gain(2, 0.33) / _felton_gain(5, 0.33)
     assert ratio < 1.0
 
@@ -119,7 +119,7 @@ def test_felton_fst_v_over_prediction_is_recorded_not_forgotten():
 
     Two separable effects, and they are NOT the same one:
       A4 (A up x1.32) raises BOTH absolute gains and leaves the II:V ratio
-        essentially untouched (1.491 -> 1.494). Absolute level is what A4 was
+        untouched (1.491 -> 1.494). Absolute level is what A4 was
         approved to change, and Felton is not the study it was anchored to.
       A2 (biphasic feedback) is what moves the RATIO, 1.491 -> 1.271, away from
         the observation. Mechanism: the biphasic curve is steeper than the old
@@ -129,9 +129,9 @@ def test_felton_fst_v_over_prediction_is_recorded_not_forgotten():
         K_const had opened. It also, for the same reason, all but eliminates
         the FST II absolute error.
 
-    The sign fix that Phase 3 was for SURVIVES -- the model still predicts
+    The sign fix that Phase 3 was for SURVIVES: the model still predicts
     FST II gaining more than FST V, and test_felton_ratio_moved_toward_the_
-    observation still holds -- but roughly a third of the Phase 3 ratio gain
+    observation still holds, but roughly a third of the Phase 3 ratio gain
     (in log terms) is given back. Tighten these bounds if a later change
     improves the numbers; do not widen them.
     """

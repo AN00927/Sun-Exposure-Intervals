@@ -42,7 +42,7 @@ def test_list_available_presets_returns_string():
     result = list_available_presets()
     assert "VDR_fokI_GG" in result
     assert "CYP2R1_low_activity" in result
-    assert "LOW" in result or "MEDIUM" in result  # confidence labels present
+    assert "LOW" in result or "MEDIUM" in result
 
 
 def test_preset_composition_multiplies_A():

@@ -1,17 +1,16 @@
 """
 Tests for data/spectra/vitd_action_spectrum_young2021_MEASURED.csv.
 
-Context: Young et al. 2021 (PNAS 118:e2015867118) publishes no independently
-digitized or re-shaped per-wavelength action spectrum. What it publishes is a
-printed transformation rule -- shift the existing CIE-174 (2006) previtamin D3
-action spectrum -5 nm ("blue shift"), shape unchanged -- validated by a grid
+Young et al. 2021 (PNAS 118:e2015867118) publishes no independently
+digitized per-wavelength action spectrum. It publishes a printed
+transformation rule: shift the existing CIE-174 (2006) previtamin D3
+action spectrum -5 nm ("blue shift"), shape unchanged, validated by a grid
 search over integer-nm shifts (Table 3; best fit at 5 nm, P = 0.911 partial-body,
 P = 0.326 full-body). See the CSV header for full quotes and page references.
 
 These tests pin that relationship rather than raw plot-derived numbers, since
 no such numbers exist in the paper. They do NOT assert this is an independent
-measurement -- see data/spectra/README.md and the CSV header for that
-distinction.
+measurement. See data/spectra/README.md and the CSV header for that distinction.
 """
 
 from __future__ import annotations

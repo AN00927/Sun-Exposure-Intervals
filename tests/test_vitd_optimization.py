@@ -81,7 +81,7 @@ def _recommend(fst=3, **kw):
 class TestRiskConstrainedInterval:
     """A recommender that returns a schedule which does not actually work is
     worse than no recommender. These check the constraints it claims to satisfy
-    are satisfied by an INDEPENDENT re-simulation, not by its own bookkeeping."""
+    are satisfied by independent re-simulation, not by its own bookkeeping."""
 
     def test_recommendation_actually_holds_the_floor(self):
         r = _recommend(fst=3)
@@ -121,12 +121,10 @@ class TestRiskConstrainedInterval:
         assert r["recommended"]["combined_risk"] <= cap
 
     def test_tightening_the_cap_never_raises_realised_risk(self):
-        """The correct monotonicity direction. Note it is NOT 'a tighter cap
-        widens the interval': longer intervals need a larger per-session dose to
-        hold the floor, and the intermittent term is steeply increasing in dose,
-        so tightening the cap pushes toward MORE frequent, smaller sessions --
-        the model's frequent-and-small result. Asserting the opposite would lock
-        in a claim the model contradicts."""
+        """The correct monotonicity direction. Tighter cap pushes toward more
+        frequent, smaller sessions -- the model's frequent-and-small result.
+        Longer intervals need a larger per-session dose to hold the floor,
+        and the intermittent term is steeply increasing in dose."""
         base = _recommend(fst=3)["recommended"]["combined_risk"]
         prev = None
         for mult in (2.0, 1.5, 1.2, 1.0):
@@ -165,17 +163,17 @@ class TestRiskConstrainedInterval:
     def test_session_length_cap_binds(self):
         """C7. Capping minutes can only lower the per-session dose.
 
-        FIXTURE REBASED 2026-08-17. The old fixture was FST VI at a 20-minute
-        ceiling. Under K_const = 0.33 that cap sat ABOVE FST VI's requirement
+        Fixture rebased 2026-08-17. The old fixture was FST VI at a 20-minute
+        ceiling. Under K_const = 0.33 that cap sat above FST VI's requirement
         (~16 min/day), so it never actually bound and the assertion held
         trivially. Under K_const = 0.98 FST VI needs ~42 min/day, so a 20-min
-        ceiling makes the schedule INFEASIBLE -- see
+        ceiling makes the schedule infeasible -- see
         TestRecalibratedFeasibility, which asserts that directly.
 
         The property under test is the optimiser's monotonicity in the cap, so
         it is now exercised at operating points where both arms are still
         feasible. The cap value is not a tolerance and nothing was widened:
-        60 min for FST VI and 20 min for FST IV are both STRICTER than "no
+        60 min for FST VI and 20 min for FST IV are both stricter than "no
         cap", which is the direction that makes the assertion meaningful.
         """
         for fst, mm in ((6, 60.0), (4, 20.0), (3, 20.0)):
@@ -257,8 +255,8 @@ class TestBuildVariableSchedule:
         assert all(s <= cap + 1e-12 for _, s in sched)
 
     def test_zero_dose_drops_the_session(self):
-        """This is what lets session count be optimised without integer
-        variables: d_i = 0 IS 'no session that day'."""
+        """d_i = 0 is 'no session that day', letting session count be optimised
+        without integer variables."""
         days = session_days(10, 365)
         seds = np.array([1.0, 0.0] * 5)
         sched = build_variable_schedule(days, seds, fst=3)
@@ -272,17 +270,17 @@ class TestBuildVariableSchedule:
 
 
 class TestVariableDoseOptimisation:
-    # FIXTURE REBASED 2026-08-17: N 104 -> 146. These tests are about
-    # PROPERTIES OF THE OPTIMISER (a nested family cannot lose to the family it
-    # nests; the returned profile really holds the floor), and they need a
-    # feasible operating point to exercise them on. FST III at N = 104 stopped
-    # being one when K_const was recalibrated 0.33 -> 0.98: holding 50 nmol/L
+    # FIXTURE REBASED 2026-08-17: N 104 -> 146. These tests exercise
+    # properties of the optimiser (a nested family cannot lose to the family it
+    # nests; the returned profile holds the floor), and they need a
+    # feasible operating point. FST III at N = 104 stopped being one when
+    # K_const was recalibrated 0.33 -> 0.98: holding 50 nmol/L
     # on 104 sessions now needs more than 70% MED per session in FST III.
     #
-    # NO CONSTRAINT WAS RELAXED to do this. The sufficiency floor, GAMMA_MED
+    # No constraint was relaxed to do this. The sufficiency floor, GAMMA_MED
     # and the ramp-in are untouched; only the session budget the fixture uses
     # moved, to one that is still feasible. The infeasibility itself is a
-    # RESULT and is asserted explicitly in TestRecalibratedFeasibility below,
+    # result and is asserted explicitly in TestRecalibratedFeasibility below,
     # rather than being made to disappear.
     HORIZON, RAMP, N = 365, 90, 146
 
@@ -318,9 +316,9 @@ class TestVariableDoseOptimisation:
                 f"{fam} lost to uniform, which it can express exactly")
 
     def test_gain_comes_from_a_smaller_budget_not_from_reshaping(self):
-        """The Jensen argument, checked on the model rather than asserted: at
-        fixed total dose AND session count, equal doses minimise the
-        intermittency term, so any real gain must show up as less total UV."""
+        """The Jensen argument, checked on the model: at fixed total dose and
+        session count, equal doses minimise the intermittency term, so any real
+        gain must show up as less total UV."""
         base = self._opt("uniform")
         best = self._opt("two_phase")
         assert base is not None and best is not None
@@ -339,7 +337,7 @@ class TestVariableDoseOptimisation:
             assert cancer_risk(uneven, 3)["intermittent_index"] >= base - 1e-12
         assert INTERMITTENT_BURN_EXPONENT > 1.0   # why the above holds
 
-    def test_unreachable_target_returns_none_rather_than_a_near_miss(self):
+    def test_unreachable_target_returns_none(self):
         assert optimise_variable_dose(fst=3, n_sessions=104, target=500.0,
                                       horizon_days=self.HORIZON,
                                       ramp_in_days=self.RAMP) is None
@@ -436,7 +434,7 @@ class TestTimeToSufficiency:
                      dose_framing="fixed_per_session_SED")
         assert np.isnan(time_to_sufficiency(r, 500.0))
 
-    def test_crossing_is_interpolated_not_quantised_to_the_grid(self):
+    def test_crossing_is_interpolated(self):
         r = simulate(fst=3, schedule=[(float(d), 2.0) for d in range(0, 200, 3)],
                      duration_days=200, D0=25.0,
                      dose_framing="fixed_per_session_SED")
@@ -449,7 +447,7 @@ class TestTimeToSufficiency:
             SUFFICIENCY_NMOL_L, abs=0.5)
 
     def test_a_faster_schedule_reaches_sufficiency_sooner(self):
-        """Both arms must actually reach the target, or this compares a number
+        """Both arms must reach the target, or this compares a number
         against NaN and passes/fails for the wrong reason. At 1 SED every 5 days
         FST III never reaches 50 nmol/L at all."""
         slow = simulate(fst=3, schedule=[(float(d), 2.0) for d in range(0, 300, 5)],
@@ -468,11 +466,11 @@ class TestRecalibratedFeasibility:
     """Schedules the 2026-08-17 K_const recalibration (0.33 -> 0.98) removed,
     and the 2026-08-18 A recalibration (2.353 -> 3.114) partially restored.
 
-    These are RESULTS, asserted so they cannot be quietly undone. Every
+    These are results, asserted so they cannot be quietly undone. Every
     constraint here is the standing one -- the 50 nmol/L floor, the 90-day
     ramp-in, GAMMA_MED, the session-length ceiling. Nothing is relaxed.
 
-    THE COMBINED EFFECT IS NOT K_const ALONE. K_const 0.33 -> 0.98 in
+    The combined effect is not K_const alone. K_const 0.33 -> 0.98 in
     isolation pushes FST III-VI all infeasible at N = 104 (twice weekly). The
     subsequent A recalibration (2.353 -> 3.114, raising overall synthesis
     efficiency) pulls FST III and IV back to feasible at N = 104, but not FST
@@ -498,10 +496,10 @@ class TestRecalibratedFeasibility:
     @pytest.mark.parametrize("fst", [5, 6])
     def test_twice_weekly_no_longer_holds_the_floor_for_fst_v_and_vi(self, fst):
         """N = 104 (twice weekly) is infeasible for FST V and VI under the
-        CURRENT combined calibration (K_const = 0.98, A = 3.114).
+        current combined calibration (K_const = 0.98, A = 3.114).
 
         It was feasible for all of III-VI at K_const = 0.33 (either A). FST
-        III and IV were ALSO infeasible under K_const = 0.98 with the prior
+        III and IV were also infeasible under K_const = 0.98 with the prior
         A = 2.353, but recovered when A moved to 3.114 -- see
         test_fst_iii_and_iv_recover_under_the_combined_calibration below. FST
         V and VI do not recover at this budget: the higher synthesis rate is
@@ -513,17 +511,17 @@ class TestRecalibratedFeasibility:
         assert self._uniform(fst, 104) is None
 
     def test_fst_ii_twice_weekly_still_holds(self):
-        """The contrast that shows this is a PIGMENT effect and not a
+        """The contrast that shows this is a pigment effect and not a
         general tightening: the least-pigmented feasible type is untouched."""
         assert self._uniform(2, 104) is not None
 
     def test_fst_iii_and_iv_recover_under_the_combined_calibration(self):
-        """FST III and IV are feasible at N = 104 under the CURRENT
+        """FST III and IV are feasible at N = 104 under the current
         parameters (K_const = 0.98, A = 3.114) -- the attribution the old,
         misnamed test_the_infeasibility_is_caused_by_k_const was trying to
         make no longer holds for these two skin types.
 
-        At K_const = 0.98 with the PRIOR A = 2.353, both are infeasible at
+        At K_const = 0.98 with the prior A = 2.353, both are infeasible at
         this budget: K_const raised alone would have left all of III-VI
         infeasible at N = 104. The A recalibration is what pulls III and IV
         back, and does not extend to V/VI (see
@@ -539,11 +537,11 @@ class TestRecalibratedFeasibility:
 
     def test_fst_v_infeasibility_is_a_joint_kconst_and_a_effect(self):
         """2x2 attribution over (K_const, A) for FST V, the cell where the A
-        recalibration does NOT rescue feasibility (unlike III/IV above).
+        recalibration does not rescue feasibility (unlike III/IV above).
 
         Raising K_const alone (A held at the old 2.353) makes N = 104
         infeasible. Raising A alone (K_const held at the old 0.33) leaves it
-        feasible -- A is not itself a tightening. Only when BOTH move to
+        feasible -- A is not itself a tightening. Only when both move to
         their current values does the cell stay infeasible, so pinning this
         on "K_const" alone (the old test name) was already an
         oversimplification even before A moved: it is the K_const penalty
@@ -572,8 +570,8 @@ class TestRecalibratedFeasibility:
         type needs to hold sufficiency on sun alone, within a non-burning dose
         and a 120-minute session. Monotone in pigmentation, as it must be.
 
-        Pinned from BOTH sides on the TRI_SESSION_BUDGETS grid: feasible
-        (holds the floor AND fits the 120-minute ceiling) at n_min, and NOT
+        Pinned from both sides on the TRI_SESSION_BUDGETS grid: feasible
+        (holds the floor and fits the 120-minute ceiling) at n_min, and not
         both of those at the next budget down. FST V and VI are the cases
         where the binding constraint differs: FST VI at n=146 already holds
         the 50 nmol/L floor, but needs ~159 min/day, over the 120-minute
@@ -593,9 +591,8 @@ class TestRecalibratedFeasibility:
             f"FST {fst} should NOT be feasible-and-under-120-min at n={n_below}")
 
     def test_fst_vi_cannot_be_scheduled_in_twenty_minute_sessions(self):
-        """Dark-skin priority, stated as a constraint rather than a footnote:
-        under the recalibrated penalty no interval on the grid holds the floor
-        for FST VI within a 20-minute session. It needs ~42 min daily."""
+        """Under the recalibrated penalty no interval on the grid holds the
+        floor for FST VI within a 20-minute session. It needs ~42 min daily."""
         r = optimal_interval_risk_constrained(fst=6, max_minutes=20.0)
         assert r["recommended"] is None
         assert r["note"]
@@ -610,7 +607,7 @@ class TestRecalibratedFeasibility:
 class TestPrimaryMinimumSchedule:
     """The headline objective. A recommender whose returned schedule does not
     actually hold the floor is worse than none, so the floor is re-checked by
-    an INDEPENDENT simulation rather than by the optimiser's own bookkeeping.
+    independent simulation rather than by the optimiser's own bookkeeping.
     """
 
     HORIZON, RAMP = 365, 90
@@ -693,7 +690,7 @@ class TestPrimaryMinimumSchedule:
         assert fw["total_sed"] >= ld["total_sed"] - 1e-9
 
     def test_minimum_budget_is_monotone_in_pigmentation(self):
-        """Darker skin cannot need FEWER sessions. A violation would mean the
+        """Darker skin cannot need fewer sessions. A violation would mean the
         melanin penalty had inverted, which is exactly the failure the
         2026-08-17 K_const recalibration was made to remove."""
         mins = []
@@ -704,8 +701,8 @@ class TestPrimaryMinimumSchedule:
         assert mins == sorted(mins), mins
 
     def test_fst_vi_is_reported_even_where_infeasible(self):
-        """Dark-skin priority, as a constraint rather than a footnote: FST VI
-        must produce rows at every budget whether or not any of them work."""
+        """FST VI must produce rows at every budget whether or not any of them
+        work."""
         res = self._run(6)
         assert res["fst"] == 6
         assert len(res["rows"]) == len(self.BUDGETS)
@@ -714,7 +711,7 @@ class TestPrimaryMinimumSchedule:
 
     def test_free_spacing_never_raises_the_minimum_budget(self):
         """gamma = 1 is in the grid, so the free search can always reproduce
-        the uniform answer and cannot do worse. Where it does BETTER that is a
+        the uniform answer and cannot do worse. Where it does better, that is a
         result -- C3 binds at the ramp-in boundary, so reaching target sooner
         can rescue a budget uniform spacing misses."""
         from vitd_optimization import TRI_GAMMA_GRID
@@ -771,10 +768,10 @@ class TestLocationAwareGeometryWiring:
                 assert a == b, (key, a, b)
 
     def test_higher_geometry_factor_lowers_minutes_needed_risk_constrained(self):
-        """More horizontal UV actually reaching skin should let the same
-        capped dose be delivered in fewer minutes -- the same relationship
-        sed_from_minutes itself embodies (max_minutes=None isolates this from
-        the session-length ceiling, which does depend on geometry_factor)."""
+        """More horizontal UV reaching skin should let the same capped dose be
+        delivered in fewer minutes -- the same relationship sed_from_minutes
+        itself embodies (max_minutes=None isolates this from the session-length
+        ceiling, which does depend on geometry_factor)."""
         low = optimal_interval_risk_constrained(fst=3, uv_index=6.0,
                                                  geometry_factor=0.2,
                                                  max_minutes=None)["recommended"]
@@ -805,9 +802,8 @@ class TestLocationAwareGeometryWiring:
 
     def test_exposed_bsa_changes_minimum_schedule_dose(self):
         """exposed_bsa scales synthesis -- a different mechanism than
-        geometry_factor, which scales dose per minute -- confirm it actually
-        reaches simulate(): more exposed skin needs less dose per session to
-        reach the same target."""
+        geometry_factor, which scales dose per minute. More exposed skin needs
+        less dose per session to reach the same target."""
         from vitd_optimization import minimum_schedule_for_sufficiency
         small_bsa = minimum_schedule_for_sufficiency(
             fst=3, uv_index=6.0, exposed_bsa=0.10, max_minutes=None,
@@ -841,8 +837,8 @@ class TestLocationAwareGeometryWiring:
 class TestTriObjective:
     """Best SED at least spacing, fewest sessions, accounting for skin cancer.
     Efficacy is a constraint here, so the checks are that every point on the
-    frontier really does hold the floor, and that the frontier really is
-    nondominated on all three axes."""
+    frontier holds the floor, and that the frontier is nondominated on all
+    three axes."""
 
     BUDGETS = (183, 365)
     GAMMAS = (1.0, 1.4)
@@ -920,7 +916,7 @@ class TestTriObjective:
 # DIAGNOSTIC tier: why gross_synth_per_SED is background only
 # ---------------------------------------------------------------------------
 class TestGrossSynthDiagnostic:
-    """Item A3(2). These assert the CURRENT model still reproduces both
+    """Item A3(2). These assert the current model still reproduces both
     failures. If a recalibration ever makes gross_synth_per_SED well-behaved,
     these fail and the hierarchy gets revisited on purpose rather than by
     accident."""
@@ -939,7 +935,7 @@ class TestGrossSynthDiagnostic:
         assert d["spearman_rho_interval_vs_metric"] > 0.9
 
     def test_its_selected_schedule_ends_below_baseline(self):
-        """The failure that disqualifies it as advice: a net LOSS of vitamin D
+        """The failure that disqualifies it as advice: a net loss of vitamin D
         scored as maximal efficiency."""
         from vitd_optimization import gross_synth_per_SED_diagnostic
         d = gross_synth_per_SED_diagnostic(fst=3, intervals=tuple(range(1, 91)))
@@ -970,7 +966,7 @@ class TestJointScheduleCoverage:
 
     def test_infeasible_budget_still_yields_a_row_shape(self):
         """optimise_joint_schedule returns None for an infeasible cell; the
-        analysis layer must turn that into a flagged ROW rather than a gap.
+        analysis layer must turn that into a flagged row rather than a gap.
         Checked on the contract both sides share."""
         from vitd_optimization import optimise_joint_schedule
         assert optimise_joint_schedule(fst=6, n_sessions=1) is None

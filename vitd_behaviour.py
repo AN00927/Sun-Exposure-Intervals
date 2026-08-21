@@ -1,60 +1,53 @@
 """
 vitd_behaviour.py
 =================
-BEHAVIOURAL exposure, kept deliberately OUTSIDE the optical model.
+BEHAVIOURAL exposure, separate from the optical model.
 
-What this module is
--------------------
-A multiplier on delivered UV dose that represents how much of the available
-sun a person actually takes: shade-seeking, clothing cover, and time outdoors.
-It is NOT optics. Nothing in here describes melanin, skin, or photochemistry.
+A multiplier on delivered UV dose: how much of the available sun a person
+actually takes via shade-seeking, clothing cover, and time outdoors. NOT
+optics. Nothing here describes melanin, skin, or photochemistry.
 
-Why it is a separate module, and why its default is 1.0
--------------------------------------------------------
-This repository exists to TELL PEOPLE WHEN TO GO OUTSIDE. When the model says
-"25 minutes at 12:30", the user is being asked to change their behaviour: to
-go out, to stand in the sun rather than the shade, to uncover some skin. Any
-behavioural factor folded into a pigment constant would then be applied to a
-person who has, by construction, just stopped behaving that way -- and it
-would be applied MOST strongly to dark-skinned users, who are exactly the
-users this project is built for.
+Why separate, and why default 1.0
+---------------------------------
+This repository tells people when to go outside. When the model says
+"25 minutes at 12:30", the user must change behaviour: go out, stand in sun
+rather than shade, uncover skin. Any behavioural factor folded into a
+pigment constant would apply to someone who has, by construction, just
+stopped behaving that way -- and apply strongest to dark-skinned users, who
+are exactly who this project serves.
 
-So:
-  * in SCHEDULING mode -- the default, and what every entry point gets unless
-    it explicitly asks otherwise -- the factor is 1.0 for every skin type, and
-    model output is bit-identical to a build without this module;
-  * in COHORT mode the measured behaviour of a named field cohort can be
-    switched on deliberately, to EXPLAIN observed population data.
+  * SCHEDULING mode (the default): factor is 1.0 for every skin type. Model
+    output is bit-identical to a build without this module.
+  * COHORT mode: switched on to reproduce measured behaviour of a named
+    field cohort, explaining observed population data.
 
-What the field evidence actually says (and does not)
-----------------------------------------------------
-The separation of behaviour from optics is the finding of
-`scripts/fst_gap_decomposition.py` and is recorded in
-`calibration_approval.yaml` (`a1_diagnosis_result_2026_08_17`). Summarised:
+What the field evidence says
+-----------------------------
+The behaviour/optics split comes from `scripts/fst_gap_decomposition.py`,
+recorded in `calibration_approval.yaml` (`a1_diagnosis_result_2026_08_17`):
 
-  * Behaviour accounts for a 2.1-2.4x factor in the observed white : FST V
-    25(OH)D response at UK latitudes -- Kift 2013 2.44x, Darling 2013 2.13x.
-  * It is SHADE AND CLOTHING, not less time outdoors. Kift's South Asian
-    cohort spent MORE time outdoors than its white comparator (69 vs 63
-    min/day; 11 vs 10 min/day around midday) and still received 0.9-1.1% of
-    ambient UV against the white cohort's 2.2-2.9%.
-  * It is not posture geometry either. Every unshaded sky-visibility value in
-    Vernez 2015 Table S1 is tens of percent; both Kift cohorts sit one to two
-    ORDERS OF MAGNITUDE below that, so what the badges record is
-    overwhelmingly shade and cover, not body orientation.
+  * Behaviour accounts for 2.1-2.4x of the observed white : FST V 25(OH)D
+    response at UK latitudes -- Kift 2013 2.44x, Darling 2013 2.13x.
+  * SHADE AND CLOTHING, not less time outdoors. Kift's South Asian cohort
+    spent MORE time outdoors than its white comparator (69 vs 63 min/day;
+    11 vs 10 min/day around midday) and still received 0.9-1.1% of ambient
+    UV against the white cohort's 2.2-2.9%.
+  * Not posture geometry. Every unshaded sky-visibility value in Vernez 2015
+    Table S1 is tens of percent; both Kift cohorts sit one to two ORDERS OF
+    MAGNITUDE below that. The badges record shade and cover, not body
+    orientation.
   * The remaining optical part is carried by `ModelParams.K_const`
-    (recalibrated 2026-08-17 to 0.98). The two are multiplicative and must not
-    be merged: dumping behaviour into K_const would require an optical factor
+    (recalibrated 2026-08-17 to 0.98). The two are multiplicative and must
+    not merge: dumping behaviour into K_const would require an optical factor
     of 4.3-5.7x, above every matched-dose measurement in existence.
 
-DARK-SKIN PROVENANCE, true of every number in this module
----------------------------------------------------------
+DARK-SKIN PROVENANCE -- true of every number in this module
+-----------------------------------------------------------
 Both field studies are UK, both dark cohorts are FST V of Indian-subcontinent
-ancestry, and both are the same measurement technology (polysulphone badges).
-There is NO personal-dosimetry measurement of FST VI, of African-ancestry
-populations, or of any population outside northern Europe, anywhere in this
-repository. Do not extrapolate these factors to FST VI or to other latitudes;
-`cohort_factor()` refuses to invent one.
+ancestry, both use polysulphone badges. No personal-dosimetry measurement of
+FST VI, African-ancestry populations, or any population outside northern
+Europe exists in this repository. Do not extrapolate to FST VI or other
+latitudes; `cohort_factor()` refuses to invent one.
 
 Cross-references
 ----------------
@@ -72,12 +65,12 @@ from typing import Dict, Iterable, List, Optional, Tuple
 # Modes
 # ---------------------------------------------------------------------------
 
-#: Default. The model is prescribing exposure, so it must not also assume the
-#: user behaves like a population average. Factor is 1.0 for every skin type.
+#: SCHEDULING mode: factor is 1.0 for every skin type. The model prescribes
+#: exposure, so it cannot assume the user behaves like a population average.
 MODE_SCHEDULING = "scheduling"
 
-#: Explanatory. Reproduce the measured behaviour of a named field cohort.
-#: Must be paired with an explicit `cohort` -- there is no "average person".
+#: COHORT mode: reproduce the measured behaviour of a named field cohort.
+#: Requires an explicit `cohort` -- no "average person" fallback.
 MODE_COHORT = "cohort"
 
 MODES = (MODE_SCHEDULING, MODE_COHORT)
@@ -89,10 +82,10 @@ NEUTRAL_FACTOR: float = 1.0
 # ---------------------------------------------------------------------------
 # Measured cohorts
 # ---------------------------------------------------------------------------
-# Every field below is a MEASUREMENT transcribed from a source held in this
-# repo, or is marked otherwise. Reproduced by scripts/fst_gap_decomposition.py
-# section S2; see that script's S6 assumption register and S8 per-number audit
-# for the transcription caveats (Kift 2013's PDF text layer drops decimal
+# Every field below is a measurement transcribed from a source held in this
+# repo, or marked otherwise. Reproduced by scripts/fst_gap_decomposition.py
+# section S2; see that script's S6 assumption register and S8 per-number
+# audit for transcription caveats (Kift 2013's PDF text layer drops decimal
 # points, and Darling 2013 itself is not in the repo -- its numbers come via
 # Webb 2021 Table 5).
 
@@ -116,9 +109,9 @@ class Cohort:
     source: str
 
 
-#: Both entries of each pair come from ONE study, on ONE protocol, with ONE
-#: badge type. That is what makes the within-pair ratio a behavioural
-#: measurement rather than a comparison of two dosimetry methods.
+#: Each pair's entries come from one study, one protocol, one badge type.
+#: That makes the within-pair ratio a behavioural measurement, not a
+#: comparison of two dosimetry methods.
 COHORTS: Dict[str, Cohort] = {
     "kift2013_white": Cohort(
         key="kift2013_white", label="Webb 2010 white, Manchester 53.5N",
@@ -144,17 +137,16 @@ COHORTS: Dict[str, Cohort] = {
         source="Darling 2013 Osteoporos Int 24:477 via Webb 2021 Table 5"),
 }
 
-#: Which cohort each pair treats as its light-skinned comparator. Behaviour is
-#: only ever measured RELATIVE to a comparator on the same protocol.
+#: Light-skinned comparator for each study pair. Behaviour is only measured
+#: relative to a comparator on the same protocol.
 COHORT_PAIRS: Dict[str, Tuple[str, str]] = {
     "kift2013": ("kift2013_white", "kift2013_south_asian"),
     "darling2013": ("darling2013_white", "darling2013_south_asian"),
 }
 
-#: Effect of each pair's measured dose difference on the modelled 25(OH)D
-#: RESPONSE ratio -- i.e. behaviour's share of the observed between-cohort gap,
-#: after the model's own feedback and BSA scaling. Derived, not transcribed:
-#: it is the ratio of the behaviour-blind to the behaviour-aware K_const
+#: Each pair's measured dose difference as a share of the modelled 25(OH)D
+#: response ratio -- after the model's own feedback and BSA scaling. Derived,
+#: not transcribed: the ratio of behaviour-blind to behaviour-aware K_const
 #: inversion in scripts/fst_gap_decomposition.py S4, run 2026-08-17.
 BEHAVIOUR_SHARE_ON_RESPONSE: Dict[str, float] = {
     "kift2013": 2.44,
@@ -182,24 +174,23 @@ def _default_reference(cohort_key: str) -> str:
 def behaviour_factor(mode: str = MODE_SCHEDULING,
                      cohort: Optional[str] = None,
                      reference: Optional[str] = None) -> float:
-    """Multiplier on delivered UV dose. **1.0 unless explicitly asked otherwise.**
+    """Multiplier on delivered UV dose. 1.0 unless explicitly asked otherwise.
 
     Parameters
     ----------
     mode : str
-        ``MODE_SCHEDULING`` (default) returns ``NEUTRAL_FACTOR`` = 1.0 for
-        everything. This is the mode every scheduling entry point uses: the
-        model is telling the user to go outside, so it must not simultaneously
-        assume they behave like the population average that stayed in.
+        ``MODE_SCHEDULING`` (default) returns ``NEUTRAL_FACTOR`` = 1.0.
+        Scheduling mode tells the user to go outside, so it cannot assume
+        they behave like the population average that stayed in.
         ``MODE_COHORT`` returns a measured cohort's badge dose relative to a
-        reference cohort measured on the SAME protocol.
+        reference cohort on the same protocol.
     cohort : str, optional
         Key into ``COHORTS``. Required in cohort mode.
     reference : str, optional
         Key into ``COHORTS`` for the comparator. Defaults to the light-skinned
         member of the same study pair. Must come from the same study: badge
-        type, placement protocol, latitude and season have to be shared or the
-        ratio is a dosimetry artefact rather than a behavioural measurement.
+        type, placement protocol, latitude and season must match or the ratio
+        measures dosimetry, not behaviour.
 
     Returns
     -------
@@ -209,8 +200,8 @@ def behaviour_factor(mode: str = MODE_SCHEDULING,
     Raises
     ------
     ValueError
-        On an unknown mode or cohort, on a missing cohort in cohort mode, or
-        on a cross-study reference pairing.
+        On an unknown mode or cohort, a missing cohort in cohort mode, or a
+        cross-study reference pairing.
     """
     if mode == MODE_SCHEDULING:
         if cohort is not None or reference is not None:
@@ -248,9 +239,9 @@ def cohort_factor(fst: int, study: str) -> float:
     """Behavioural factor for the cohort of skin type `fst` in `study`.
 
     Convenience wrapper over :func:`behaviour_factor`. Raises rather than
-    interpolating: there is no measured FST VI, FST I, III or IV cohort
-    anywhere in this repo, and inventing one is the failure this whole
-    module/parameter split exists to prevent.
+    interpolates: no measured FST VI, FST I, III or IV cohort exists in this
+    repo, and inventing one is the failure this module/parameter split
+    exists to prevent.
     """
     if study not in COHORT_PAIRS:
         raise ValueError(f"unknown study {study!r}; known: {sorted(COHORT_PAIRS)}")
@@ -269,8 +260,8 @@ def cohort_factor(fst: int, study: str) -> float:
 def measured_dose_ratio(study: str) -> float:
     """Measured light : dark personal-UV DOSE ratio for one study pair.
 
-    This is the raw badge-dose ratio. It is NOT the effect on serum 25(OH)D --
-    for that see :data:`BEHAVIOUR_SHARE_ON_RESPONSE`, which is smaller because
+    Raw badge-dose ratio. NOT the effect on serum 25(OH)D -- see
+    :data:`BEHAVIOUR_SHARE_ON_RESPONSE` for that, which is smaller because
     feedback and sub-linear BSA scaling compress it.
     """
     if study not in COHORT_PAIRS:
@@ -285,8 +276,7 @@ def apply_to_schedule(schedule: Iterable[Tuple[float, float]],
 
     Behaviour changes the DOSE TAKEN, not when the sun is up, so it multiplies
     the SED of each pulse and never moves a pulse. With the default
-    ``NEUTRAL_FACTOR`` this returns the schedule unchanged (to floating-point
-    identity, since x * 1.0 == x).
+    ``NEUTRAL_FACTOR`` this returns the schedule unchanged (x * 1.0 == x).
     """
     if factor < 0.0:
         raise ValueError(f"factor must be >= 0, got {factor}")

@@ -10,13 +10,13 @@ def test_effective_j_per_m2_to_sed():
 
 
 def test_physical_to_j_per_m2_conversion():
-    """1 J/cm2 = 10000 J/m2. Uses flat action spectrum of weight 1.0 and normalized flat lamp spectrum."""
+    """1 J/cm2 = 10000 J/m2. Flat action spectrum of weight 1.0, normalized flat lamp spectrum."""
     from vitd_dose_conversion import physical_dose_to_effective_j_per_m2, normalize_spectrum
     wl = list(range(280, 321, 5))
     spectrum = pd.DataFrame({"wavelength_nm": wl, "weight": [1.0] * len(wl)})
     action = pd.DataFrame({"wavelength_nm": wl, "weight": [1.0] * len(wl)})
     result = physical_dose_to_effective_j_per_m2(1.0, spectrum, action)
-    # With flat normalized spectrum and flat action=1.0, weighting sum = 1.0
+    # Flat normalized spectrum and flat action=1.0, weighting sum = 1.0
     # So effective = 1.0 * 10000 * 1.0 = 10000
     assert result == pytest.approx(10000.0)
 

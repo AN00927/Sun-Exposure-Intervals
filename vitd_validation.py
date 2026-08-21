@@ -197,7 +197,7 @@ def sanity_decay_halflife(verbose=True):
     At low D (~43 nmol/L), instantaneous half-life ≈ 199 days.
     Test all three anchor points with ±10% tolerance.
 
-    The simulator is then checked against the ANALYTIC solution of the ODE
+    The simulator is checked against the analytic solution of the ODE
     rather than against a fixed-k exponential. With k(D) = ln2*D^0.72/2953,
     dD/dt = -c*D^1.72 (c = ln2/2953) integrates to
         D(t) = [D0^-0.72 + 0.72*c*t]^(-1/0.72)
@@ -253,9 +253,8 @@ def sanity_single_bolus_FST_III(verbose=True):
     """
     Computation-integrity check: single 1 SED bolus in untanned FST III.
 
-    This asserts that `synthesis_per_session` computes the product the module
-    docstring says it computes. It is NOT a literature check and has no
-    external target.
+    Asserts that `synthesis_per_session` computes the product the module
+    docstring says it computes. NOT a literature check -- no external target.
 
     BUG FIX 2026-08-18, not a calibration. The expected value was hardcoded as
         2.353 * ln(2) * exp(-0.33 * 0.21) * (1 - 25/150)  ~= 1.27
@@ -441,13 +440,13 @@ def sanity_photoadaptation_reduction(verbose=True):
     Matsuoka 1990 (n = 7), deconvolved for its baseline-25(OH)D confound, implies
     K_ATTEN 0.34-1.00 depending on the assumed feedback form
     (vitd_calibration.derive_K_ATTEN), i.e. reductions of 6.6-18.1%. A 10%
-    ceiling therefore admits the LOW end of the Matsuoka bracket and rejects its
-    high end, which is the correct posture given that Matsuoka's "51%" is mostly
+    ceiling admits the LOW end of the Matsuoka bracket and rejects its high end,
+    which is the correct posture given that Matsuoka's "51%" is mostly
     D-feedback rather than pigment (see CLAUDE.md).
 
     WHAT THIS CHECK IS NOT
     ----------------------
-    It is NOT evidence that photoadaptation reduces synthesis. With K_ATTEN
+    NOT evidence that photoadaptation reduces synthesis. With K_ATTEN
     RETIRED at 0.00 (approved item A6) the measured reduction is exactly 0.0%
     and this check CANNOT FAIL at the value the model ships. Read it as a
     ONE-SIDED RETIREMENT GUARD: it fires if anyone reinstates a strong

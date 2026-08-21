@@ -1,7 +1,7 @@
 """
 Validation suite integrity tests.
 
-Ensures that invalid tests are excluded from the main validation suite.
+Excludes invalid tests from the main validation suite.
 """
 
 import os
@@ -9,7 +9,7 @@ import glob
 
 
 def test_no_invalid_tests_in_main_suite():
-    """Assert no file in the main validation suite contains STATUS: INVALID_FOR_PHYSIOLOGICAL_VALIDATION."""
+    """No file in the main validation suite contains STATUS: INVALID_FOR_PHYSIOLOGICAL_VALIDATION."""
     main_files = glob.glob("vitd_validation.py") + glob.glob("test_vitd_validation.py")
 
     for filepath in main_files:
@@ -24,12 +24,12 @@ def test_no_invalid_tests_in_main_suite():
 
 
 def test_nhanes_invalid_test_exists():
-    """Verify the archived NHANES test exists in validation_exploratory/."""
+    """The archived NHANES test exists in validation_exploratory/."""
     archived = os.path.join("validation_exploratory", "validate_nhanes_seasonal_INVALID.py")
     assert os.path.exists(archived), f"Archived NHANES test not found at {archived}"
 
 
 def test_young2020_check_exists():
-    """Verify the Young 2020 calibration check function is importable and runnable."""
+    """The Young 2020 calibration check function is callable and importable."""
     from vitd_calibration import young2020_calibration_check
     assert callable(young2020_calibration_check)

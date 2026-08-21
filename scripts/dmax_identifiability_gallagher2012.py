@@ -23,10 +23,10 @@ arm 46 ng/mL = 115 nmol/L, "a quadratic curve function". DiaSorin RIA, not
 LC-MS/MS -- same method offset this repo documents for NHANES.
 
 SELF-CONTAINED BY DESIGN (since 2026-08-16). The model's oral/dietary pathway
-was removed on that date -- see the "ORAL / DIETARY VITAMIN D: REMOVED" note in
-`vitd_model.py`. This script therefore imports nothing from the model and
-integrates the documented dynamics directly, so the argument below survives
-that removal and stays runnable.
+was removed on 2026-08-16 — see the "ORAL / DIETARY VITAMIN D: REMOVED" note in
+`vitd_model.py`. This script imports nothing from the model and integrates the
+documented dynamics directly, so the argument below survives that removal and
+stays runnable.
 
 WHY THE EVIDENCE STILL COUNTS WITHOUT AN ORAL PATHWAY. The oral route was the
 experimental *probe*, not the thing being measured. What Gallagher constrains is
@@ -44,8 +44,8 @@ IU_TO_UG = 0.025
 
 # Was vitd_model.DIETARY_UG_TO_NMOL_PER_L before the oral pathway was removed.
 # Retained here ONLY as the historical value this analysis was run at, so the
-# published numbers stay reproducible. It is not a model parameter any more,
-# and it was measured to miss its own documented Cashman target by 3-9x.
+# published numbers stay reproducible. Not a model parameter any more, and it
+# missed its own documented Cashman target by 3-9x.
 HISTORICAL_DIET_COEFF: float = 0.07
 ARMS_IU = [400, 800, 1600, 2400, 3200, 4000, 4800]
 D0 = 39.0
@@ -55,7 +55,7 @@ OBS_TOP_ARM = 115.0        # Yalamanchili 2017, 4800 IU/d, white women
 
 
 def clearance(D):
-    """ln(2) * D**1.72 / 2953 -- from the Datta 2017 power-law half-life.
+    """ln(2) * D**1.72 / 2953 — Datta 2017 power-law half-life.
 
     t_half(D) = 2953 * D**-0.72, k = ln2/t_half, so k*D = ln2 * D**1.72 / 2953.
     """
@@ -64,7 +64,7 @@ def clearance(D):
 
 def integrate(ug_per_day, D_max=None, diet=HISTORICAL_DIET_COEFF,
               days=DAYS, D_start=D0, dt=0.05):
-    """Forward-Euler the oral-only dynamics. D_max=None reproduces the live model."""
+    """Forward-Euler oral-only dynamics. D_max=None reproduces the live model."""
     D = D_start
     for _ in range(int(days / dt)):
         inp = ug_per_day * diet

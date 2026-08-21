@@ -26,13 +26,13 @@ def _d0_spread(fst, days):
 def test_steady_state_independent_of_D0():
     """Steady state must not remember the starting value.
 
-    HORIZON REBASED 2026-08-17, 365 -> 730 days, and FST VI added.
-    The tolerance is UNCHANGED at 5.0 nmol/L; what changed is the horizon
-    needed to reach it. Recalibrating K_const 0.33 -> 0.98 weakens synthesis in
+    Horizon rebased 2026-08-17: 365 -> 730 days, and FST VI added.
+    Tolerance unchanged at 5.0 nmol/L; the change is the horizon needed to
+    reach it. Recalibrating K_const 0.33 -> 0.98 weakens synthesis in
     pigmented skin, so the approach to steady state is slower there and 365
     days no longer washes out the initial condition for FST V (spread 5.4).
-    That is a convergence RATE change, not a loss of the property being
-    asserted: the property is that the memory of D0 decays to nothing, and
+    A convergence rate change, not a loss of the property being asserted:
+    the memory of D0 decays to nothing, and
     test_steady_state_memory_decays_with_horizon below shows it does.
 
     Widening the 5.0 tolerance instead would have made the test pass without
@@ -46,10 +46,10 @@ def test_steady_state_independent_of_D0():
 
 
 def test_steady_state_memory_decays_with_horizon():
-    """The real property: D0 memory shrinks monotonically as the run lengthens.
+    """D0 memory shrinks monotonically as the run lengthens.
 
-    This is what "independent of D0" means, stated so that it cannot be
-    satisfied by picking a convenient horizon.
+    What "independent of D0" means, stated so it cannot be satisfied by
+    picking a convenient horizon.
     """
     for fst in (2, 5, 6):
         spreads = [_d0_spread(fst, d) for d in (365, 730, 1095)]
@@ -94,14 +94,14 @@ def test_synthesis_zero_sed():
 
 
 def test_synthesis_at_high_D_is_suppressed_but_never_zero():
-    """REWRITTEN 2026-08-18 (approved item A2).
+    """Rewritten 2026-08-18 (approved item A2).
 
     This used to assert `synthesis == 0` at D = 250, which was true only under
-    the withdrawn max(0, 1 - D/D_max) form. That assertion encodes the exact
+    the withdrawn max(0, 1 - D/D_max) form. That assertion encoded the exact
     claim the approval rejected: that cutaneous synthesis stops outright above
     some serum level. It does not, and D_max = 150.0 never had a located
-    source. The property worth testing is that feedback is STRONG and
-    MONOTONE, not that it is absolute.
+    source. The property worth testing: feedback is strong and monotone, not
+    absolute.
     """
     p = ModelParams()
     at_250 = synthesis_per_session(sed=1.0, M=0.5, M_baseline=0.21, D=250, SC=0.1, params=p)
@@ -111,7 +111,7 @@ def test_synthesis_at_high_D_is_suppressed_but_never_zero():
 
 
 def test_legacy_linear_mode_still_zeroes_at_D_max():
-    """The retired form is kept working so older results stay reproducible."""
+    """The retired form stays working so older results stay reproducible."""
     p = ModelParams()
     p.feedback_mode = "linear"
     r = synthesis_per_session(sed=1.0, M=0.5, M_baseline=0.21, D=250, SC=0.1, params=p)
@@ -120,7 +120,7 @@ def test_legacy_linear_mode_still_zeroes_at_D_max():
 
 def test_D_max_override_is_inert_in_the_default_mode():
     """A silently-ignored override is a trap, so its inertness is asserted
-    rather than left to be discovered. D_max is LEGACY: only 'linear' and
+    rather than left to be discovered. D_max is legacy: only 'linear' and
     'power' read it."""
     p = ModelParams()
     assert p.feedback_mode == "biphasic"
@@ -132,7 +132,7 @@ def test_D_max_override_is_inert_in_the_default_mode():
 
 
 class TestFeedbackFormA2:
-    """Approved item A2: the hard ceiling is withdrawn as the default."""
+    """Approved item A2: the hard ceiling is withdrawn as default."""
 
     def test_default_is_biphasic(self):
         assert ModelParams().feedback_mode == "biphasic"
@@ -140,15 +140,15 @@ class TestFeedbackFormA2:
     def test_inflection_is_the_scholze_value(self):
         from vitd_physiology import (HYDROXYLATION_INFLECTION_NMOL_L,
                                      HYDROXYLATION_HILL_N)
-        # Scholze et al. 2026, Commun Med 6:105. [ESTIMATE] 56.0 is an OUTPUT
+        # Scholze et al. 2026, Commun Med 6:105. [ESTIMATE] 56.0 is an output
         # of a fitted breakpoint on the vitamin D3 axis, not a regressor.
-        # [CHOICE] the Hill exponent is NOT fittable from that paper; 2.0 is
+        # [CHOICE] the Hill exponent is not fittable from that paper; 2.0 is
         # the gentlest integer knee.
         assert HYDROXYLATION_INFLECTION_NMOL_L == 56.0
         assert HYDROXYLATION_HILL_N == 2.0
 
     def test_every_mode_is_monotone_decreasing_in_D(self):
-        """The property that actually produces the interval ranking."""
+        """The property that produces the interval ranking."""
         for mode in ("biphasic", "saturating", "linear", "power"):
             p = ModelParams()
             p.feedback_mode = mode
@@ -158,9 +158,9 @@ class TestFeedbackFormA2:
 
     def test_interval_optimum_is_not_an_artefact_of_the_linear_form(self):
         """run_all.py section 17 attributes the interval ranking to the
-        `(1 - D/D_max)` term specifically. Measured: at a FIXED A the optimum
-        is 3 d under linear, saturating AND biphasic alike, so the ordering
-        comes from HAVING a decreasing feedback factor, not from that term.
+        `(1 - D/D_max)` term specifically. At fixed A the optimum is 3 d
+        under linear, saturating, and biphasic alike, so the ordering
+        comes from having a decreasing feedback factor, not from that term.
         """
         for mode in ("biphasic", "saturating", "linear"):
             p = ModelParams()
@@ -191,7 +191,7 @@ class TestYoung2021AAnchor:
         assert out["A_implied"] == pytest.approx(ModelParams().A, abs=5e-4)
         assert out["model_slope_at_current_A"] == pytest.approx(3.48, abs=0.01)
 
-    def test_printed_slopes_are_transcribed_not_invented(self):
+    def test_printed_slopes_are_transcribed(self):
         from vitd_validation import YOUNG2021_FB_SLOPES_NMOL_PER_SED as S
         # Young 2021 PNAS 118:e2015867118, Fig. 4B legend, FB panel.
         assert S == {"PUVA": 1.99, "Arimed B": 3.18, "UV6": 4.97}
@@ -205,7 +205,7 @@ class TestYoung2021AAnchor:
 
     def test_the_source_matched_cross_checks_bracket_the_adopted_value(self):
         """Young's three arms disagree by 2.5x because SED is a poor spectral
-        predictor -- the paper's own headline. A must sit BETWEEN the two
+        predictor -- the paper's own headline. A must sit between the two
         E_source-matched routes, not on one of them."""
         from vitd_validation import young2021_A_anchor
         c = young2021_A_anchor()["cross_checks"]
@@ -234,7 +234,7 @@ class TestRetiredParameters:
 
     def test_pinned_value_is_always_assignable(self):
         p = ModelParams()
-        p.K_ATTEN = 0.0          # a no-op must not raise
+        p.K_ATTEN = 0.0          # no-op must not raise
 
     def test_sweeps_go_through_the_named_escape_hatch(self):
         from vitd_model import allow_retired_parameter_sweep
@@ -252,7 +252,7 @@ class TestRetiredParameters:
             p.K_ATTEN = 0.5
 
     def test_the_mechanism_is_retained_not_deleted(self):
-        """Retirement fixes the coefficient; it must NOT remove the term."""
+        """Retirement fixes the coefficient; it must not remove the term."""
         from vitd_model import allow_retired_parameter_sweep
         p = ModelParams()
         with allow_retired_parameter_sweep():
@@ -262,9 +262,8 @@ class TestRetiredParameters:
         assert tanned < untanned
 
     def test_retirement_is_justified_by_immateriality(self):
-        """The claim the retirement rests on, measured rather than asserted:
-        across the full plausible range K_ATTEN moves steady-state D by well
-        under 1%, against ~36% for A."""
+        """The claim the retirement rests on: across the full plausible range
+        K_ATTEN moves steady-state D by well under 1%, against ~36% for A."""
         from vitd_model import allow_retired_parameter_sweep
         sched = build_pulse_schedule(365, 1.0, 3)
         ss = []

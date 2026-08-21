@@ -1,40 +1,34 @@
 """
 tests/test_exposure.py
-========================
-Tests for vitd_exposure.py -- the PHASE 1 entry point joining vitd_solar.py
-(where is the sun), vitd_ambient.py (what is the ambient UV Index) and
+=======================
+Tests for vitd_exposure.py, the PHASE 1 entry point joining vitd_solar.py
+(where is the sun), vitd_ambient.py (ambient UV Index) and
 vitd_physiology.py/vitd_objectives.py (personal-dose geometry) into
 (latitude, longitude, datetime, exposed sites, posture) -> SED.
 
-NO NETWORK ACCESS. exposure_sed() takes an already-known ambient UV Index
-(no network at all). exposure_sed_live() is tested with an injected
-`http_get` stub reusing the SAME real recorded fixture
-(tests/fixtures/open_meteo_forecast_la_20260817.json) that
-tests/test_ambient.py uses, exactly the pattern documented in that module's
-own "TESTING WITHOUT NETWORK" section -- not a second, separately-invented
-fixture.
+NO NETWORK ACCESS. exposure_sed() takes an already-known ambient UV Index.
+exposure_sed_live() is tested with an injected `http_get` stub reusing the
+same real recorded fixture (tests/fixtures/open_meteo_forecast_la_20260817.json)
+that tests/test_ambient.py uses.
 
 Test groups
 -----------
-1. BSA table integrity   -- the Lund-Browder-derived BSA_SITE_FRACTION table
-                             sums, excludes the right regions, and covers
-                             exactly the 13 Vernez Table S1 sites.
-2. Area-weighted Vis/BSA -- vis_percent_for_site_set / exposed_bsa_for_site_set
-                             arithmetic, checked against hand-computed values.
-3. Structural consistency-- the repo open item 5b fix: ExposureGeometry ties
-                             vis_percent and exposed_bsa to ONE site set and
-                             cannot be desynced (immutability, dedup, single
-                             construction path).
-4. Presets                -- every named preset resolves, and its (vis, bsa)
-                             pair is pinned against values computed directly
-                             from vis_table_s1 + BSA_SITE_FRACTION so this
-                             test would fail if the preset definitions or the
-                             weighting arithmetic ever drift apart.
-5. exposure_sed()          -- the deterministic end-to-end chain: solar
-                             position + geometry + ambient UVI -> SED, and
-                             its input-validation failure modes.
-6. exposure_sed_live()     -- same chain via a stubbed vitd_ambient fetch,
-                             matching a real recorded UVI value exactly.
+1. BSA table integrity: the Lund-Browder-derived BSA_SITE_FRACTION table
+   sums, excludes the right regions, and covers exactly the 13 Vernez Table
+   S1 sites.
+2. Area-weighted Vis/BSA: vis_percent_for_site_set / exposed_bsa_for_site_set
+   arithmetic, checked against hand-computed values.
+3. Structural consistency: the repo open item 5b fix. ExposureGeometry ties
+   vis_percent and exposed_bsa to ONE site set and cannot be desynced
+   (immutability, dedup, single construction path).
+4. Presets: every named preset resolves, and its (vis, bsa) pair is pinned
+   against values computed directly from vis_table_s1 + BSA_SITE_FRACTION so
+   this test would fail if the preset definitions or the weighting arithmetic
+   ever drift apart.
+5. exposure_sed(): the deterministic end-to-end chain: solar position +
+   geometry + ambient UVI -> SED, and its input-validation failure modes.
+6. exposure_sed_live(): same chain via a stubbed vitd_ambient fetch, matching
+   a real recorded UVI value exactly.
 """
 
 import datetime as dt
@@ -75,7 +69,7 @@ class TestBSATableIntegrity:
 
     def test_bsa_site_fraction_covers_exactly_the_13_vernez_sites(self):
         # Every site vis_table_s1 can look up must have a BSA weight, and
-        # vice versa -- otherwise vis_percent_for_site_set and
+        # vice versa; otherwise vis_percent_for_site_set and
         # exposed_bsa_for_site_set would silently disagree on domain.
         known_vernez_sites = {
             "face", "skull", "forearm_external", "upper_arm_external",
@@ -146,7 +140,7 @@ class TestAreaWeightedArithmetic:
 
 
 # ---------------------------------------------------------------------------
-# 3. Structural consistency -- repo open item 5b
+# 3. Structural consistency: repo open item 5b
 # ---------------------------------------------------------------------------
 class TestGeometryConsistency:
     def test_vis_and_bsa_come_from_the_same_call(self):
@@ -167,7 +161,7 @@ class TestGeometryConsistency:
         # The scenario the task calls out explicitly: a caller claiming a
         # single low-Vis site (face, 46.6% standing) while wanting the
         # larger exposed_bsa of higher-Vis sites (forearm 49.4%, neck
-        # 67.6%). With this API that is impossible -- there is no
+        # 67.6%). With this API that is impossible; there is no
         # constructor that accepts vis_percent and exposed_bsa
         # independently; both always come from resolving ONE `sites` tuple.
         face_only = ve.geometry_for_site_set(["face"], "standing_erect_arms_down")
@@ -176,7 +170,7 @@ class TestGeometryConsistency:
         # The larger site set's exposed_bsa is bigger...
         assert larger_set.exposed_bsa > face_only.exposed_bsa
         # ...and its vis_percent reflects the ADDED higher-Vis sites, not the
-        # face-only value -- there is no way to get the small face-only Vis
+        # face-only value. There is no way to get the small face-only Vis
         # together with the larger set's BSA out of this API.
         assert larger_set.vis_percent != pytest.approx(face_only.vis_percent)
         assert larger_set.vis_percent > face_only.vis_percent  # forearm/neck > face here
@@ -241,7 +235,7 @@ class TestPresets:
 
 
 # ---------------------------------------------------------------------------
-# 5. exposure_sed() -- deterministic end-to-end chain
+# 5. exposure_sed(): deterministic end-to-end chain
 # ---------------------------------------------------------------------------
 class TestExposureSED:
     WHEN = dt.datetime(2026, 7, 1, 12, 0, tzinfo=UTC)
@@ -325,14 +319,13 @@ class TestExposureSED:
 
 
 # ---------------------------------------------------------------------------
-# 6. exposure_sed_live() -- network path, stubbed with a real fixture
+# 6. exposure_sed_live(): network path, stubbed with a real fixture
 # ---------------------------------------------------------------------------
 class TestExposureSEDLive:
     def test_matches_recorded_la_uvi(self):
         # Same instant/place as tests/test_ambient.py's happy-path test:
         # uv_index_live == 8.10 at 2026-08-17T20:00Z. Confirms
-        # exposure_sed_live() actually threads the fetched UVI through,
-        # not a placeholder.
+        # exposure_sed_live() threads the fetched UVI through, not a placeholder.
         when = dt.datetime(2026, 8, 17, 20, 0, tzinfo=UTC)
         r = ve.exposure_sed_live(34.05, -118.25, when, minutes=30,
                                  preset="short_sleeves",
@@ -357,7 +350,7 @@ class TestExposureSEDLive:
 # that accepts vis_percent and exposed_bsa independently", resting on
 # frozen=True. That claim was false: frozen blocks attribute assignment and
 # nothing else. Both paths below were verified to produce a low single-site Vis
-# carried on a BSA belonging to a different, higher-Vis site set -- precisely
+# carried on a BSA belonging to a different, higher-Vis site set, precisely
 # the inconsistency repo open item 5b exists to eliminate. Enforcement now
 # lives in ExposureGeometry.__post_init__, so it covers every path.
 import dataclasses as _dataclasses
@@ -409,7 +402,7 @@ class TestGeometryConsistencyIsStructural:
 # ---------------------------------------------------------------------------
 # ADDED 2026-08-19. Before this, nothing in the repo fed an ExposureResult's
 # .exposed_bsa/.geometry_factor into minimum_schedule_for_sufficiency /
-# optimal_interval_risk_constrained -- confirmed by grep at the time this plan
+# optimal_interval_risk_constrained, confirmed by grep at the time this plan
 # was written. These are the regression tests that pin the join.
 from vitd_optimization import (            # noqa: E402
     minimum_schedule_for_sufficiency, optimal_interval_risk_constrained,
@@ -433,7 +426,7 @@ class TestExposureFeedsScheduleFunctions:
     def test_risk_constrained_accepts_live_exposure_result(self):
         # interval_grid includes 1 day: at FST 5 with a small face_and_hands
         # exposed_bsa, weekly+ intervals are genuinely infeasible under the
-        # erythema cap (a real result of the model, not a wiring bug -- see
+        # erythema cap (a real result of the model, not a wiring bug; see
         # TestPrimaryMinimumSchedule's monotone-in-pigmentation tests for the
         # same shape of constraint), so this only asserts SOME interval on
         # the grid resolves, not that every interval does.
@@ -447,8 +440,8 @@ class TestExposureFeedsScheduleFunctions:
 
     def test_no_double_application_of_geometry_or_E_source(self):
         """A schedule built from ExposureResult.sed must match one built by
-        calling sed_from_minutes directly with the SAME geometry_factor --
-        i.e. exposure_sed()'s geometry correction and the optimizer's own
+        calling sed_from_minutes directly with the SAME geometry_factor;
+        exposure_sed()'s geometry correction and the optimizer's own
         sed_from_minutes(1.0, uv_index, geometry_factor) call must agree
         exactly, not compound. This is the audit-table regression test."""
         r = ve.exposure_sed(_LAGOS_LAT, _LAGOS_LON, _LAGOS_WHEN, minutes=30,
@@ -458,7 +451,7 @@ class TestExposureFeedsScheduleFunctions:
         assert r.sed == pytest.approx(30 * manual_sed_per_min, rel=1e-9)
 
         # And the optimizer, given that SAME geometry_factor, must derive an
-        # identical per-minute conversion -- not a second, independent one.
+        # identical per-minute conversion, not a second independent one.
         res = optimal_interval_risk_constrained(
             fst=5, uv_index=r.ambient_uv_index, geometry_factor=r.geometry_factor,
             interval_grid=(7,), max_minutes=None)
@@ -488,9 +481,9 @@ class TestExposureFeedsScheduleFunctions:
 
 
 # ---------------------------------------------------------------------------
-# 9. exposure_across_months() -- optional, caller-supplied-only seasonal mode
+# 9. exposure_across_months(): optional, caller-supplied-only seasonal mode
 # ---------------------------------------------------------------------------
-_LAGOS_UTC_OFFSET = 1.0  # West Africa Time, no network involved -- just a plain offset
+_LAGOS_UTC_OFFSET = 1.0  # West Africa Time, no network involved, just a plain offset
 
 
 class TestExposureAcrossMonths:
@@ -520,7 +513,7 @@ class TestExposureAcrossMonths:
 
     def test_each_month_independent_of_the_others(self):
         # Dropping a month from the input must not change any other month's
-        # result -- no cross-month interaction (no dose banking).
+        # result, no cross-month interaction (no dose banking).
         full = ve.exposure_across_months(_LAGOS_LAT, _LAGOS_LON, 2026,
                                          {1: 4.0, 7: 9.0}, minutes=30,
                                          preset="face_and_hands",

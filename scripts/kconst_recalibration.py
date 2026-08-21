@@ -4,7 +4,7 @@ kconst_recalibration.py
 DERIVATION for the K_const recalibration approved on 2026-08-17
 (`calibration_approval.yaml`, `a1_diagnosis_result_2026_08_17`).
 
-It answers one question and writes no file:
+One question, no file written:
 
     What value of `ModelParams.K_const` reproduces the between-skin-type
     25(OH)D response measured in the WITHIN-STUDY, MATCHED-PHYSICAL-DOSE,
@@ -16,7 +16,7 @@ two independent routes. This script picks the number and shows its working.
 
 Design
 ------
-CALIBRATION SET (fitted).  Only trials satisfying ALL of:
+CALIBRATION SET (fitted). Only trials satisfying ALL of:
   * within-study     -- both skin types in the same paper, so no cross-trial
                         baseline anchoring is needed;
   * matched PHYSICAL dose (SED), not fractional MED;

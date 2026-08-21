@@ -1,64 +1,53 @@
 """
 vitd_ambient.py
 ================
-Ambient UV Index input path: get an erythemal UV Index for a place and time,
-either by fetching a live/forecast value from Open-Meteo or by accepting a
-value the caller already has (e.g. typed in from a weather app or a UV
-sensor). This is the module that removes the "the caller must already know
-today's UV Index" precondition that every other function in this repo
-(sed_from_minutes, minutes_for_target, etc. in vitd_objectives.py) has always
-had.
+Ambient UV Index input path: fetch an erythemal UV Index for a place and time
+via Open-Meteo, or accept a value the caller already has (weather app, UV
+sensor). Removes the "caller must already know today's UV Index" precondition
+that every other function in this repo (sed_from_minutes, minutes_for_target,
+etc. in vitd_objectives.py) has always had.
 
 WHAT THIS MODULE DOES NOT DO
 -----------------------------
-It does not compute a vitamin-D dose, and it does not apply any vitamin-D
-weighting. It hands back the ambient erythemal UV Index and, when available,
-how much of it survived the day's cloud cover. Converting that erythemal
-quantity into a vitamin-D-effective one is the job of this repo's E_source
-(VDE:EE ratio) machinery -- see the SOURCE_CALIBRATION_TABLE dosimetry chain
-in vitd_model.py, and the solar-zenith-angle-based E_source work in
-vitd_esource.py (as of this writing, being built by another agent working
-from vitd_solar.py's solar-position output). Nothing here duplicates or
-guesses at that weighting.
+No vitamin-D dose computation, no vitamin-D weighting. Returns the ambient
+erythemal UV Index and, when available, the fraction surviving cloud cover.
+Converting erythemal to vitamin-D-effective is the job of E_source (VDE:EE
+ratio) machinery — see SOURCE_CALIBRATION_TABLE in vitd_model.py and
+vitd_esource.py. Nothing here duplicates or guesses at that weighting.
 
-CRITICAL SCIENTIFIC CAVEAT -- erythemal, not vitamin-D, and anchored to light
+CRITICAL SCIENTIFIC CAVEAT -- erythemal, not vitamin-D, anchored to light
 skin
 -----------------------------------------------------------------------------
-The UV Index (UVI) is defined by the WHO/WMO/ICNIRP/UNEP "Global Solar UV
-Index: A Practical Guide" (WHO, 2002) as erythemally effective irradiance
-weighted by the CIE 1998 erythema reference action spectrum (McKinlay &
-Diffey 1987), NOT by any vitamin-D action spectrum (e.g. CIE 2006 D-vitamin
-weighting). Erythema and previtamin-D3 photosynthesis peak at different
-wavelengths and have different spectral shapes, so "high UVI" and "high
-vitamin-D dose rate" are correlated but NOT proportional across all
-sun/sky/altitude/ozone conditions -- the ratio between them (E_source in this
-repo's terms) genuinely varies by spectral composition, which is exactly why
-vitd_esource.py exists as a separate module rather than this one silently
-multiplying UVI by a constant.
+The UV Index (UVI) is defined by WHO/WMO/ICNIRP/UNEP "Global Solar UV Index:
+A Practical Guide" (WHO, 2002) as erythemally effective irradiance weighted
+by the CIE 1998 erythema reference action spectrum (McKinlay & Diffey 1987),
+NOT any vitamin-D action spectrum. Erythema and previtamin-D3 photosynthesis
+peak at different wavelengths with different spectral shapes, so "high UVI"
+and "high vitamin-D dose rate" are correlated but NOT proportional across
+all sun/sky/altitude/ozone conditions — the ratio between them (E_source)
+varies by spectral composition, which is why vitd_esource.py exists as a
+separate module rather than multiplying UVI by a constant here.
 
 This has already cost this repo one bogus validation benchmark: the
-Kallioglu 2024 "held-out skin-type" table that a previous audit treated as a
-vitamin-D result was actually its Table 3 erythemal MED values (Fitzpatrick
-I=200, ..., VI=1000 J/m^2 -- an erythemal MED progression, not a vitamin-D
-one) run through Hollick's rule, and the "5.00x"/"2.40x" ratios quoted from
-it are literally 1000/200 and 600/250 of THAT table -- i.e. purely erythemal
-arithmetic that was mistaken for a vitamin-D-weighted result. See
-MODEL_AND_EVIDENCE.md for the full writeup. This module is deliberately
-structured so that mixing up the two is hard to do by accident: every value
-this module returns is named uv_index* (erythemal), nothing here is named or
-described as a "vitamin D index", and no conversion factor is applied.
+Kallioglu 2024 "held-out skin-type" table was actually its Table 3 erythemal
+MED values (Fitzpatrick I=200, ..., VI=1000 J/m^2 — erythemal progression,
+not vitamin-D) run through Hollick's rule, and the "5.00x"/"2.40x" ratios
+are literally 1000/200 and 600/250 of THAT table — purely erythemal
+arithmetic mistaken for vitamin-D-weighted results. See
+MODEL_AND_EVIDENCE.md for the full writeup. This module is structured so
+mixing up the two is hard: every value returned is named uv_index*
+(erythemal), nothing is named or described as a "vitamin D index", and no
+conversion factor is applied.
 
 Further: the CIE erythema action spectrum that DEFINES the UV Index was
-derived from, and is validated against, predominantly light (Fitzpatrick
-I-III) skin erythema response data (McKinlay & Diffey 1987; the CIE
-standard's own reference is unweighted by skin type but its empirical
-grounding is fair-skin sunburn data). This repo is a DARK-SKIN-PRIORITY
-model. The UV Index this module returns therefore inherits a light-skin
-measurement lineage before it ever reaches this repo's darker-FST-focused
-dose logic downstream -- the same kind of inherited-bias caveat this repo
-already documents for other imported constants (see MODEL_AND_EVIDENCE.md,
-"assumptions"). Nothing in THIS module corrects for that; it is flagged here
-so nothing downstream forgets it exists.
+derived from and validated against predominantly light (Fitzpatrick I-III)
+skin erythema data (McKinlay & Diffey 1987; empirical grounding is fair-skin
+sunburn data). This repo is DARK-SKIN-PRIORITY. The UV Index therefore
+inherits a light-skin measurement lineage before reaching this repo's
+darker-FST-focused dose logic downstream — the same inherited-bias caveat
+this repo documents for other imported constants (MODEL_AND_EVIDENCE.md,
+"assumptions"). Nothing here corrects for that; flagged so nothing
+downstream forgets.
 
 UNITS
 -----
@@ -239,11 +228,11 @@ HOUR_MATCH_TOLERANCE_MINUTES: float = 90.0
 class AmbientUVIUnavailable(RuntimeError):
     """Raised whenever an ambient UVI cannot be honestly produced.
 
-    Deliberately a single exception type covering network failure, API-side
-    errors, malformed responses, and out-of-window timestamps: callers of a
-    minutes-of-sun recommendation need exactly one thing from a failure --
-    "do not use this number" -- not a taxonomy to pattern-match on. The
-    `.reason` attribute carries the specific cause for logging/debugging.
+    Single exception type for network failure, API-side errors, malformed
+    responses, and out-of-window timestamps: minutes-of-sun callers need one
+    thing from a failure — "do not use this number" — not a taxonomy to
+    pattern-match on. The `.reason` attribute carries the cause for
+    logging/debugging.
     """
 
     def __init__(self, reason: str):
@@ -255,10 +244,10 @@ class AmbientUVIUnavailable(RuntimeError):
 class AmbientUVI:
     """A single ambient-UVI observation, from either source in this module.
 
-    `effective_uv_index` is what a caller should feed into UVI-consuming
-    code (e.g. vitd_objectives.sed_from_minutes' `uv_index` argument) --
-    NOT a vitamin-D dose; see module docstring. It is erythemally weighted,
-    never vitamin-D weighted, regardless of source.
+    `effective_uv_index` is what callers feed into UVI-consuming code (e.g.
+    vitd_objectives.sed_from_minutes' `uv_index` argument) — NOT a vitamin-D
+    dose; see module docstring. Erythemally weighted, never vitamin-D
+    weighted, regardless of source.
     """
 
     latitude: Optional[float]
@@ -297,9 +286,8 @@ def _default_http_get(url: str, timeout: float) -> str:
     """Real HTTP GET, used when fetch_ambient_uvi() is not given a stub.
 
     Not exercised by tests/test_ambient.py (that suite injects a fake
-    `http_get` so it never touches the network); this function exists so
-    production callers get real data without having to know about the
-    injection seam.
+    `http_get` so it never touches the network); production callers get real
+    data without knowing about the injection seam.
     """
     try:
         with urllib.request.urlopen(url, timeout=timeout) as resp:
@@ -360,17 +348,17 @@ def fetch_ambient_uvi(latitude: float, longitude: float,
                        base_url: str = OPEN_METEO_FORECAST_URL) -> AmbientUVI:
     """Fetch the ambient (erythemal) UV Index for a place and time.
 
-    Network call (unless `http_get` is injected for testing -- see module
-    docstring "TESTING WITHOUT NETWORK"). Returns the all-sky forecast UVI as
-    `effective_uv_index`, falling back to the clear-sky forecast (with
+    Network call (unless `http_get` is injected for testing — see module
+    docstring "TESTING WITHOUT NETWORK"). Returns the all-sky forecast UVI
+    as `effective_uv_index`, falling back to clear-sky forecast (with
     `is_fallback=True`) only if the live field is absent for the matched
-    hour. Never returns a guessed number: any failure raises
+    hour. Never returns a guessed number: failures raise
     AmbientUVIUnavailable (see module docstring "FAILURE HANDLING").
 
     `when` defaults to now (UTC). Must be timezone-aware if given, or naive
-    and already-UTC -- naive datetimes are assumed UTC [CHOICE], since this
-    module has no way to know a caller's intended zone and silently
-    assuming local-machine time would be a worse guess.
+    and already-UTC — naive datetimes are assumed UTC, since this module
+    cannot know a caller's intended zone and silently assuming local-machine
+    time would be worse.
     """
     if latitude is None or longitude is None:
         raise AmbientUVIUnavailable("latitude and longitude are required")
@@ -506,15 +494,11 @@ def uvi_from_user_input(uv_index: float, *,
     """Wrap a caller-supplied UV Index into the same AmbientUVI shape.
 
     No network access. This is the path for "I looked at my phone's weather
-    app / a UV sensor and the UVI is X" -- the model should be able to run
-    entirely offline from a manually entered number, which this function
-    exists to guarantee (it does nothing but validate and wrap).
+    app / a UV sensor and the UVI is X" — the model runs entirely offline
+    from a manually entered number. Does nothing but validate and wrap.
 
-    Raises ValueError -- NOT AmbientUVIUnavailable -- for invalid input,
-    since this is a caller programming/data-entry error, not a runtime
-    service failure; the two exception types are kept distinct so callers
-    can tell "you gave me a bad number" apart from "I couldn't get a
-    number".
+    Raises ValueError (not AmbientUVIUnavailable) for invalid input: this is
+    a caller programming/data-entry error, not a runtime service failure.
     """
     if uv_index is None:
         raise ValueError("uv_index is required")
@@ -555,23 +539,20 @@ def uvi_from_user_input(uv_index: float, *,
 def cloud_modifier(uv_index: float, uv_index_clear_sky: float) -> float:
     """uv_index / uv_index_clear_sky -- the MEASURED cloud/aerosol attenuation.
 
-    This is the entire reason Open-Meteo was chosen over a source that only
-    reports one UVI number: with both the all-sky and clear-sky forecast for
-    the same hour, this ratio is read off real model output instead of being
-    assumed from a generic "cloud cover %" heuristic.
+    This is why Open-Meteo was chosen over a source reporting one UVI number:
+    both all-sky and clear-sky forecast for the same hour lets us read the
+    ratio off real model output instead of assuming a "cloud cover %"
+    heuristic.
 
-    Raises ValueError if uv_index_clear_sky <= 0 (undefined -- typically
-    night, when both values are legitimately 0 and there is nothing to take
-    a ratio of). fetch_ambient_uvi() catches this internally and records
-    cloud_modifier=None with a note rather than treating it as a fetch
-    failure; call this function directly and you get the exception.
+    Raises ValueError if uv_index_clear_sky <= 0 (undefined — typically
+    night, when both are 0 and there is nothing to ratio). fetch_ambient_uvi()
+    catches this internally and records cloud_modifier=None with a note;
+    calling directly raises.
 
     Values above 1.0 are NOT clipped. [CHOICE] Cloud-edge/broken-cloud UV
-    enhancement above the clear-sky value is a real, observed phenomenon in
-    ground-based UV monitoring (reflection/scattering off nearby cloud can
-    briefly exceed the clear-sky irradiance); silently capping the ratio at
-    1.0 would discard a real measured signal in favour of an assumption this
-    module has no basis for.
+    enhancement above clear-sky is real and observed in ground-based UV
+    monitoring; capping at 1.0 discards a measured signal for an assumption
+    this module has no basis for.
     """
     if uv_index_clear_sky is None or uv_index_clear_sky <= 0:
         raise ValueError(

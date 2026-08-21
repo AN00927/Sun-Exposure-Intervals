@@ -4,7 +4,7 @@ vitd_analyses.py
 Analyses for the vitamin D scheduling model:
 
   A. alpha sensitivity sweep (photoadaptation rise rate, FST V & VI)
-  B. K_ATTEN sensitivity synthesis attenuation coefficient)
+  B. K_ATTEN sensitivity (synthesis attenuation coefficient)
   C. Schedule comparison under TWO framings (matched SED vs matched dose)
   D. Two-framing summary plot
   E. beta sensitivity sweep (tanning decay rate)
@@ -32,7 +32,7 @@ from vitd_model import (simulate, build_pulse_schedule,
                           get_E_source, E_SOURCE_SOLAR_DEFAULT)
 
 def print_safety_summary(safety_log, label=""):
-    """Print a one-line safety summary from a simulate() safety_log."""
+    """One-line safety summary from a simulate() safety_log."""
     if not safety_log:
         print(f"  Safety{label}: no safety data")
         return
@@ -70,9 +70,9 @@ PROTOCOL_DAYS = 84   # 12 weeks
 def analysis_alpha_sweep():
     """
     Vary alpha (photoadaptation rise rate) and observe how the OPTIMAL
-    inter-session interval shifts. Per the handoff this is the highest
-    priority because alpha was calibrated from light-skin (Miyamura 2011)
-    and may be larger in darker skin.
+    inter-session interval shifts. Highest priority because alpha was
+    calibrated from light-skin (Miyamura 2011) and may be larger in darker
+    skin.
     """
     print("\n" + "=" * 70)
     print("ANALYSIS A: alpha sensitivity sweep")
@@ -158,9 +158,9 @@ def analysis_alpha_sweep():
 # ===========================================================================
 def analysis_K_ATTEN_sweep():
     """
-    Vary K_ATTEN (melanin penalty coefficient). Young 2020 measured a
-    vitamin D inhibition factor of only 1.3-1.4x between FST II and VI,
-    suggesting K_ATTEN may be substantially lower than the default 2.0.
+    Vary K_ATTEN (melanin penalty coefficient). Young 2020 measured
+    vitamin D inhibition of only 1.3-1.4x between FST II and VI, suggesting
+    K_ATTEN may be lower than the default 2.0.
     """
     print("\n" + "=" * 70)
     print("ANALYSIS B: K_ATTEN sensitivity sweep")
@@ -239,10 +239,10 @@ def analysis_K_ATTEN_sweep():
 # ===========================================================================
 def analysis_two_framings():
     """
-    Show the two framings side-by-side for FST V and VI:
+    Two framings side-by-side for FST V and VI:
 
-    Framing 1: MATCHED CUMULATIVE SED (UV budget unconstrained, just
-               distributing a fixed total). Total = 42 SED over 84 days.
+    Framing 1: MATCHED CUMULATIVE SED (UV budget unconstrained, distributing
+               a fixed total). Total = 42 SED over 84 days.
                Daily would deliver 0.5 SED/session; every-21-day would
                deliver 10.5 SED/session.
 
@@ -380,10 +380,9 @@ def analysis_beta_sweep():
     Ravnbak 2008 (PMID 18480919), which measured UVB tanning fade of 4-5
     months in Scandinavians and Indians/Pakistanis.
 
-    If "complete fading" corresponds to ~3 e-folding times (12.5% residual),
-    the Ravnbak 2008 data implies a half-life of ~40-50 days. If ~4 e-folding
-    times (6% residual), ~30-37 days. The plausible range is ~30-75 days.
-    The sweep extends beyond this range to test robustness.
+    "Complete fading" at ~3 e-folding times (12.5% residual) implies half-life
+    ~40-50 days; at ~4 e-folding times (6% residual), ~30-37 days. Plausible
+    range ~30-75 days. Sweep extends beyond for robustness.
 
     Analogous to analysis_alpha_sweep and analysis_K_ATTEN_sweep.
     """
@@ -471,8 +470,8 @@ def analysis_beta_sweep():
 # ===========================================================================
 def analysis_fine_grid():
     """
-    Test every 1-day interval from 1 to 30 days. Produces a high-resolution
-    curve of efficiency vs. interval for FST V and VI.
+    Test every 1-day interval from 1 to 30 days. High-resolution efficiency
+    curve for FST V and VI.
 
     Fixed 1 SED per session, 84-day protocol.
     """
@@ -564,18 +563,17 @@ def analysis_fine_grid():
 def analysis_scipy_optimize():
     """
     Use scipy.optimize.minimize_scalar to find the true optimal interval
-    numerically, rather than on a discrete grid.
+    numerically, on a continuous domain.
 
-    Uses Brent's method (method='bounded') which combines parabolic
-    interpolation with golden section search. No gradient needed -- only
-    function evaluations. Typically converges in ~10-15 evaluations.
+    Brent's method (method='bounded') combines parabolic interpolation with
+    golden section search. No gradient needed — only function evaluations,
+    typically ~10-15.
 
     Optimizes two objectives:
-    1. net_final_D_change_per_SED -- the per-SED framing with an interior
-       optimum (the retired per-SED efficiency metric was used here
-       previously; it was removed 2026-07-31 because it ranks schedules
-       anti-correlated with mean 25(OH)D -- see vitd_model.py)
-    2. steady_state_D (absolute) -- the maximum-D framing
+    1. net_final_D_change_per_SED — per-SED framing with interior optimum
+       (the retired per-SED efficiency metric was removed 2026-07-31 because
+       it ranks schedules anti-correlated with mean 25(OH)D)
+    2. steady_state_D (absolute) — maximum-D framing
 
     Cross-validates against fine-grid argmax.
     """
@@ -658,11 +656,11 @@ def analysis_scipy_optimize():
 # ===========================================================================
 def analysis_max_interval_for_sufficiency():
     """
-    Find the longest inter-session interval that maintains steady-state D >= 50
+    Find the longest inter-session interval maintaining steady-state D >= 50
     nmol/L under fixed 1 SED/session dosing.
 
-    For each FST (V, VI), scans intervals from 1 to 60 days. Reports the
-    threshold interval and plots D_ss vs interval with a sufficiency line.
+    Scans intervals 1-60 days for each FST (V, VI). Reports threshold
+    interval and plots D_ss vs interval with a sufficiency line.
     """
     print("\n" + "=" * 70)
     print("ANALYSIS H: maximum interval for sufficiency")
@@ -723,8 +721,7 @@ def analysis_max_interval_for_sufficiency():
 def analysis_loading_dose():
     """
     Optimize how to distribute a UV budget across the first 14 days
-    (loading phase), with fixed maintenance (1 SED every 7 days from
-    day 15-84).
+    (loading phase), with fixed maintenance (1 SED every 7 days, day 15-84).
 
     Tests budgets of 2-20 SED split across 1, 2, 3, 5, 7, or 14 sessions.
     Compares D at day 14, D at day 84, and AUC above 50 nmol/L.

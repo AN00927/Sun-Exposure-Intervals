@@ -2,12 +2,12 @@
 Bogh 2012 Ablation Study — Phase 3 Debug Run
 
 Runs 21 ablation configurations (A00-A20) against the Bogh 2012 NB-UVB protocol.
-Originally used to isolate which model factors contributed to a prediction gap;
-that gap was a dose-unit error (absolute J/cm2 passed as erythemal SED, and 35%
-BSA used for a whole-body protocol), not a physiological one. Once units and
-BSA are corrected, the default SOURCE_CALIBRATION_TABLE value (tl01_nb_uvb=2.44)
-gives error 0.2 nmol/L with no search. Retained as a sensitivity tool; per-config
-error figures from historical runs are not reproducible and should not be cited.
+Isolates which model factors contributed to a prediction gap; that gap was a
+dose-unit error (absolute J/cm2 passed as erythemal SED, and 35% BSA used for a
+whole-body protocol), not a physiological one. Once units and BSA are corrected,
+the default SOURCE_CALIBRATION_TABLE value (tl01_nb_uvb=2.44) gives error
+0.2 nmol/L with no search. Retained as a sensitivity tool; per-config error
+figures from historical runs are not reproducible and should not be cited.
 
 STATUS: PROVISIONAL — requires human review before calibration.
 """
@@ -52,19 +52,19 @@ def build_bogh2012_schedule():
 
 
 def sed_from_j_per_cm2(j_per_cm2):
-    """Provisional conversion: 1 MED ≈ 0.025 J/cm2 for FST III (NB-UVB 311 nm).
+    """Conversion: 1 MED ≈ 0.025 J/cm2 for FST III (NB-UVB 311 nm).
 
-    This is a rough placeholder. Erythemal SED = J/cm2 / MED_FST3.
+    Erythemal SED = J/cm2 / MED_FST3.
     """
     med_fst3 = 0.025
     return j_per_cm2 / med_fst3
 
 
 def convert_schedule_to_sed(schedule, spectrum_name, action_spectrum_name):
-    """Convert a (day, J/cm²) schedule to (day, SED) using spectral weighting.
+    """Convert a (day, J/cm²) schedule to (day, SED) via spectral weighting.
 
     Returns (converted_schedule, conversion_info) where conversion_info
-    contains per-session details and overall status.
+    holds per-session details and overall status.
     """
     converted = []
     session_info = []

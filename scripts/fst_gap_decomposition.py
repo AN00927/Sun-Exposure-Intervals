@@ -1,15 +1,14 @@
 """
 fst_gap_decomposition.py
 ========================
-DIAGNOSIS ONLY. This script changes no parameter and writes no parameter.
-It answers one question:
+DIAGNOSIS ONLY. Changes no parameter, writes no parameter.
 
-    Of the 2-3x "too weak melanin penalty" reported in MODEL_AND_EVIDENCE.md
-    gap 22, how much is OPTICAL (melanin attenuating UV in skin, which belongs
-    in K_const / K_ATTEN) and how much is BEHAVIOURAL / EXPOSURE (shade,
-    clothing, time outdoors, which belongs in a separate exposure term)?
+Of the 2-3x "too weak melanin penalty" in MODEL_AND_EVIDENCE.md gap 22,
+how much is OPTICAL (melanin attenuating UV in skin, belonging in K_const /
+K_ATTEN) and how much is BEHAVIOURAL / EXPOSURE (shade, clothing, time
+outdoors, belonging in a separate exposure term)?
 
-Why the distinction matters: a scheduling tool asks people to CHANGE their
+The distinction matters because a scheduling tool asks people to CHANGE their
 behaviour. Any factor folded into K_const is assumed invariant under that
 change. Folding a behavioural factor into an optical constant makes the model
 score well on the benchmark and wrong for exactly the user it is built for.
@@ -31,7 +30,7 @@ Run
     PYTHONIOENCODING=utf-8 python3 scripts/fst_gap_decomposition.py
 
 Every literature number used here is tagged with its source in the DATA block
-below.  Numbers this script DERIVES are printed as "[derived]".  Numbers this
+below. Numbers this script DERIVES are printed as "[derived]". Numbers this
 script ASSUMES are printed as "[ASSUMED]" and collected in S6.
 """
 
@@ -53,7 +52,7 @@ NGML_TO_NMOL = 2.5
 
 
 # ===========================================================================
-# DATA BLOCK - every value below is quoted from a source in this repo
+# DATA BLOCK -- every value below is quoted from a source in this repo
 # ===========================================================================
 
 # --- Kallioglu et al. 2024, Sci Rep 14:3541 (Research_Papers/, full text) ---
@@ -69,7 +68,7 @@ KALLIOGLU_MINUTES = {1: 5.05, 2: 6.3, 3: 7.6, 4: 11.35, 5: 15.15, 6: 25.25}
 SHIH_20PCT_MED_MJCM2 = {1: 4.2, 2: 5.2, 3: 6.4, 4: 11.2, 5: 15.0, 6: 30.4}
 SHIH_MED_SED = {k: v * 5.0 / 10.0 for k, v in SHIH_20PCT_MED_MJCM2.items()}
 # Key finding: 25(OH)D gain per fractional MED showed "no influence of skin
-# type (P = 0.23)".  n = 33-38 per dose, ~6 per skin type.  This is a NULL.
+# type (P = 0.23)".  n = 33-38 per dose, ~6 per skin type.  A NULL result.
 
 # --- Webb et al. 2021, Endocr Connect 10:R248 Table 4 (Research_Papers/) ---
 # Solar-simulated-radiation studies, both 35% BSA, both Arimed B, same group.
@@ -81,7 +80,7 @@ SHIH_MED_SED = {k: v * 5.0 / 10.0 for k, v in SHIH_20PCT_MED_MJCM2.items()}
 #   nmol/L per SED (1.11 / 0.48)                     -> ITALIC = Webb's own
 #     arithmetic. 26.0/23.4 = 1.111 checks out; 11.5/23.4 = 0.491 vs the
 #     printed 0.48, a small unexplained rounding.
-# This script therefore prefers the ROMAN cells for its own ratio.
+# Prefers the ROMAN cells for its own ratio.
 WEBB21_T4 = {
     # study: (n, skin types, total SED, delta 25(OH)D nmol/L, nmol/L per SED)
     "Rhodes 2010 (white)": (109, "1-4", 23.4, 26.0, 1.11),
@@ -136,8 +135,8 @@ WK_SAFE_SED_FST_V = 2.75   # Table 1 "Acceptable daily dose (SED)"
 WK_MIN_FST_V = 25.0        # Table 1 "Time for fixed daily dose (S1-3)"
 WK_MIN_WHITE = 9.0         # Results, quoted from ref [12] for white Caucasians
 # Kift 2013 serum medians AS QUOTED BY Webb 2018 Results 3.1 ("22.5 nmol/L in
-# summer and 14.5 nmol/L in winter"). This independently confirms this
-# script's decimal reconstruction of Kift 2013 Figure 1 (9.0 and 5.8 ng/mL).
+# summer and 14.5 nmol/L in winter"). Independently confirms the
+# decimal reconstruction of Kift 2013 Figure 1 (9.0 and 5.8 ng/mL).
 WEBB18_QUOTES_KIFT = {"summer": 22.5, "winter": 14.5, "diet_ug_day": 1.32}
 
 # --- Young et al. 2020, JID 140:1418 --------------------------------------
@@ -158,7 +157,7 @@ def hr(title):
 
 
 # ===========================================================================
-# S1 - what each "independent" failure actually measures
+# S1 -- what each "independent" failure actually measures
 # ===========================================================================
 
 def s1_provenance_audit():
@@ -261,7 +260,7 @@ def s1_provenance_audit():
 
 
 # ===========================================================================
-# S2 - the behavioural exposure ratio, measured
+# S2 -- the behavioural exposure ratio, measured
 # ===========================================================================
 
 def s2_behaviour():
@@ -359,7 +358,7 @@ VERNEZ_CSV = os.path.join(REPO, "data",
 
 def s2b_is_it_geometry():
     """Could the measured behavioural difference be POSTURE rather than
-    shade-seeking? The Vernez 2015 Table S1 inputs now in the repo answer it."""
+    shade-seeking? Vernez 2015 Table S1 inputs in the repo answer it."""
     hr("S2b  IS THE BEHAVIOURAL DIFFERENCE JUST POSTURE GEOMETRY?")
     if not os.path.exists(VERNEZ_CSV):
         print("\n  [SKIP] Vernez Table S1 CSV not found.")
@@ -403,7 +402,7 @@ def s2b_is_it_geometry():
 
 
 # ===========================================================================
-# S3 - optical factor at matched physical dose (individual-level)
+# S3 -- optical factor at matched physical dose (individual-level)
 # ===========================================================================
 
 def _load_young2020():
@@ -543,7 +542,7 @@ def s3_optical():
 
 
 # ===========================================================================
-# S3b - are the two lamp studies actually in conflict?
+# S3b -- are the two lamp studies actually in conflict?
 # ===========================================================================
 # Young 2020 and Farrar/Rhodes ran DIFFERENT protocols (85% BSA / 2 SED x5 vs
 # 35% BSA / 1.3 SED x18). Feedback compresses an observed slope ratio more for
@@ -562,8 +561,8 @@ Y20_OBSERVED_II_VI = YOUNG20_PAPER_RATIOS["ArimedB (SSR)"]   # 1.29
 
 # --- PRIMARY matched-dose comparator: Felton et al. 2016 -------------------
 # Br J Dermatol 175:1320-1328, Research_Papers/, open access. Table 1.
-# This is a WITHIN-STUDY phototype II vs V comparison: same cabinet, same
-# 1.3 SED x3/wk x6 wk, same ~35% BSA, BOTH baselines measured. It needs no
+# WITHIN-STUDY phototype II vs V comparison: same cabinet, same
+# 1.3 SED x3/wk x6 wk, same ~35% BSA, BOTH baselines measured. Needs no
 # cross-trial baseline anchor, which is why it replaces Rhodes 2010 here.
 FELTON_D0 = {2: 36.5, 5: 17.2}          # baseline 25(OH)D, nmol/L (Table 1)
 FELTON_FINAL = {2: 54.3, 5: 25.5}       # final 25(OH)D, nmol/L (Table 1)
@@ -777,7 +776,7 @@ def s3b_lamp_conflict():
 
 
 # ===========================================================================
-# S4 - model inversion on cohorts with measured dose AND measured serum
+# S4 -- model inversion on cohorts with measured dose AND measured serum
 # ===========================================================================
 
 _SENS_PARAMS = None  # set by s4b_sensitivity to swap the parameter set
@@ -1082,15 +1081,222 @@ def s4d_esource_dependence():
 
 
 # ===========================================================================
-# S5 - NHANES identifiability
+# S5 -- NHANES identifiability
 # ===========================================================================
+
+def _nhanes_K_for_R(w, b, R, p):
+    """K_const reproducing both groups' summer means at dose ratio R.
+
+    Extracted verbatim from the original S5 loop so that the constant-dose
+    ridge (Part 1) and the DEQ-refined check (Part 2) cannot drift apart:
+    both call this. Returns (K_const, FST V:II optical factor, residual).
+
+    A single shared badge->effective-dose scale is fitted to the White
+    group, then the Black group's summer level is predicted at 1/R of the
+    White dose and compared with what NHANES observed.
+    """
+    def resid(K):
+        s = _solve_scale(2, 1.0, NHANES_SIM_BSA,
+                         w["winter"], w["summer"], K)
+        return _predict_summer(5, 1.0 / R, NHANES_SIM_BSA,
+                               b["winter"], K, s) - b["summer"]
+    if resid(0.0) <= 0:
+        K, err = 0.0, resid(0.0)
+    elif resid(K_MAX) >= 0:
+        K, err = K_MAX, resid(K_MAX)
+    else:
+        lo, hi = 0.0, K_MAX
+        for _ in range(40):
+            mid = 0.5 * (lo + hi)
+            if resid(mid) > 0:
+                lo = mid
+            else:
+                hi = mid
+        K = 0.5 * (lo + hi)
+        err = resid(K)
+    opt = float(np.exp(K * (p.M_baseline(5) - p.M_baseline(2))))
+    return K, opt, err
+
+
+# DEQ cycles carrying DED120/DED125 (minutes outdoors). 2009-2018 only.
+DEQ_MINUTES_CYCLES = ("2009-2010", "2011-2012", "2013-2014",
+                      "2015-2016", "2017-2018")
+
+
+def _wmean(g, col):
+    return float(np.average(g[col], weights=g["wtmec2yr"]))
+
+
+def _deq_dose_ratio(s):
+    """Weighted White:Black ratio of mean daily minutes outdoors."""
+    wg = s[s["race_ethnicity"] == 3]
+    bg = s[s["race_ethnicity"] == 4]
+    return _wmean(wg, "deq_minutes") / _wmean(bg, "deq_minutes")
+
+
+def _s5_deq_refined(df, w, b, p, ridge_rows):
+    """Part 2: re-solve the ridge with the dose ratio MEASURED, not swept.
+
+    The Part 1 ridge is parameterised by R, the White:Black behavioural
+    dose ratio, and every R fits because nothing in the old extract
+    measured behaviour. DED120/DED125 (minutes outdoors on a work day and
+    a non-work day, 2009-2018) now measure the TIME component of that
+    ratio directly, so R stops being free.
+
+    Scaling note. The ridge feeds RELATIVE weekly doses (1.0 for White,
+    1/R for Black) into `_solve_scale`, which then fits one shared
+    minutes->effective-SED scale factor. Any constant conversion --
+    including vitd_objectives.SED_PER_MIN_PER_UVI and any assumed
+    reference UV index, geometry factor or exposed BSA -- multiplies both
+    groups identically and therefore CANCELS from R exactly. So this
+    function does not need, and does not invent, an absolute minutes->SED
+    constant: only the ratio of group-mean minutes enters. The absolute
+    scale remains the repo's existing assumption, untouched.
+
+    What this does NOT measure: DED120/DED125 are minutes outdoors only.
+    They say nothing about exposed BSA, clothing, shade-seeking or
+    time-of-day. R here is therefore a TIME ratio, and the ridge's R is a
+    DOSE ratio. They coincide only if the two groups expose comparable
+    skin area at comparable hours -- which NHANES still does not measure.
+    """
+    print("\n  --- Part 2: DEQ-REFINED ridge (DED120/DED125 subset) ---")
+
+    need = ("deq_outdoor_minutes_workday", "deq_outdoor_minutes_nonworkday")
+    if not all(c in df.columns for c in need):
+        print("  [SKIP] DEQ minutes columns absent -- re-run "
+              "nhanes_preprocessing.py to add them.")
+        return None
+
+    s = df.copy()
+    # Mean of the two reported days. `mean` skips NaN, so a respondent who
+    # answered only one branch still contributes that branch. 3333 ("does
+    # not work / go to school") was already dropped to NaN upstream in
+    # nhanes_preprocessing.py -- treating it as 3333 minutes would wreck
+    # this average, and it affects 355-640 respondents per cycle.
+    s["deq_minutes"] = s[list(need)].mean(axis=1)
+    s = s.dropna(subset=["deq_minutes"])
+    s = s[s["race_ethnicity"].isin([3, 4])]
+    if len(s) < 500:
+        print(f"  [SKIP] only {len(s)} usable DEQ rows.")
+        return None
+
+    cycles_seen = sorted(s["cycle"].unique())
+    print(f"\n  cycles with DED120/DED125: {', '.join(cycles_seen)}")
+    print(f"  (Part 1 above used ALL cycles; this subset is {len(s)} rows.)")
+    for code, label in ((3, "Non-Hispanic White"), (4, "Non-Hispanic Black")):
+        g = s[s["race_ethnicity"] == code]
+        print(f"  {label:22s} n = {len(g):>5}   mean minutes outdoors/day = "
+              f"{_wmean(g, 'deq_minutes'):6.1f}  (WTMEC2YR-weighted)")
+
+    R_hat = _deq_dose_ratio(s)
+
+    # Bootstrap CI on the measured ratio.
+    rng = np.random.default_rng(7)
+    idx = np.arange(len(s))
+    boots = []
+    for _ in range(2000):
+        bs = s.iloc[rng.integers(0, len(s), len(s))]
+        if (bs["race_ethnicity"] == 3).any() and (bs["race_ethnicity"] == 4).any():
+            boots.append(_deq_dose_ratio(bs))
+    lo, hi = (float(x) for x in np.percentile(boots, [2.5, 97.5]))
+    print(f"\n  [MEASURED] White:Black time-outdoors ratio R = {R_hat:.3f}"
+          f"   95% CI [{lo:.3f}, {hi:.3f}]  ({len(boots)} bootstraps)")
+
+    both = s.dropna(subset=list(need))
+    print(f"  [sensitivity] restricting to respondents who answered BOTH "
+          f"days (n = {len(both)}): R = {_deq_dose_ratio(both):.3f}")
+
+    # DED031 as a covariate: is the time ratio confounded by sun sensitivity?
+    if "deq_skin_reaction" in s.columns and s["deq_skin_reaction"].notna().any():
+        print("\n  DED031 'reaction after months out of the sun' "
+              "(1 = blisters ... 5 = never burns):")
+        for code, label in ((3, "Non-Hispanic White"),
+                            (4, "Non-Hispanic Black")):
+            g = s[(s["race_ethnicity"] == code) &
+                  s["deq_skin_reaction"].notna()]
+            print(f"    {label:22s} n = {len(g):>5}  weighted mean = "
+                  f"{_wmean(g, 'deq_skin_reaction'):.2f}")
+        print("    -> the ordering supports the repo's race->FST map "
+              "(NH Black burns less), though it is a self-report.")
+        print("\n  R re-measured WITHIN each DED031 stratum (confounding check):")
+        for lvl in (1, 2, 3, 4, 5):
+            st = s[s["deq_skin_reaction"] == lvl]
+            nw = int((st["race_ethnicity"] == 3).sum())
+            nb = int((st["race_ethnicity"] == 4).sum())
+            if nw >= 30 and nb >= 30:
+                print(f"    DED031 = {lvl}:  R = {_deq_dose_ratio(st):.3f}"
+                      f"   (n White {nw}, n Black {nb})")
+            else:
+                print(f"    DED031 = {lvl}:  too few to stratify "
+                      f"(n White {nw}, n Black {nb})")
+        print("    -> R stays near 1 in every stratum with usable n, so the")
+        print("       measured time ratio is not an artefact of differing")
+        print("       sun sensitivity between the two groups.")
+
+    # Re-solve the ridge on THIS subset, at the measured R and its CI.
+    obs_sub = {}
+    for code, key in ((3, "w"), (4, "b")):
+        sub = s[s["race_ethnicity"] == code]
+        rec = {}
+        for scode, sname in ((1, "winter"), (2, "summer")):
+            g = sub[sub["exam_season"] == scode]
+            rec[sname] = _wmean(g, "vitd_standardized_nmol_L")
+        obs_sub[key] = rec
+    ws, bs_ = obs_sub["w"], obs_sub["b"]
+    print(f"\n  Subset serum means: White {ws['winter']:.1f}/"
+          f"{ws['summer']:.1f}   Black {bs_['winter']:.1f}/{bs_['summer']:.1f}"
+          f"  (winter/summer nmol/L)")
+
+    print(f"\n  {'R (measured)':>14} {'K_const needed':>15} "
+          f"{'FST V:II optical':>18} {'residual nmol/L':>16}")
+    out = {}
+    for tag, R in (("CI low", lo), ("point", R_hat), ("CI high", hi)):
+        K, opt, err = _nhanes_K_for_R(ws, bs_, R, p)
+        out[tag] = (R, K, opt, err)
+        print(f"  {R:>14.3f} {K:>15.3f} {opt:>18.2f} {err:>16.2f}"
+              f"   <- {tag}")
+
+    # Which of Part 1's swept R values does the measurement exclude?
+    excluded = [r for (r, *_rest) in ridge_rows if r < lo or r > hi]
+    kept = [r for (r, *_rest) in ridge_rows if lo <= r <= hi]
+    span_old = (min(r for (r, *_x) in ridge_rows),
+                max(r for (r, *_x) in ridge_rows))
+    k_old = [k for (_r, k, *_x) in ridge_rows]
+    k_new = [out[t][1] for t in ("CI low", "CI high")]
+    print(f"\n  Part 1 swept R over [{span_old[0]:.2f}, {span_old[1]:.2f}] "
+          f"-> K_const spanned [{min(k_old):.3f}, {max(k_old):.3f}] "
+          f"(a factor of {max(k_old) - min(k_old):.3f} in K).")
+    print(f"  Part 2 measures R in [{lo:.3f}, {hi:.3f}] "
+          f"-> K_const spans [{min(k_new):.3f}, {max(k_new):.3f}].")
+    print(f"  Excluded by measurement: R = "
+          f"{', '.join(f'{r:g}' for r in excluded) or '(none)'}")
+    print(f"  Still admissible:        R = "
+          f"{', '.join(f'{r:g}' for r in kept) or '(none of the swept grid)'}")
+    print("\n  READ THIS BEFORE QUOTING THE NARROWING:")
+    print("  DED120/DED125 measure TIME OUTDOORS, not dose. Exposed BSA,")
+    print("  clothing, shade-seeking and time-of-day are still unmeasured in")
+    print("  NHANES. So Part 2 does not collapse the ridge -- it RELOCATES")
+    print("  the remaining freedom: the time component of R is ~1, and any")
+    print("  larger behavioural ratio now has to come from the skin-area /")
+    print("  timing axis, which this dataset cannot see. Part 1 stands as")
+    print("  the statement of what NHANES alone constrains.")
+    print("  This is a DIAGNOSTIC. No model parameter is changed here; any")
+    print("  move in K_const would be a calibration decision requiring")
+    print("  approval per calibration_approval.yaml.")
+    return out
+
 
 def s5_nhanes_ridge():
     hr("S5  NHANES: the (behaviour, optics) ridge")
-    print("\n  NHANES has no personal UV dosimetry and no sun-exposure")
-    print("  questionnaire in this repo's extract (checked: DEMO/BMX/DR1/DR2/")
-    print("  DS1/DS2/VID only). So behaviour cannot be measured; it can only")
-    print("  be traded off against optics. Below is that trade-off curve.")
+    print("\n  NHANES has no personal UV dosimetry. Part 1 below is the")
+    print("  original constant-dose ridge over the FULL pooled sample, in")
+    print("  which behaviour is unmeasured and can only be traded off")
+    print("  against optics. It is unchanged and remains the headline result.")
+    print("\n  Part 2 is NEW: the dermatology questionnaire (DEQ) has since")
+    print("  been added to this repo's extract, and DED120/DED125 give")
+    print("  self-reported minutes outdoors for 2009-2018. That measures the")
+    print("  TIME axis of behaviour for a subset, so Part 2 re-runs the same")
+    print("  solve with the dose ratio taken from data instead of swept.")
 
     import pandas as pd
     path = os.path.join(REPO, "audit_outputs", "nhanes_standardized_processed.csv")
@@ -1125,6 +1331,8 @@ def s5_nhanes_ridge():
     print(f"\n  [derived] observed seasonal-amplitude ratio White:Black = "
           f"{(w['summer'] - w['winter']) / (b['summer'] - b['winter']):.2f}x")
 
+    print("\n  --- Part 1: ORIGINAL constant-dose ridge "
+          "(full sample, all 10 cycles) ---")
     print("\n  Trade-off: for each assumed behavioural dose ratio R (White:Black),")
     print("  the K_const that reproduces both groups' summer means, given one")
     print("  shared dose scale fitted to the White group.")
@@ -1133,36 +1341,19 @@ def s5_nhanes_ridge():
     p = ModelParams()
     rows = []
     for R in [1.0, 1.25, 1.5, 2.0, 2.5, 3.0, 3.4, 4.0]:
-        def resid(K):
-            s = _solve_scale(2, 1.0, NHANES_SIM_BSA,
-                             w["winter"], w["summer"], K)
-            return _predict_summer(5, 1.0 / R, NHANES_SIM_BSA,
-                                   b["winter"], K, s) - b["summer"]
-        if resid(0.0) <= 0:
-            K, err = 0.0, resid(0.0)
-        elif resid(K_MAX) >= 0:
-            K, err = K_MAX, resid(K_MAX)
-        else:
-            lo, hi = 0.0, K_MAX
-            for _ in range(40):
-                mid = 0.5 * (lo + hi)
-                if resid(mid) > 0:
-                    lo = mid
-                else:
-                    hi = mid
-            K = 0.5 * (lo + hi)
-            err = resid(K)
-        opt = float(np.exp(K * (p.M_baseline(5) - p.M_baseline(2))))
+        K, opt, err = _nhanes_K_for_R(w, b, R, p)
         rows.append((R, K, opt, err))
         print(f"  {R:>14.2f} {K:>15.3f} {opt:>18.2f} {err:>16.2f}")
     print("\n  Every row fits NHANES equally well. NHANES alone cannot pick one.")
     print("  This is the honest statement of what NHANES Part B tells us: it")
     print("  constrains the PRODUCT of behaviour and optics, nothing more.")
+
+    _s5_deq_refined(df, w, b, p, rows)
     return rows
 
 
 # ===========================================================================
-# S6 - assumptions register
+# S6 -- assumptions register
 # ===========================================================================
 
 ASSUMPTIONS = [
@@ -1194,6 +1385,17 @@ ASSUMPTIONS = [
     "The NHANES race -> FST map (NH White = II, NH Black = V) is the repo's "
     "existing RACE_FST_MAP and is itself an approximation; NH Black spans "
     "FST IV-VI.",
+    "S5 Part 2's DEQ-measured ratio uses DED120/DED125, which are "
+    "SELF-REPORTED MINUTES OUTDOORS, not dose. Equating that time ratio "
+    "with the ridge's behavioural DOSE ratio assumes the two race groups "
+    "expose comparable skin area at comparable times of day. NHANES "
+    "measures neither, so this is the load-bearing assumption of Part 2 "
+    "and the reason Part 1 is retained as the headline result. The "
+    "sentinel 3333 ('does not work / go to school') is dropped to NaN "
+    "upstream; leaving it in as a duration would inflate the mean by "
+    "roughly an order of magnitude. DED031's 6/77/99/0 codes are dropped "
+    "likewise. DEQ is asked only of ages 20-59, so Part 2's subset is "
+    "younger than Part 1's 18-65 sample by construction.",
     "S3's baseline adjustment is a single pooled slope-vs-baseline "
     "regression, not the ANCOVA Young 2020 used. It reproduces the published "
     "ratios only approximately (see printed comparison).",
@@ -1241,7 +1443,7 @@ def s6_assumptions():
 
 
 # ===========================================================================
-# S8 - per-number audit register
+# S8 -- per-number audit register
 # ===========================================================================
 # Class (a): reproduced from a primary source held in this repo, this session.
 # Class (b): reproduced, but rests on a stated assumption or a secondary
@@ -1364,6 +1566,15 @@ def s8b_repo_file_dependencies():
      VID_B/C/D.csv) which is CDC's own already-standardized LC-MS/MS-
      EQUIVALENT series, and 2007+ is LBXVIDMS, CDC's measured LC-MS/MS.
      CDC did the harmonization upstream; the repo did not do it locally.
+     ALSO CORRECTED 2026-08-20: that file's tenth cycle was labelled
+     '2019-2020'. It is CDC cycle L = August 2021-August 2023
+     (SDDSRVYR = 12, SEQN 130378-142310). The true 2019-2020 cycle was
+     never released standalone -- COVID cut the fieldwork short -- so it
+     exists only inside the P_-prefixed 2017-March-2020 combined files,
+     which this repo has for DEMO/BMX/diet but NOT for serum vitamin D.
+     The relabel is cosmetic for S5: it renames a cycle, it does not add,
+     drop or alter a single serum row, and the Part 1 table is
+     numerically identical before and after.
      VERDICT: the NHANES numbers in S5 are sound. But CLAUDE.md's rule
      ('do NOT pool without harmonization code') is currently satisfied by
      a function that does nothing, which is a latent trap for the next
