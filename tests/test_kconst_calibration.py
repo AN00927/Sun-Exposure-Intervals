@@ -176,17 +176,9 @@ def test_felton_ratio_regression_from_the_feedback_form_is_pinned():
 # ---------------------------------------------------------------------------
 # Behaviour stayed out of the optical term
 # ---------------------------------------------------------------------------
-
-def test_behaviour_module_is_neutral_by_default():
-    import vitd_behaviour as vb
-    assert vb.behaviour_factor() == 1.0
-
-
-def test_optical_and_behavioural_factors_are_separable():
-    """Their product is what the behaviour-blind field inversion measured
-    (4.3-5.7x). Each on its own must be well below that."""
-    import vitd_behaviour as vb
-    opt = optical(ModelParams().K_const, 5)
-    beh = vb.measured_dose_ratio("kift2013")
-    assert opt < BEHAVIOUR_BLIND_FLOOR
-    assert opt * beh > BEHAVIOUR_BLIND_FLOOR   # together they over-explain it
+# The two tests that exercised `vitd_behaviour` directly MOVED on 2026-08-21 to
+# tests/exploratory/test_behaviour_separation.py, when that module was retired
+# (see exploratory/README.md). The half of the argument that does NOT need the
+# retired module -- that K_const alone stays clear of the behaviour-blind floor
+# -- is guarded by test_does_not_absorb_the_behavioural_share above and
+# stays here.

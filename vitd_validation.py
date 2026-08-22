@@ -67,6 +67,55 @@ from collections import namedtuple
 CheckResult = namedtuple('CheckResult', ['name', 'passed', 'message'])
 
 # ---------------------------------------------------------------------------
+# Evidence tiers (added 2026-08-21, docs/REPO_SCOPE_AUDIT.md section 2)
+# ---------------------------------------------------------------------------
+# `run_all()` used to report one number: "PASSED REQUIRED: 10 / 10". That
+# number is real -- every check does what its assertions say -- but it is
+# also the single largest overclaim in this repo, because most of what it
+# counts is self-consistency, not evidence about biology. This block adds an
+# explicit TIER to every registered check, orthogonal to the existing
+# required/warning-only axis (which controls what counts toward the headline
+# pass/fail tally, not what KIND of support a pass gives).
+#
+# Assignment method: read each check's own docstring and assertions. Several
+# checks already state their own tier in words ("computation-integrity
+# check", "NOT evidence", "Direction check only", "STATUS: DEBUGGING_TARGET",
+# "STATUS: EXPLORATORY_ONLY", "[C7-SC-FITTED] ... Calibrated with de Boer
+# 2025"); those self-descriptions are honoured directly below rather than
+# re-derived. See the per-check `tier_note` in CHECK_REGISTRY for the
+# one-line justification for each of the 13 checks.
+TIER_INTERNAL = "INTERNAL"
+TIER_DIRECTIONAL = "DIRECTIONAL"
+TIER_QUANTITATIVE = "QUANTITATIVE"
+TIER_CIRCULAR = "CIRCULAR"
+TIER_NOT_EVIDENCE = "NOT_EVIDENCE"
+
+#: Print order for the tiered summary, roughly strongest-looking-but-weakest
+#: first to poorest-looking-but-honest last -- NOT a ranking of evidentiary
+#: strength (QUANTITATIVE is the strongest tier that exists in this suite).
+TIER_ORDER = [TIER_INTERNAL, TIER_DIRECTIONAL, TIER_QUANTITATIVE,
+              TIER_CIRCULAR, TIER_NOT_EVIDENCE]
+
+TIER_LABELS = {
+    TIER_INTERNAL: "self-consistency / computation-integrity / wiring; "
+                    "not evidence about biology",
+    TIER_DIRECTIONAL: "external literature data, direction or ordering "
+                       "only -- no quantitative comparison",
+    TIER_QUANTITATIVE: "external literature data, a real numeric "
+                        "comparison -- see per-check circularity notes",
+    TIER_CIRCULAR: "external data the model (or one of its parameters) "
+                   "was FITTED to; a pass is expected by construction",
+    TIER_NOT_EVIDENCE: "retained for the finding it records, but its own "
+                        "docstring says it is not vitamin-D evidence, or "
+                        "that it is exploratory only",
+}
+
+#: One registered check. `tier_note` is the one-line justification for the
+#: tier assignment, sourced from the function's own docstring/assertions.
+CheckSpec = namedtuple('CheckSpec',
+                       ['name', 'fn', 'warning_only', 'tier', 'tier_note'])
+
+# ---------------------------------------------------------------------------
 # Comparison utilities for validation targets
 # ---------------------------------------------------------------------------
 
@@ -1209,6 +1258,22 @@ def validate_katten_seasonal_amplitude(verbose=True):
     return passed
 
 
+#: [PROVENANCE] Kift 2013 Fig. 1 medians for the FST V South Asian cohort,
+#: decimal-reconstructed (the local PDF's text layer drops decimal points):
+#: summer 9.0 ng/mL, winter 5.8 ng/mL. Independently confirmed to the decimal
+#: by Webb et al. 2018 (Nutrients 10:457) Results 3.1, which quotes the SAME
+#: cohort directly: "22.5 nmol/L in summer and 14.5 nmol/L in winter"
+#: (9.0*2.5=22.5, 5.8*2.5=14.5 -- exact agreement between two independent
+#: readings). See scripts/fst_gap_decomposition.py, FIELD_COHORTS
+#: ["Kift2013_southasian"] and WEBB18_QUOTES_KIFT, for the full reproduction.
+#: Reported by validate_kift_2013_south_asian for the record; NOT gated on
+#: -- see that function's docstring for why.
+KIFT2013_OBSERVED_SUMMER_NMOL_L = 22.5
+KIFT2013_OBSERVED_WINTER_NMOL_L = 14.5
+KIFT2013_OBSERVED_AMPLITUDE_NMOL_L = (KIFT2013_OBSERVED_SUMMER_NMOL_L
+                                       - KIFT2013_OBSERVED_WINTER_NMOL_L)  # 8.0
+
+
 def validate_kift_2013_south_asian(verbose=True):
     """
     Kift 2013: UK South Asian adults (FST V) receiving naturalistic UK summer exposure.
@@ -1219,6 +1284,57 @@ def validate_kift_2013_south_asian(verbose=True):
       - Baseline ~22.5 nmol/L
       - D_final in range [20.0, 40.0] nmol/L
       - delta in range [0.0, 15.0] nmol/L
+
+    TIER: CIRCULAR. DEMOTED to warning-only 2026-08-21
+    (docs/REPO_SCOPE_AUDIT.md section 2). Two independent problems, either
+    one alone disqualifying this from the required/quantitative pool:
+
+    (1) UNFALSIFIABLE BAND. `delta` is accepted anywhere in [0.0, 15.0]
+        nmol/L -- 15 nmol/L wide, and it INCLUDES ZERO. A model predicting
+        NO vitamin D synthesis whatsoever from this protocol would pass.
+        That is a range assertion, not a validation.
+
+    (2) CIRCULAR. Kift 2013 is one of the four within-study/field routes --
+        Felton 2016, Young 2020, Kift 2013, Darling 2013 -- that
+        `ModelParams.K_const = 0.98` was fitted to by equal-weight least
+        squares in log-ratio space (vitd_model.py, K_const entry: "Fitted
+        to four within-study routes: Felton 2016, Young 2020, Kift 2013,
+        Darling 2013"; full derivation in scripts/kconst_recalibration.py,
+        S3/S4). A model built in part to reproduce Kift's own implied
+        skin-type penalty passing a check built on that same study is
+        expected by construction, not independent support.
+
+    OPTION (a) -- tighten the band to the observed value -- was considered
+    and rejected. A real observed delta DOES exist in the repo (see
+    KIFT2013_OBSERVED_AMPLITUDE_NMOL_L below) and is not invented, but
+    tightening around a number K_const was partly fitted to would make the
+    check LOOK stronger while making problem (2) worse, not better: a
+    precise-looking pass that is still circular is a more convincing
+    overclaim than a loose one. Demoting was judged more defensible than
+    dressing up a circular check as a quantitative one.
+
+    WHAT WOULD MAKE THIS A REAL CHECK: a naturalistic (non-lamp) South Asian
+    FST V UK exposure cohort that was NOT one of the four K_const fitting
+    routes. None currently exists in this repo -- Darling 2013 is the only
+    other field route, and it is also a fitting input. The nearest thing to
+    a genuinely held-out check on this exact quantity is Webb/Kift 2018
+    (RESULTS.md section 15, vitd_benchmark_webbkift.py), which is un-fitted
+    precisely because it was assembled after K_const was set. As of the
+    2026-08-21 audit run it FAILS on the minutes ratio (model 4.80 vs
+    reported 2.78; dose ratio 3.01x vs reported 2.5-3.0x, a near-pass) --
+    see docs/REPO_SCOPE_AUDIT.md section 2.
+
+    REPORTED, NOT GATED: Kift 2013's own observed winter -> summer amplitude
+    in this cohort is 14.5 -> 22.5 = 8.0 nmol/L (see
+    KIFT2013_OBSERVED_AMPLITUDE_NMOL_L above this function; independently
+    confirmed by Webb 2018). Printed below for the record. Note also that
+    this check's own D0 = 22.5 is the STUDY'S SUMMER value, not its winter
+    baseline -- the simulation therefore does NOT reproduce the
+    winter-to-summer transition the amplitude describes; it only checks
+    that continued exposure from an already-summer level stays in a
+    plausible range. That mismatch is flagged here rather than silently
+    fixed, since correcting the simulated protocol is outside this task's
+    scope (retiering + band honesty, not protocol reconstruction).
     """
     p = ModelParams()
     fst = 5
@@ -1234,11 +1350,19 @@ def validate_kift_2013_south_asian(verbose=True):
     passed = D_final_ok and delta_ok
 
     if verbose:
-        print(f"[Lit 6] Kift 2013 - UK South Asian naturalistic exposure (FST V)")
+        print(f"[Lit 6, WARNING-ONLY / CIRCULAR] Kift 2013 - UK South Asian naturalistic exposure (FST V)")
         print(f"  Protocol: ~1.0 SED/wk (0.333 SED 3x/wk) x 12 weeks, FST V, BSA=0.14, baseline {D0:.1f} nmol/L")
         print(f"  Model D_final = {D_final:.1f} nmol/L (delta = +{delta:.1f} nmol/L)")
         print(f"  Target bounds: D_final in [20, 40]: {'YES' if D_final_ok else 'NO'}, delta in [0, 15]: {'YES' if delta_ok else 'NO'}")
-        print(f"  {'PASS' if passed else 'FAIL'}")
+        print(f"  CIRCULAR: Kift 2013 is one of the 4 routes K_const=0.98 was fitted to; band")
+        print(f"  also includes zero, so a null model would pass. Demoted to warning-only,")
+        print(f"  not counted toward the required pass/fail score. See docstring.")
+        print(f"  [REPORTED, NOT GATED] Kift's own observed winter->summer amplitude: "
+              f"{KIFT2013_OBSERVED_WINTER_NMOL_L:.1f} -> {KIFT2013_OBSERVED_SUMMER_NMOL_L:.1f} "
+              f"= {KIFT2013_OBSERVED_AMPLITUDE_NMOL_L:.1f} nmol/L (confirmed independently by Webb 2018).")
+        print(f"  Note D0 above is the study's SUMMER value, not its winter baseline, so this")
+        print(f"  simulation does not reproduce that transition -- flagged, not fixed.")
+        print(f"  {'PASS' if passed else 'FAIL'} (warning-only; not counted toward required score)")
 
     return passed
 
@@ -1348,11 +1472,19 @@ def validate_kallioglu_2024_erythema_med_ratio(verbose=True):
 #      directly in the function body so the target is self-documenting.
 #    - Print details when verbose=True; include the PASS/FAIL line.
 #
-# 2. Add a (name, fn, warning_only) tuple to the |checks| list below.
+# 2. Add a CheckSpec(name, fn, warning_only, tier, tier_note) to
+#    CHECK_REGISTRY below.
 #    - name: short human-readable label.
 #    - fn: the function from step 1.
 #    - warning_only: True if the check is advisory (does not count
 #      toward required pass/fail).
+#    - tier: one of TIER_INTERNAL, TIER_DIRECTIONAL, TIER_QUANTITATIVE,
+#      TIER_CIRCULAR, TIER_NOT_EVIDENCE (defined near CheckResult, above).
+#      Assign by reading the check's OWN docstring and assertions, not by
+#      guessing -- most checks already say what they are in words.
+#    - tier_note: one line saying why that tier, citing the docstring
+#      language or the specific parameter the check would be circular
+#      against.
 #
 # 3. Run |python3 vitd_validation.py| to confirm registration.
 #
@@ -1364,52 +1496,173 @@ def validate_kallioglu_2024_erythema_med_ratio(verbose=True):
 # ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
+#: The 13 registered checks, each stamped with an evidence tier. This is
+#: the single source of truth for both the existing required/warning-only
+#: pass/fail tally AND the tiered honesty summary added 2026-08-21 -- see
+#: docs/REPO_SCOPE_AUDIT.md section 2. Tier assignments were made by reading
+#: each function's own docstring; see tier_note for the one-line reason and
+#: the function docstring itself for the full argument.
+CHECK_REGISTRY = [
+    CheckSpec(
+        "decay half-life", sanity_decay_halflife, False,
+        TIER_INTERNAL,
+        "Simulator checked against the analytic solution of its own ODE; "
+        "half-life targets are a power-law fit to the same three Datta "
+        "2017 group means the model encodes. Tests that the code computes "
+        "its documented math, not that the math matches unseen biology."),
+    CheckSpec(
+        "single bolus FST III", sanity_single_bolus_FST_III, False,
+        TIER_INTERNAL,
+        "Docstring: \"computation-integrity check ... NOT a literature "
+        "check -- no external target.\" Expected value is rebuilt from the "
+        "model's own live parameters."),
+    CheckSpec(
+        "photoadaptation reduction", sanity_photoadaptation_reduction, False,
+        TIER_INTERNAL,
+        "Docstring proves the measured quantity is an algebraic identity "
+        "independent of K_const/A/D_max/feedback form, pinned at K_ATTEN=0 "
+        "so it cannot fail as shipped. Docstring: \"NOT evidence ... a "
+        "ONE-SIDED RETIREMENT GUARD.\""),
+    CheckSpec(
+        "de Boer 2025 photoadaptation [C6 replaced]",
+        validate_photoadaptation_deBoer2025, True,
+        TIER_DIRECTIONAL,
+        "Docstring: \"Checks direction only ... Quantitative MI comparison "
+        "is not possible.\" External de Boer 2025 protocol; asserts "
+        "melanin up / SC up / synthesis down, no numeric target."),
+    CheckSpec(
+        "SC de Boer 2025 [C7-SC warning]", validate_sc_deBoer2025, True,
+        TIER_CIRCULAR,
+        "Docstring: \"[C7-SC-FITTED] alpha_SC=0.12, SC_max_by_FST ... "
+        "Calibrated with de Boer 2025 Supplementary Table S1.\" The SC "
+        "parameters generating the model's trajectory were fitted to the "
+        "same dataset this check compares that trajectory against."),
+    CheckSpec(
+        "Bogh 2012 [C1 quantitative]", validate_bogh_2012, False,
+        TIER_CIRCULAR,
+        "Self-labelled \"STATUS: DEBUGGING_TARGET ... must not be "
+        "reported as an independent validation pass until structural and "
+        "source-data verification are complete.\" E_source=2.5 is a "
+        "per-study placeholder tuned to this trial."),
+    CheckSpec(
+        "Farrar 2013 [C2 quantitative]", validate_farrar_2013, False,
+        TIER_QUANTITATIVE,
+        "Real numeric comparison (D_final and delta bounds in nmol/L) "
+        "against an external FST V trial. Not a direct K_const/A fitting "
+        "target, but vitd_model.py's A entry records this check's pass/"
+        "fail as a \"MEASURED CONSEQUENCE\" of the 2026-08-18 A "
+        "recalibration (FAIL -> PASS) -- partly informed, not fully "
+        "independent. The strongest tier this suite has; read with that "
+        "caveat."),
+    CheckSpec(
+        "Bogh baseline+BSA [C4]", validate_bogh_baseline_bsa, False,
+        TIER_DIRECTIONAL,
+        "Docstring: \"Direction check only ... exact coefficient match is "
+        "not required.\" Tests the SIGN of the baseline effect against "
+        "Bogh 2010/P5's regression; the ratio band [1.2, 3.0] is wide "
+        "enough to be near-guaranteed by the feedback function's own "
+        "monotonicity."),
+    CheckSpec(
+        "baseline calibration target [C3-feedback]",
+        validate_baseline_calibration_target, False,
+        TIER_DIRECTIONAL,
+        "Docstring: \"Direction, not magnitude, is what this check "
+        "licenses: a baseline-dependent SIGN REVERSAL is a strong "
+        "constraint on feedback shape.\" Uses external Karppinen 2017 "
+        "numbers to set a sign-reversal target with a wide bracket around "
+        "them, not a tight numeric match."),
+    CheckSpec(
+        "metric ordering and sanity", validate_metric_ordering, False,
+        TIER_INTERNAL,
+        "Pure internal sanity: AUC-above-sufficiency is 0 when D never "
+        "crosses the threshold, AUC-above-baseline is >0 when D rises. No "
+        "external data of any kind."),
+    CheckSpec(
+        "K_ATTEN seasonal amplitude", validate_katten_seasonal_amplitude,
+        False,
+        TIER_NOT_EVIDENCE,
+        "Self-labelled in source: \"STATUS: EXPLORATORY_ONLY. Invalid as "
+        "physiological validation of K_ATTEN. Retained only for future "
+        "behavioral modeling.\""),
+    CheckSpec(
+        "Kift 2013 South Asian", validate_kift_2013_south_asian, True,
+        TIER_CIRCULAR,
+        "DEMOTED to warning-only 2026-08-21 (was required, band included "
+        "zero). Kift 2013 is one of the four within-study/field routes "
+        "K_const=0.98 was fitted to (vitd_model.py K_const entry; "
+        "scripts/kconst_recalibration.py). See function docstring for the "
+        "full argument and the option-(a)-vs-(b) decision."),
+    CheckSpec(
+        "Kallioglu 2024 erythema-MED ratio [held-out, not vitamin-D evidence]",
+        validate_kallioglu_2024_erythema_med_ratio, True,
+        TIER_NOT_EVIDENCE,
+        "Docstring: \"NOT independent vitamin-D evidence ... must not be "
+        "counted or reported as such.\" Compares the model's minutes "
+        "ratio to an erythema-MED table run through Hollick's rule, not "
+        "to a vitamin-D measurement."),
+]
+
+
 def run_all(verbose=True):
-    checks = [
-        ("decay half-life",              sanity_decay_halflife, False),
-        ("single bolus FST III",          sanity_single_bolus_FST_III, False),
-        ("photoadaptation reduction",     sanity_photoadaptation_reduction, False),
-        ("de Boer 2025 photoadaptation [C6 replaced]", validate_photoadaptation_deBoer2025, True),
-        ("SC de Boer 2025 [C7-SC warning]", validate_sc_deBoer2025, True),
-        ("Bogh 2012 [C1 quantitative]",   validate_bogh_2012, False),
-        ("Farrar 2013 [C2 quantitative]", validate_farrar_2013, False),
-        ("Bogh baseline+BSA [C4]",        validate_bogh_baseline_bsa, False),
-        ("baseline calibration target [C3-feedback]", validate_baseline_calibration_target, False),
-        ("metric ordering and sanity",    validate_metric_ordering, False),
-        ("K_ATTEN seasonal amplitude",    validate_katten_seasonal_amplitude, False),
-        ("Kift 2013 South Asian",         validate_kift_2013_south_asian, False),
-        ("Kallioglu 2024 erythema-MED ratio [held-out, not vitamin-D evidence]",
-         validate_kallioglu_2024_erythema_med_ratio, True),
-    ]
-    
     results = {}
     warning_results = {}
-    
+    outcomes = {}
+
     print("=" * 70)
     print("VALIDATION SUITE")
     print("=" * 70)
-    for name, fn, warning_only in checks:
-        ok = fn(verbose=verbose)
-        if warning_only:
-            warning_results[name] = ok
+    for spec in CHECK_REGISTRY:
+        if verbose:
+            print(f"[TIER: {spec.tier}] {spec.tier_note}")
+        ok = spec.fn(verbose=verbose)
+        outcomes[spec.name] = ok
+        if spec.warning_only:
+            warning_results[spec.name] = ok
         else:
-            results[name] = ok
+            results[spec.name] = ok
         print()
-        
+
     n_pass = sum(results.values())
     n_total = len(results)
-    
+
     n_warn_pass = sum(warning_results.values())
     n_warn_total = len(warning_results)
-    
+
     print("=" * 70)
     print(f"PASSED REQUIRED: {n_pass} / {n_total}")
     print(f"PASSED WARNING-ONLY: {n_warn_pass} / {n_warn_total}")
     print("Audit change tags active: C1 C2 C3 C4 C6 (see module docstring)")
     print("C5 C7 C8: see vitd_model.py docstring and parameter comments")
     print("=" * 70)
-    
-    # Return combining all for run_all.py or external consumers
+    print()
+    print("EVIDENCE TIER BREAKDOWN -- all 13 checks, orthogonal to the")
+    print("required/warning-only split above. See docs/REPO_SCOPE_AUDIT.md")
+    print("section 2: the REQUIRED count above is real but misleading --")
+    print("most of what it counts is self-consistency, not biology.")
+    for tier in TIER_ORDER:
+        members = [c for c in CHECK_REGISTRY if c.tier == tier]
+        if not members:
+            continue
+        t_pass = sum(1 for c in members if outcomes[c.name])
+        t_total = len(members)
+        print(f"  {tier:13s} {t_pass} / {t_total}   ({TIER_LABELS[tier]})")
+    print()
+    print("HELD-OUT (not run inside this suite, un-gated by design):")
+    print("  Webb/Kift 2018 -- RESULTS.md section 15, vitd_benchmark_webbkift.py.")
+    print("  The one genuinely un-fitted external check in the pipeline. As of")
+    print("  the 2026-08-21 audit run it FAILS on the minutes ratio: model 4.80")
+    print("  vs reported 2.78 (dose ratio 3.01x vs reported 2.5-3.0x, a near-pass).")
+    print("  See docs/REPO_SCOPE_AUDIT.md section 2 for the full re-run.")
+    print("=" * 70)
+
+    # Return combining all for run_all.py or external consumers. SAME
+    # contract as before this re-tiering: {check_name: bool} for every
+    # registered check, keys unchanged in meaning (Kift 2013's key still
+    # appears here even though its bucket moved from required to
+    # warning-only -- run_all.py's sum()/len() over this dict still works
+    # unmodified). Tier information lives in CHECK_REGISTRY / the printed
+    # summary above, not in this dict, so nothing here can break run_all.py's
+    # arithmetic.
     combined = {**results, **warning_results}
     return combined
 

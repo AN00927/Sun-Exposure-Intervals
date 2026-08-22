@@ -42,7 +42,9 @@ from vitd_objectives import SED_PER_MIN_PER_UVI
 from vitd_physiology import vis_table_s1
 
 UTC = dt.timezone.utc
-FIXTURES = Path(__file__).parent / "fixtures"
+# Fixtures stayed in tests/fixtures/ when this test moved to
+# tests/exploratory/ (retirement, 2026-08-21) -- they are shared.
+FIXTURES = Path(__file__).parent.parent / "fixtures"
 LA_FIXTURE = (FIXTURES / "open_meteo_forecast_la_20260817.json").read_text(encoding="utf-8")
 
 

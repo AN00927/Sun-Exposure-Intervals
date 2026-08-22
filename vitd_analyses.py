@@ -9,7 +9,9 @@ Analyses for the vitamin D scheduling model:
   D. Two-framing summary plot
   E. beta sensitivity sweep (tanning decay rate)
   F. Fine-grid interval sweep (1-30 days, 1-day steps)
-  G. scipy.optimize continuous interval optimization
+  G. exhaustive integer interval sweep (1-60 days; replaces a former
+     scipy.optimize.minimize_scalar call that ran a continuous line search
+     on an objective that rounds to the nearest integer day)
   H. Maximum interval for sufficiency (D_ss >= 50 nmol/L threshold)
   I. Loading dose optimization (distribute UV budget across first 14 days)
   J. Maintenance dose splitting (single vs split sessions)
@@ -22,7 +24,7 @@ import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.optimize import minimize_scalar
+import vitd_scenario
 from vitd_model import (simulate, build_pulse_schedule,
                          steady_state_D, mean_final_M,
                          final_D, net_final_D_change_per_SED,
@@ -562,12 +564,38 @@ def analysis_fine_grid():
 # ===========================================================================
 def analysis_scipy_optimize():
     """
-    Use scipy.optimize.minimize_scalar to find the true optimal interval
-    numerically, on a continuous domain.
+    Exhaustive integer sweep of inter-session interval over 1-60 days.
 
-    Brent's method (method='bounded') combines parabolic interpolation with
-    golden section search. No gradient needed — only function evaluations,
-    typically ~10-15.
+    This used to call scipy.optimize.minimize_scalar(method='bounded') (a
+    Brent-type continuous line search) on `interval_float`, but the objective
+    rounds that argument to the nearest integer before building a schedule
+    (`interval = max(1, int(round(interval_float)))`) — i.e. the function
+    Brent's method was searching is piecewise-constant on every unit
+    interval. A parabolic-interpolation / golden-section method assumes a
+    smooth univariate landscape; run on a staircase it converges to
+    whichever step it lands in, not to the argmax, and the result is not
+    reproducible across scipy versions or starting brackets. It also is not
+    the right tool for this problem on principle: the interval variable is
+    integer-valued (a schedule cannot have a session every 6.3 days), so a
+    continuous optimizer was never the correct method here, independent of
+    the rounding bug. `interval_float` was never fed to the simulator
+    directly, so there was no continuous objective to optimize.
+
+    Fixed (2026-08-21, methodology review R4 / OPTIMIZATION_METHODOLOGY.md
+    section 9-10): replaced with the exhaustive integer sweep over the same
+    (1, 60) bounds the continuous solver was given. This is honest instead of
+    approximating a discontinuous function with a continuous method, cheaper
+    (60 forward evaluations vs. an iterative line search) and exact rather
+    than approximate on an integer domain, and it removes the discrepancy
+    against section 6 (whose 1-30 day fine-grid sweep is the same kind of
+    exhaustive search over a narrower range and additionally the *correct*
+    method for this domain — dropping this section entirely was the other
+    option, but keeping it as a direct, wider-range replication of section 6
+    is more informative than deleting it). See
+    `docs/OPTIMIZATION_METHODOLOGY.md` sections 8 ("7 scipy continuous") and
+    10 (R4) for the full argument; option (a) of the three offered there
+    ("drop the continuous optimiser and report the exhaustive integer
+    sweep") is the one implemented.
 
     Optimizes two objectives:
     1. net_final_D_change_per_SED — per-SED framing with interior optimum
@@ -575,45 +603,40 @@ def analysis_scipy_optimize():
        it ranks schedules anti-correlated with mean 25(OH)D)
     2. steady_state_D (absolute) — maximum-D framing
 
-    Cross-validates against fine-grid argmax.
+    Replicates the fine-grid argmax (section 6) over a wider integer range
+    (1-60d vs 1-30d) rather than "confirming" it via a different method —
+    it is the same method (exhaustive integer sweep) at a different
+    resolution, so agreement with section 6 where the ranges overlap is
+    expected, not an independent cross-check.
     """
     print("\n" + "=" * 70)
-    print("ANALYSIS G: continuous optimization (scipy.optimize)")
+    print("ANALYSIS G: exhaustive integer interval sweep (1-60 days)")
     print("=" * 70)
 
     fsts = [5, 6]
     sed_per_session = 1.0
     PROTOCOL = 84
+    intervals = list(range(1, 61))
 
-    def neg_net_change_per_sed(interval_float, fst):
-        """Negative net D change per SED (minimize = maximize)."""
-        interval = max(1, int(round(interval_float)))
+    def net_change_per_sed(interval, fst):
         sched = build_pulse_schedule(PROTOCOL, sed_per_session, interval)
         r = simulate(fst=fst, schedule=sched, duration_days=PROTOCOL)
-        return -net_final_D_change_per_SED(r)
+        return net_final_D_change_per_SED(r)
 
-    def neg_steady_state_D(interval_float, fst):
-        """Negative steady-state D (minimize = maximize)."""
-        interval = max(1, int(round(interval_float)))
+    def ss_D(interval, fst):
         sched = build_pulse_schedule(PROTOCOL, sed_per_session, interval)
         r = simulate(fst=fst, schedule=sched, duration_days=PROTOCOL)
-        return -steady_state_D(r)
+        return steady_state_D(r)
 
     rows = []
     for fst in fsts:
-        res_net = minimize_scalar(
-            neg_net_change_per_sed, args=(fst,),
-            bounds=(1, 60), method='bounded'
-        )
-        opt_interval_net = max(1, int(round(res_net.x)))
-        opt_net_change = -res_net.fun
+        net_vals = [net_change_per_sed(iv, fst) for iv in intervals]
+        opt_interval_net = intervals[int(np.argmax(net_vals))]
+        opt_net_change = max(net_vals)
 
-        res_D = minimize_scalar(
-            neg_steady_state_D, args=(fst,),
-            bounds=(1, 60), method='bounded'
-        )
-        opt_interval_D = max(1, int(round(res_D.x)))
-        opt_D = -res_D.fun
+        D_vals = [ss_D(iv, fst) for iv in intervals]
+        opt_interval_D = intervals[int(np.argmax(D_vals))]
+        opt_D = max(D_vals)
 
         sched_net = build_pulse_schedule(PROTOCOL, sed_per_session, opt_interval_net)
         r_net = simulate(fst=fst, schedule=sched_net, duration_days=PROTOCOL)
@@ -625,10 +648,10 @@ def analysis_scipy_optimize():
             "FST": fst,
             "opt_interval_net_change": opt_interval_net,
             "opt_net_change_nmol_per_SED": opt_net_change,
-            "net_change_func_evals": res_net.nfev,
+            "net_change_func_evals": len(intervals),
             "opt_interval_absolute_D": opt_interval_D,
             "opt_steady_state_D": opt_D,
-            "D_func_evals": res_D.nfev,
+            "D_func_evals": len(intervals),
             "ss_D_at_net_change_opt": steady_state_D(r_net),
             "net_change_at_D_opt": net_final_D_change_per_SED(r_D),
         }
@@ -637,10 +660,10 @@ def analysis_scipy_optimize():
         print(f"\nFST {fst}:")
         print(f"  Net-change optimum: interval={opt_interval_net}d, "
               f"net_change={opt_net_change:.3f} nmol/L/SED "
-              f"({res_net.nfev} function evals)")
+              f"({len(intervals)} evals, exhaustive over 1-60d)")
         print(f"  Absolute D optimum: interval={opt_interval_D}d, "
               f"steady_state_D={opt_D:.1f} nmol/L "
-              f"({res_D.nfev} function evals)")
+              f"({len(intervals)} evals, exhaustive over 1-60d)")
         print(f"  Cross-check: ss_D at net-change optimum = {steady_state_D(r_net):.1f}, "
               f"net_change at D optimum = {net_final_D_change_per_SED(r_D):.3f}")
         print(f"  AUC deficit at 50 nmol/L for optimal schedule: {auc_deficit(r_net['D'], r_net['t'], 50.0):.1f}")
@@ -919,10 +942,30 @@ def analysis_sun_exposure():
     Practical sun exposure scheduling: how many minutes of midday sun,
     how often, to maintain sufficiency?
 
-    Uses spring/fall moderate conditions (UV index ~5), arms + face exposure
-    (~30% BSA), E_source = 1.0 (broadband reference).
-    SED-per-minute conversion: ~6.7 min/SED (UV index 5, erythemal irradiance
-    ~0.25 W/m², 1 SED = 100 J/m²).
+    Uses the FROZEN REFERENCE SCENARIO (`vitd_scenario.py`): fixed ambient UV
+    index, fixed horizontal-to-personal geometry factor, fixed exposed BSA,
+    held constant on every exposure day.
+
+    [BUG FIX 2026-08-21 -- unit/geometry error, not a calibration change.]
+    This function previously used a hardcoded `MIN_PER_SED = 6.7` alongside a
+    docstring claiming "UV index ~5" and "erythemal irradiance ~0.25 W/m^2".
+    Those three statements are mutually inconsistent and two of them are wrong:
+
+      * 1 UV Index unit = 25 mW/m^2 erythemal (WHO/WMO). UV index 5 is
+        therefore 125 mW/m^2, not the 250 mW/m^2 (= 0.25 W/m^2) claimed --
+        the stated irradiance is UV index 10, a factor of 2 off its own
+        stated UV index.
+      * 6.7 min/SED = 0.149 SED/min, which is UV index ~10 on a HORIZONTAL
+        surface. No horizontal-to-personal geometry factor was applied at
+        all, while every other minutes figure in this repository applies
+        `vitd_objectives.PERSONAL_DOSE_GEOMETRY_FACTOR`. An upright person
+        does not intercept horizontal-surface irradiance.
+
+    Net effect: this section was under-reporting the minutes needed by roughly
+    4.7x relative to the rest of the repository. Section 11's minute figures
+    are correspondingly LONGER after this fix. No calibrated scientific
+    parameter moved; `calibration_approval.yaml` was not touched. See
+    `CLAUDE.md` ("Bug fixes ... unit errors ... are allowed without approval").
 
     Two parts:
     1. Practical schedule comparison (6 predefined strategies)
@@ -931,11 +974,15 @@ def analysis_sun_exposure():
     print("\n" + "=" * 70)
     print("ANALYSIS K: sun exposure scheduling (no equipment)")
     print("=" * 70)
-    MIN_PER_SED = 6.7
+    print(vitd_scenario.describe())
+    MIN_PER_SED = 1.0 / vitd_scenario.SED_PER_MINUTE
     # [CALIBRATION 2026-08-16] Was a hardcoded 1.0. Sun now uses the single
     # unified solar value; see vitd_model.E_SOURCE_SOLAR_DEFAULT.
     E_SOURCE_SUN = get_E_source(E_SOURCE_SOLAR_DEFAULT)
-    BSA_SUN = 0.30
+    # Frozen scenario BSA (== vitd_model.BSA_REF, so bsa_factor is exactly
+    # 1.0 and every existing calibration is untouched). Was a separate
+    # hardcoded 0.30, inconsistent with the 0.35 used everywhere else.
+    BSA_SUN = vitd_scenario.EXPOSED_BSA
 
     # Pre-defined practical schedules: (name, sessions_per_week, minutes_per_session)
     PRACTICAL = [

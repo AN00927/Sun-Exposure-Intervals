@@ -52,7 +52,9 @@ from vitd_ambient import (
     HOUR_MATCH_TOLERANCE_MINUTES,
 )
 
-FIXTURES = Path(__file__).parent / "fixtures"
+# Fixtures stayed in tests/fixtures/ when this test moved to
+# tests/exploratory/ (retirement, 2026-08-21) -- they are shared.
+FIXTURES = Path(__file__).parent.parent / "fixtures"
 UTC = dt.timezone.utc
 
 

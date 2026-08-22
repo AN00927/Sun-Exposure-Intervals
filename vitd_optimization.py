@@ -142,6 +142,20 @@ def dose_gap_coupled(days: np.ndarray, d_ref: float, p: float) -> np.ndarray:
     Generalises schedule_frontloaded / schedule_backloaded, which vary spacing
     at fixed dose: here spacing and dose co-vary, so an unavoidably long gap
     gets compensated rather than simply tolerated.
+
+    Degenerate under uniform spacing. When `days` is evenly spaced, every
+    `gap_i` equals `mean_gap`, so `(gap_i / mean_gap) ** p == 1` for every p
+    and this returns the constant-dose profile `dose_uniform(days, d_ref)`
+    regardless of p (verified for p in {0, 0.5, 1, 1.5, 3}). The family only
+    carries information when day spacing is non-uniform. In the current
+    pipeline, `optimise_variable_dose` is the only caller and it always
+    builds `days` from `session_days()`, which is uniformly spaced -- so as
+    called today, this family is always degenerate and cannot outperform (or
+    underperform) `dose_uniform`. `optimise_joint_schedule`, which does warp
+    the day spacing non-uniformly, restricts its dose search to
+    `JOINT_DOSE_FAMILIES = ("two_phase", "exponential")` and never calls this
+    function, so the non-degenerate case is not currently exercised anywhere
+    in this repository.
     """
     days = np.asarray(days, dtype=float)
     if days.size == 0:
@@ -483,9 +497,18 @@ def optimal_interval_risk_constrained(
 # than by branch and bound.
 #
 # Method: low-dimensional shape families searched globally, rather than a free
-# per-session vector searched locally. A 3-parameter family recovers
-# essentially all of the gain that a free 74-dimensional SLSQP solve finds, and
-# it returns a schedule that can actually be described to a person.
+# per-session vector searched locally. This buys a schedule that can actually
+# be described to a person, but it is NOT free: at the one operating point
+# where it has been checked against a free per-day dose vector (FST III,
+# N=104, horizon 365d -- the exact cell RESULTS.md 13c publishes at risk
+# 1.3706), a 365-variable SLSQP solve warm-started from the parameterised
+# answer reaches risk 1.1943, i.e. the parameterised family gives up 12.9%
+# relative to it (80,067 forward evaluations; see
+# scripts/joint_schedule_freesolve.py, which reproduces this number and is not
+# part of run_all.py). Because that solve is local and warm-started rather
+# than global, 12.9% is a LOWER bound on the true family-restriction gap, not
+# an estimate of it. This has been measured at one (FST, N) cell only and
+# should not be generalised to other cells without rerunning the script.
 def _risk_of(fst: int, days: np.ndarray, seds: np.ndarray, horizon_days: int,
              D0: float, target: float, ramp_in_days: int,
              params: Optional[ModelParams],
@@ -725,7 +748,8 @@ def optimise_joint_schedule(fst: int,
                             params: Optional[ModelParams] = None,
                             seed: int = 0,
                             maxiter: int = 18,
-                            popsize: int = 10) -> Optional[dict]:
+                            popsize: int = 10,
+                            n_seeds: int = 1) -> Optional[dict]:
     """Jointly optimise session timing and per-session dose at a session budget.
 
     Minimises the combined cancer-risk index subject to the sufficiency floor
@@ -741,8 +765,30 @@ def optimise_joint_schedule(fst: int,
         the solver, its budget and the dose families identical. Comparing a
         joint search against a coarse grid search instead would confound the
         two.
+    n_seeds : int
+        Number of DE seeds to replicate the search over, starting at `seed`
+        and incrementing by 1 (`seed`, `seed + 1`, ..., `seed + n_seeds - 1`).
+        Default 1 reproduces the previous single-seed behaviour exactly, so no
+        existing caller changes. `differential_evolution` here terminates on
+        `maxiter` every time rather than on `tol` (measured: `nit == maxiter`
+        in every run checked), and direct replication at FST III / N=146 spans
+        6.3% in `combined_risk` across 5 seeds with the winning dose family
+        itself changing by seed (`docs/OPTIMIZATION_METHODOLOGY.md` 8.6a) --
+        so a single seed-0 run is a draw from a distribution several percent
+        wide, not a repeatable point estimate. When `n_seeds > 1` the returned
+        dict gains `risk_min`, `risk_max`, `risk_spread_frac` (the range as a
+        fraction of `risk_min`) and `n_seeds_run`, computed over whichever
+        seeds produced a feasible schedule at all; `combined_risk` and the
+        rest of the fields describe the single best-of-n_seeds result, exactly
+        as they would for a single successful seed. Paired free-vs-uniform
+        gains replicate in SIGN (5/5 positive across the seeds checked in the
+        review) but not reliably in MAGNITUDE (range +3.0% to +12.1% at one
+        cell, mean +6.8%, sd 3.4 pp) -- so treat any single-cell percentage
+        gain from this function as order-of-magnitude only, and do not compare
+        magnitudes below roughly 10 percentage points across different (FST,
+        N) cells.
 
-    Returns None if no schedule in the family clears the floor.
+    Returns None if no schedule in the family clears the floor in any seed.
 
     Notes
     -----
@@ -775,67 +821,91 @@ def optimise_joint_schedule(fst: int,
             return 1e6
         return risk + PEN * max(0.0, target - trough) ** 2
 
-    best = None
-    for family in families:
-        if family == "exponential":
-            bounds = [(0.02, 1.0), (0.0, 8.0), (5.0, 180.0)]
-        elif family == "two_phase":
-            bounds = [(0.02, 1.0), (0.1, 1.0), (0.0, 0.6)]
-        else:
-            raise ValueError(f"unknown joint dose family {family!r}")
-        # The spacing dimension is present in BOTH arms and merely inert in the
-        # control (build() pins gamma to 1.0). differential_evolution sizes its
-        # population as popsize * n_parameters, so giving the free arm an extra
-        # dimension would also hand it a ~33% larger search budget -- the gain
-        # would then be partly attributable to search effort rather than to
-        # spacing, which is the one thing this comparison exists to isolate.
-        bounds = bounds + [(0.4, 2.5)]
+    def _solve_once(seed_val: int) -> Optional[dict]:
+        """One full DE solve (all `families`) at a single seed."""
+        best = None
+        for family in families:
+            if family == "exponential":
+                bounds = [(0.02, 1.0), (0.0, 8.0), (5.0, 180.0)]
+            elif family == "two_phase":
+                bounds = [(0.02, 1.0), (0.1, 1.0), (0.0, 0.6)]
+            else:
+                raise ValueError(f"unknown joint dose family {family!r}")
+            # The spacing dimension is present in BOTH arms and merely inert in
+            # the control (build() pins gamma to 1.0). differential_evolution
+            # sizes its population as popsize * n_parameters, so giving the
+            # free arm an extra dimension would also hand it a ~33% larger
+            # search budget -- the gain would then be partly attributable to
+            # search effort rather than to spacing, which is the one thing
+            # this comparison exists to isolate.
+            bounds = bounds + [(0.4, 2.5)]
 
-        res = differential_evolution(lambda x, f=family: score(f, x),
-                                     bounds=bounds, seed=seed, maxiter=maxiter,
-                                     popsize=popsize, tol=1e-6, polish=True)
+            res = differential_evolution(lambda x, f=family: score(f, x),
+                                         bounds=bounds, seed=seed_val,
+                                         maxiter=maxiter, popsize=popsize,
+                                         tol=1e-6, polish=True)
 
-        # Land exactly on the floor: bisect the overall dose LEVEL of the winning
-        # shape. Monotone, because per-session yield is increasing in dose.
-        _, _, gamma = build(family, res.x)
-        days = warp_days(n_sessions, horizon_days, gamma)
-        shape = _joint_seds(days, cap, family, res.x[0], res.x[1], res.x[2],
-                            horizon_days)
-        base = float(np.max(shape))
-        if base <= 0:
-            continue
+            # Land exactly on the floor: bisect the overall dose LEVEL of the
+            # winning shape. Monotone, because per-session yield is increasing
+            # in dose.
+            _, _, gamma = build(family, res.x)
+            days = warp_days(n_sessions, horizon_days, gamma)
+            shape = _joint_seds(days, cap, family, res.x[0], res.x[1], res.x[2],
+                                horizon_days)
+            base = float(np.max(shape))
+            if base <= 0:
+                continue
 
-        def make(mult, sh=shape, bs=base):
-            return sh * (mult * cap / bs)
+            def make(mult, sh=shape, bs=base):
+                return sh * (mult * cap / bs)
 
-        s = _min_feasible(fst, days, make, horizon_days, D0, target,
-                          ramp_in_days, params, iters=30)
-        if s is None:
-            continue
-        seds = make(s)
-        risk, trough, total, ttf = _risk_of(fst, days, seds, horizon_days, D0,
-                                            target, ramp_in_days, params)
-        if trough < target - 1e-6:
-            continue
-        delivered = np.array([v for _, v in
-                              build_variable_schedule(days, seds, fst=fst)])
-        cand = {
-            "fst": fst, "n_sessions": n_sessions, "family": family,
-            "free_spacing": free_spacing, "gamma": float(gamma),
-            "combined_risk": risk, "trough_after_ramp": trough,
-            "total_sed": total, "time_to_sufficiency": ttf,
-            "n_sessions_delivered": int(delivered.size),
-            "max_sed": float(np.max(delivered)) if delivered.size else 0.0,
-            "min_sed": float(np.min(delivered)) if delivered.size else 0.0,
-            "first_gap_days": float(days[1] - days[0]) if days.size > 1 else float("nan"),
-            "last_gap_days": float(days[-1] - days[-2]) if days.size > 1 else float("nan"),
-            # Winning parameters, stored as scalars so the exact schedule can be
-            # rebuilt by rebuild_joint_schedule() without re-running the search.
-            "p_scale": float(res.x[0]), "p_a": float(res.x[1]),
-            "p_b": float(res.x[2]), "p_level": float(s),
-        }
-        if best is None or cand["combined_risk"] < best["combined_risk"]:
-            best = cand
+            s = _min_feasible(fst, days, make, horizon_days, D0, target,
+                              ramp_in_days, params, iters=30)
+            if s is None:
+                continue
+            seds = make(s)
+            risk, trough, total, ttf = _risk_of(fst, days, seds, horizon_days,
+                                                D0, target, ramp_in_days, params)
+            if trough < target - 1e-6:
+                continue
+            delivered = np.array([v for _, v in
+                                  build_variable_schedule(days, seds, fst=fst)])
+            cand = {
+                "fst": fst, "n_sessions": n_sessions, "family": family,
+                "free_spacing": free_spacing, "gamma": float(gamma),
+                "combined_risk": risk, "trough_after_ramp": trough,
+                "total_sed": total, "time_to_sufficiency": ttf,
+                "n_sessions_delivered": int(delivered.size),
+                "max_sed": float(np.max(delivered)) if delivered.size else 0.0,
+                "min_sed": float(np.min(delivered)) if delivered.size else 0.0,
+                "first_gap_days": float(days[1] - days[0]) if days.size > 1 else float("nan"),
+                "last_gap_days": float(days[-1] - days[-2]) if days.size > 1 else float("nan"),
+                # Winning parameters, stored as scalars so the exact schedule
+                # can be rebuilt by rebuild_joint_schedule() without
+                # re-running the search.
+                "p_scale": float(res.x[0]), "p_a": float(res.x[1]),
+                "p_b": float(res.x[2]), "p_level": float(s),
+                "seed": int(seed_val),
+            }
+            if best is None or cand["combined_risk"] < best["combined_risk"]:
+                best = cand
+        return best
+
+    seeds = [seed + i for i in range(max(1, int(n_seeds)))]
+    results = [r for r in (_solve_once(sv) for sv in seeds) if r is not None]
+    if not results:
+        return None
+
+    best = min(results, key=lambda r: r["combined_risk"])
+    if n_seeds > 1:
+        risks = [r["combined_risk"] for r in results]
+        risk_min, risk_max = min(risks), max(risks)
+        best = dict(best)
+        best["risk_min"] = risk_min
+        best["risk_max"] = risk_max
+        best["risk_spread_frac"] = ((risk_max - risk_min) / risk_min
+                                     if risk_min > 0 else float("nan"))
+        best["n_seeds_run"] = len(results)
     return best
 
 
@@ -995,13 +1065,31 @@ def analysis_joint_schedule(params: Optional[ModelParams] = None,
         # negative entry is therefore pure differential-evolution noise, and its
         # magnitude is a free calibration of the solver's run-to-run spread --
         # which is worth more than hiding it would be.
+        #
+        # CAVEAT (docs/OPTIMIZATION_METHODOLOGY.md 8.6c): this estimator only
+        # lower-bounds solver noise. It takes the single most negative gain
+        # across ~22 (FST, N) cells at seed=0, which is one draw per cell, not
+        # a replication. Direct 5-seed replication at one cell (FST III,
+        # N=146) spans 6.3% in combined_risk with the winning dose family
+        # itself changing by seed, and paired free-vs-uniform gains at that
+        # cell range +3.0% to +12.1% (mean +6.75%, sd 3.4 pp) -- roughly 2-3x
+        # wider than the bound below suggests. Call optimise_joint_schedule
+        # with n_seeds > 1 and use its risk_min/risk_max/risk_spread_frac for
+        # a measured bound instead of this inferred one. The sign of the
+        # free-vs-uniform gain replicates (5/5 positive across the seeds
+        # checked); per-cell magnitudes below roughly 10 percentage points do
+        # not, and should not be compared across cells.
         worst = float(np.min(gains))
         if worst < 0:
             print(f"\n    A negative entry is not a real loss: gamma = 1 is")
             print(f"    inside the search bounds, so the free arm can reproduce")
             print(f"    the control exactly and cannot truly do worse. The worst")
-            print(f"    entry ({worst:+.1f}%) therefore bounds solver noise, and")
-            print(f"    gains below roughly {abs(worst):.0f}% should not be read as real.")
+            print(f"    entry ({worst:+.1f}%) therefore LOWER-BOUNDS solver noise")
+            print(f"    (direct seed replication at one cell spans ~9 percentage")
+            print(f"    points, roughly 2-3x this figure -- see the CAVEAT comment")
+            print(f"    in analysis_joint_schedule). Gains below roughly 10%")
+            print(f"    should not be read as real, and cross-cell magnitude")
+            print(f"    comparisons below that are not supported.")
 
     print("\n  Mechanism. Free spacing does NOT win by lowering cumulative dose")
     print("  -- total SED is usually slightly HIGHER. It wins by lowering the")

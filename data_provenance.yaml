@@ -35,8 +35,23 @@ studies:
     response_variable: "delta_25(OH)D in nmol/L"
 
     verification_status: PARTIAL
-    verified_by: "Extracted from PAPER_SUMMARIES.md [14]"
-    verification_date: 2026-07-28
+    verified_by: >-
+      Re-verified directly against the primary source PDF, 2026-08-21:
+      Research_Papers/"Interdependence between body surface area and
+      ultraviolet - bogh 2010.pdf" (title/DOI/pagination confirmed
+      identical to the BJD 164:163-169 citation above). Combined-model
+      regression (intercept, coefficients, R^2=0.47) confirmed verbatim
+      as an in-text equation on p.167 ("Estimation of 25-hydroxyvitamin-D3
+      increase after ultraviolet B in a combined model") -- NOT in "Table 2"
+      as previously recorded; Table 2 (p.166) is a different object (the
+      raw dose x BSA mean-delta grid). baseline_coefficient_p (0.000024)
+      and baseline_r_squared (0.313) were found on p.165 but belong to a
+      *different, earlier* paper (Bogh et al. 2010, J Invest Dermatol
+      130:546-53, their ref 16), cited in-text to justify reusing the
+      -0.223 coefficient -- not a statistic of this paper's own 92
+      participants. See audit_outputs/provenance_reverification_2026-08-21.md
+      for the full field-by-field table and both mismatches.
+    verification_date: 2026-08-21
 
     notes: |
       Data extracted from PAPER_SUMMARIES.md [14] (full text retrieved).
@@ -103,8 +118,23 @@ studies:
     latitude: "56°N (Sweden)"
 
     verification_status: PARTIAL
-    verified_by: "Extracted from PAPER_SUMMARIES.md [17]"
-    verification_date: 2026-07-28
+    verified_by: >-
+      Re-verified directly against the primary source PDF, 2026-08-21:
+      Research_Papers/"Narrowband ultraviolet B three times per week is
+      more effective in treating vitamin D deficiency than 1600 IU oral
+      vitamin D3 per day, a randomized clinical trial..pdf" (DOI
+      10.1111/j.1365-2133.2012.11069.x, BJD 167:625-630, confirmed
+      identical). Baseline/final/delta means and dose schedule confirmed
+      verbatim in Table 1 (actual page 628, not 627 as previously
+      recorded) and Results text (p.627). Two findings versus the prior
+      record: (1) study enrollment window was Feb 2010-May 2011 (15
+      months, two winters), not "Feb-May 2011" as recorded; (2) Table 1
+      DOES report exact FST counts per arm (NB-UVB 0/5/2/7/0/2, oral-D3
+      0/4/5/3/2/2, n=16 each) -- the prior note that "exact FST counts
+      not reported" is incorrect. See
+      audit_outputs/provenance_reverification_2026-08-21.md for the full
+      field table.
+    verification_date: 2026-08-21
     verified_fields:
       - baseline_mean, baseline_sd, baseline_unit
       - final_mean, final_sd, final_unit
@@ -195,8 +225,32 @@ studies:
       max_interpersonal_difference: "114 nmol/L (7 vs 121 nmol/L)"
 
     verification_status: PARTIAL
-    verified_by: "Extracted from PAPER_SUMMARIES.md [9]"
-    verification_date: 2026-07-28
+    verified_by: >-
+      Re-verified directly against the primary source PDF, 2026-08-21:
+      Research_Papers/"Half-life in 25(OH)D after UVB exposure depends on
+      - datta 2017.pdf" (DOI 10.1039/C6PP00258G, confirmed identical).
+      This is the RSC Accepted-Manuscript pre-print (self-paginated
+      1-34), not the final typeset pagination (985-995), so the recorded
+      page range "987-989" could not be independently confirmed against
+      final print pages, though all content matches. All quantitative
+      half-life, k, and R^2/P values confirmed exact against Table 1
+      (start-level SD), Table 4 (per-subgroup k and half-lives), Table 5
+      and Fig.3 (medium/low group half-lives), and in-text stats on
+      manuscript pp.4-9. Two citation corrections versus the prior
+      record: the subgroup half-life data actually live in Table 4 and
+      Table 5/Fig.3, not "Table 2" (the paper's real Table 2 is an
+      unrelated 25(OH)D/PTH time-course table); and the full 34-page
+      manuscript (not just the abstract) was available in
+      Research_Papers/ all along, so "unverified_fields: full
+      experimental protocol" is resolved -- confirmed via the
+      Experimental section, manuscript pp.14-17. Note: the paper's own
+      Abstract says "149 days" for the medium-level half-life, but the
+      main text, Table 5, and Fig.3 all consistently say 148 days
+      (matching this record) -- flagged as an apparent typo in the
+      paper's abstract, not a record error. See
+      audit_outputs/provenance_reverification_2026-08-21.md for the full
+      field table.
+    verification_date: 2026-08-21
     verified_fields:
       - half_life_parameterization
       - decay_constant_k, decay_constant_unit
@@ -250,8 +304,29 @@ studies:
     ita_correlation: "r = -0.903 (protected), -0.902 (exposed), P=4.47×10⁻²²"
 
     verification_status: PARTIAL
-    verified_by: "Extracted from PAPER_SUMMARIES.md [10]"
-    verification_date: 2026-07-28
+    verified_by: >-
+      Re-verified directly against the primary source PDF, 2026-08-21:
+      Research_Papers/"Melanin has a Small Inhibitory Effect on Cutaneous
+      Vitamin D Synthesis, A Comparison of Extreme Phenotypes.pdf" (DOI
+      10.1016/j.jid.2019.11.019, JID 140:1418-1426, confirmed identical).
+      Both FST II:VI ratios (1.29 Arimed B, 1.43 TL01), their per-exposure
+      and cumulative SED doses, ethnicity ratios, and ITA r-values
+      confirmed exact against p.1419-1421, 1424 (Methods) and Table 3
+      (p.1423). Two mismatches found: (1) sample_size's TL01 breakdown
+      ("38 irradiated + 10 control") does not match Table 1 (p.1420),
+      which gives 23 irradiated (FST II n=12 + FST VI n=11) + 15 control
+      (FST II n=8 + FST VI n=7) -- the corrected 23/15 figures are the
+      ones consistent with the paper's own stated total of 102
+      (44+20+23+15=102 vs. 44+20+38+10=112); the Arimed B breakdown
+      (44 irradiated + 20 control) is correct as recorded. (2) Table 3
+      DOES report absolute regression slopes (nmol/L per SED) with 95%
+      CI for every FST group under both spectra -- contradicting the
+      unverified_fields note that these are "not reported"; the 1.29 and
+      1.43 ratios in this record were in fact computed from those
+      published slopes. See
+      audit_outputs/provenance_reverification_2026-08-21.md for the full
+      field table.
+    verification_date: 2026-08-21
     verified_fields:
       - fst_ii_to_vi_ratio_low, fst_ii_to_vi_ratio_high
       - melanin_inhibition_factor

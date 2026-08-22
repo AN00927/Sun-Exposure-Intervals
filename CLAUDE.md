@@ -27,6 +27,7 @@ Read-only git is fine: `git status`, `git diff`, `git log`, `git show`.
 | You want | Read |
 |---|---|
 | Parameter values + citations | `vitd_model.py` module docstring — **the only canonical source** |
+| Exposure-scenario constants (ambient UV index, geometry factor, exposed BSA) | `vitd_scenario.py` — **the only canonical source** |
 | Latest model output & results | `RESULTS.md` (generated) |
 | Project overview & usage | `README.md` |
 
@@ -34,7 +35,10 @@ Read-only git is fine: `git status`, `git diff`, `git log`, `git show`.
 `K_ATTEN` was previously written out in nine places and `A` in five, including
 two mutually contradictory copies inside `vitd_model.py` itself. That
 duplication is exactly why the docs drifted out of sync with the code. Link
-instead.
+instead. The same rule applies to `vitd_scenario.py`'s exposure-scenario
+constants (`UV_INDEX`, `GEOMETRY_FACTOR`, `EXPOSED_BSA`, `SED_PER_MINUTE`) —
+quote `vitd_scenario.LIMITATION_STATEMENT` or `vitd_scenario.describe()`
+instead of retyping the numbers.
 
 - `calibration_approval.yaml` gates **calibration** (changing a scientific
   parameter to fit data) — that needs explicit user approval. **Bug fixes**
@@ -52,6 +56,31 @@ instead.
   everything", refresh results, or check mid-task — it is expensive and should
   only be run when genuinely needed (e.g. before quoting final numbers, after a
   calibration change, or when the user explicitly asks).
+
+## Retired modules — `exploratory/`
+
+On 2026-08-21 the location-based dosimetry chain (solar position -> ambient UV
+index -> posture/site geometry -> exposed BSA) and several other modules were
+moved to `exploratory/`: `vitd_genetics.py`, `vitd_ambient.py`,
+`vitd_behaviour.py`, `nhanes_preprocessing.py`, `vitd_solar.py`,
+`vitd_exposure.py`. They still import and their own tests
+(`tests/exploratory/`) still pass. What changed is that **nothing they produce
+reaches any headline number** — `run_all.py` no longer imports them. Rationale:
+`docs/REPO_SCOPE_AUDIT.md`. What was retired, why, and the un-retirement
+procedure: `exploratory/README.md`.
+
+**Rule: nothing in the core pipeline may import from `exploratory/`.** The core
+pipeline's frozen replacement for the location chain is `vitd_scenario.py` (see
+the table above). `tests/exploratory/conftest.py` puts `exploratory/` on
+`sys.path` for that directory's own tests only — a `sys.path` leak between
+conftest files has previously masked a broken import, so this is a real
+invariant, not a style preference. Check it with:
+
+```bash
+python3 -m pytest tests/ -q --ignore=tests/exploratory
+```
+
+That command must pass with `exploratory/` absent from `sys.path` entirely.
 
 ## Agent guidelines
 

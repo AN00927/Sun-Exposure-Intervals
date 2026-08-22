@@ -20,6 +20,45 @@
 >
 > See `MODEL_AND_EVIDENCE.md` for full derivation.
 
+## Scope and limitations
+
+**As of 2026-08-21, this repository does not model location, date, weather, or
+posture.** An audit (`docs/REPO_SCOPE_AUDIT.md`) found the location-based
+dosimetry chain — solar position -> ambient UV index -> posture/site geometry
+-> exposed BSA — stacked four independent uncertainties into one number that
+had never been validated as a product, even though its individual links were
+mostly sound. That chain was retired to `exploratory/` (still present, still
+tested, no longer wired into any headline number; see `exploratory/README.md`).
+
+In its place, every schedule in the core pipeline is evaluated under one
+**frozen reference scenario** (`vitd_scenario.py`) — fixed ambient UV index,
+fixed geometry factor, fixed exposed body-surface area, held constant on every
+exposure day. The values were chosen so no parameter needed recalibrating: each
+was already the reference condition the model was calibrated at.
+
+`vitd_scenario.LIMITATION_STATEMENT`, verbatim:
+
+> All results assume a fixed ambient UV index of 6, a horizontal-to-personal
+> geometry factor of 0.35, and 35% exposed body surface area (t-shirt and
+> shorts with partial coverage (face, neck, forearms, hands and part of the
+> legs bare)), held constant on every exposure day. Real ambient UV varies with
+> latitude, season, time of day, altitude, cloud and ozone, and real personal
+> dose varies with posture and clothing. We do not model that variation. Every
+> duration reported here should therefore be read as a duration under these
+> reference conditions, not as a calendar recommendation for a specific place
+> or date.
+
+Two consequences worth stating plainly:
+
+- The model **cannot** tell you how long to stand outside in a specific city on
+  a specific date. It answers "how long under reference conditions."
+- Two new reference points narrow what "the model" means in any given claim:
+  `basics/melanin_only.py` and `basics/sc_only.py` isolate one mechanism each
+  against one dataset each, and `spacing_study/` is a self-contained sub-study
+  on whether daily exposure is actually optimal for vitamin D synthesis (see
+  `spacing_study/results/FINDINGS.md`). Neither is fitted to anything, and
+  neither replaces the full model.
+
 ## General Information
 
 - **Title:** Vitamin D Scheduling Optimization Model
@@ -36,6 +75,13 @@
     by `run_all.py`; do not hand-edit)
   - `paper/README.md` -- manuscript status, what is drafted versus stubbed
   - `CLAUDE.md` -- repository conventions and agent guidelines
+  - `docs/REPO_SCOPE_AUDIT.md` -- the 2026-08-21 scope audit; the reasoning
+    behind the `exploratory/` retirement and the frozen reference scenario
+  - `docs/OPTIMIZATION_METHODOLOGY.md` -- in-depth account of how the schedule
+    optimisation actually works
+  - `exploratory/README.md` -- what was retired, why, and how to un-retire it
+  - `basics/README.md` -- the two Tier-1 single-mechanism reference models
+  - `spacing_study/README.md` -- the daily-vs-spaced-exposure sub-study
 
 ## Data and File Overview
 
@@ -67,6 +113,7 @@ spectra.
 | Path | Purpose |
 |------|---------|
 | `vitd_model.py` | Model state, parameters, Young 2021 action spectrum calibration, canonical parameter values |
+| `vitd_scenario.py` | The frozen reference scenario (fixed ambient UV index, geometry factor, exposed BSA) that every schedule in the core pipeline is evaluated under -- single source of exposure-scenario constants |
 | `vitd_calibration.py` | Calibration suite (Matsuoka 1990, Young 2020 per-person ratio, De Boer 2025 cross-validation) |
 | `vitd_objectives.py` | Decision problems and schedule objectives |
 | `vitd_protocols.py` | Named protocol helpers for study-specific simulations |
@@ -74,17 +121,19 @@ spectra.
 | `vitd_physiology.py` | Body-weight dilution, photodegradation, hydroxylation efficiency, cancer risk |
 | `vitd_sensitivity.py` | Parameter sensitivity analysis |
 | `vitd_optimization.py` | Schedule optimisation routines |
-| `vitd_solar.py` | Solar spectrum handling |
 | `vitd_dose_conversion.py` | Dose unit conversions (SED, MED, J/cm^2) |
-| `vitd_genetics.py` | Genetic covariate support |
-| `vitd_ambient.py` | Ambient UV exposure modelling |
 | `vitd_analyses.py` | Analysis helpers |
 | `vitd_benchmark_webbkift.py` | Webb/Kift benchmark |
-| `nhanes_preprocessing.py` | NHANES standardization and harmonization pipeline |
 | `run_all.py` | Full pipeline entry point |
 | `scripts/` | Standalone analyses, parameter fitting, diagnostics |
-| `tests/` | Pytest test suite |
+| `tests/` | Pytest test suite for the core pipeline |
+| `tests/exploratory/` | Test suite for `exploratory/`, with its own `conftest.py` that puts `exploratory/` on `sys.path` -- the core suite must pass without it (see `CLAUDE.md`) |
 | `paper/` | Elsevier elsarticle manuscript skeleton |
+| `exploratory/` | Retired location/genetics/behaviour/NHANES modules -- still import, still tested, no longer wired into any headline number. See `exploratory/README.md` |
+| `basics/` | Two Tier-1 single-mechanism reference models (`melanin_only.py`, `sc_only.py`). See `basics/README.md` |
+| `spacing_study/` | Self-contained sub-study on exposure spacing. See `spacing_study/README.md` |
+| `docs/REPO_SCOPE_AUDIT.md` | The 2026-08-21 scope audit that motivated the retirement and the frozen scenario |
+| `docs/OPTIMIZATION_METHODOLOGY.md` | How the schedule optimisation actually works |
 
 ## Methodological Information
 
