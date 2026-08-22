@@ -212,65 +212,34 @@ class TestYoung2021AAnchor:
         assert min(c.values()) < ModelParams().A < max(c.values())
 
 
-class TestRetiredParameters:
-    """Approved item A6: K_ATTEN is retired as a free parameter."""
+class TestKAttenCalibration:
+    """K_ATTEN is calibrated to 0.34 based on Matsuoka 1990 deconvolution."""
 
-    def test_k_atten_is_registered_as_retired(self):
-        from vitd_model import RETIRED_PARAMETERS, K_ATTEN_STRUCTURAL
-        assert "K_ATTEN" in RETIRED_PARAMETERS
-        assert K_ATTEN_STRUCTURAL == 0.0
-        assert ModelParams().K_ATTEN == K_ATTEN_STRUCTURAL
+    def test_k_atten_default_is_calibrated_value(self):
+        from vitd_model import K_ATTEN_DEFAULT
+        assert K_ATTEN_DEFAULT == 0.34
+        assert ModelParams().K_ATTEN == 0.34
 
-    def test_assignment_is_refused(self):
-        from vitd_model import RetiredParameterError
+    def test_assignment_and_construction_allowed(self):
+        p = ModelParams(K_ATTEN=0.5)
+        assert p.K_ATTEN == 0.5
+        p.K_ATTEN = 0.8
+        assert p.K_ATTEN == 0.8
+
+    def test_the_mechanism_is_active(self):
+        """Tanning attenuates synthesis relative to untanned baseline."""
         p = ModelParams()
-        with pytest.raises(RetiredParameterError):
-            p.K_ATTEN = 0.4
-
-    def test_construction_with_a_different_value_is_refused(self):
-        from vitd_model import RetiredParameterError
-        with pytest.raises(RetiredParameterError):
-            ModelParams(K_ATTEN=0.4)
-
-    def test_pinned_value_is_always_assignable(self):
-        p = ModelParams()
-        p.K_ATTEN = 0.0          # no-op must not raise
-
-    def test_sweeps_go_through_the_named_escape_hatch(self):
-        from vitd_model import allow_retired_parameter_sweep
-        p = ModelParams()
-        with allow_retired_parameter_sweep():
-            p.K_ATTEN = 0.4
-        assert p.K_ATTEN == 0.4
-
-    def test_the_escape_hatch_closes_again(self):
-        from vitd_model import allow_retired_parameter_sweep, RetiredParameterError
-        p = ModelParams()
-        with allow_retired_parameter_sweep():
-            p.K_ATTEN = 0.4
-        with pytest.raises(RetiredParameterError):
-            p.K_ATTEN = 0.5
-
-    def test_the_mechanism_is_retained_not_deleted(self):
-        """Retirement fixes the coefficient; it must not remove the term."""
-        from vitd_model import allow_retired_parameter_sweep
-        p = ModelParams()
-        with allow_retired_parameter_sweep():
-            p.K_ATTEN = 1.0
         tanned = synthesis_per_session(1.0, 0.41, 0.21, D=25.0, SC=0.0, params=p)
         untanned = synthesis_per_session(1.0, 0.21, 0.21, D=25.0, SC=0.0, params=p)
         assert tanned < untanned
 
-    def test_retirement_is_justified_by_immateriality(self):
-        """The claim the retirement rests on: across the full plausible range
-        K_ATTEN moves steady-state D by well under 1%, against ~36% for A."""
-        from vitd_model import allow_retired_parameter_sweep
+    def test_k_atten_range_immateriality(self):
+        """Across the full plausible range [0.0, 1.0], K_ATTEN moves steady-state
+        D by well under 1%, against ~36% for A."""
         sched = build_pulse_schedule(365, 1.0, 3)
         ss = []
-        for k in (0.0, 0.5, 1.0):
-            p = ModelParams()
-            with allow_retired_parameter_sweep():
-                p.K_ATTEN = k
+        for k in (0.0, 0.34, 1.0):
+            p = ModelParams(K_ATTEN=k)
             ss.append(steady_state_D(simulate(fst=5, schedule=sched,
                                               duration_days=365, params=p,
                                               D0=25.0)))

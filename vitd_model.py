@@ -266,41 +266,20 @@ Parameters & Sources
     The SOURCE_CALIBRATION_TABLE below provides evidence-derived starting priors
     from Webb 2021 (P21) and Grigalavicius 2015 (P35). These are priors only;
     Young 2021 PNAS (P20) shows the CIE previtamin-D3 action spectrum needs a ~5 nm
-    blue shift, meaning exact values require recomputation from measured spectra.
-    Osmancevic 2009 (P18) shows broadband UVB can outperform NB-UVB per SED in
-    psoriasis, confirming these cannot be universal
-- K_ATTEN = 0.00  --  RETIRED AS A FREE PARAMETER, 2026-08-18 (approved item A6):
-    Facultative (tanning) melanin attenuation coefficient. Now a FIXED
-    STRUCTURAL CONSTANT (`K_ATTEN_STRUCTURAL`, in `RETIRED_PARAMETERS`).
-    MECHANISM NOT REMOVED — exp(-K_ATTEN * excess_M) is still evaluated on
-    every session — but the coefficient can no longer be assigned a different
-    value without deliberate code change: ModelParams raises
-    RetiredParameterError; the only path is `allow_retired_parameter_sweep()`,
-    which exists for ablation and sensitivity work and is not a calibration
-    route.
-
-    WHY RETIRED, in the order the evidence lands.
-    (1) NOT IDENTIFIABLE. Jointly unidentifiable with K_SC and K_const
-        (vitd_sensitivity.py: >99% of each pair's response surface is one
-        linear combination). Only combinations are constrained; reporting
-        K_ATTEN as separately calibrated overstates the evidence.
-    (2) IMMATERIAL. Swings steady-state D by 0.3% across its full plausible
-        range, against 36% for A. Best-cited, least consequential number in
-        the model.
-    (3) THE FIT THAT PRODUCED 0.00 IS NOT AN ESTIMATE. 1D MSE minimisation on
-        Young 2020 per-person data (n = 23, TL-01 arm) returns 0.00 with
-        CI [0.00, 0.00], but the objective is flat to 0.08% across
-        K_ATTEN in [0.00, 0.33] on that acute 7.5 SED protocol. The CI is
-        a bound artefact of flat-surface fitting, not tight estimation.
-        Baseline 25(OH)D and BSA explain that trial's FST II:VI response
-        without any facultative term.
-    RETIREMENT IS NOT A CLAIM THAT TANNING DOES NOTHING. It claims this
-    repository's data cannot measure it. Matsuoka 1990 (n = 7), deconvolved,
-    implies 0.34-1.00 depending on assumed feedback form
-    (vitd_calibration.derive_K_ATTEN); divergence documented, immaterial at
-    present, guarded by `vitd_validation.sanity_photoadaptation_reduction`
-    and tests/test_matsuoka1990.py. To reinstate as a free parameter, remove
-    from RETIRED_PARAMETERS and supply a dataset separating it from K_SC.
+    blue shift, meaning exact values require recomputation. Osmancevic 2009 (P18)
+    shows broadband UVB can outperform NB-UVB per SED in psoriasis, confirming
+    these cannot be universal.
+- K_ATTEN = 0.34  --  CALIBRATED 2026-08-21 (user-approved):
+    Facultative (tanning) melanin attenuation coefficient.
+    Reinstated as an active parameter anchored to Matsuoka 1990 (PMID 2165512, n=7
+    within-subject tanned-vs-untanned arm synthesis) with biphasic feedback g(D)
+    deconvolved (residual melanin attenuation 6.6%, K_ATTEN = 0.34; plausible
+    range across feedback forms: [0.34, 1.00]).
+    MECHANISM: exp(-K_ATTEN * max(0, M - M_baseline)) is evaluated on every session.
+    A full tan (excess_M ~ 0.20) gives 6.6% attenuation at K_ATTEN=0.34 and
+    18.1% at K_ATTEN=1.00.
+    Caveats: Matsuoka 1990 is n=7 and collinear with K_SC; 0.34 provides the
+    evidence-based lower bound from the only within-subject trial in existence.
 - M_baseline_by_FST:
     [C7] Anchored to ITA_Unexposed means from trial CSVs (ArimedB trial data,
     N=44). Mapping: M = 1 - (ITA_U + 30) / 85, clipped to [0, 1].
@@ -543,22 +522,16 @@ BSA_EXP: float = 0.50
 #     a code change reviewable in a diff, gated by
 #     calibration_approval.yaml like any other calibration.
 
-# [RETIRED 2026-08-18, approved item A6] Facultative-melanin attenuation
-# coefficient. Full reasoning in this module's docstring, K_ATTEN entry.
-K_ATTEN_STRUCTURAL: float = 0.00
+# [CALIBRATION 2026-08-21, user-approved] Facultative-melanin attenuation
+# coefficient. Anchored to Matsuoka 1990 (PMID 2165512) deconvolution under
+# biphasic feedback (K_ATTEN = 0.34, range [0.34, 1.00]).
+K_ATTEN_DEFAULT: float = 0.34
+K_ATTEN_STRUCTURAL: float = K_ATTEN_DEFAULT  # backward-compatibility alias
 
-RETIRED_PARAMETERS: Dict[str, str] = {
-    "K_ATTEN": (
-        "Retired 2026-08-18 (approved item A6). Jointly unidentifiable with "
-        "both K_SC and K_const; swings steady-state D by 0.3% across its full "
-        "plausible range; the fitted 0.00 comes from an objective flat to "
-        "0.08% over [0.00, 0.33], so its CI is a bound artefact. Mechanism "
-        "retained, value fixed at K_ATTEN_STRUCTURAL."
-    ),
-}
+RETIRED_PARAMETERS: Dict[str, str] = {}
 
-# Module-level constant that each retired parameter is pinned to.
-_RETIRED_VALUES: Dict[str, float] = {"K_ATTEN": K_ATTEN_STRUCTURAL}
+# Module-level constant mapping for retired parameters (none currently retired).
+_RETIRED_VALUES: Dict[str, float] = {}
 
 # Depth counter, so nested sweeps behave.
 _retired_sweep_depth: int = 0
@@ -662,11 +635,11 @@ class ModelParams:
     # facultative MI gains but on instrument-specific units.
     M_TAN_HEADROOM: float = 0.20
     M_max: float = 0.95
-    # [RETIRED 2026-08-18, approved item A6] NOT A FREE PARAMETER. Pinned to
-    # K_ATTEN_STRUCTURAL; assignment of any other value raises
-    # RetiredParameterError unless inside allow_retired_parameter_sweep().
-    # See RETIRED_PARAMETERS and this module's docstring, K_ATTEN entry.
-    K_ATTEN: float = K_ATTEN_STRUCTURAL
+    # [CALIBRATION 2026-08-21, user-approved] 0.00 -> 0.34. Active parameter
+    # anchored to Matsuoka 1990 (PMID 2165512, n=7 within-subject tanned vs untanned)
+    # with biphasic feedback g(D) deconvolved (residual melanin attenuation 6.6%,
+    # K_ATTEN = 0.34; range [0.34, 1.00]).
+    K_ATTEN: float = K_ATTEN_DEFAULT
     D0_default: float = 25.0
     # LEGACY. Ceiling of the withdrawn 'linear'/'power' feedback modes only; the
     # default feedback_mode is 'biphasic' and does not read this. See the

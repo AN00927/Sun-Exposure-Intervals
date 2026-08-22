@@ -512,11 +512,22 @@ def optimal_interval_risk_constrained(
 def _risk_of(fst: int, days: np.ndarray, seds: np.ndarray, horizon_days: int,
              D0: float, target: float, ramp_in_days: int,
              params: Optional[ModelParams],
-             exposed_bsa: Optional[float] = None) -> Tuple[float, float, float, float]:
-    """(combined risk, trough after ramp, total SED, time to sufficiency)."""
+             exposed_bsa: Optional[float] = None
+             ) -> Tuple[float, float, float, float, dict]:
+    """(combined risk, trough after ramp, total SED, time to sufficiency,
+    full cancer_risk dict).
+
+    The 5th element carries `scc_index` and `intermittent_index` separately.
+    `combined_index` (element 0) is a geometric-mean convenience for
+    single-objective ranking, not itself a literature-anchored quantity --
+    see the docstring of `vitd_physiology.cancer_risk`. Callers that report
+    risk changes to a reader should prefer the two components over the
+    combined figure where both are available.
+    """
     sched = build_variable_schedule(days, seds, fst=fst)
     if not sched:
-        return float("inf"), float("-inf"), 0.0, float("nan")
+        return (float("inf"), float("-inf"), 0.0, float("nan"),
+                {"scc_index": float("nan"), "intermittent_index": float("nan")})
     r = simulate(fst=fst, schedule=sched, duration_days=horizon_days,
                  params=params, D0=D0, exposed_bsa_override=exposed_bsa,
                  dose_framing="fixed_per_session_SED")
@@ -524,7 +535,8 @@ def _risk_of(fst: int, days: np.ndarray, seds: np.ndarray, horizon_days: int,
     mask = t >= ramp_in_days
     trough = float(np.min(D[mask])) if mask.any() else float("-inf")
     return (r["cancer_risk"]["combined_index"], trough,
-            float(r["cumulative_SED"]), time_to_sufficiency(r, target))
+            float(r["cumulative_SED"]), time_to_sufficiency(r, target),
+            r["cancer_risk"])
 
 
 def _min_feasible(fst, days, make_seds, horizon_days, D0, target,
@@ -537,14 +549,14 @@ def _min_feasible(fst, days, make_seds, horizon_days, D0, target,
     dose under both feedback modes and with photodegradation on.
     """
     seds_hi = make_seds(hi)
-    _, trough_hi, _, _ = _risk_of(fst, days, seds_hi, horizon_days, D0, target,
-                                  ramp_in_days, params, exposed_bsa)
+    _, trough_hi, _, _, _ = _risk_of(fst, days, seds_hi, horizon_days, D0, target,
+                                     ramp_in_days, params, exposed_bsa)
     if trough_hi < target:
         return None                      # infeasible even at full scale
     for _ in range(iters):
         mid = 0.5 * (lo + hi)
-        _, trough, _, _ = _risk_of(fst, days, make_seds(mid), horizon_days, D0,
-                                   target, ramp_in_days, params, exposed_bsa)
+        _, trough, _, _, _ = _risk_of(fst, days, make_seds(mid), horizon_days, D0,
+                                      target, ramp_in_days, params, exposed_bsa)
         if trough < target:
             lo = mid
         else:
@@ -585,8 +597,8 @@ def optimise_variable_dose(fst: int,
         return None
 
     def evaluate(seds, meta):
-        risk, trough, total, ttf = _risk_of(fst, days, seds, horizon_days, D0,
-                                            target, ramp_in_days, params)
+        risk, trough, total, ttf, _ = _risk_of(fst, days, seds, horizon_days, D0,
+                                               target, ramp_in_days, params)
         if trough < target:
             return None
         # Report the doses actually DELIVERED, not the raw shape: the shape may
@@ -815,8 +827,8 @@ def optimise_joint_schedule(fst: int,
 
     def score(family, x):
         days, seds, _ = build(family, x)
-        risk, trough, _, _ = _risk_of(fst, days, seds, horizon_days, D0,
-                                      target, ramp_in_days, params)
+        risk, trough, _, _, _ = _risk_of(fst, days, seds, horizon_days, D0,
+                                         target, ramp_in_days, params)
         if not np.isfinite(risk):
             return 1e6
         return risk + PEN * max(0.0, target - trough) ** 2
@@ -864,8 +876,8 @@ def optimise_joint_schedule(fst: int,
             if s is None:
                 continue
             seds = make(s)
-            risk, trough, total, ttf = _risk_of(fst, days, seds, horizon_days,
-                                                D0, target, ramp_in_days, params)
+            risk, trough, total, ttf, cr = _risk_of(fst, days, seds, horizon_days,
+                                                    D0, target, ramp_in_days, params)
             if trough < target - 1e-6:
                 continue
             delivered = np.array([v for _, v in
@@ -874,6 +886,8 @@ def optimise_joint_schedule(fst: int,
                 "fst": fst, "n_sessions": n_sessions, "family": family,
                 "free_spacing": free_spacing, "gamma": float(gamma),
                 "combined_risk": risk, "trough_after_ramp": trough,
+                "scc_index": cr["scc_index"],
+                "intermittent_index": cr["intermittent_index"],
                 "total_sed": total, "time_to_sufficiency": ttf,
                 "n_sessions_delivered": int(delivered.size),
                 "max_sed": float(np.max(delivered)) if delivered.size else 0.0,
@@ -983,10 +997,14 @@ def analysis_joint_schedule(params: Optional[ModelParams] = None,
                         "feasible": False, "binding_constraint": binding,
                         "family": "", "gamma": float("nan"),
                         "combined_risk": float("nan"),
+                        "scc_index": float("nan"),
+                        "intermittent_index": float("nan"),
                         "trough_after_ramp": float("nan"),
                         "total_sed": float("nan"),
                         "time_to_sufficiency": float("nan"),
                         "risk_vs_uniform_spacing_pct": float("nan"),
+                        "scc_vs_uniform_spacing_pct": float("nan"),
+                        "intermittent_vs_uniform_spacing_pct": float("nan"),
                     })
                     continue
                 r["feasible"] = True
@@ -997,6 +1015,22 @@ def analysis_joint_schedule(params: Optional[ModelParams] = None,
                         / fixed["combined_risk"])
                 else:
                     r["risk_vs_uniform_spacing_pct"] = float("nan")
+                # SCC and intermittent (BCC/melanoma) tracked SEPARATELY, not
+                # just the geometric-mean combined_risk: they are the two
+                # literature-anchored axes (Moan 1989 dose power law; Elwood/
+                # Leiter intermittency), and the combination itself is not.
+                if fixed is not None and fixed.get("scc_index", 0) > 0:
+                    r["scc_vs_uniform_spacing_pct"] = (
+                        100.0 * (fixed["scc_index"] - r["scc_index"])
+                        / fixed["scc_index"])
+                else:
+                    r["scc_vs_uniform_spacing_pct"] = float("nan")
+                if fixed is not None and fixed.get("intermittent_index", 0) > 0:
+                    r["intermittent_vs_uniform_spacing_pct"] = (
+                        100.0 * (fixed["intermittent_index"] - r["intermittent_index"])
+                        / fixed["intermittent_index"])
+                else:
+                    r["intermittent_vs_uniform_spacing_pct"] = float("nan")
                 rows.append(r)
 
     if not rows:
@@ -1006,9 +1040,14 @@ def analysis_joint_schedule(params: Optional[ModelParams] = None,
     df = pd.DataFrame(rows)
     df.to_csv("tables/joint_schedule_optimization.csv", index=False)
 
+    print("\n  SCC and intermittent (BCC/melanoma) risk are the two")
+    print("  literature-anchored axes (Moan 1989 cumulative-dose power law;")
+    print("  Elwood/Leiter intermittency) and are reported SEPARATELY below.")
+    print("  'combined' (geometric mean) is a ranking-only convenience, not")
+    print("  itself literature-anchored -- see vitd_physiology.cancer_risk.")
     print(f"\n  {'FST':>4} {'N':>4} {'spacing':>9} {'family':>12} {'gamma':>6} "
-          f"{'risk':>9} {'vs unif%':>9} {'totSED':>8} {'t->suff':>8}")
-    print("  " + "-" * 82)
+          f"{'SCC%':>7} {'interm%':>8} {'combined%':>10} {'totSED':>8} {'t->suff':>8}")
+    print("  " + "-" * 96)
     for fst in fsts:
         for N in session_counts:
             sub = df[(df["fst"] == fst) & (df["n_sessions"] == N)]
@@ -1017,17 +1056,21 @@ def analysis_joint_schedule(params: Optional[ModelParams] = None,
                 if not r["feasible"]:
                     print(f"  {ROMAN_FST[int(r['fst'])]:>4} "
                           f"{int(r['n_sessions']):>4} {arm:>9} "
-                          f"{'--':>12} {'--':>6} {'--':>9} {'--':>9} "
+                          f"{'--':>12} {'--':>6} {'--':>7} {'--':>8} {'--':>10} "
                           f"{'--':>8} {'--':>8}   INFEASIBLE: "
                           f"{r['binding_constraint']}")
                     continue
                 ttf = ("n/a" if not np.isfinite(r["time_to_sufficiency"])
                        else f"{r['time_to_sufficiency']:.0f}d")
+                scc_pct = ("--" if not np.isfinite(r["scc_vs_uniform_spacing_pct"])
+                           else f"{r['scc_vs_uniform_spacing_pct']:.1f}")
+                interm_pct = ("--" if not np.isfinite(r["intermittent_vs_uniform_spacing_pct"])
+                              else f"{r['intermittent_vs_uniform_spacing_pct']:.1f}")
                 print(f"  {ROMAN_FST[int(r['fst'])]:>4} {int(r['n_sessions']):>4} "
                       f"{arm:>9} "
                       f"{r['family']:>12} {r['gamma']:>6.2f} "
-                      f"{r['combined_risk']:>9.4f} "
-                      f"{r['risk_vs_uniform_spacing_pct']:>9.1f} "
+                      f"{scc_pct:>7} {interm_pct:>8} "
+                      f"{r['risk_vs_uniform_spacing_pct']:>10.1f} "
                       f"{r['total_sed']:>8.1f} {ttf:>8}")
             if len(sub):
                 print()
@@ -1053,9 +1096,25 @@ def analysis_joint_schedule(params: Optional[ModelParams] = None,
     if len(free):
         gains = free["risk_vs_uniform_spacing_pct"].to_numpy(dtype=float)
         gains = gains[np.isfinite(gains)]
+        scc_gains = free["scc_vs_uniform_spacing_pct"].to_numpy(dtype=float)
+        scc_gains = scc_gains[np.isfinite(scc_gains)]
+        interm_gains = free["intermittent_vs_uniform_spacing_pct"].to_numpy(dtype=float)
+        interm_gains = interm_gains[np.isfinite(interm_gains)]
         print(f"  Free spacing vs uniform spacing, {len(gains)} operating points:")
-        print(f"    median gain {np.median(gains):+.2f}%   "
+        print(f"    SCC (cumulative-dose axis):        median "
+              f"{np.median(scc_gains):+.2f}%   best {np.max(scc_gains):+.2f}%   "
+              f"worst {np.min(scc_gains):+.2f}%")
+        print(f"    Intermittent (BCC/melanoma axis):  median "
+              f"{np.median(interm_gains):+.2f}%   best {np.max(interm_gains):+.2f}%   "
+              f"worst {np.min(interm_gains):+.2f}%")
+        print(f"    Combined (ranking-only, NOT literature-anchored as a "
+              f"combination): median {np.median(gains):+.2f}%   "
               f"best {np.max(gains):+.2f}%   worst {np.min(gains):+.2f}%")
+        if np.median(scc_gains) < 0 < np.median(interm_gains):
+            print(f"    Front-loading trades a small SCC (cumulative-dose) "
+                  f"INCREASE for a large intermittent (BCC/melanoma) DECREASE --")
+            print(f"    the two axes move in OPPOSITE directions. Report them "
+                  f"separately; a single combined percentage hides this.")
         print(f"    gamma chosen: median {np.median(free['gamma']):.2f} "
               f"(1.00 = uniform), range "
               f"{np.min(free['gamma']):.2f}-{np.max(free['gamma']):.2f}")
@@ -1379,9 +1438,9 @@ def minimum_schedule_for_sufficiency(
             if s is None:
                 continue
             seds = make(s)
-            risk, trough, total, ttf = _risk_of(fst, days, seds, horizon_days,
-                                                D0, target, ramp_in_days, params,
-                                                exposed_bsa)
+            risk, trough, total, ttf, _ = _risk_of(fst, days, seds, horizon_days,
+                                                   D0, target, ramp_in_days, params,
+                                                   exposed_bsa)
             # Smallest total UV wins the budget; ties to the tighter spacing.
             key = (total, max_gap_days(days, horizon_days))
             if best is None or key < best[0]:
@@ -1539,8 +1598,8 @@ def _min_risk_on_fixed_days(fst: int, days: np.ndarray, cap: float,
         if s is None:
             continue
         seds = make(s)
-        risk, trough, total, ttf = _risk_of(fst, days, seds, horizon_days, D0,
-                                            target, ramp_in_days, params)
+        risk, trough, total, ttf, _ = _risk_of(fst, days, seds, horizon_days, D0,
+                                               target, ramp_in_days, params)
         if trough < target - 1e-6:
             continue
         delivered = np.array([v for _, v in
@@ -2062,6 +2121,91 @@ def analysis_constant_sessions(params: Optional[ModelParams] = None):
               f"{row['net_final_D_change_per_SED']:>9.3f}  "
               f"{row['max_rolling_7d_SED']:>6.1f}  "
               f"{row['uv_safety_flag']:>20s}")
+
+    return df
+
+
+def analysis_spacing_fixed_dose(params: Optional[ModelParams] = None,
+                                fsts: Sequence[int] = (1, 2, 3, 4, 5, 6),
+                                session_budgets: Sequence[int] = (52, 104, 146, 183, 260, 365),
+                                sed_per_session: float = 1.0,
+                                horizon_days: int = 365,
+                                objective: str = "mean_D") -> pd.DataFrame:
+    """Best spacing for a fixed dose per session, across skin types and budgets.
+
+    Answers 'when should I go outside?' for a person who will use the same
+    dose each time. Ranks by `mean_D` (maximise average 25(OH)D).
+    """
+    import os
+    from vitd_objectives import optimal_spacing_fixed_sessions
+
+    print("\n" + "=" * 70)
+    print("ANALYSIS 13a: spacing optimisation at fixed dose")
+    print("=" * 70)
+    print(f"\n  Fixed dose: {sed_per_session:.2f} SED/session, "
+          f"horizon {horizon_days}d, objective: {objective}")
+    print("  Sweeping gap days for each (skin type, session budget) cell.\n")
+
+    os.makedirs("tables", exist_ok=True)
+
+    rows = []
+    for fst in fsts:
+        for n in session_budgets:
+            res = optimal_spacing_fixed_sessions(
+                fst=fst, n_sessions=n, sed_per_session=sed_per_session,
+                horizon_days=horizon_days, params=params, objective=objective)
+            best = res["best"]
+            if best is None:
+                rows.append({
+                    "fst": fst, "n_sessions": n, "feasible": False,
+                    "gap_days": float("nan"), "mean_D": float("nan"),
+                    "final_D": float("nan"), "min_D": float("nan"),
+                    "days_below_50": float("nan"),
+                    "scc_index": float("nan"),
+                    "intermittent_index": float("nan"),
+                    "burn_fraction": float("nan"),
+                })
+                continue
+            rows.append({
+                "fst": fst, "n_sessions": n, "feasible": True,
+                "gap_days": best["gap_days"],
+                "mean_D": best["mean_D"],
+                "final_D": best["final_D"],
+                "min_D": best["min_D"],
+                "days_below_50": best["days_below_50"],
+                "scc_index": best["scc_index"],
+                "intermittent_index": best["intermittent_index"],
+                "burn_fraction": best["burn_fraction"],
+            })
+
+    df = pd.DataFrame(rows)
+    df.to_csv("tables/spacing_fixed_dose.csv", index=False)
+    print(f"  Saved tables/spacing_fixed_dose.csv")
+
+    # Print table
+    print(f"\n  {'FST':>4} {'N/yr':>5} {'gap':>5} {'meanD':>7} {'finalD':>7} "
+          f"{'minD':>7} {'<50d':>5} {'SCC':>7} {'INT':>7} {'burn':>7}")
+    print("  " + "-" * 67)
+    for fst in fsts:
+        sub = df[df["fst"] == fst]
+        for _, r in sub.iterrows():
+            if not r["feasible"]:
+                print(f"  {ROMAN_FST[int(r['fst'])]:>4} {int(r['n_sessions']):>5} "
+                      f"{'--':>5} {'--':>7} {'--':>7} {'--':>7} {'--':>5} "
+                      f"{'--':>7} {'--':>7} {'--':>7}")
+                continue
+            print(f"  {ROMAN_FST[int(r['fst'])]:>4} {int(r['n_sessions']):>5} "
+                  f"{r['gap_days']:>5.0f} {r['mean_D']:>7.1f} {r['final_D']:>7.1f} "
+                  f"{r['min_D']:>7.1f} {r['days_below_50']:>5.0f} "
+                  f"{r['scc_index']:>7.3f} {r['intermittent_index']:>7.3f} "
+                  f"{r['burn_fraction']:>7.3f}")
+        if len(sub):
+            print()
+
+    print("  Spacing is uniform (gap days). Front-loaded and back-loaded")
+    print("  arrangements are checked by optimal_spacing_fixed_sessions but")
+    print("  uniform spacing minimises the largest gap, so it dominates at")
+    print("  fixed dose and session count.\n")
 
     return df
 

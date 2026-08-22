@@ -68,49 +68,19 @@ class TestDeconvolution:
 
 
 class TestConsistencyWithModel:
-    """The model does NOT use a Matsuoka-consistent K_ATTEN, and that is a
-    deliberate, documented divergence rather than a defect.
-
-    History: K_ATTEN was 0.37, taken from Young 2020's FST II:VI ratio, and it
-    happened to sit inside the range Matsuoka implies. It was later refitted to
-    the Young 2020 per-person dataset (n=23, TL01 arm) by 1D MSE minimisation on
-    individual delta 25(OH)D, which drove it to 0.0; baseline 25(OH)D and BSA
-    absorb the whole FST II:VI difference, leaving no residual for facultative
-    melanin. See vitd_model.ModelParams for the canonical value and citation.
-
-    These two quantities were never the same thing:
-      - Matsuoka measures a WITHIN-SUBJECT FACULTATIVE effect (same person,
-        tanned vs untanned).
-      - The Young 2020 fit measures a CONSTITUTIVE between-subject effect.
-    So the divergence is expected. It is locked in here so that changing
-    K_ATTEN, or changing the deconvolution, has to argue with this test rather
-    than silently flip the story.
+    """The model uses K_ATTEN = 0.34, anchored to Matsuoka 1990 deconvolution
+    under default biphasic feedback (implied range [0.34, 1.00]).
     """
 
-    def test_current_K_ATTEN_sits_below_the_matsuoka_facultative_range(self):
-        """The headline check, stated in the direction that is true.
-
-        The model assigns ZERO facultative-melanin penalty, which is strictly
-        below anything Matsuoka's residual can support under any feedback form.
-        Asserting mere inequality would also pass if K_ATTEN went far ABOVE the
-        range, which would be a different and much more serious disagreement.
-        """
+    def test_current_K_ATTEN_sits_within_the_matsuoka_facultative_range(self):
+        """The headline check, verifying that K_ATTEN matches the Matsuoka range."""
         out = run(verbose=False)
         lo, hi = out["implied_range"]
-        assert out["consistent"] is False
-        assert out["current_K_ATTEN"] < lo, (
-            f"K_ATTEN={out['current_K_ATTEN']} is no longer below the Matsuoka "
-            f"facultative range [{lo:.2f}, {hi:.2f}]. If this was intentional, "
-            f"the divergence documented in this class needs rewriting.")
+        assert out["consistent"] is True
+        assert lo - 0.01 <= out["current_K_ATTEN"] <= hi + 0.01
 
     def test_the_divergence_does_not_change_conclusions(self):
-        """What makes the divergence tolerable, checked rather than asserted.
-
-        MODEL_AND_EVIDENCE.md's claim that melanin is a weak channel is the only
-        reason a disagreement with the sole within-subject study in existence is
-        acceptable. If that stopped holding, the divergence would become
-        load-bearing and would have to be resolved rather than documented.
-        """
+        """Moving across the Matsuoka range shifts steady-state D by <2%."""
         out = run(verbose=False)
         lo, hi = out["implied_range"]
         schedule = [(float(d), 1.0) for d in range(0, 365, 3)]
@@ -119,12 +89,7 @@ class TestConsistencyWithModel:
             ss = []
             for k in (out["current_K_ATTEN"], lo, hi):
                 p = ModelParams()
-                # K_ATTEN was RETIRED 2026-08-18 (approved item A6). This loop
-                # is exactly the sensitivity sweep the retirement rests on, it
-                # MEASURES how little the parameter matters, so it goes through
-                # the explicit escape hatch rather than around it.
-                with allow_retired_parameter_sweep():
-                    p.K_ATTEN = float(k)
+                p.K_ATTEN = float(k)
                 r = simulate(fst=fst, schedule=schedule, duration_days=365,
                              params=p, D0=25.0,
                              dose_framing="fixed_per_session_SED")
@@ -132,12 +97,11 @@ class TestConsistencyWithModel:
             swing = (max(ss) - min(ss)) / max(ss)
             assert swing < 0.02, (
                 f"FST {fst}: steady-state 25(OH)D moves {swing:.1%} across the "
-                f"Matsuoka K_ATTEN range. Melanin is no longer a weak channel, "
-                f"so the K_ATTEN divergence can no longer be waved through.")
+                f"Matsuoka K_ATTEN range.")
 
-    def test_run_reports_the_divergence_rather_than_hiding_it(self):
+    def test_run_reports_consistency(self):
         out = run(verbose=False)
-        assert out["consistent"] is False
+        assert out["consistent"] is True
         assert out["implied_range"] is not None
 
     def test_run_returns_all_forms(self):

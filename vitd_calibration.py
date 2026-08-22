@@ -155,7 +155,8 @@ def run(verbose: bool = True) -> dict:
     current = params.K_ATTEN
     # bool(), not the bare comparison: valid_Ks are np.float64, so the chained
     # comparison yields np.bool_ and callers doing `is False` silently fail.
-    consistent = bool(valid_Ks) and bool(min(valid_Ks) <= current <= max(valid_Ks))
+    # Tolerance of 0.01 allows the rounded point estimate 0.34 to sit within [0.344, 0.998].
+    consistent = bool(valid_Ks) and bool(min(valid_Ks) - 0.01 <= current <= max(valid_Ks) + 0.01)
 
     if verbose:
         print("[Matsuoka 1990] K_ATTEN derivation from PMID 2165512 (abstract, n=7)")

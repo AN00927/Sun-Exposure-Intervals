@@ -1,98 +1,211 @@
 """
 vitd_scenario.py
 ================
-The FROZEN REFERENCE SCENARIO. One fixed set of exposure conditions, used for
-every day of every schedule in the core pipeline.
+Scenario architecture for UV exposure protocols.
 
-WHY THIS EXISTS
----------------
-This module replaces the location-based dosimetry chain (solar position ->
-ambient UV index -> posture/site geometry -> exposed BSA), retired to
-`exploratory/` on 2026-08-21. That chain multiplied four independent
-uncertainties into one number which then entered `ln(1 + UV * E_source)`, and
-no *product* of the chain had ever been validated against measured personal
-dosimetry. Its individual links were mostly fine; the stack was not defensible.
-
-See `docs/REPO_SCOPE_AUDIT.md` for the full argument, and
-`exploratory/README.md` for what was retired and why.
-
-WHAT THIS BUYS, AND WHAT IT COSTS
----------------------------------
-BUYS: reproducibility (no network call, no date dependence, no posture
-assumption), and a much smaller surface to defend.
-
-COSTS: the model can no longer answer "how long should I stand outside in
-Manchester on 15 March". It answers "how long under reference conditions".
-That is a real loss of capability and is stated as a limitation, not hidden.
-
-THE VALUES, AND WHY EACH ONE REQUIRED NO RECALIBRATION
-------------------------------------------------------
-Every constant below was ALREADY the reference value somewhere in the
-codebase. Freezing them changes no calibrated parameter and moves no
-validation check. That was the selection criterion.
-
-  UV_INDEX = 6.0
-      Already the reference condition printed in the RESULTS.md section 0
-      header ("Reference conditions for the minutes column: UV index 6.0").
-
-  GEOMETRY_FACTOR = 0.35
-      Already `vitd_objectives.PERSONAL_DOSE_GEOMETRY_FACTOR` (Cockell 2001
-      scalar), which is the fallback the whole minutes machinery uses when no
-      posture or activity is supplied. Imported from there rather than
-      restated, so the two cannot drift apart.
-
-  EXPOSED_BSA = vitd_model.BSA_REF
-      Already the model's reference BSA, at which `bsa_factor(bsa) == 1.0`
-      exactly. Every existing calibration (A, K_const) was performed at this
-      value, so freezing here leaves all of them untouched.
-
-      THE "USUAL AMOUNT OF BODY PARTS" QUESTION. Computing the retired
-      `vitd_exposure.CLOTHING_PRESETS` at standing posture gives
-      `short_sleeves` = 0.165 (face, neck, forearms, hands bare) and
-      `shorts_and_tshirt` = 0.495 (adds both legs). Their midpoint is 0.33 --
-      within 6% of BSA_REF. So "a t-shirt and shorts, with partial coverage"
-      is already what the model's reference BSA encodes. The plain-English
-      description below is therefore a description of the existing value, not
-      a new choice.
-
-  SED_PER_MINUTE
-      DERIVED, not asserted:
-          SED_PER_MIN_PER_UVI * UV_INDEX * GEOMETRY_FACTOR
-      `SED_PER_MIN_PER_UVI` is owned by `vitd_objectives.py` and follows from
-      the WHO/WMO UVI definition (1 UVI = 25 mW/m^2 erythemal) and the SED
-      definition (1 SED = 100 J/m^2 erythemal). It is not a free parameter.
-
-THE LIMITATION, FOR THE PAPER
------------------------------
-Reproduce `LIMITATION_STATEMENT` below verbatim in any write-up. Real ambient
-UV varies with latitude, season, time of day, altitude, cloud and ozone; real
-personal dose varies with posture and clothing. None of that is modelled here.
-Every duration this repository reports is a duration UNDER REFERENCE
-CONDITIONS, not a calendar recommendation for a specific place.
-
-The returned SED is ERYTHEMAL. The spectral step to vitamin-D-effective dose
-is `E_source` (`vitd_model.SOURCE_CALIBRATION_TABLE`), applied downstream and
-deliberately not folded in here.
+Provides a frozen ``ExposureScenario`` dataclass encapsulating all exposure
+parameters and clinical study metadata, a ``SCENARIO_REGISTRY`` of named
+presets, helper functions for retrieval and simulation, and backward-
+compatible aliases for code that still imports the old frozen-reference
+constants.
 """
 
-from vitd_model import BSA_REF
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Tuple, Union
+
+import numpy as np
+
+from vitd_model import BSA_REF, build_pulse_schedule, get_E_source
+from vitd_model import ModelParams, simulate
+from vitd_physiology import cancer_risk
 from vitd_objectives import PERSONAL_DOSE_GEOMETRY_FACTOR, SED_PER_MIN_PER_UVI
 
+
 # ---------------------------------------------------------------------------
-# The frozen scenario
+# ExposureScenario dataclass
 # ---------------------------------------------------------------------------
 
-UV_INDEX: float = 6.0
-GEOMETRY_FACTOR: float = PERSONAL_DOSE_GEOMETRY_FACTOR
-EXPOSED_BSA: float = BSA_REF
+@dataclass(frozen=True)
+class ExposureScenario:
+    """A frozen description of one UV exposure environment and protocol.
 
-#: Erythemal SED delivered per minute of exposure under the frozen scenario.
-#: Derived from the three constants above; never edit this directly.
-SED_PER_MINUTE: float = SED_PER_MIN_PER_UVI * UV_INDEX * GEOMETRY_FACTOR
+    Immutable and hashable so instances can be dict keys and set members.
+    """
 
-#: Plain-English description of EXPOSED_BSA, for report headers. See the
-#: module docstring for why this describes the existing BSA_REF rather than
-#: choosing a new value.
+    name: str
+    description: str
+    study_citation: str
+    pmid_or_doi: str
+    uvi: float = 6.0
+    exposed_bsa: float = 0.35
+    geometry_factor: float = 0.35
+    e_source_name: str = "solar_summer"
+    target_fst: int = 3
+    baseline_D0: float = 25.0
+    protocol_duration_days: int = 84
+    protocol_schedule: Tuple[Tuple[float, float], ...] = field(default_factory=tuple)
+    observed_delta_D: Optional[Union[float, Tuple[float, float, float]]] = None
+
+    @property
+    def sed_per_minute(self) -> float:
+        """Erythemal SED delivered per minute under this scenario's UVI and geometry."""
+        return SED_PER_MIN_PER_UVI * self.uvi * self.geometry_factor
+
+    def minutes_for_sed(self, sed: float) -> float:
+        """Minutes needed to deliver *sed* under this scenario."""
+        rate = self.sed_per_minute
+        return max(0.0, float(sed)) / rate if rate > 0 else float("inf")
+
+    def sed_for_minutes(self, minutes: float) -> float:
+        """Erythemal SED delivered by *minutes* of exposure under this scenario."""
+        return max(0.0, float(minutes)) * self.sed_per_minute
+
+
+# ---------------------------------------------------------------------------
+# Schedule builder helper
+# ---------------------------------------------------------------------------
+
+def _build_weekly_protocol(
+    duration_days: int,
+    sed_per_session: float,
+    days_of_week: Tuple[int, ...] = (0, 2, 4),
+) -> Tuple[Tuple[float, float], ...]:
+    """Build a repeating weekly protocol as a tuple of (day, SED) pairs."""
+    return tuple(
+        (float(w * 7 + d), float(sed_per_session))
+        for w in range(duration_days // 7)
+        for d in days_of_week
+        if w * 7 + d < duration_days
+    )
+
+
+# ---------------------------------------------------------------------------
+# SCENARIO_REGISTRY: 7 named presets
+# ---------------------------------------------------------------------------
+
+SCENARIO_REGISTRY: Dict[str, ExposureScenario] = {
+    "summer_midday_reference": ExposureScenario(
+        name="summer_midday_reference",
+        description="Standard summer sun reference scenario",
+        study_citation="Reference conditions for the minutes column",
+        pmid_or_doi="N/A (reference)",
+        uvi=6.0,
+        exposed_bsa=0.35,
+        geometry_factor=0.35,
+        e_source_name="solar_summer",
+        target_fst=3,
+        baseline_D0=25.0,
+        protocol_duration_days=84,
+        protocol_schedule=_build_weekly_protocol(84, 1.0),
+        observed_delta_D=None,
+    ),
+    "farrar2013_fst5_uk": ExposureScenario(
+        name="farrar2013_fst5_uk",
+        description="South Asian UK trial, FST V, 3x/wk NB-UVB",
+        study_citation="Farrar et al. 2013, J Clin Endocrinol Metab 98:E526",
+        pmid_or_doi="10.1210/jc.2012-3864",
+        uvi=6.0,
+        exposed_bsa=0.35,
+        geometry_factor=0.35,
+        e_source_name="solar_summer",
+        target_fst=5,
+        baseline_D0=17.2,
+        protocol_duration_days=42,
+        protocol_schedule=_build_weekly_protocol(42, 1.3),
+        observed_delta_D=21.7,
+    ),
+    "young2021_fst2_solar": ExposureScenario(
+        name="young2021_fst2_solar",
+        description="Solar simulator full body, FST II, Arimed B",
+        study_citation="Young et al. 2021, PNAS 118:e2015867118",
+        pmid_or_doi="10.1073/pnas.2015867118",
+        uvi=6.0,
+        exposed_bsa=0.85,
+        geometry_factor=0.35,
+        e_source_name="arimed_b",
+        target_fst=2,
+        baseline_D0=34.6,
+        protocol_duration_days=10,
+        protocol_schedule=(
+            (0.0, 2.0), (2.0, 2.0), (4.0, 2.0), (6.0, 2.0), (8.0, 2.0),
+        ),
+        observed_delta_D=36.1,
+    ),
+    "felton2016_fst2_matched": ExposureScenario(
+        name="felton2016_fst2_matched",
+        description="Matched-dose fair skin, FST II",
+        study_citation="Felton et al. 2016, Br J Dermatol 175:1030-1040",
+        pmid_or_doi="10.1111/bjd.14832",
+        uvi=6.0,
+        exposed_bsa=0.35,
+        geometry_factor=0.35,
+        e_source_name="solar_summer",
+        target_fst=2,
+        baseline_D0=36.5,
+        protocol_duration_days=42,
+        protocol_schedule=_build_weekly_protocol(42, 1.3),
+        observed_delta_D=17.8,
+    ),
+    "felton2016_fst5_matched": ExposureScenario(
+        name="felton2016_fst5_matched",
+        description="Matched-dose dark skin, FST V",
+        study_citation="Felton et al. 2016, Br J Dermatol 175:1030-1040",
+        pmid_or_doi="10.1111/bjd.14832",
+        uvi=6.0,
+        exposed_bsa=0.35,
+        geometry_factor=0.35,
+        e_source_name="solar_summer",
+        target_fst=5,
+        baseline_D0=17.2,
+        protocol_duration_days=42,
+        protocol_schedule=_build_weekly_protocol(42, 1.3),
+        observed_delta_D=8.3,
+    ),
+    "deboer2025_barrier": ExposureScenario(
+        name="deboer2025_barrier",
+        description="Barrier thickening trial, lower back, FST I-III",
+        study_citation="de Boer et al. 2025",
+        pmid_or_doi="TBD",
+        uvi=6.0,
+        exposed_bsa=0.10,
+        geometry_factor=0.35,
+        e_source_name="solar_summer",
+        target_fst=3,
+        baseline_D0=25.0,
+        protocol_duration_days=63,
+        protocol_schedule=_build_weekly_protocol(63, 0.8),
+        observed_delta_D=None,
+    ),
+    "webb2018_uk_guidance": ExposureScenario(
+        name="webb2018_uk_guidance",
+        description="UK public health lunch-hour guidance reference",
+        study_citation="Webb et al. 2018",
+        pmid_or_doi="TBD",
+        uvi=6.0,
+        exposed_bsa=0.35,
+        geometry_factor=0.35,
+        e_source_name="solar_summer",
+        target_fst=2,
+        baseline_D0=25.0,
+        protocol_duration_days=84,
+        protocol_schedule=tuple((float(d), 0.5) for d in range(0, 84, 1)),
+        observed_delta_D=None,
+    ),
+}
+
+
+# ---------------------------------------------------------------------------
+# Backward-compatible aliases (delegates to summer_midday_reference)
+# ---------------------------------------------------------------------------
+
+_DEFAULT = SCENARIO_REGISTRY["summer_midday_reference"]
+UV_INDEX: float = _DEFAULT.uvi
+GEOMETRY_FACTOR: float = _DEFAULT.geometry_factor
+EXPOSED_BSA: float = _DEFAULT.exposed_bsa
+SED_PER_MINUTE: float = _DEFAULT.sed_per_minute
+
 CLOTHING_DESCRIPTION: str = (
     "t-shirt and shorts with partial coverage (face, neck, forearms, hands "
     "and part of the legs bare)"
@@ -112,15 +225,13 @@ LIMITATION_STATEMENT: str = (
 
 
 def sed_for_minutes(minutes: float) -> float:
-    """Erythemal SED delivered by `minutes` of exposure under the frozen
-    scenario. Negative durations clamp to zero."""
-    return max(0.0, float(minutes)) * SED_PER_MINUTE
+    """Erythemal SED delivered by *minutes* of exposure under the default scenario."""
+    return _DEFAULT.sed_for_minutes(minutes)
 
 
 def minutes_for_sed(sed: float) -> float:
-    """Minutes of exposure needed to deliver `sed` erythemal SED under the
-    frozen scenario. Negative doses clamp to zero."""
-    return max(0.0, float(sed)) / SED_PER_MINUTE
+    """Minutes needed to deliver *sed* erythemal SED under the default scenario."""
+    return _DEFAULT.minutes_for_sed(sed)
 
 
 def describe() -> str:
@@ -135,6 +246,62 @@ def describe() -> str:
         f"  erythemal SED/minute  : {SED_PER_MINUTE:.4f} (derived)\n"
         "  held constant on every exposure day; see vitd_scenario.py"
     )
+
+
+# ---------------------------------------------------------------------------
+# Helper functions
+# ---------------------------------------------------------------------------
+
+def get_scenario(name: str) -> ExposureScenario:
+    """Retrieve a scenario by name. Raises KeyError if not found."""
+    if name not in SCENARIO_REGISTRY:
+        raise KeyError(
+            f"Unknown scenario \'{name}\'. Available: {sorted(SCENARIO_REGISTRY)}"
+        )
+    return SCENARIO_REGISTRY[name]
+
+
+def list_scenarios() -> List[str]:
+    """Return sorted list of all registered scenario names."""
+    return sorted(SCENARIO_REGISTRY.keys())
+
+
+def simulate_scenario(name: str) -> dict:
+    """Run vitd_model.simulate with the scenario\'s parameters.
+
+    Returns the full simulate() dict enriched with:
+      - scenario_name: str
+      - scenario_metadata: dict (citation, doi, observed_delta_D)
+      - cancer risk keys promoted to top level for convenience
+    """
+    scenario = get_scenario(name)
+    params = ModelParams(
+        exposed_bsa=scenario.exposed_bsa,
+        E_source=get_E_source(scenario.e_source_name),
+    )
+    schedule = list(scenario.protocol_schedule)
+    result = simulate(
+        fst=scenario.target_fst,
+        schedule=schedule,
+        duration_days=scenario.protocol_duration_days,
+        params=params,
+        D0=scenario.baseline_D0,
+    )
+    # Promote cancer risk keys to top level
+    risk = result.get("cancer_risk", {})
+    result["scc_index"] = risk.get("scc_index", 0.0)
+    result["intermittent_index"] = risk.get("intermittent_index", 0.0)
+    result["burn_fraction"] = risk.get("burn_fraction", 0.0)
+    result["final_D"] = float(result["D"][-1])
+    result["delta_D"] = float(result["D"][-1] - scenario.baseline_D0)
+    # Add scenario metadata
+    result["scenario_name"] = name
+    result["scenario_metadata"] = {
+        "citation": scenario.study_citation,
+        "doi": scenario.pmid_or_doi,
+        "observed_delta_D": scenario.observed_delta_D,
+    }
+    return result
 
 
 if __name__ == "__main__":

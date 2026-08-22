@@ -24,7 +24,8 @@ import vitd_scenario
 import vitd_validation
 import vitd_analyses
 import vitd_calibration
-from vitd_optimization import (analysis_constant_sessions, analysis_variable_dose,
+from vitd_optimization import (analysis_constant_sessions, analysis_spacing_fixed_dose,
+                               analysis_variable_dose,
                                analysis_joint_schedule,
                                analysis_objective_hierarchy,
                                analysis_tri_objective,
@@ -166,6 +167,7 @@ def main():
         vitd_analyses.analysis_sun_exposure,
         vitd_analyses.analysis_trajectories,
         analysis_constant_sessions,
+        analysis_spacing_fixed_dose,
         analysis_variable_dose,
         analysis_joint_schedule,
         # Objective hierarchy runs last but reports first (section 0) -- reader
@@ -175,7 +177,7 @@ def main():
     ]
     alpha_log, k_log, beta_log, frame_log, fine_log, scipy_log, \
         maxint_log, load_log, split_log, sun_log, traj_log, const_log, \
-        vardose_log, joint_log, hierarchy_log, tri_log = [
+        spacing_log, vardose_log, joint_log, hierarchy_log, tri_log = [
             capture_log(fn) for fn in analyses
         ]
 
@@ -195,6 +197,7 @@ def main():
     print(sun_log)
     print(traj_log)
     print(const_log)
+    print(spacing_log)
     print(vardose_log)
     print(joint_log)
 
@@ -447,6 +450,18 @@ def main():
         "time.)\n"
     )
     report.append("\n```\n" + const_log + "\n```\n")
+
+    report.append("\n## 13a. Spacing optimisation at fixed dose\n")
+    report.append(
+        "\nThis section fixes the dose per session (1.0 SED) and searches only "
+        "the spacing between sessions. It answers 'when should I go outside?' "
+        "for a person who will use the same dose each time. The best uniform "
+        "gap for each (skin type, session budget) cell is reported under the "
+        "mean_D objective. The table also includes the skin-cancer-convergence "
+        "index (SCC) and the intermittency index for the full cancer-safety "
+        "profile.\n"
+    )
+    report.append("\n```\n" + spacing_log + "\n```\n")
 
     report.append("\n## 13b. Variable-dose optimisation\n")
     report.append(

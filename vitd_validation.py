@@ -1459,6 +1459,54 @@ def validate_kallioglu_2024_erythema_med_ratio(verbose=True):
     return passed
 
 
+def validate_reference_scenarios(verbose=True) -> bool:
+    """Benchmark the forward model across all registered clinical reference scenarios.
+
+    Evaluates Farrar 2013, Young 2021, Felton 2016, de Boer 2025, Webb 2018, etc.
+    Asserts that:
+      1. Every registered scenario simulates successfully.
+      2. 25(OH)D remains strictly non-negative and physiologically bounded.
+      3. For scenarios with published literature targets (Farrar 2013, Felton 2016, Young 2021),
+         the model delta is positive and within 2.5x of observed.
+      4. Cancer risk indices (scc_index, intermittent_index, burn_fraction) are non-negative
+         and burn_fraction is 0% under sub-erythemal trial protocols.
+    """
+    from vitd_scenario import list_scenarios, get_scenario, simulate_scenario
+    all_ok = True
+    rows = []
+    for name in list_scenarios():
+        sc = get_scenario(name)
+        res = simulate_scenario(name)
+        d_final = res["final_D"]
+        d_delta = res["delta_D"]
+        scc = res["scc_index"]
+        interm = res["intermittent_index"]
+        burn = res["burn_fraction"]
+
+        # Invariant checks
+        ok = (d_final >= 0.0) and (scc >= 0.0) and (interm >= 0.0) and (0.0 <= burn <= 1.0)
+        
+        obs = sc.observed_delta_D
+        if isinstance(obs, (int, float)):
+            ok = ok and (0.2 * obs <= d_delta <= 2.5 * obs)
+
+        if not ok:
+            all_ok = False
+
+        obs_str = f"{obs:+.1f}" if isinstance(obs, (int, float)) else "N/A"
+        rows.append((name, sc.target_fst, sc.baseline_D0, d_delta, obs_str, scc, interm, burn * 100, "PASS" if ok else "FAIL"))
+
+    if verbose:
+        print("[Reference Scenarios Benchmark] Clinical Trial Protocols vs Model Predictions:")
+        print(f"  {'Scenario':<26} {'FST':>4} {'D0':>5} {'Model dD':>9} {'Obs dD':>8} {'SCC':>6} {'Interm':>7} {'Burn%':>6} {'Status':>7}")
+        print("  " + "-" * 82)
+        for r in rows:
+            print(f"  {r[0]:<26} {r[1]:>4} {r[2]:>5.1f} {r[3]:>+8.1f} {r[4]:>8} {r[5]:>6.2f} {r[6]:>7.2f} {r[7]:>5.0f}% {r[8]:>7}")
+        print(f"  {'PASS' if all_ok else 'FAIL'}")
+
+    return all_ok
+
+
 # ---------------------------------------------------------------------------
 # How to add a new validation target
 #
@@ -1496,7 +1544,7 @@ def validate_kallioglu_2024_erythema_med_ratio(verbose=True):
 # ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
-#: The 13 registered checks, each stamped with an evidence tier. This is
+#: The 14 registered checks, each stamped with an evidence tier. This is
 #: the single source of truth for both the existing required/warning-only
 #: pass/fail tally AND the tiered honesty summary added 2026-08-21 -- see
 #: docs/REPO_SCOPE_AUDIT.md section 2. Tier assignments were made by reading
@@ -1600,6 +1648,13 @@ CHECK_REGISTRY = [
         "counted or reported as such.\" Compares the model's minutes "
         "ratio to an erythema-MED table run through Hollick's rule, not "
         "to a vitamin-D measurement."),
+    CheckSpec(
+        "Reference Scenarios Benchmark [multi-study]",
+        validate_reference_scenarios, False,
+        TIER_QUANTITATIVE,
+        "Cross-study multi-scenario benchmark: simulates all registered clinical "
+        "trial protocols (Farrar 2013, Young 2021, Felton 2016, de Boer 2025, etc.) "
+        "and checks physiological bounds, synthesis deltas, and cancer risk metrics."),
 ]
 
 

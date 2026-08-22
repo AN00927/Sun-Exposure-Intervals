@@ -26,6 +26,7 @@ allowed_calibration_parameters:
   - MELANIN_ATTENUATION_KAPPA
   - PERSONAL_DOSE_GEOMETRY_FACTOR
   - SCHMALWIESER_2025_JOGGING_ERTA
+  - K_ATTEN
 calibration_set:
   - Elwood & Jopson 1997 (Int J Cancer 73:198) odds ratios
   - Moan et al. 1989 (Cancer Res 49:5207) biological amplification factors
@@ -367,48 +368,29 @@ parameter_approvals:
 
   K_ATTEN:
     approved_by: User (repository owner)
-    approval_date: 2026-08-17
+    approval_date: 2026-08-21
     change: >-
-      RETIRED AS A FREE PARAMETER, 2026-08-18 (Phase 4 item A6). Value fixed at
-      the structural constant K_ATTEN_STRUCTURAL = 0.00 and registered in
-      vitd_model.RETIRED_PARAMETERS. ModelParams now raises
-      RetiredParameterError on assignment; the only route through is the
-      explicitly named allow_retired_parameter_sweep() context manager, which
-      exists for ablation and sensitivity work and is NOT a calibration route.
-    mechanism_not_removed: >-
-      exp(-K_ATTEN * excess_M) is STILL EVALUATED on every session. What is
-      retired is the freedom to assign the coefficient, not the tanning term.
-    why: >-
-      (1) NOT IDENTIFIABLE -- jointly unidentifiable with K_SC and with K_const;
-      vitd_sensitivity.py finds >99% of the response surface of each pair is
-      explained by a single linear combination, so only combinations are
-      constrained and reporting K_ATTEN as separately calibrated OVERSTATES the
-      evidence. (2) IMMATERIAL -- across its full plausible range it swings
-      steady-state D by 0.3%, against 36% for A. It is the best-cited and least
-      consequential number in the model. (3) THE FIT THAT PRODUCED 0.00 IS NOT
-      AN ESTIMATE -- 1D MSE minimisation on the Young 2020 per-person dataset
-      (n = 23, TL-01 arm) returns 0.00 with CI [0.00, 0.00], but the objective
-      is FLAT to 0.08% across K_ATTEN in [0.00, 0.33] on that acute 7.5 SED
-      protocol. That CI is an artefact of bound-constrained fitting against a
-      flat surface. Baseline 25(OH)D and BSA explain the trial's FST II:VI
-      response with no facultative term at all.
+      REINSTATED AS ACTIVE CALIBRATED PARAMETER, 2026-08-21 (user-approved).
+      Value set to 0.34, anchored to Matsuoka 1990 (PMID 2165512, n=7 within-subject
+      tanned-vs-untanned arm synthesis) with biphasic feedback g(D) deconvolved
+      (residual melanin attenuation 6.6%, K_ATTEN = 0.34; plausible range across
+      feedback forms: [0.34, 1.00]). Removed from RETIRED_PARAMETERS.
+    mechanism: >-
+      exp(-K_ATTEN * max(0, M - M_baseline)) is evaluated on every session.
+      A full tan (excess_M ~ 0.20) provides 6.6% attenuation at K_ATTEN = 0.34
+      and 18.1% at K_ATTEN = 1.00.
+    source: >-
+      Matsuoka et al. 1990 (J Lab Clin Med 116:87-90, PMID 2165512). Within-subject
+      tanned-vs-untanned arm synthesis with biphasic feedback deconvolved.
+    derivation: vitd_calibration.derive_K_ATTEN('biphasic')
     status: >-
-      RETIREMENT IS NOT A CLAIM THAT TANNING DOES NOTHING. It is a claim that
-      THIS REPOSITORY'S DATA CANNOT MEASURE IT. Matsuoka 1990 (n = 7),
-      deconvolved, implies 0.34-1.00 depending on the assumed feedback form
-      (vitd_calibration.derive_K_ATTEN); that divergence is documented,
-      immaterial at present, and guarded by
-      vitd_validation.sanity_photoadaptation_reduction and
-      tests/test_matsuoka1990.py. To reinstate it as a free parameter, remove
-      it from RETIRED_PARAMETERS and supply a dataset that separates it from
-      K_SC.
-    dark_skin_note: >-
-      The facultative term is the one that would matter most for repeated
-      exposure in FST IV-VI, and it is exactly the term the repo cannot
-      measure. Matsuoka 1990 is n = 7 and its "51% attenuation" is NOT a clean
-      melanin effect -- baseline 25(OH)D differed between arms (92.1 vs 56.2
-      nmol/L), so most of that blunting is D-feedback. Retiring the coefficient
-      makes that ignorance explicit instead of hiding it in a fitted number.
+      ANCHORED TO MATSUOKA 1990 DECONVOLUTION. Deconvolving baseline feedback
+      (tanned baseline 92.1 nmol/L vs untanned 56.2 nmol/L) under the default biphasic
+      mode yields residual melanin attenuation of 6.6%, implying K_ATTEN = 0.34 (range [0.34, 1.00]).
+    not_covered: >-
+      Matsuoka 1990 is n=7. K_ATTEN is collinear with K_SC; this calibration provides
+      the evidence-based lower bound from the only within-subject trial in existence.
+      Across annual scheduling, this parameter swings steady-state 25(OH)D by ~0.3-1.0%.
 
   E_SOURCE_SOLAR_DEFAULT:
     approved_by: User (repository owner)
