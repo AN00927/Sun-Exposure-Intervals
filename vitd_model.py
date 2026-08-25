@@ -216,10 +216,25 @@ Parameters & Sources
     FST II/III/V/VI); the ARGMAX moves. The claim that recalibrating A
     leaves "scheduling rankings unchanged" is TRUE for ordering and FALSE
     for reported optimum.
-    IMPORTANT: the claim in run_all.py section 17 that ordering "comes from
-    the (1 - D/D_max) feedback term" is too specific. Ordering comes from
-    HAVING a decreasing feedback factor: at incumbent A the argmax is 3 d
-    under linear, biphasic AND both saturating variants alike.
+    HISTORICAL NOTE ON WHAT CARRIES THE INTERVAL ORDERING — TWICE CORRECTED.
+    [2026-08-18] The claim in run_all.py section 17 that ordering "comes from
+    the (1 - D/D_max) feedback term" was found too specific: at incumbent A
+    the argmax is 3 d under linear, biphasic AND both saturating variants
+    alike, so no particular feedback FORM carries it. That observation stands.
+    The inference drawn from it at the time — that ordering comes from HAVING
+    a decreasing feedback factor — does NOT stand, and is RETRACTED here.
+    [2026-08-21] `spacing_study/` tested it directly by ablation: disabling
+    g(D) entirely leaves the interval ordering unchanged and WIDENS daily
+    dosing's margin rather than narrowing it, and turning off every state
+    mechanism at once widens it further still. The ordering is instead a
+    property of the CONCAVITY of the synthesis law A * ln(1 + sed * E_source)
+    — at a fixed total UV budget, dividing it into more and smaller sessions
+    always yields more 25(OH)D. D-feedback and photoadaptation modulate the
+    SIZE of the gap; neither creates it. Sources for this retraction:
+    spacing_study/results/FINDINGS.md (section 3, mechanism decomposition)
+    and the generated RESULTS.md paragraph beginning "The interval ordering
+    these sweeps produce comes from neither photoadaptation nor the
+    D-feedback term".
 - D_max = 150.0 nmol/L:
     LEGACY. Ceiling of the withdrawn 'linear'/'power' feedback modes; see the
     feedback_mode entry above. Not in force in the default model.
@@ -269,20 +284,38 @@ Parameters & Sources
     blue shift, meaning exact values require recomputation. Osmancevic 2009 (P18)
     shows broadband UVB can outperform NB-UVB per SED in psoriasis, confirming
     these cannot be universal.
-- K_ATTEN = 0.34  --  CALIBRATED 2026-08-21 (user-approved):
+- K_ATTEN = 0.288972  --  CALIBRATED 2026-08-21 (user-approved), excess_M updated 2026-08-25:
     Facultative (tanning) melanin attenuation coefficient.
     Reinstated as an active parameter anchored to Matsuoka 1990 (PMID 2165512, n=7
     within-subject tanned-vs-untanned arm synthesis) with biphasic feedback g(D)
-    deconvolved (residual melanin attenuation 6.6%, K_ATTEN = 0.34; plausible
-    range across feedback forms: [0.34, 1.00]).
+    deconvolved (residual melanin attenuation 6.6%, K_ATTEN = 0.288972; plausible
+    range across feedback forms: [0.288972, 0.838389]). derive_K_ATTEN's excess_M
+    now reads M_TAN_HEADROOM live rather than a hardcoded value, so this figure
+    tracks M_TAN_HEADROOM automatically.
     MECHANISM: exp(-K_ATTEN * max(0, M - M_baseline)) is evaluated on every session.
-    A full tan (excess_M ~ 0.20) gives 6.6% attenuation at K_ATTEN=0.34 and
-    18.1% at K_ATTEN=1.00.
-    Caveats: Matsuoka 1990 is n=7 and collinear with K_SC; 0.34 provides the
+    A full tan (excess_M = M_TAN_HEADROOM = 0.238) gives 6.6% attenuation at
+    K_ATTEN=0.288972 and 18.1% at K_ATTEN=0.838389.
+    Caveats: Matsuoka 1990 is n=7 and collinear with K_SC; 0.288972 provides the
     evidence-based lower bound from the only within-subject trial in existence.
 - M_baseline_by_FST:
-    [C7] Anchored to ITA_Unexposed means from trial CSVs (ArimedB trial data,
-    N=44). Mapping: M = 1 - (ITA_U + 30) / 85, clipped to [0, 1].
+    [C7] Anchored to ITA_Unexposed means from the Young 2020 trial workbook
+    `Papers_and_Datasets/Final skin type vit D database 26_03_2020.xlsx`.
+    Mapping: M = 1 - (ITA_U + 30) / 85, clipped to [0, 1].
+    PROVENANCE CORRECTED 2026-08-23 (documentation only; no value changed).
+    The previously stated "N=44" is the ROW COUNT of the `ArimedB irradiated`
+    sheet, not the sample behind these numbers: only 28 of those 44 rows carry
+    an ITA_Unexposed value, and those 28 alone give {II 0.07, III 0.19,
+    IV 0.48, V 0.77, VI 0.96} — which is NOT the shipped table. The subset that
+    reproduces it is `ArimedB irradiated` POOLED WITH `ARIMED Controls`,
+    n = 48 rows with a non-null ITA_Unexposed (the two TL01 sheets contribute
+    none), taking the per-FST mean of ITA_Unexposed and then applying the
+    mapping. That route returns {II 0.06, III 0.21, IV 0.45, V 0.78,
+    VI 1.077 -> clipped 1.00}: exact for III, V and VI, and within 0.01 for
+    II and IV. No subset or aggregation order reproduces all five cells
+    exactly, so the shipped values are best described as ROUNDED group means
+    from the pooled n=48 set, not a transcription. Per-FST n in that set is
+    II 13, III 15, IV 12, V 4, VI 4 — the two darkest cells rest on n=4 each,
+    and the FST VI cell is a clipped boundary, not a mean.
     FST I is extrapolated (ITA_U ≈ 58°). Values:
     {I: 0.0, II: 0.07, III: 0.21, IV: 0.44, V: 0.78, VI: 1.00}.
     [C10-PRIOR] GROUP-LEVEL PRIOR — Datta 2019 (P13, PMID: 30656228) shows
@@ -305,18 +338,28 @@ Parameters & Sources
     # PARAMETER EVIDENCE STATUS (updated from Consensus literature search, July 2026)
     # -------------------------------------------------------------------------
     # Gap 1 — M_baseline FST V/VI:
-    #   Current values: {V: 0.78, VI: 1.00} (ITA_Unexposed means, ArimedB N=44)
+    #   Current values: {V: 0.78, VI: 1.00} (ITA_Unexposed means; pooled
+    #   ArimedB irradiated + ARIMED Controls, n=48 with ITA -- NOT the "N=44"
+    #   sheet row count once stated here; see the M_baseline_by_FST entry
+    #   above. n = 4 at FST V and 4 at FST VI.)
     #   Literature support: WILKES 2015 gives MI>750->FST VI on Mexameter (partial).
     #   ALALUF 2001 gives quantitative melanin in FST V/VI but not as a baseline MI table.
     #   No paper provides separate untanned FST V and FST VI baseline MI means.
     #   Status: COARSE PRIOR — awaiting de Boer 2025 individual-level data.
     #
-    # Gap 2 — K_ATTEN:  CLOSED BY RETIREMENT 2026-08-18, not by measurement.
-    #   Matsuoka 1990 implies 0.34-1.00 depending on feedback form; only source,
+    # Gap 2 — K_ATTEN:  OPEN. Retired 2026-08-18, REINSTATED and calibrated
+    #   2026-08-21 (user-approved) — see the K_ATTEN entry above for the live
+    #   value and its Matsuoka 1990 derivation. RETIRED_PARAMETERS is now empty:
+    #   K_ATTEN is an ACTIVE parameter again, not a structural constant pinned
+    #   at 0.00, and the 2026-08-18 "CLOSED BY RETIREMENT" status recorded here
+    #   previously is superseded.
+    #   Matsuoka 1990 implies 0.288972-0.838389 depending on feedback form; only source,
     #   no replication. NEVILLE 2020 confirms the field still lacks tanning-effect
     #   data. MARKIEWICZ 2020: tanning may be redistribution, not pure synthesis.
-    #   Status: RETIRED STRUCTURAL CONSTANT at 0.00 — see the K_ATTEN entry above
-    #   and RETIRED_PARAMETERS. The gap is not resolved; it is fenced.
+    #   Status: SINGLE-SOURCE CALIBRATION at the lower bound of that range. The
+    #   evidence gap is not resolved; the parameter is simply no longer fenced.
+    #   NOTE: any result generated before 2026-08-21 (including
+    #   spacing_study/results/FINDINGS.md) describes K_ATTEN = 0.00.
     #
     # Gap 3 — A (synthesis rate):
     #   Current value: 3.114 (2026-08-18 recalibration; see the A entry above)
@@ -522,10 +565,22 @@ BSA_EXP: float = 0.50
 #     a code change reviewable in a diff, gated by
 #     calibration_approval.yaml like any other calibration.
 
-# [CALIBRATION 2026-08-21, user-approved] Facultative-melanin attenuation
-# coefficient. Anchored to Matsuoka 1990 (PMID 2165512) deconvolution under
-# biphasic feedback (K_ATTEN = 0.34, range [0.34, 1.00]).
-K_ATTEN_DEFAULT: float = 0.34
+# [CALIBRATION 2026-08-25, user-approved] 0.34 -> 0.288972. Facultative-melanin
+# attenuation coefficient, anchored to Matsuoka 1990 (PMID 2165512)
+# deconvolution under biphasic feedback. Range across feedback forms
+# [0.288972 biphasic, 0.838389 linear].
+#
+# WHY IT MOVED. K_ATTEN is not independently measured. It is derived from the
+# Matsuoka residual attenuation and the size of a fully developed tan:
+#     vitd_calibration.derive_K_ATTEN(feedback_mode, excess_M=M_TAN_HEADROOM)
+# so it is a FUNCTION of M_TAN_HEADROOM, which was recalibrated 0.20 -> 0.238
+# on the same day (Ravnbak 2008; see M_TAN_HEADROOM below). Holding K_ATTEN at
+# the old 0.34 while the headroom grew would have raised the facultative
+# attenuation actually applied from 6.5740% to 7.7733%, overshooting the
+# Matsuoka residual the parameter exists to encode. The measured quantity is
+# that residual; K_ATTEN is only its parameterisation, so it tracks.
+# derive_K_ATTEN now reads M_TAN_HEADROOM live, so the two cannot drift again.
+K_ATTEN_DEFAULT: float = 0.288972
 K_ATTEN_STRUCTURAL: float = K_ATTEN_DEFAULT  # backward-compatibility alias
 
 RETIRED_PARAMETERS: Dict[str, str] = {}
@@ -629,16 +684,43 @@ class ModelParams:
     #     M <- M_max - (M_max - M) * exp(-alpha * sed)
     # DECREASED melanin for FST VI (UV made the skin lighter). FST V/VI is the
     # target population for this project, so that inversion mattered.
-    # Headroom 0.20 keeps FST I-III behaviour close to the old global 0.95
-    # ceiling while making tanning monotone for every FST.
-    # [PRIOR] Magnitude is not separately identified; Ravnbak 2008 reports
-    # facultative MI gains but on instrument-specific units.
-    M_TAN_HEADROOM: float = 0.20
+    # [CALIBRATION 2026-08-25, user-approved] 0.20 -> 0.238. Anchored to
+    # Ravnbak 2008 (PMID 18480919) Table II via scripts/fit_melanin_kinetics.py.
+    # Converted onto this model's melanin index, Ravnbak's six measured tans
+    # span dM = 0.192059 to 0.237724. The previous headroom of 0.20 sat BELOW
+    # four of those six, so the model could not represent a Ravnbak tan at any
+    # value of alpha -- the ceiling, not the induction rate, was binding.
+    # 0.238 is the largest observed tan (0.237724, rounded up at the third
+    # decimal), so the ceiling now accommodates every measured tan while
+    # remaining inside the free-fit range [0.230880, 0.268013] returned by the
+    # three candidate scale maps (power / quadratic / linear).
+    # NOTE this parameter, not alpha, is what Ravnbak actually constrains:
+    # profiling alpha over 0.0025-1.0 moves the weighted residual <25%, because
+    # the tan is already near plateau at the earlier of Ravnbak's only two
+    # exposure counts. See scripts/fit_melanin_kinetics.py sec.2 and
+    # docs/MELANIN_MODEL.md sec.2.1.
+    M_TAN_HEADROOM: float = 0.238
+    # [UNUSED BY THE CORE PIPELINE -- flagged 2026-08-23, NOT removed.]
+    # Nothing reads ModelParams.M_max: simulate() takes its ceiling from
+    # M_ceiling(fst) (or from the separate `M_max_override` argument, which IS
+    # used and is a different thing). A repo-wide grep for `.M_max` outside
+    # exploratory/ finds only this definition, the historical comment above,
+    # and the `M_max_override` plumbing.
+    # DISCREPANCY LEFT FOR THE AUTHOR TO RESOLVE: the symbol M_max still
+    # appears in the published governing equation for dM/dt (this module's
+    # docstring, README.md, paper/manuscript.tex), where it reads as the
+    # melanin ceiling actually in force. It is not. Either the equation should
+    # be restated in terms of M_ceiling(F) = M_baseline(F) + M_TAN_HEADROOM, or
+    # this field should be removed -- both are behaviour/text changes beyond a
+    # documentation pass. The field is retained for backward compatibility with
+    # callers that construct ModelParams(M_max=...).
     M_max: float = 0.95
-    # [CALIBRATION 2026-08-21, user-approved] 0.00 -> 0.34. Active parameter
+    # [CALIBRATION 2026-08-21, user-approved] 0.00 -> 0.34; [CALIBRATION
+    # 2026-08-25, user-approved] 0.34 -> 0.288972 tracking M_TAN_HEADROOM.
+    # Active parameter
     # anchored to Matsuoka 1990 (PMID 2165512, n=7 within-subject tanned vs untanned)
     # with biphasic feedback g(D) deconvolved (residual melanin attenuation 6.6%,
-    # K_ATTEN = 0.34; range [0.34, 1.00]).
+    # K_ATTEN = 0.288972; range [0.288972, 0.838389]).
     K_ATTEN: float = K_ATTEN_DEFAULT
     D0_default: float = 25.0
     # LEGACY. Ceiling of the withdrawn 'linear'/'power' feedback modes only; the
@@ -704,8 +786,20 @@ class ModelParams:
     k_decay_SC: float = np.log(2) / 28.0
     alpha_SC: float = 0.12
     SC_max: float = 0.30
+    # [CALIBRATION 2026-08-25, user-approved] FST I-III 0.23 -> 0.24.
+    # de Boer 2025 Supp Table S1 gives +23% for FP I-III. Miyamura 2011
+    # (PMID 20979596) Table 1 independently gives stratum corneum 16.6 -> 20.7
+    # um in FST II-III after 10 suberythemal UVB exposures, i.e. +24.6988% --
+    # a different cohort, protocol and measurement method. 0.24 sits between
+    # the two. This is the first out-of-sample support SC_max has had; before
+    # it, the parameter rested on de Boer alone. Miyamura reports SEM with
+    # n=6, so this corroborates magnitude and does not tighten the prior --
+    # SC_max stays flagged as uncalibrated when absolute D is presented
+    # (CLAUDE.md). Derivation: scripts/fit_melanin_kinetics.py sec.6.
+    # FST IV-VI is unchanged at 0.36: Miyamura enrolled FST II-III only and
+    # provides no constraint on darker skin.
     SC_max_by_FST: Dict[int, float] = field(default_factory=lambda: {
-        1: 0.23, 2: 0.23, 3: 0.23,
+        1: 0.24, 2: 0.24, 3: 0.24,
         4: 0.36, 5: 0.36, 6: 0.36,
     })
     K_SC: float = 1.0
@@ -752,7 +846,12 @@ class ModelParams:
         "k_damage": (0.0, 0.15),
     }
     # [C7][C10-PRIOR] M_baseline_by_FST anchored to ITA_Unexposed means from
-    # trial CSVs (ArimedB trial data, N=44). Mapping: M = 1 - (ITA_U + 30) / 85.
+    # the Young 2020 trial workbook: ArimedB irradiated POOLED WITH ARIMED
+    # Controls, n=48 rows with a non-null ITA_Unexposed. (The "N=44" once
+    # recorded here was the ArimedB sheet's row count, of which only 28 carry
+    # an ITA value; those 28 do not reproduce this table. See the
+    # M_baseline_by_FST entry in this module's docstring.)
+    # Mapping: M = 1 - (ITA_U + 30) / 85.
     # Documented as rounded group priors. K_const multiplies these values, so
     # any change to them rescales the whole skin-type penalty -- see the
     # K_const entry in this module's docstring.

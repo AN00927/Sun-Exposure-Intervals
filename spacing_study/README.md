@@ -42,7 +42,7 @@ The physiology is **imported, not reimplemented** — `vitd_model.py` and
 | **B** | Matched **total UV budget**: same total SED over the horizon, distributed over fewer/larger or more/smaller sessions. Isolates dose-response concavity against photoadaptation. |
 | **C** | Matched **minutes outdoors** per week, split daily vs every-other-day vs weekly. |
 | **D** | **Non-uniform patterns**: burst-then-rest (5 on / 2 off, 10 on / 10 off, ...) plus an exhaustive search over every rotation-distinct 14-day on/off pattern at a fixed duty cycle. |
-| **E** | **Mechanism decomposition**: photoadaptation off, SC off, melanin adaptation off, feedback `g(D)` off, D decay off — plus a sweep of the retired `K_ATTEN` coefficient and a threshold scan on `K_SC`. |
+| **E** | **Mechanism decomposition**: photoadaptation off, SC off, melanin adaptation off, feedback `g(D)` off, D decay off — plus a sweep of the `K_ATTEN` coefficient (retired/pinned at 0 when this study last ran; reinstated as an active, calibrated parameter 2026-08-21 — see `vitd_model.py`) and a threshold scan on `K_SC`. |
 | **F** | **Skin type sweep**, FST I-VI, with FST V-VI reported explicitly per the repo's dark-skin priority directive. |
 | **G** | **Outcome-metric sensitivity**: final D, mean D, minimum D, and fraction of days above 50 nmol/L, for every comparison. |
 
@@ -98,11 +98,16 @@ most:
   `alpha_SC` and `K_SC` are uncalibrated priors, and `A` is a light-skin
   extrapolation wherever it is applied to FST III-VI. The *rankings* are much
   more robust than the levels.
-- **Melanin photoadaptation is structurally inert in the shipped model.**
-  `K_ATTEN` is a retired parameter pinned at zero, so tanning has no effect on
-  synthesis and this study cannot test the tanning hypothesis on its merits —
-  only bound how large the coefficient would have to be for it to win. See
-  `vitd_model.RETIRED_PARAMETERS`.
+- **Melanin photoadaptation was structurally inert in the model this study
+  ran against.** `K_ATTEN` was a retired parameter pinned at zero at that time,
+  so tanning had no effect on synthesis and the study could not test the
+  tanning hypothesis on its merits — only bound how large the coefficient
+  would have to be for it to win. `K_ATTEN` was reinstated as an active,
+  calibrated parameter on 2026-08-21 (user-approved) — see the `vitd_model.py`
+  module docstring for the live value — so this statement describes the
+  configuration this report was generated under, not the current one. The
+  study has not been re-run under the live value; see the staleness banner in
+  `spacing_study/results/FINDINGS.md`.
 
 ## Calibration status
 
@@ -110,4 +115,7 @@ most:
 measure how the conclusion depends on it and then discards it;
 `calibration_approval.yaml` was not touched, and no shipped parameter changed.
 The `K_ATTEN` sweep runs inside `vitd_model.allow_retired_parameter_sweep()`,
-the context manager that exists for exactly this purpose.
+the context manager that exists for exactly this purpose. As of 2026-08-21
+`K_ATTEN` is reinstated and not retired, so that context manager is currently
+a no-op guard for `K_ATTEN` specifically; it is kept in place for whatever
+parameter is retired next.

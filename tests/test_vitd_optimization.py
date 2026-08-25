@@ -442,9 +442,23 @@ class TestTimeToSufficiency:
         assert np.isfinite(ttf)
         t, D = np.asarray(r["t"]), np.asarray(r["D"])
         assert t[0] <= ttf <= t[-1]
-        # D at the reported time is the target, to within the local slope
-        assert float(np.interp(ttf, t, D)) == pytest.approx(
-            SUFFICIENCY_NMOL_L, abs=0.5)
+        # The reported time must BRACKET the crossing: everything strictly
+        # before it is below target, and the target is reached at it.
+        #
+        # This used to assert np.interp(ttf, t, D) == target +/- 0.5, which is
+        # not a well-posed test of this function. simulate() emits two samples
+        # at the same t for every session (pre- and post-pulse), so `t` is
+        # non-decreasing rather than increasing and np.interp is undefined on
+        # the jump -- it returns the post-pulse value. When the crossing falls
+        # on a session, D steps ACROSS the target discontinuously and never
+        # equals it: here D goes 49.33 -> 50.62 at t = 60.0 with dt = 0. The
+        # old assertion passed only while the crossing happened to land on a
+        # continuous stretch, and a parameter change that moved it onto a pulse
+        # exposed that. time_to_sufficiency itself is correct.
+        i = int(np.flatnonzero(D >= SUFFICIENCY_NMOL_L)[0])
+        assert D[:i].max() < SUFFICIENCY_NMOL_L
+        assert D[i] >= SUFFICIENCY_NMOL_L
+        assert t[i - 1] <= ttf <= t[i]
 
     def test_a_faster_schedule_reaches_sufficiency_sooner(self):
         """Both arms must reach the target, or this compares a number

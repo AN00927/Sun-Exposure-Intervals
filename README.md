@@ -263,7 +263,7 @@ module docstring. **Do not copy values into this file** -- link to the code.
 | alpha | Melanin induction rate | dimensionless | Miyamura 2011 (light skin) |
 | beta | Melanin decay rate | 1/days | Ravnbak 2008 |
 | UV_halfmax_by_FST | Hill constant for melanin induction | SED | Ravnbak 2008 Table IV |
-| M_baseline_by_FST | Constitutive melanin index by FST | dimensionless | ITA_Unexposed means (ArimedB, N=44) |
+| M_baseline_by_FST | Constitutive melanin index by FST | dimensionless | ITA_Unexposed means (ArimedB irradiated + ARIMED controls pooled, n=48) |
 
 ### UV source calibration
 

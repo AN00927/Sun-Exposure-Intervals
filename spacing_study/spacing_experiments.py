@@ -237,20 +237,31 @@ def exp_E_mechanisms() -> List[Dict]:
 
 
 # ---------------------------------------------------------------------------
-# E'. K_ATTEN sweep -- the retired facultative-melanin attenuation coefficient
+# E'. K_ATTEN sweep -- the facultative-melanin attenuation coefficient
 # ---------------------------------------------------------------------------
+# K_ATTEN was a RETIRED parameter (pinned at 0) when this sweep was written.
+# It was reinstated as an active, calibrated parameter on 2026-08-21
+# (user-approved; see the vitd_model.py module docstring for the live value),
+# so vitd_model.RETIRED_PARAMETERS may or may not contain it depending on
+# when this module is imported relative to that change -- check it at
+# runtime rather than trusting this comment.
 
 K_ATTEN_SWEEP: List[float] = [0.0, 0.1, 0.33, 0.5, 1.0, 2.0, 3.0, 5.0,
                               10.0, 20.0, 50.0, 100.0]
 
 
 def exp_E_katten_sweep() -> List[Dict]:
-    """Does a non-daily optimum appear if tanning attenuation were non-zero?
+    """Does a non-daily optimum appear across a range of tanning attenuation?
 
-    K_ATTEN is RETIRED at K_ATTEN_STRUCTURAL (see vitd_model.RETIRED_PARAMETERS),
-    so the shipped model has no facultative-melanin attenuation at all. This
-    sweep runs inside `allow_retired_parameter_sweep()`, which is explicitly
-    for sensitivity/ablation. No value found here is adopted.
+    If K_ATTEN is currently RETIRED (see vitd_model.RETIRED_PARAMETERS), the
+    shipped model has no facultative-melanin attenuation at all and this sweep
+    explores what would happen if it did. If K_ATTEN is currently ACTIVE
+    (reinstated 2026-08-21), the shipped model already has a nonzero value
+    (see the vitd_model.py module docstring) and this sweep explores the
+    surrounding range, including the shipped value and points far outside it.
+    Either way this sweep runs inside `allow_retired_parameter_sweep()`,
+    which is explicitly for sensitivity/ablation (a no-op guard whenever
+    K_ATTEN is not currently retired). No value found here is adopted.
     """
     rows = []
     H = sm.HORIZON_SS

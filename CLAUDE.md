@@ -22,6 +22,39 @@ skips it. A rewrite here has already destroyed uncommitted work once.
 
 Read-only git is fine: `git status`, `git diff`, `git log`, `git show`.
 
+## Precision — carry the full value, never a tidied one
+
+**When a number comes out of a fit, a derivation, or a source table, carry it
+at full precision. Do not round it for readability, and never present a rounded
+figure as though it were the computed one.**
+
+Round only where rounding is the actual decision, and when you do, say so and
+give the unrounded value next to it. `M_TAN_HEADROOM = 0.238` is a deliberate
+choice recorded against its exact origin (max observed dM = 0.237724); writing
+"~0.23" in prose and then setting 0.23 in code would silently discard a real
+digit and make the parameter untraceable to its source.
+
+This applies to reporting as well as to code. Quoting "about 24%" when the
+measurement is 24.6988% throws away information the reader needs to check you.
+Report `24.7%` and keep the full value in the derivation. If a value is
+genuinely uncertain, give the range — `40-70 d` — rather than rounding to a
+single tidy midpoint, which fakes precision in the opposite direction.
+
+**This is not a licence to print float64 repr.** Precision means *don't discard
+digits that carry information*; it does not mean pasting
+`+0.05323821715712285` into a table. A simulation output on a model whose
+absolute predictions rest on uncalibrated priors carries maybe three
+meaningful digits, and seventeen of them is noise wearing a lab coat — it
+misleads the reader about how much the model actually knows. The test is
+whether a digit is *load-bearing*: a calibration constant, a source
+measurement, or anything another calculation reads back gets its full value;
+a reported result gets the emitting script's own print format, with the full
+value left in the CSV or the code. When in doubt, ask what a reader would do
+with the digit.
+
+Sibling rule to the one below: values live in the code at full precision, and
+prose links to them rather than restating them.
+
 ## Where facts live — do not duplicate them
 
 | You want | Read |
@@ -51,11 +84,37 @@ instead of retyping the numbers.
   contained the complete dataset it claimed was absent.
 - Run the pipeline with `PYTHONIOENCODING=utf-8 python3 run_all.py`. The local
   `.venv` lacks numpy; `python3` is the interpreter with the dependencies.
-  **`run_all.py` takes ~10 minutes** (dominated by the differential-evolution
-  optimisations in sections 13b/13c). Do **not** run it just to "update
-  everything", refresh results, or check mid-task — it is expensive and should
-  only be run when genuinely needed (e.g. before quoting final numbers, after a
-  calibration change, or when the user explicitly asks).
+  **`run_all.py` takes ~25 minutes** (last measured 23:02:17-23:27:24 EDT
+  2026-08-23, after two new sections were added; dominated by the
+  differential-evolution optimisations in sections 13b/13c). Do **not** run it
+  just to "update everything", refresh results, or check mid-task — it is
+  expensive and should only be run when genuinely needed (e.g. before quoting
+  final numbers, after a calibration change, or when the user explicitly asks).
+
+## Script lifecycle — four buckets, decide by evidence
+
+Every script gets exactly one bucket, decided by checking imports/tests/docs,
+never by filename or gut feel:
+
+- **PIPELINE** — imported by `run_all.py`, a module it imports, or `tests/`.
+  Never gitignore, never delete. Cautionary example: `.gitignore` once
+  gitignored two scripts `run_all.py` imports via `_import_script_module` — a
+  fresh clone could not run the pipeline. Grep `run_all.py` for
+  `_import_script_module` and the script's own name before ignoring anything
+  under `scripts/`.
+- **RECURRING** — a sensitivity/diagnostic tool meant to be re-run
+  occasionally (archetype: `scripts/bogh2012_ablation.py`, "retained as a
+  sensitivity tool"). Keep tracked, not gitignored.
+- **FEW-TIME** — a fitting/extraction/checking script whose committed
+  artefact it might regenerate. Gitignore it (don't delete — the artefact's
+  provenance depends on the script existing on disk).
+- **ONE-TIME** — answered its question; the answer already lives in a doc or
+  table. Delete — but only after confirming the file is recoverable
+  (`git show HEAD:<path>` on a tracked, unmodified file) or is genuinely
+  worthless. Deletion is irreversible here; a rewrite has already destroyed
+  uncommitted work once.
+
+Can't tell which bucket from the evidence? Ask — don't guess.
 
 ## Retired modules — `exploratory/`
 

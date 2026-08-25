@@ -27,6 +27,8 @@ allowed_calibration_parameters:
   - PERSONAL_DOSE_GEOMETRY_FACTOR
   - SCHMALWIESER_2025_JOGGING_ERTA
   - K_ATTEN
+  - M_TAN_HEADROOM
+  - SC_max_by_FST
 calibration_set:
   - Elwood & Jopson 1997 (Int J Cancer 73:198) odds ratios
   - Moan et al. 1989 (Cancer Res 49:5207) biological amplification factors
@@ -375,10 +377,15 @@ parameter_approvals:
       tanned-vs-untanned arm synthesis) with biphasic feedback g(D) deconvolved
       (residual melanin attenuation 6.6%, K_ATTEN = 0.34; plausible range across
       feedback forms: [0.34, 1.00]). Removed from RETIRED_PARAMETERS.
+      UPDATED 2026-08-25: M_TAN_HEADROOM moved 0.20 -> 0.238 (Ravnbak 2008) and
+      derive_K_ATTEN's excess_M now reads M_TAN_HEADROOM live instead of a
+      hardcoded 0.20, so K_ATTEN moved with it to 0.288972 (plausible range
+      [0.288972, 0.838389]). The residual melanin attenuation percentages
+      (6.6%/18.1%) are unchanged -- they do not depend on excess_M.
     mechanism: >-
       exp(-K_ATTEN * max(0, M - M_baseline)) is evaluated on every session.
-      A full tan (excess_M ~ 0.20) provides 6.6% attenuation at K_ATTEN = 0.34
-      and 18.1% at K_ATTEN = 1.00.
+      A full tan (excess_M = M_TAN_HEADROOM = 0.238) provides 6.6% attenuation
+      at K_ATTEN = 0.288972 and 18.1% at K_ATTEN = 0.838389.
     source: >-
       Matsuoka et al. 1990 (J Lab Clin Med 116:87-90, PMID 2165512). Within-subject
       tanned-vs-untanned arm synthesis with biphasic feedback deconvolved.
@@ -386,7 +393,8 @@ parameter_approvals:
     status: >-
       ANCHORED TO MATSUOKA 1990 DECONVOLUTION. Deconvolving baseline feedback
       (tanned baseline 92.1 nmol/L vs untanned 56.2 nmol/L) under the default biphasic
-      mode yields residual melanin attenuation of 6.6%, implying K_ATTEN = 0.34 (range [0.34, 1.00]).
+      mode yields residual melanin attenuation of 6.6%, implying K_ATTEN = 0.288972
+      (range [0.288972, 0.838389]) at the live M_TAN_HEADROOM = 0.238.
     not_covered: >-
       Matsuoka 1990 is n=7. K_ATTEN is collinear with K_SC; this calibration provides
       the evidence-based lower bound from the only within-subject trial in existence.
@@ -734,6 +742,128 @@ pending_approvals:
       default feedback_mode = 'linear' (whose Matsuoka deconvolution gives
       ~1.00, which FAILS even the widened band).
 
+  - name: "M_TAN_HEADROOM 0.20 -> 0.238 (melanin ceiling)"
+    date: 2026-08-25
+    status: APPROVED
+    approved_by: User (repository owner), 2026-08-25
+    value_adopted: 0.238
+    value_rationale: >-
+      0.238 is the largest tan Ravnbak actually measured (dM = 0.237724 exactly,
+      rounded up at the third decimal), so the ceiling accommodates every
+      observed tan. It sits inside the free-fit range [0.230880, 0.268013]
+      spanned by the three candidate scale maps. Chosen by the repository owner
+      in preference to the power-map point estimate 0.230880, which would have
+      left the two largest Ravnbak tans unrepresentable.
+    derivation: scripts/fit_melanin_kinetics.py
+    sources:
+      - >-
+        Ravnbak MH, Philipsen PA, Wulf HC. Skin pigmentation kinetics after UVB
+        exposure. Acta Derm Venereol 2008; 88:223-228. PMID 18480919.
+        Table II (absolute pigmentation-% increase, 6 and 12 exposures at
+        0.8/0.6/0.4 MMD) and Table I (per-FST pre-exposure pigmentation-% and
+        single-exposure MMD in SED).
+      - >-
+        Miyamura Y, Coelho SG, Schlenz K, et al. The deceptive nature of UVA
+        tanning versus the modest protective effects of UVB tanning on human
+        skin. Pigment Cell Melanoma Res 2011; 24(1):136-147. PMID 20979596.
+        Used as the UVA negative control and as an out-of-sample check; NOT
+        pooled into the fit.
+      - >-
+        Ravnbak MH, Philipsen PA, Wulf HC. Skin pigmentation kinetics after
+        exposure to ultraviolet A. Acta Derm Venereol 2009; 89:357-363.
+        NEGATIVE CONTROL ONLY -- see not_covered.
+    what: >-
+      M_TAN_HEADROOM is the facultative tanning headroom above constitutive
+      pigment, on the model 0-1 melanin index. It is currently 0.20 and is
+      flagged [PRIOR] in vitd_model.py with no independent source; the stated
+      rationale is structural ("keeps FST I-III behaviour close to the old
+      global 0.95 ceiling while making tanning monotone for every FST").
+      Ravnbak 2008 Table II, converted onto the model index through a map
+      anchored on the four per-FST pre-exposure pigmentation-% values, gives
+      measured tans of dM = 0.192 to 0.238. Several of those EXCEED the entire
+      shipped headroom, so the model cannot represent Ravnbak tans at any
+      alpha. Refitting with headroom free returns 0.231 (power map), 0.265
+      (quadratic) and 0.268 (linear), and the value is stable at 0.221-0.229
+      across a four-decade profile of alpha.
+    consequence: >-
+      Raises the melanin ceiling reachable by tanning, which increases
+      facultative self-shielding at high cumulative dose and therefore
+      slightly reduces synthesis late in long protocols. Interacts with
+      K_ATTEN (facultative attenuation, active at 0.288972). Downstream effect on
+      headline numbers is NOT yet quantified -- run_all.py has not been re-run
+      against this value.
+    not_covered: >-
+      This entry does NOT approve any change to alpha, alpha_by_FST,
+      alpha_max or UV_halfmax. The same fit shows those are NOT IDENTIFIABLE
+      from this evidence: profiling alpha from 0.0025 to 1.0 moves the weighted
+      residual by under 25%, because Ravnbak used only two exposure counts
+      (6 and 12) and the tan is already near plateau at 6. They stay PRIOR at
+      their shipped values.
+      It also does NOT approve pooling Ravnbak 2009 (UVA) into any melanin
+      fit. Miyamura 2011 Table 1 shows UVA raises epidermal melanin content
+      not at all (8.62 vs 9.03 a.u., NS) while producing a comparable visible
+      tan; fitting the model ATTENUATING melanin to UVA reflectance data would
+      credit the model with photoprotection that does not exist.
+
+  - name: "SC_max_by_FST I-III 0.23 -> 0.24 (stratum corneum ceiling)"
+    date: 2026-08-25
+    status: APPROVED
+    approved_by: User (repository owner), 2026-08-25
+    derivation: scripts/fit_melanin_kinetics.py  (sec. 6)
+    value_adopted: 0.24
+    sources:
+      - >-
+        de Boer 2025 Supplementary Table S1. FP I-III stratum corneum
+        5.6 -> 6.9 um, i.e. +23%. This was the sole basis for SC_max until now.
+      - >-
+        Miyamura Y, Coelho SG, Schlenz K, et al. Pigment Cell Melanoma Res
+        2011; 24(1):136-147. PMID 20979596. Table 1: stratum corneum
+        16.6 -> 20.7 um in FST II-III after 10 suberythemal UVB exposures over
+        2 weeks, i.e. +24.6988%. Independent cohort, protocol and measurement
+        method (histology of formalin-fixed biopsies vs de Boer's technique).
+    what: >-
+      Two independent studies now bracket the FST I-III stratum corneum
+      thickening ceiling at +23% and +24.6988%. 0.24 sits between them. The
+      midpoint is 0.238494; 0.24 was chosen by the repository owner as the
+      round value inside the bracket.
+    consequence: >-
+      Slightly increases SC attenuation at full adaptation for FST I-III,
+      reducing synthesis late in long protocols. FST IV-VI unchanged at 0.36.
+      The SC_max scalar default (0.30) is unchanged and remains the I-III /
+      IV-VI midpoint to within 0.0.
+    not_covered: >-
+      Does NOT tighten SC_max from prior to calibrated. Miyamura reports SEM
+      with n=6 and did not measure vitamin D, so this corroborates MAGNITUDE
+      only. CLAUDE.md still requires SC_max be flagged as an uncalibrated prior
+      whenever absolute D predictions are presented.
+      Does NOT extend to FST IV-VI: Miyamura enrolled FST II-III only, so the
+      0.36 value still rests on de Boer alone. Per the dark-skin priority
+      directive this is the gap that matters most and it remains open.
+      Does NOT touch alpha_SC, k_decay_SC, K_SC or k_damage.
+
+  - name: "beta provenance upgrade (NO value change)"
+    date: 2026-08-25
+    status: NOT_GATED
+    derivation: scripts/fit_melanin_kinetics.py
+    what: >-
+      beta stays at ln(2)/56 per day. What changed is where it comes from.
+      It was previously a stated guess ("a mid-range estimate compatible with
+      Ravnbak 2008 if complete fading requires ~3 e-folding times",
+      RESULTS.md:445). Ravnbak's Methods specify that "days to total fading"
+      was produced by fitting a LINEAR regression to pigmentation at 1 week,
+      2 months and 4 months and extrapolating to zero. That procedure is fully
+      specified and therefore invertible: assuming exponential decay, sampling
+      it on Ravnbak's timepoints, fitting OLS and taking the x-intercept
+      reproduces their 132-175 d for any true half-life in roughly 40-70 d.
+      The shipped 56 d sits near the middle of that band.
+    not_covered: >-
+      No point estimate is adopted. Ravnbak mixed 2-point and 3-point
+      regressions in unreported proportion (2-point was used "when fading was
+      completed at the 4 months control"), and that choice alone moves the
+      inverted half-life from ~48 d to ~74 d. Quoting a single fitted beta
+      would over-read the data. The manuscript status flag "VERIFIED" for beta
+      should be softened to DERIVED with the 40-70 d range quoted.
+
 standing_directives:
   # Cross-cutting instructions from the repository owner, 2026-08-17. These
   # govern HOW every entry below is to be executed, not any single parameter.
@@ -1012,6 +1142,15 @@ notes: |
     was retired to a structural constant -- see parameter_approvals.K_ATTEN --
     on the grounds that it is jointly unidentifiable with K_SC and K_const and
     that the flat objective which produced 0.00 was never an estimate.
+    SUPERSEDED AGAIN 2026-08-21 (user-approved): K_ATTEN was reinstated as an
+    active, calibrated parameter (K_ATTEN = 0.34, anchored to Matsuoka 1990
+    under biphasic feedback). RETIRED_PARAMETERS is now empty -- see the
+    K_ATTEN entry in the vitd_model.py module docstring for the live value and
+    derivation.
+    UPDATED 2026-08-25: M_TAN_HEADROOM moved 0.20 -> 0.238 and derive_K_ATTEN's
+    excess_M now reads it live, so K_ATTEN moved to 0.288972 (see the
+    parameter_approvals.K_ATTEN entry above). The 2026-08-18 retirement entry above is a historical record
+    of the state at that date, not current.
   - No genuine held-out validation study exists; every study is a calibration
     or debug target.
 

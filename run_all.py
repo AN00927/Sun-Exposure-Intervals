@@ -9,6 +9,7 @@ Usage:  python3 run_all.py
 import datetime as _dt
 import os
 import sys
+import traceback
 from io import StringIO
 from contextlib import redirect_stdout
 
@@ -41,6 +42,53 @@ def capture_log(fn, *args, **kwargs):
     with redirect_stdout(buf):
         fn(*args, **kwargs)
     return buf.getvalue()
+
+
+def _ensure_scripts_on_path():
+    """Put `scripts/` on sys.path once. Idempotent."""
+    d = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts")
+    if d not in sys.path:
+        sys.path.insert(0, d)
+    return d
+
+
+def capture_log_safe(label, fn, *args, **kwargs):
+    """`capture_log` that cannot abort the pipeline.
+
+    The two `scripts/` sections wired in below (1a, 5a) are heavier than a
+    typical analysis and live outside the core modules, so a failure in one of
+    them must not cost the other seventeen sections a ten-minute run. Whatever
+    the analysis printed before it died is kept, a failure banner is appended
+    so the failure is *visible in the report* rather than silently missing,
+    and the return value is `None` so the prose code can fall back.
+
+    Returns ``(log_text, result, error_or_None)``.
+    """
+    buf = StringIO()
+    result = None
+    err = None
+    try:
+        with redirect_stdout(buf):
+            result = fn(*args, **kwargs)
+    except Exception as exc:                       # not BaseException: Ctrl-C
+        err = "%s: %s" % (type(exc).__name__, exc)
+        buf.write(
+            "\n\n*** SECTION FAILED: %s ***\n%s\n\n%s\n"
+            "The rest of the pipeline continued. Output above (if any) is\n"
+            "partial and the figures/tables for this section may be stale or\n"
+            "absent.\n" % (label, err, traceback.format_exc()))
+    return buf.getvalue(), result, err
+
+
+def _import_script_module(name):
+    """Import a module from `scripts/` defensively.
+
+    Used for the two Phase-F sections. Import is deferred to call time and
+    wrapped, because an import-time failure (a mid-edit file, a missing
+    optional dependency) should degrade one section, not the pipeline.
+    """
+    _ensure_scripts_on_path()
+    return __import__(name)
 
 
 def _report_decision_problems():
@@ -127,6 +175,256 @@ def _report_decision_problems():
     print("  rather than silently returning the search bound.")
 
 
+def _single_session_headline(df):
+    """One sentence of headline numbers for section 1a, from the returned df.
+
+    Every number is computed here from the analysis's own output; nothing is
+    typed in (CLAUDE.md: parameter values live in the code, not in prose).
+    Returns "" if the frame is missing or does not carry the columns, so a
+    schema change in the script degrades the sentence rather than the run.
+    """
+    try:
+        d = df[df["variant"] == sorted(df["variant"].unique())[0]]
+        d = d[d["fst"] == 6] if (d["fst"] == 6).any() else d
+        d = d.sort_values("minutes")
+        lo, hi = d.iloc[0], d.iloc[-1]
+        min_ratio = hi["minutes"] / lo["minutes"]
+        gap_ratio = (hi["peak_gap_vs_no_exposure_nmol_L"]
+                     / lo["peak_gap_vs_no_exposure_nmol_L"])
+        marg_lo = lo["marginal_gap_nmol_L_per_extra_minute"]
+        marg_hi = hi["marginal_gap_nmol_L_per_extra_minute"]
+        rem = hi["frac_of_peak_gap_remaining_at_end"]
+        return (
+            "\n**Headline, generated from this run's own output table.** For "
+            "the darkest skin type carried here, under the default "
+            "(impulse-synthesis) model, a %g-fold increase in session length "
+            "(%g -> %g minutes) buys only a %.1f-fold increase in the peak "
+            "25(OH)D gap over the no-exposure control: the marginal yield "
+            "falls from %.4f to %.4f nmol/L per extra minute across that "
+            "range. The washout is correspondingly slow — %.0f%% of the peak "
+            "gap from the longest session is still present at the end of the "
+            "observation window. Longer sessions are subject to diminishing "
+            "returns because per-session synthesis is logarithmic in dose; "
+            "this is the single-session statement of the same concavity that "
+            "makes frequent-and-small win in sections 5, 5a and 17.\n"
+            % (min_ratio, lo["minutes"], hi["minutes"], gap_ratio,
+               marg_lo, marg_hi, 100.0 * rem))
+    except Exception as exc:                       # pragma: no cover - guard
+        return ("\n*(Headline numbers unavailable: %s: %s. Read them from the "
+                "log and CSV below.)*\n" % (type(exc).__name__, exc))
+
+
+def _frontload_headline(df):
+    """Headline numbers for section 5a, computed from the returned frame.
+
+    Nothing here is typed in: every figure is derived from the analysis's own
+    output at report time (CLAUDE.md). Column names are read defensively, so
+    a schema change in the script degrades this paragraph rather than the run.
+    """
+    try:
+        import numpy as _np
+        out = []
+        RUNG = "melanin_only"
+        DEF = "AUC_deficit_below_sufficiency"
+
+        # ---------------------------------------------------------- arm (a)
+        a = df[(df["arm"] == "within_week") & (df["rung"] == RUNG)]
+        pcts, mono = [], 0
+        for _, g in a.groupby(["FST", "weekly_budget_SED"]):
+            g = g.sort_values("sessions_per_week")
+            hi = g[g["sessions_per_week"] == g["sessions_per_week"].max()]
+            lo = g[g["sessions_per_week"] == g["sessions_per_week"].min()]
+            if hi.empty or lo.empty:
+                continue
+            pcts.append(100.0 * (float(lo["steady_state_D"].iloc[0])
+                                 / float(hi["steady_state_D"].iloc[0]) - 1.0))
+            mono += int(g["steady_state_D"].is_monotonic_increasing)
+        if pcts:
+            worst = a.loc[a["max_frac_MED"].idxmax()]
+            out.append(
+                "**Arm (a) - within-week concentration. Splitting beats "
+                "concentrating, monotonically.** Holding the weekly SED "
+                "budget fixed, going from a session every day to one session "
+                "a week changes steady-state 25(OH)D by between %+.1f%% and "
+                "%+.1f%% across the %d skin-type x budget cells, and "
+                "steady-state 25(OH)D rises monotonically with sessions per "
+                "week in %d of those %d cells. This is the advisor's question "
+                "read literally, and the sign is unambiguous: at fixed weekly "
+                "UV, front-loading into fewer days is worse. It is also "
+                "unsafe at the concentrated end - the worst arm on the grid "
+                "(FST %d, %g SED/week, %d session(s) per week) reaches "
+                "%.0f%% of one MED in a single session, i.e. a frank burn."
+                % (max(pcts), min(pcts), len(pcts), mono, len(pcts),
+                   int(worst["FST"]), float(worst["weekly_budget_SED"]),
+                   int(worst["sessions_per_week"]),
+                   100.0 * float(worst["max_frac_MED"])))
+
+        # ---------------------------------------------------------- arm (b)
+        b = df[(df["arm"] == "horizon_taper") & (df["rung"] == RUNG)]
+        plateau, transient, artefact, conflict = [], [], [], []
+        for horizon in sorted(b["horizon_days"].unique()):
+            bh = b[b["horizon_days"] == horizon]
+            pg, dg, dg_f = [], [], []
+            g_def, g_ss = set(), set()
+            dts_def, dts_ss, art, spans_t, spans_i = [], [], [], [], []
+            n_front = 0
+            for _, g in bh.groupby(["FST", "weekly_budget_SED",
+                                    "n_sessions_planned"]):
+                ref = g[(g["gamma"] == 1.0) & (g["family"] == "uniform")]
+                if ref.empty:
+                    continue
+                r_ss = float(ref["steady_state_D"].iloc[0])
+                r_def = float(ref[DEF].iloc[0])
+                front = g[g["gamma"] > 1.0]
+                if not front.empty and r_ss > 0:
+                    pg.append(100.0 * (float(front["steady_state_D"].max())
+                                       / r_ss - 1.0))
+                    n_front += len(front)
+                if r_def > 0:
+                    dg.append(100.0 * (1.0 - float(g[DEF].min()) / r_def))
+                    fe = g[g["sub_erythemal"].astype(bool)]
+                    if not fe.empty:
+                        dg_f.append(100.0 * (1.0 - float(fe[DEF].min()) / r_def))
+                best_def = g.loc[g[DEF].idxmin()]
+                best_ss = g.loc[g["steady_state_D"].idxmax()]
+                g_def.add(float(best_def["gamma"]))
+                g_ss.add(float(best_ss["gamma"]))
+                for row, sink in ((best_def, dts_def), (best_ss, dts_ss)):
+                    v = float(row["days_to_sufficiency"])
+                    if _np.isfinite(v):
+                        sink.append(v)
+                if r_def > 0 and r_ss > 0:
+                    art.append((100.0 * (float(best_ss["steady_state_D"])
+                                         / r_ss - 1.0),
+                                float(best_ss[DEF]) / r_def,
+                                float(best_ss["gamma"]),
+                                float(best_ss.get("first_gap_days", _np.nan))))
+                flat = g[g["family"] == "uniform"]
+                if len(flat) > 1 and r_ss > 0 and r_def > 0:
+                    spans_t.append(100.0 * (float(flat["steady_state_D"].max())
+                                            - float(flat["steady_state_D"].min()))
+                                   / r_ss)
+                    spans_i.append(100.0 * (float(flat[DEF].max())
+                                            - float(flat[DEF].min())) / r_def)
+            if pg:
+                plateau.append(
+                    "- **%d-day horizon**: over %d matched-N cells (%d "
+                    "front-loaded arms), the best front-loaded profile "
+                    "differs from flat-and-uniform on steady-state 25(OH)D "
+                    "by a mean of %+.2f%% and at best %+.2f%%. The largest "
+                    "POSITIVE plateau gain available anywhere on the "
+                    "front-loaded half of the grid is **%+.2f%%**."
+                    % (horizon, len(pg), n_front, sum(pg) / len(pg), max(pg),
+                       max(0.0, max(pg))))
+            if dg:
+                transient.append(
+                    "- **%d-day horizon**: mean **%.1f%% reduction** in "
+                    "accumulated deficiency below sufficiency versus "
+                    "flat-and-uniform at the same session count (max %.1f%%); "
+                    "%s when the search is restricted to sub-erythemal arms "
+                    "only. The deficit-optimal spacing exponent is %s - "
+                    "front-loaded - and reaches sufficiency in a median of "
+                    "%s days, against %s days at the spacing that maximises "
+                    "the terminal plateau instead."
+                    % (horizon, sum(dg) / len(dg), max(dg),
+                       ("mean %.1f%%" % (sum(dg_f) / len(dg_f))) if dg_f
+                       else "no sub-erythemal arm exists",
+                       ", ".join("%g" % x for x in sorted(g_def)),
+                       ("%.0f" % _np.median(dts_def)) if dts_def else "n/a",
+                       ("%.0f" % _np.median(dts_ss)) if dts_ss else "n/a"))
+            if art:
+                worst_art = max(art)
+                gain_pct, def_ratio, gam, gap = worst_art
+                if gam < 1.0 and def_ratio > 1.0:
+                    artefact.append(
+                        "- **%d-day horizon**: the arm that maximises the "
+                        "terminal plateau wins it by %+.1f%% - at gamma = %g, "
+                        "i.e. **back**-loading. It opens with a %s-day "
+                        "no-exposure gap and stacks dose underneath the "
+                        "final-28-day averaging window, and pays for it with "
+                        "**%.1fx worse** accumulated deficiency than the flat "
+                        "reference. That is an artefact of the measurement "
+                        "window, not a schedule anyone should follow."
+                        % (horizon, gain_pct, gam,
+                           ("%.0f" % gap) if _np.isfinite(gap) else "long",
+                           def_ratio))
+                else:
+                    artefact.append(
+                        "- **%d-day horizon**: no such artefact. The terminal "
+                        "winner here is gamma = %g (%s), it wins by only "
+                        "%+.1f%%, and its accumulated deficiency is %.2fx the "
+                        "flat reference - so the terminal and integrated "
+                        "measures are not being pulled apart at this horizon."
+                        % (horizon, gam,
+                           "back-loaded" if gam < 1.0 else
+                           "front-loaded" if gam > 1.0 else "uniform",
+                           gain_pct, def_ratio))
+            if spans_t:
+                conflict.append(
+                    "- **%d-day horizon**: across the spacing exponent the "
+                    "terminal measure moves by ~%.0f percentage points while "
+                    "the horizon-integrated measure moves by ~%.0f. The "
+                    "terminal argmax is gamma = %s and the integrated argmax "
+                    "is gamma = %s."
+                    % (horizon, sum(spans_t) / len(spans_t),
+                       sum(spans_i) / len(spans_i),
+                       ", ".join("%g" % x for x in sorted(g_ss)),
+                       ", ".join("%g" % x for x in sorted(g_def))))
+
+        if plateau:
+            out.append(
+                "**Arm (b) - the plateau is a null, and the longer horizon "
+                "makes it cleaner, not weaker.** Every arm is referenced to "
+                "the flat, uniformly spaced arm at the *same* session count, "
+                "so the session-count effect is divided out and only dose "
+                "shape and spacing remain:\n\n" + "\n".join(plateau) + "\n\n"
+                "Giving the three-parameter shape families four times the "
+                "horizon to express themselves did not produce a plateau "
+                "gain; it removed what little there was. That forecloses "
+                "the obvious "
+                "objection that the shapes simply had no room to work. **The "
+                "steady-state level is set by the budget and by how finely "
+                "that budget is split (arm a). Arranging the same budget "
+                "differently over the horizon does not move it.**")
+        if transient:
+            out.append(
+                "**But front-loading has large, real leverage on the "
+                "TRANSIENT.** Ranked on accumulated deficiency below "
+                "sufficiency - a horizon-integrated measure rather than a "
+                "terminal one - the picture inverts from a null to a "
+                "substantial effect:\n\n" + "\n".join(transient) + "\n\n"
+                "**This is the section's headline.** What front-loading buys "
+                "is not a higher plateau but a faster climb to one: reaching "
+                "sufficiency in weeks rather than months, and spending far "
+                "less time deficient on the way. The effect survives the "
+                "erythema cap, so it is not bought with a burn.")
+        if artefact:
+            out.append(
+                "**The large terminal 'gain' at the long horizon is an "
+                "artefact and must not be quoted bare.**\n\n"
+                + "\n".join(artefact) + "\n\n"
+                "Steady-state 25(OH)D is a mean over the final 28 days, so "
+                "at a 365-day horizon the averaging window is under 8% of the "
+                "run, and any schedule that piles dose into the endpoint wins "
+                "it. That is why arm (b) is ranked on deficit AUC with the "
+                "terminal measures retained as reported secondaries.")
+        if conflict:
+            out.append(
+                "**Metric-conflict caveat - no taper sign may be stated "
+                "without naming the metric it was read off, and the conflict "
+                "WIDENS with horizon.**\n\n" + "\n".join(conflict) + "\n\n"
+                "Note what this rules out. `steady_state_D` and `final_D` are "
+                "**both terminal measures**, and as the horizon grows the "
+                "averaging window shrinks toward the endpoint, so the two "
+                "converge on each other. Their agreement at the long horizon "
+                "is co-movement between two views of the same instant, **not "
+                "corroboration**, and must never be presented as two metrics "
+                "independently confirming a result.")
+        return "\n" + "\n\n".join(out) + "\n" if out else ""
+    except Exception as exc:                       # pragma: no cover - guard
+        return ("\n*(Headline numbers unavailable: %s: %s. Read them from the "
+                "log and CSVs below.)*\n" % (type(exc).__name__, exc))
+
 def main():
     print("=" * 70)
     print("Vitamin D scheduling model: full pipeline")
@@ -200,6 +498,28 @@ def main():
     print(spacing_log)
     print(vardose_log)
     print(joint_log)
+
+    # 2b. Advisor-question deliverables (scripts/). Both are heavier than the
+    # analyses above and both are wired defensively via capture_log_safe, so a
+    # failure in either one costs its own section and nothing else.
+    def _run_single_session():
+        return _import_script_module("single_session_response").run()
+
+    def _run_frontload():
+        return _import_script_module("frontload_fixed_budget").run()
+
+    single_log, single_df, single_err = capture_log_safe(
+        "1a. Single-session dose-response and washout", _run_single_session)
+    frontload_log, frontload_df, frontload_err = capture_log_safe(
+        "5a. Front-load vs split at a fixed budget", _run_frontload)
+    print(single_log)
+    print(frontload_log)
+    if single_err:
+        print("WARNING: section 1a failed (%s) -- pipeline continued."
+              % single_err)
+    if frontload_err:
+        print("WARNING: section 5a failed (%s) -- pipeline continued."
+              % frontload_err)
 
     # 3. Markdown report.
     # Every constant below is interpolated from code, never typed out --
@@ -293,6 +613,87 @@ def main():
     report.append(f"\n**{n_pass} / {n_total} checks passed.**\n")
     report.append("\n```\n" + val_log + "\n```\n")
 
+    # ---- 1a. Single-session dose-response and washout -------------------
+    # Numbered 1a rather than inserted as a new integer section: several
+    # sections below cross-reference each other by number ("see section 13c",
+    # "section 6's exhaustive sweep"), and renumbering would silently break
+    # every one of them. 1a places the foundational single-session result
+    # before the parameter sweeps that assume it.
+    report.append("\n## 1a. Single session: dose-response and washout\n")
+    report.append(
+        "\n**The question this answers**, put by the project's advisor: *plot "
+        "how vitamin D concentration changes with exposure duration for a "
+        "single session, including how it decays once the session is over.* "
+        "Everything above and below this section scores a *schedule*; this "
+        "one scores a single exposure, which is the unit those schedules are "
+        "built from. It is the dose-response and washout kernel behind the "
+        "trajectories in section 12 and the interval orderings in sections 5 "
+        "and 5a.\n\n"
+        "**What is held fixed.** One session at t = 0 and nothing afterwards, "
+        "then an observation window long enough for the washout to complete. "
+        "Session length in minutes is converted to erythemal SED under the "
+        "single frozen reference scenario quoted at the top of this report "
+        "(`vitd_scenario`) — no latitude, date or posture enters. Only the "
+        "session DURATION varies between curves. Each panel also carries a "
+        "no-exposure control run from the same baseline, because the model "
+        "has no dietary or endogenous source term, so baseline 25(OH)D is an "
+        "initial condition rather than a fixed point and the curves decay "
+        "*through* it. The session's effect is therefore read as the GAP to "
+        "that control, not as an absolute level.\n")
+    report.append(_single_session_headline(single_df)
+                  if single_df is not None else "")
+    report.append(
+        "\n**Limitation — the decay limb is an extrapolation, and the "
+        "washout times are unvalidated.** The state-dependent decay rate "
+        "`ModelParams.k_decay_D` (Datta 2017 power law) was fitted over a "
+        "25(OH)D range that this figure sits almost entirely *below*, so the "
+        "half-life the power law returns here is longer than any half-life "
+        "Datta measured. The script computes the fitted range and the model "
+        "half-lives inside and outside it at run time and renders them both "
+        "into the log below and onto the figure itself, so they cannot drift "
+        "from the parameterisation:\n")
+    _ss_caveat = ""
+    try:
+        _ssm = _import_script_module("single_session_response")
+        from vitd_model import ModelParams as _MP2
+        _b = _MP2()
+        _lo, _hi = _ssm.DATTA_FITTED_D_RANGE
+        _ss_caveat = (
+            "\n- `k_decay_D` was fitted over 25(OH)D **%g-%g nmol/L**; model "
+            "half-life is **%.0f d** at %g nmol/L and **%.0f d** at %g "
+            "nmol/L (both inside the fitted range), against **%.0f d** at "
+            "the %g nmol/L default baseline this figure starts from — "
+            "outside it.\n"
+            % (_lo, _hi, _ssm._thalf(_b, _hi), _hi, _ssm._thalf(_b, _lo),
+               _lo, _ssm._thalf(_b, _b.D0_default), _b.D0_default))
+    except Exception as _exc:                      # pragma: no cover - guard
+        _ss_caveat = ("\n- *(computed caveat unavailable: %s: %s — read the "
+                      "banner on the figure)*\n" % (type(_exc).__name__, _exc))
+    report.append(_ss_caveat)
+    report.append(
+        "\nPeak heights and the marginal-yield ranking do **not** depend on "
+        "that rate — they are set by the synthesis term at t = 0 — but every "
+        "washout time in this section does, and should be treated as "
+        "unvalidated. A second caveat is structural: in the default model a "
+        "session's synthesis is credited to serum as an instantaneous "
+        "impulse, so the rise is a vertical step rather than a ramp. That is "
+        "a property of the impulse formulation, not a physiological claim; "
+        "the transit-delay variant (`ModelParams.use_transit_delay`, whose "
+        "half-life is flagged `[PRIOR]` in `vitd_model.py`) is plotted "
+        "alongside it, and the default column is the one every other headline "
+        "number in this report uses.\n")
+    if single_err:
+        report.append(
+            "\n> **This section failed on this run** (`%s`). The figure and "
+            "table referenced below may be stale or absent; the traceback is "
+            "in the log block.\n" % single_err)
+    report.append("\n```\n" + single_log + "\n```\n")
+    report.append("\n![single session dose-response and washout]"
+                  "(figs/single_session_response.png)\n")
+    report.append("\nPer-duration table: "
+                  "[`tables/single_session_response.csv`]"
+                  "(tables/single_session_response.csv).\n")
+
     report.append("\n## 2. Alpha sensitivity sweep (Priority 1 completed in Session 2)\n")
     report.append(
         "\nVaries the photoadaptation rise rate (alpha) and checks whether the "
@@ -332,17 +733,233 @@ def main():
     report.append("\n```\n" + k_log + "\n```\n")
     report.append("\n![K_ATTEN sweep](figs/K_ATTEN_sweep.png)\n")
 
+    # Section 5 assumption block. Every quantity is read from vitd_analyses'
+    # module constants and ModelParams() at report time, so the assumptions
+    # stated in the prose cannot drift from the ones the analysis ran under.
+    _TF_DAYS = vitd_analyses.PROTOCOL_DAYS
+    _TF_TOTAL_SED = vitd_analyses.TWO_FRAMING_TOTAL_SED
+    _TF_PER_SESSION = vitd_analyses.TWO_FRAMING_PER_SESSION_SED
+    _TF_FSTS = ", ".join(str(f) for f in vitd_analyses.TWO_FRAMING_FSTS)
+    _TF_INTERVALS = ", ".join(str(d) for d in vitd_analyses.INTERVALS_DAYS)
     report.append("\n## 5. Two-framing schedule comparison\n")
     report.append(
         "\nCentral handoff finding: the optimal interval depends on what's being "
-        "optimized.\n\n"
-        "- **Framing 1**: matched cumulative SED (42 SED over 12 weeks). UV budget "
-        "is the constraint; we just choose how to distribute it.\n"
-        "- **Framing 2**: matched per-session dose (1 SED per session). Per-session "
-        "dose is fixed; cumulative UV exposure varies with frequency.\n"
+        "optimized. A schedule claim only means something relative to what is "
+        "held fixed, so the conditions come first and the claim is stated "
+        "conditioned on them.\n\n"
+        "### What is held fixed\n\n"
+        "Identical across **every row of both framings**. Each value is read "
+        "from `vitd_analyses`' module constants or `vitd_model.ModelParams()` "
+        "at report time, so this list cannot drift from the code that ran:\n\n"
+        f"- **Horizon**: {_TF_DAYS:g} days ({_TF_DAYS / 7:g} weeks), "
+        "`vitd_analyses.PROTOCOL_DAYS`. Every schedule is scored over the same "
+        "window, and steady-state D is read from the end of it.\n"
+        "- **Baseline 25(OH)D**: every arm starts at `ModelParams.D0_default` "
+        f"= {_p.D0_default:g} nmol/L. No arm is given a head start.\n"
+        f"- **Exposed BSA**: `ModelParams.exposed_bsa` = {_p.exposed_bsa:g} of "
+        "body surface, the same in every arm. Posture, clothing and body-site "
+        "geometry are not varied, so a longer interval buys no extra skin.\n"
+        f"- **Skin types**: FST {_TF_FSTS} only "
+        "(`vitd_analyses.TWO_FRAMING_FSTS`) - the dark-skin target population. "
+        "FST I-IV are not in this table and nothing here should be read as a "
+        "light-skin result.\n"
+        "- **Feedback mode**: `ModelParams.feedback_mode` = "
+        f"'{_p.feedback_mode}'. Substrate feedback is active, so a large single "
+        "dose is penalised for landing on an already-higher 25(OH)D.\n"
+        f"- **UV source**: `ModelParams.E_source` = {_p.E_source:g}, the "
+        "broadband solar reference. This section does **not** use the "
+        "`solar_summer` calibration that section 11 uses, so absolute D values "
+        "here are not comparable with section 11's.\n"
+        "- **Spacing is uniform only**: sessions come from "
+        "`vitd_model.build_pulse_schedule`, which emits equally spaced pulses "
+        "from day 0. Irregular, clustered and burst schedules are never tested "
+        f"here. The intervals compared are the fixed grid {_TF_INTERVALS} days "
+        "(`vitd_analyses.INTERVALS_DAYS`).\n"
+        "- **Both photoadaptation channels are active**: induced melanin and "
+        "stratum-corneum thickening both run at their `ModelParams()` defaults, "
+        "starting from `M = M_baseline(FST)` and `SC = 0`. Neither is ablated, "
+        "so the penalty for concentrating UV into few large sessions carries "
+        "both mechanisms.\n"
+        "- **Doses are absolute SED, not a fraction of MED.** Both framings "
+        "specify UV in SED and neither rescales by the individual MED. Under "
+        "fractional-MED framing the skin-type response pattern differs "
+        "materially (section 0), so these rows do not transfer to it.\n\n"
+        "### What each framing varies\n\n"
+        f"- **Framing 1**: matched cumulative SED - a fixed {_TF_TOTAL_SED:g} "
+        f"SED budget spread over the {_TF_DAYS:g}-day horizon. Total UV is the "
+        "constraint and the only free choice is how to distribute it, so a "
+        "longer interval necessarily means a larger per-session dose.\n"
+        f"- **Framing 2**: matched per-session dose - {_TF_PER_SESSION:g} SED "
+        "every session regardless of interval. Per-session dose is the "
+        "constraint; cumulative UV falls as the interval lengthens, so these "
+        "arms are *not* matched on total exposure.\n\n"
+        "### The claim, conditioned\n\n"
+        "**Under Framing 1 - at fixed total UV over the horizon, with "
+        "everything in the list above held fixed - daily dosing beats every "
+        "longer spacing tested.** It wins on steady-state D, final D, net "
+        "delta-D per SED and AUC above baseline per SED, for both skin types. "
+        "The relationship is **monotone in interval across the whole tested "
+        "grid**: every step from daily toward wider spacing is worse than the "
+        "step before it, and there is no interior optimum. The finding is "
+        "therefore 'as often as you can manage', not 'an optimal gap of N "
+        "days'.\n\n"
+        "Two qualifications, both visible in the log below. First, part of what "
+        "rules out the widest spacing is **dose safety, not vitamin D "
+        "efficiency**: concentrating the whole budget into the "
+        "longest-interval schedule pushes a single session above one MED, "
+        "flagged as an overdose on the safety line. Second, the monotonicity "
+        "is a Framing-1 property. Under Framing 2 daily still reaches the "
+        "highest 25(OH)D, but only by delivering far more total UV than the "
+        "wide-interval arms (compare the `cumulative_SED` column), and on the "
+        "per-SED efficiency columns Framing 2 has an **interior** optimum at an "
+        "intermediate interval where daily is not the most UV-efficient "
+        "choice. 'Daily is best' and 'daily is most efficient per unit UV' are "
+        "different claims, and only the first survives both framings.\n\n"
+        "### Out of scope for this section\n\n"
+        "Both framings vary the **interval**. Neither holds frequency fixed "
+        "while varying the per-session dose, so nothing here addresses **daily "
+        "small doses versus daily large doses** - that comparison is not in the "
+        "table and this section cannot answer it. The dose axis is treated "
+        "elsewhere: section 10 compares one session against a split one at a "
+        "matched UV rate, and section 13b frees the per-session dose while "
+        "holding the session count fixed.\n"
     )
     report.append("\n```\n" + frame_log + "\n```\n")
     report.append("\n![two framings](figs/two_framings.png)\n")
+
+    # ---- 5a. Front-load vs split at a fixed budget ------------------------
+    # 5a, not a new integer: this sits directly against section 5's
+    # two-framing comparison, and the report's later sections cross-reference
+    # each other by number, so nothing may be renumbered.
+    report.append("\n## 5a. Front-load or split? A fixed UV budget, three "
+                  "mechanism rungs\n")
+    report.append(
+        "\n**The question this answers**, put by the project's advisor: *for "
+        "a fixed total exposure time per week, is it better to front load "
+        "rather than split time across days?* — and, explicitly, *answer it "
+        "with just melanin dynamics first, then add skin thickening, then "
+        "add skin cancer risk.* That staging is why this section is run at "
+        "three rungs of `vitd_ablation` rather than once: `melanin_only`, "
+        "`melanin_plus_sc`, and `melanin_sc_risk`.\n\n"
+        "Section 5 varies the **interval** at a fixed budget. This section "
+        "separates the two distinct things \"front-loading\" can mean and "
+        "reports them as separate arms:\n\n"
+        "- **Arm (a), within-week concentration.** The weekly SED budget is "
+        "held fixed and only the number of days it is spread over changes, "
+        "from a session every day down to one session a week. The pattern "
+        "repeats every week, so nothing is front-loaded across the horizon — "
+        "only within each week. This is the advisor's question read "
+        "literally.\n"
+        "- **Arm (b), across-horizon taper.** The total SED over the whole "
+        "horizon is held fixed and the dose *profile* is varied from flat to "
+        "front-loaded-and-tapering (two-phase and exponential families), "
+        "crossed with a monotone spacing warp (`gamma = 1` is uniform, "
+        "`> 1` front-loaded). Every profile is rescaled to deliver exactly "
+        "the same total SED, so only the shape is swept.\n\n"
+        "**What is held fixed.** The same frozen reference scenario as every "
+        "other section; the same baseline; FST V and VI as the priority "
+        "population with FST II carried only as an explicitly-labelled "
+        "light-skin contrast; and, within each comparison, the SED budget. "
+        "The method is a **deterministic grid sweep with no constraint "
+        "applied** — deliberately not the risk-constrained optimisers of "
+        "sections 13b/13c, whose sufficiency floor and erythema cap would "
+        "silently delete exactly the concentrated arms the question is "
+        "about. Because no cap is applied, every row instead carries the "
+        "largest single session as a fraction of MED, checked against the "
+        f"sub-erythemal ceiling ({GAMMA_MED:.0%} MED) and against a frank "
+        "burn at 1.0 MED. An arm that wins while requiring a burn has not "
+        "won, and is flagged as such in the CSV, the console summary and the "
+        "plots.\n\n"
+        "**The answer in one line, because the two arms answer different "
+        "halves of it.** The steady-state *plateau* is set by the budget "
+        "and by how finely it is split across days (arm a); rearranging "
+        "the same budget over the horizon does not move it (arm b, a "
+        "null that gets cleaner at the longer horizon). What "
+        "front-loading actually buys is the *transient*: reaching "
+        "sufficiency fast and minimising the deficiency accumulated on "
+        "the way. Arm (b) is therefore ranked on accumulated deficiency "
+        "below sufficiency - a horizon-integrated measure - with "
+        "steady-state and final 25(OH)D retained as reported secondary "
+        "terminal measures. Limitation 1 below says why that choice is "
+        "not cosmetic.\n")
+    report.append(_frontload_headline(frontload_df)
+                  if frontload_df is not None else "")
+    report.append(
+        "\n**Limitations — these three constrain what may be read off this "
+        "section.**\n\n"
+        "1. **Session count must be matched before any taper claim is made, "
+        "and the outcome measure must be named.** An unmatched comparison - "
+        "one that lets the tapered arm also use a different number of "
+        "sessions - shows a gain of several percent that is an artefact of "
+        "the session-count difference, not of the dose shape. Referenced to "
+        "the flat, uniformly spaced arm at the *same* N, the plateau effect "
+        "is sub-percent at the protocol horizon and vanishes entirely at the "
+        "longer one. Any \"front-loading helps\" claim taken from this "
+        "material must therefore say (i) whether N was matched - if it was "
+        "not, the claim is about how often you go outside, not about how the "
+        "dose is shaped - and (ii) which outcome it was read off, because "
+        "the sign of the taper depends on that choice and the dependence "
+        "**widens with the horizon**. The terminal measures "
+        "(`steady_state_D`, `final_D`) reward whatever sits nearest the "
+        "endpoint; the horizon-integrated measure (deficit AUC below "
+        "sufficiency) rewards getting there early. Arm (b) is ranked on the "
+        "integrated measure for that reason, with the terminal measures "
+        "retained as reported secondaries, and the disagreement is plotted "
+        "rather than resolved by picking a favourite.\n"
+        "2. **The back-loaded winner on the terminal measure is an artefact, "
+        "not a schedule.** At the long horizon the arm that maximises "
+        "steady-state 25(OH)D does so by maximum back-loading: it opens with "
+        "a long no-exposure gap, leaves the subject deficient for most of "
+        "the year, and stacks dose underneath the final-28-day averaging "
+        "window. The numbers that expose it - its deficit AUC relative to "
+        "the flat reference, and its days-to-sufficiency - are generated "
+        "above so the \"gain\" cannot be quoted bare.\n"
+        "3. **`melanin_only` is an ABLATION, not a re-fit.** Turning the "
+        "stratum-corneum channel off does not re-estimate anything, so "
+        "absolute 25(OH)D levels under that rung are a mechanism-isolation "
+        "diagnostic and are **not comparable across rungs**. Only *within*-"
+        "rung schedule rankings are defensible. This is why the headline "
+        "figure plots each arm relative to its own rung's reference schedule "
+        "and the absolute-level figure keeps the rungs in separate panels. "
+        "Relatedly, `melanin_sc_risk` is dynamically **identical** to "
+        "`melanin_plus_sc` — it is a *reporting* rung that obliges the "
+        "analysis to show the skin-cancer indices `simulate()` computes "
+        "anyway, not \"cancer risk added to the model\", and its trace sits "
+        "exactly on top of `melanin_plus_sc` on every plot.\n")
+    if frontload_err:
+        report.append(
+            "\n> **This section failed on this run** (`%s`). The figures and "
+            "tables referenced below may be stale or absent; the traceback is "
+            "in the log block.\n" % frontload_err)
+    report.append("\n```\n" + frontload_log + "\n```\n")
+    report.append("\n![front-load vs split, within week]"
+                  "(figs/frontload_within_week.png)\n")
+    report.append("\n![front-load vs split, absolute levels by rung]"
+                  "(figs/frontload_within_week_absolute.png)\n")
+    report.append("\n![across-horizon taper, protocol horizon]"
+                  "(figs/frontload_horizon_taper.png)\n")
+    report.append("\n![across-horizon taper, 365-day horizon]"
+                  "(figs/frontload_horizon_taper_365d.png)\n")
+    report.append("\n![taper metric conflict: terminal vs horizon-integrated "
+                  "outcomes](figs/frontload_taper_metric_conflict.png)\n")
+    report.append("\n![front-load safety sidecar](figs/frontload_safety.png)\n")
+    report.append(
+        "\nTables: [`tables/frontload_within_week.csv`]"
+        "(tables/frontload_within_week.csv) (arm a), "
+        "[`tables/frontload_horizon_taper.csv`]"
+        "(tables/frontload_horizon_taper.csv) (arm b), and "
+        "[`tables/frontload_taper_horizon_comparison.csv`]"
+        "(tables/frontload_taper_horizon_comparison.csv) (the matched-N "
+        "horizon check, one row per rung x skin type x budget x session "
+        "count, carrying `best_gain_pct`, `spacing_only_gain_pct` and the "
+        "three argmax-gamma columns the paragraph above is computed from). "
+        "The 365-day re-run of arm (b) writes "
+        "[`tables/frontload_horizon_taper_365d.csv`]"
+        "(tables/frontload_horizon_taper_365d.csv) and its own figure. If "
+        "the script is run over a different set of horizons it writes one "
+        "`tables/frontload_horizon_taper_<N>d.csv` and one matching figure "
+        "per extra horizon; the exact filenames written on this run are "
+        "listed at the end of the log above.\n")
 
     report.append("\n## 6. Fine-grid interval sweep\n")
     report.append(
@@ -579,8 +1196,7 @@ def main():
 
     # Collapses the Q2 frontier to one actionable schedule per skin type and
     # saves the frontier figure.
-    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                    "scripts"))
+    _ensure_scripts_on_path()
     import risk_aware_scheduling
 
     obj_log = capture_log(_report_decision_problems)
@@ -695,7 +1311,7 @@ the gap; neither creates it.
 The induced-melanin coefficient `K_ATTEN` was never a candidate cause: its value
 is {K_ATTEN_NOW:g} (see the `vitd_model.py` docstring), so that term is inert
 *by calibration*, not merely by ablation. `spacing_study/` swept it as far as
-100 (against a literature-implied 0.34-1.00) inside
+100 (against a literature-implied 0.288972-0.838389) inside
 `allow_retired_parameter_sweep()` without ever producing a non-daily optimum
 under a matched total budget.
 

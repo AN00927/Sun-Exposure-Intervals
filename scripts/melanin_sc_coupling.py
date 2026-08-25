@@ -85,9 +85,15 @@ def joint_identifiability(fst: int = 5, n_grid: int = 11):
     for i, x in enumerate(av):
         for j, y in enumerate(bv):
             p = ModelParams()
-            # K_ATTEN is RETIRED. This grid is the identifiability measurement
-            # that justifies the retirement, so it goes through the named
-            # escape hatch. See vitd_model.RETIRED_PARAMETERS.
+            # K_ATTEN was RETIRED when this grid was written; it was the
+            # identifiability measurement that justified the retirement.
+            # K_ATTEN was reinstated as an active, calibrated parameter on
+            # 2026-08-21 (RETIRED_PARAMETERS is now empty), so
+            # allow_retired_parameter_sweep() is currently a no-op guard here
+            # -- nothing it does is enforcing anything. It is kept so this
+            # grid still reads as an ablation/sensitivity sweep rather than a
+            # calibration, and so it needs no change if a parameter is
+            # retired again later. See vitd_model.RETIRED_PARAMETERS.
             with allow_retired_parameter_sweep():
                 p.K_ATTEN, p.K_SC = float(x), float(y)
             r = simulate(fst=fst, schedule=_sched(1.0, 3), duration_days=HORIZON,
@@ -116,8 +122,9 @@ def phenotype_stratification():
     print("=" * 76)
     print("3. PHENOTYPE STRATIFICATION  --  decomposing the FST II vs V gap")
     print("=" * 76)
-    print("  SC_max is already FST-stratified from de Boer 2025 "
-          "(FP I-III 0.23, FP IV-VI 0.36).")
+    print("  SC_max is already FST-stratified from de Boer 2025, "
+          "corroborated for FP I-III by Miyamura 2011 "
+          "(FP I-III 0.24, FP IV-VI 0.36).")
     print("  Ablate each channel to see what actually produces the FST gap.\n")
 
     configs = [
@@ -136,7 +143,7 @@ def phenotype_stratification():
         vals = {}
         for fst in (2, 5):
             p = ModelParams()
-            with allow_retired_parameter_sweep():       # ablations set K_ATTEN
+            with allow_retired_parameter_sweep():       # ablations set K_ATTEN; no-op guard, K_ATTEN is not currently retired
                 for k, v in overrides.items():
                     setattr(p, k, v)
             r = simulate(fst=fst, schedule=_sched(1.0, 3), duration_days=HORIZON,

@@ -20,9 +20,16 @@ Three categories:
       the FACULTATIVE tanning channel, band 0-10%. Everything but the
       facultative term cancels, so the check equals
       1 - exp(-K_ATTEN * M_TAN_HEADROOM) exactly and is INDEPENDENT of
-      K_const, A, D_max and the feedback form. K_ATTEN is RETIRED at 0.00, so
-      the measured value is 0.0% and this is a one-sided drift guard, NOT
-      evidence. See sanity_photoadaptation_reduction for the full re-derivation.
+      K_const, A, D_max and the feedback form. K_ATTEN was RETIRED at 0.00
+      when this check was written, giving a measured value of 0.0% -- a
+      one-sided drift guard, NOT evidence. K_ATTEN is now an active,
+      calibrated parameter (reinstated 2026-08-21, re-derived 2026-08-25 when
+      M_TAN_HEADROOM moved; see the vitd_model.py module docstring for the
+      live value), so this check now measures the
+      live attenuation rather than a fixed zero -- it remains a drift guard,
+      not independent evidence, since the calibration and the guard share the
+      same K_ATTEN value. See sanity_photoadaptation_reduction for the full
+      re-derivation.
 
 2. Literature validation targets
    a. de Boer 2025 - photoadaptation direction check (replaces mis-sourced Matsuoka 1990).
@@ -439,15 +446,18 @@ def young2021_A_anchor(params=None, verbose=False):
 # attenuation channel, as a FRACTION of untanned synthesis at the structural
 # melanin ceiling. See sanity_photoadaptation_reduction for the derivation of
 # why this number, and what it is and is not evidence of.
-PHOTOADAPTATION_REDUCTION_MAX = 0.10   # [CHOICE] -> K_ATTEN <= 0.527
+PHOTOADAPTATION_REDUCTION_MAX = 0.10   # [CHOICE] -> K_ATTEN <= 0.443 (at
+                                        # M_TAN_HEADROOM=0.238; was 0.527 at
+                                        # the pre-2026-08-25 value of 0.20)
 
 
 def sanity_photoadaptation_reduction(verbose=True):
     """Guard on the FACULTATIVE (tanning) melanin channel.
 
-    Measures synthesis at M = M_ceiling(FST III) = 0.41, the largest tan the
-    melanin ODE can produce, against untanned M = M_baseline = 0.21, at
-    matched D and SC.
+    Measures synthesis at M = M_ceiling(FST III) = 0.448 (M_baseline 0.21 +
+    M_TAN_HEADROOM 0.238, raised from 0.20 -> 0.238 on 2026-08-25 -- see
+    docs/MELANIN_MODEL.md sec.2.5), the largest tan the melanin ODE can
+    produce, against untanned M = M_baseline = 0.21, at matched D and SC.
 
     WHAT THE MEASURED QUANTITY ACTUALLY IS
     --------------------------------------
@@ -467,9 +477,11 @@ def sanity_photoadaptation_reduction(verbose=True):
         re-derived; the answer is that K_const never entered. The band stands
         on its own terms, not because it happened to keep passing.
       * The check has exactly ONE degree of freedom, K_ATTEN, so the band is
-        equivalent to a bracket on K_ATTEN. At M_TAN_HEADROOM = 0.20:
-            0-10%  reduction  <=>  K_ATTEN in [0.000, 0.527]
-            10-30% reduction  <=>  K_ATTEN in [0.527, 1.783]   (the OLD band)
+        equivalent to a bracket on K_ATTEN. At M_TAN_HEADROOM = 0.238
+        (raised from 0.20 on 2026-08-25, calibration_approval.yaml, "melanin
+        ceiling"; see docs/MELANIN_MODEL.md sec.2.5):
+            0-10%  reduction  <=>  K_ATTEN in [0.000, 0.443]
+            10-30% reduction  <=>  K_ATTEN in [0.443, 1.499]   (the OLD band)
 
     WHY 0-10% AND NOT 10-30%
     ------------------------
@@ -487,26 +499,60 @@ def sanity_photoadaptation_reduction(verbose=True):
     sides by what the repo holds. Young 2020 (n = 23, TL-01, the dataset
     K_ATTEN was fitted to) supports a SMALL facultative effect and returns 0.00.
     Matsuoka 1990 (n = 7), deconvolved for its baseline-25(OH)D confound, implies
-    K_ATTEN 0.34-1.00 depending on the assumed feedback form
-    (vitd_calibration.derive_K_ATTEN), i.e. reductions of 6.6-18.1%. A 10%
+    K_ATTEN 0.288972-0.838389 depending on the assumed feedback form
+    (vitd_calibration.derive_K_ATTEN, which reads M_TAN_HEADROOM live), i.e.
+    reductions of 6.6-18.1%. The reduction percentages are the measured
+    quantity and do not move with the headroom; the K_ATTEN bracket that
+    encodes them does. A 10%
     ceiling admits the LOW end of the Matsuoka bracket and rejects its high end,
     which is the correct posture given that Matsuoka's "51%" is mostly
     D-feedback rather than pigment (see CLAUDE.md).
 
     WHAT THIS CHECK IS NOT
     ----------------------
-    NOT evidence that photoadaptation reduces synthesis. With K_ATTEN
-    RETIRED at 0.00 (approved item A6) the measured reduction is exactly 0.0%
-    and this check CANNOT FAIL at the value the model ships. Read it as a
-    ONE-SIDED RETIREMENT GUARD: it fires if anyone reinstates a strong
-    facultative penalty without going through RETIRED_PARAMETERS. Do not count
-    it as literature support, and read the headline "passed" count knowing one
-    of its members is pinned by construction.
+    NOT evidence that photoadaptation reduces synthesis -- it is a bound
+    derived from the same Matsuoka 1990 study K_ATTEN is calibrated to, not an
+    independent check.
+
+    [2026-08-18 -- 2026-08-21: while K_ATTEN was RETIRED at 0.00 (approved
+    item A6) the measured reduction was exactly 0.0% and this check could not
+    fail at the value the model shipped; it functioned as a ONE-SIDED
+    RETIREMENT GUARD that would only fire if someone reinstated a strong
+    facultative penalty without going through RETIRED_PARAMETERS.]
+
+    K_ATTEN was reinstated as an active, calibrated parameter on 2026-08-21
+    (user-approved) and re-derived to 0.288972 on 2026-08-25, which this check
+    evaluates at 6.6464% reduction -- inside the 0-10% band, so it currently
+    PASSES, but it is no longer
+    pinned to 0.0% by construction: a future re-calibration of K_ATTEN could
+    move it outside the band, and this check would then be measuring that, not
+    guarding a retirement. Do not count it as literature support.
+
+    RESOLVED 2026-08-25. For a few hours on 2026-08-25 this docstring recorded
+    an open inconsistency, and the history is worth keeping because the failure
+    mode is easy to recreate. M_TAN_HEADROOM was raised 0.20 -> 0.238 against
+    Ravnbak 2008 while K_ATTEN stayed at 0.34 -- but K_ATTEN is not an
+    independent parameter. It is derived FROM the headroom, as
+        K_ATTEN = -ln(1 - residual) / M_TAN_HEADROOM
+    where `residual` is the melanin attenuation deconvolved from Matsuoka 1990
+    (vitd_calibration.derive_K_ATTEN). Raising the denominator while pinning
+    the quotient silently raised the facultative attenuation the model APPLIED
+    from 6.5740% to 7.7733%, overshooting the Matsuoka residual the parameter
+    exists to encode. The measured quantity is the residual; K_ATTEN is only
+    its parameterisation.
+
+    Fixed by re-deriving K_ATTEN (0.34 -> 0.288972, user-approved) AND by
+    removing the two hardcoded `excess_M=0.20` call sites that caused the
+    decoupling -- derive_K_ATTEN's signature default and vitd_calibration.run().
+    Both now read params.M_TAN_HEADROOM live, so the coupling is structural
+    rather than a number someone has to remember to update.
+    tests/test_vitd_model.py::test_k_atten_tracks_the_headroom_it_is_derived_from
+    guards the coupling itself, not the value, so this cannot silently recur.
     """
     p = ModelParams()
     fst = 3
     M_base = p.M_baseline(fst)
-    M_tanned = p.M_ceiling(fst)  # 0.41 for FST III (M_base + M_TAN_HEADROOM)
+    M_tanned = p.M_ceiling(fst)  # 0.448 for FST III (M_base + M_TAN_HEADROOM)
     d_untanned = synthesis_per_session(1.0, M_base, M_base, D=25.0, SC=0.0, params=p)
     d_tanned = synthesis_per_session(1.0, M_tanned, M_base, D=25.0, SC=0.0, params=p)
     reduction = 1.0 - d_tanned / d_untanned
@@ -520,8 +566,10 @@ def sanity_photoadaptation_reduction(verbose=True):
               f"(guard range 0-{100*PHOTOADAPTATION_REDUCTION_MAX:.0f}%; "
               f"evaluated at structural ceiling M_ceiling)")
         print(f"  equivalent bracket: K_ATTEN in [0.000, {k_implied_max:.3f}]; "
-              f"K_ATTEN is RETIRED at {K_ATTEN_STRUCTURAL:.2f}, so this is a "
-              f"one-sided drift guard, NOT evidence.")
+              f"K_ATTEN is ACTIVE and calibrated at {K_ATTEN_STRUCTURAL:.2f} "
+              f"(reinstated 2026-08-21), so this measures the live "
+              f"parameter and is a drift guard sharing its evidence with the "
+              f"calibration, NOT an independent check.")
         print(f"  {'PASS' if passed else 'FAIL'}")
     return passed
 
@@ -594,9 +642,11 @@ def validate_bogh_2012(verbose=True):
     Model delta must fall within ±10 nmol/L of the observed +55.8 nmol/L,
     i.e., 45.8 to 65.8 nmol/L. Tolerance was ±15 previously but a ~14 nmol/L
     prediction error is unacceptable. The model systematically under-predicts
-    NB-UVB by ~17 nmol/L with current parameters (alpha_SC=0.12, SC_max=0.23
-    for FST III). This is a known structural limitation: E_source=2.5 is a
-    placeholder requiring per-study spectral calibration (see [C3] below).
+    NB-UVB by ~17 nmol/L with current parameters (alpha_SC=0.12, SC_max=0.24
+    for FST III, raised from 0.23 on 2026-08-25 -- calibration_approval.yaml,
+    "SC_max_by_FST I-III 0.23 -> 0.24"). This is a known structural
+    limitation: E_source=2.5 is a placeholder requiring per-study spectral
+    calibration (see [C3] below).
 
     [C3] SOURCE / SPECTRAL CALIBRATION NOTE:
     E_source=2.5 is a per-study placeholder. Young 2021 PNAS (P20) shows that the
@@ -856,12 +906,18 @@ def validate_sc_deBoer2025(verbose=True):
     Melanin index: FP I-III +15%, FP IV-VI +9%.
 
     Calibrated with de Boer 2025 Supplementary Table S1.
-    [C7-SC-FITTED] alpha_SC=0.12, SC_max_by_FST: I-III=0.23, IV-VI=0.36.
+    [C7-SC-FITTED] alpha_SC=0.12, SC_max_by_FST: I-III=0.24, IV-VI=0.36.
+    I-III raised 0.23 -> 0.24 on 2026-08-25 (calibration_approval.yaml,
+    "SC_max_by_FST I-III 0.23 -> 0.24 (stratum corneum ceiling)"); Miyamura
+    2011 Table 1 (FST II-III stratum corneum 16.6 -> 20.7 um, +24.6988%) now
+    independently corroborates de Boer 2025's +23% in MAGNITUDE only -- see
+    docs/MELANIN_MODEL.md. This remains an uncalibrated prior for absolute D
+    predictions.
     Warning-only because k_damage=0. The week-5 dip is representable (SC is
     two-process) but unidentifiable from three group medians.
 
-    Target SC at week 9: FP I-III proxy (FST III, SC_max=0.23) should be
-      in [0.12, 0.23] (reaches ~90% of SC_max within 9 weeks).
+    Target SC at week 9: FP I-III proxy (FST III, SC_max=0.24) should be
+      in [0.12, 0.24] (reaches ~90% of SC_max within 9 weeks).
     Target SC at week 9: FP IV-VI proxy (FST V, SC_max=0.36) should be
       in [0.18, 0.36] (reaches ~90% of SC_max within 9 weeks).
     """
@@ -877,7 +933,7 @@ def validate_sc_deBoer2025(verbose=True):
     SC_III_increased = SC_III > 0.0
     SC_V_increased = SC_V > 0.0
 
-    SC_III_range_ok = 0.08 <= SC_III <= 0.23
+    SC_III_range_ok = 0.08 <= SC_III <= 0.24
     SC_V_range_ok = 0.14 <= SC_V <= 0.36
 
     SC_V_ge_III = SC_V >= SC_III * 0.8
@@ -898,9 +954,9 @@ def validate_sc_deBoer2025(verbose=True):
     if verbose:
         print(f"[SC Check] de Boer 2025 SC validation (warning-only)")
         print(f"  Protocol: 0.8 SED 3x/week x 9 weeks (T1 = 35 d, T2 = 63 d)")
-        print(f"  FST III (FP I-III proxy, SC_max=0.23): SC={SC_III:.4f} "
+        print(f"  FST III (FP I-III proxy, SC_max=0.24): SC={SC_III:.4f} "
               f"(increased: {'YES' if SC_III_increased else 'NO'}, "
-              f"range [0.08,0.23]: {'OK' if SC_III_range_ok else 'OUT'})")
+              f"range [0.08,0.24]: {'OK' if SC_III_range_ok else 'OUT'})")
         print(f"  FST V  (FP IV-VI proxy, SC_max=0.36): SC={SC_V:.4f} "
               f"(increased: {'YES' if SC_V_increased else 'NO'}, "
               f"range [0.14,0.36]: {'OK' if SC_V_range_ok else 'OUT'})")
@@ -1568,9 +1624,12 @@ CHECK_REGISTRY = [
         "photoadaptation reduction", sanity_photoadaptation_reduction, False,
         TIER_INTERNAL,
         "Docstring proves the measured quantity is an algebraic identity "
-        "independent of K_const/A/D_max/feedback form, pinned at K_ATTEN=0 "
-        "so it cannot fail as shipped. Docstring: \"NOT evidence ... a "
-        "ONE-SIDED RETIREMENT GUARD.\""),
+        "independent of K_const/A/D_max/feedback form. K_ATTEN is active and "
+        "calibrated (reinstated 2026-08-21, re-derived 2026-08-25 to track "
+        "M_TAN_HEADROOM), not pinned at 0, so this check measures the live "
+        "value rather than being "
+        "pinned to pass by construction. Docstring: \"NOT evidence ... a "
+        "drift guard sharing its evidence with the calibration.\""),
     CheckSpec(
         "de Boer 2025 photoadaptation [C6 replaced]",
         validate_photoadaptation_deBoer2025, True,

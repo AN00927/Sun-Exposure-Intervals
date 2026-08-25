@@ -213,12 +213,33 @@ class TestYoung2021AAnchor:
 
 
 class TestKAttenCalibration:
-    """K_ATTEN is calibrated to 0.34 based on Matsuoka 1990 deconvolution."""
+    """K_ATTEN is calibrated from the Matsuoka 1990 deconvolution.
+
+    Updated 2026-08-25: 0.34 -> 0.288972. K_ATTEN is not independently
+    measured -- it is the Matsuoka residual attenuation divided through by the
+    size of a full tan, i.e. a function of M_TAN_HEADROOM. When the headroom
+    was recalibrated 0.20 -> 0.238 against Ravnbak 2008, K_ATTEN had to track
+    it or the model would apply 7.7733% facultative attenuation where Matsuoka
+    supports 6.6%. See calibration_approval.yaml.
+    """
 
     def test_k_atten_default_is_calibrated_value(self):
         from vitd_model import K_ATTEN_DEFAULT
-        assert K_ATTEN_DEFAULT == 0.34
-        assert ModelParams().K_ATTEN == 0.34
+        assert K_ATTEN_DEFAULT == 0.288972
+        assert ModelParams().K_ATTEN == 0.288972
+
+    def test_k_atten_tracks_the_headroom_it_is_derived_from(self):
+        """Guards the coupling itself, not just the value.
+
+        The 2026-08-25 incident was that M_TAN_HEADROOM moved while K_ATTEN
+        and both derivation call sites kept a hardcoded 0.20, so the parameter
+        silently decoupled from the measurement it encodes. This fails if that
+        recurs.
+        """
+        from vitd_calibration import derive_K_ATTEN
+        p = ModelParams()
+        assert derive_K_ATTEN("biphasic", None, p)["K_ATTEN"] == pytest.approx(
+            p.K_ATTEN, rel=1e-6)
 
     def test_assignment_and_construction_allowed(self):
         p = ModelParams(K_ATTEN=0.5)

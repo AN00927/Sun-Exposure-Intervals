@@ -187,7 +187,14 @@ def run(verbose: bool = True) -> dict:
         print(f"    reported = {mr['reported_ratio']:.2f} (25 min / 9 min -- "
               f"algebraically the same fact as the 2.5-3.0x above)")
         if not dose_ratio_ok:
-            print("  NOTE: model under-predicts the skin-type penalty. Farrar 2013 (the")
+            # Direction is COMPUTED, not asserted. This line read "under-predicts"
+            # unconditionally until 2026-08-25, which was simply wrong at the
+            # values it was printing beside: the model's 3.01x sits ABOVE the
+            # 2.5-3.0x band, and the diagnostic minutes ratio (5.21) is likewise
+            # above the reported 2.78. Both over-predict the skin-type penalty.
+            _dir = ("over" if model_dose_ratio > WK_DOSE_RATIO_HIGH else "under")
+            print(f"  NOTE: model {_dir}-predicts the skin-type penalty. "
+                  f"Farrar 2013 (the")
             print("  source of Webb/Kift's 2.5-3.0x) is ITSELF a matched-dose, simulated-")
             print("  sunlight (lamp) trial at ~35% BSA against a matched-dose white")
             print("  comparator (Rhodes 2010) -- it contains NO behavioural exposure term,")

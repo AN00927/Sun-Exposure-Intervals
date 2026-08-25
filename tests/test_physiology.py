@@ -526,11 +526,19 @@ class TestTwoProcessSC:
 
     def test_default_SC_trajectory_unchanged(self):
         """Backward compatibility: at k_damage=0 the two-process form must
-        reproduce the old single-process numbers exactly."""
+        reproduce the old single-process numbers exactly.
+
+        Expected value updated 2026-08-25 with the SC_max_by_FST I-III
+        recalibration 0.23 -> 0.24 (Miyamura 2011 corroboration of de Boer
+        2025; see calibration_approval.yaml). This is a ceiling rescale and
+        nothing else: 0.136 * 0.24/0.23 = 0.141913 against an observed
+        0.141905, so the trajectory shape is untouched and this test still
+        guards what it was written to guard.
+        """
         p = ModelParams()
         r = simulate(fst=3, schedule=build_weekly_schedule(63, 0.8, [0, 2, 4]),
                      duration_days=63, params=p, D0=25.0)
-        assert r["SC"][-1] == pytest.approx(0.1360, abs=1e-3)
+        assert r["SC"][-1] == pytest.approx(0.141905, abs=1e-3)
 
     def test_SC_can_go_below_baseline(self):
         """The capability the old parameterisation lacked entirely."""

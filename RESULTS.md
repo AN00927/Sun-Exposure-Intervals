@@ -112,64 +112,64 @@ PRIMARY RESULT: least you have to do to reach AND hold sufficiency
    FST  N/yr  SED/sesh  min/sesh   totSED  t->suff      risk  status
   ------------------------------------------------------------------------------
      I    52        --        --       --       --        --  INFEASIBLE: C1 erythema (70% MED)
-     I   104     1.191      37.8    123.9      84d    3.8463  ok
-     I   146     0.749      23.8    109.3      85d    2.0424  ok
-     I   183     0.551      17.5    100.8      88d    1.3461  ok
-     I   260     0.362      11.5     94.0      88d    0.8039  ok
-     I   365     0.248       7.9     90.4      88d    0.5219  ok
+     I   104     1.201      38.1    124.9      84d    3.9208  ok
+     I   146     0.754      23.9    110.1      85d    2.0758  ok
+     I   183     0.554      17.6    101.4      88d    1.3662  ok
+     I   260     0.364      11.5     94.5      88d    0.8148  ok
+     I   365     0.249       7.9     90.8      88d    0.5285  ok
 
     II    52        --        --       --       --        --  INFEASIBLE: C1 erythema (70% MED)
-    II   104     1.331      42.3    138.4      84d    3.5971  ok
-    II   146     0.827      26.2    120.7      85d    1.8553  ok
-    II   183     0.604      19.2    110.6      88d    1.2054  ok
-    II   260     0.394      12.5    102.5      88d    0.7095  ok
-    II   365     0.269       8.5     98.1      88d    0.4563  ok
+    II   104     1.343      42.6    139.7      84d    3.6730  ok
+    II   146     0.833      26.4    121.6      85d    1.8881  ok
+    II   183     0.608      19.3    111.3      88d    1.2247  ok
+    II   260     0.397      12.6    103.1      88d    0.7197  ok
+    II   365     0.270       8.6     98.7      88d    0.4624  ok
 
    III    52        --        --       --       --        --  INFEASIBLE: C1 erythema (70% MED)
-   III   104     1.681      53.4    174.8      84d    4.3261  ok
-   III   146     1.014      32.2    148.1      85d    2.0853  ok
-   III   183     0.731      23.2    133.8      88d    1.3106  ok
-   III   260     0.470      14.9    122.2      88d    0.7460  ok
-   III   365     0.318      10.1    116.0      88d    0.4697  ok
+   III   104     1.699      53.9    176.7      84d    4.4347  ok
+   III   146     1.023      32.5    149.3      85d    2.1280  ok
+   III   183     0.737      23.4    134.8      88d    1.3345  ok
+   III   260     0.473      15.0    123.0      88d    0.7581  ok
+   III   365     0.320      10.1    116.7      88d    0.4767  ok
 
     IV    52        --        --       --       --        --  INFEASIBLE: C1 erythema (70% MED)
-    IV   104     3.033      96.3    315.5      84d    3.7538  ok
-    IV   146     1.669      53.0    243.7      85d    1.4577  ok
-    IV   183     1.151      36.5    210.6      88d    0.8259  ok
-    IV   260     0.708      22.5    184.1      88d    0.4236  ok
-    IV   365     0.465      14.8    169.9      88d    0.2498  ok
+    IV   104     3.034      96.3    315.5      84d    3.7563  ok
+    IV   146     1.669      53.0    243.7      85d    1.4581  ok
+    IV   183     1.151      36.5    210.7      88d    0.8260  ok
+    IV   260     0.708      22.5    184.1      88d    0.4237  ok
+    IV   365     0.466      14.8    169.9      88d    0.2499  ok
 
      V    52        --        --       --       --        --  INFEASIBLE: C1 erythema (70% MED)
      V   104        --        --       --       --        --  INFEASIBLE: C1 erythema (70% MED)
-     V   146     3.202     101.6    467.4      85d    2.4274  ok
-     V   183     2.053      65.2    375.8      88d    1.1595  ok
-     V   260     1.177      37.4    306.0      88d    0.5038  ok
-     V   365     0.741      23.5    270.3      88d    0.2681  ok
+     V   146     3.202     101.7    467.6      85d    2.4290  ok
+     V   183     2.054      65.2    375.8      88d    1.1599  ok
+     V   260     1.177      37.4    306.1      88d    0.5039  ok
+     V   365     0.741      23.5    270.4      88d    0.2682  ok
 
     VI    52        --        --       --       --        --  INFEASIBLE: C1 erythema (70% MED)
     VI   104        --        --       --       --        --  INFEASIBLE: C1 erythema (70% MED)
     VI   146        --        --       --       --        --  INFEASIBLE: C7 session length (>120 min)
-    VI   183     3.147      99.9    575.9      88d    0.5629  ok
-    VI   260     1.688      53.6    438.8      88d    0.2092  ok
-    VI   365     1.021      32.4    372.6      88d    0.1015  ok
+    VI   183     3.148      99.9    576.0      88d    0.5633  ok
+    VI   260     1.688      53.6    438.9      88d    0.2092  ok
+    VI   365     1.021      32.4    372.7      88d    0.1015  ok
 
   HEADLINE. Minimum session budget that reaches and holds 50 nmol/L,
   under uniform spacing and then with the spacing free:
    FST            uniform spacing                   free spacing   gamma
   ------------------------------------------------------------------------
-     I    104/yr, 38 min, 124 SED         104/yr, 25 min, 81 SED    1.40
-    II    104/yr, 42 min, 138 SED         104/yr, 27 min, 90 SED    1.40
-   III    104/yr, 53 min, 175 SED        104/yr, 34 min, 110 SED    1.40
-    IV    104/yr, 96 min, 315 SED        104/yr, 55 min, 181 SED    1.40
-     V   146/yr, 102 min, 467 SED       104/yr, 108 min, 353 SED    1.40
+     I    104/yr, 38 min, 125 SED         104/yr, 25 min, 82 SED    1.40
+    II    104/yr, 43 min, 140 SED         104/yr, 28 min, 90 SED    1.40
+   III    104/yr, 54 min, 177 SED        104/yr, 34 min, 111 SED    1.40
+    IV    104/yr, 96 min, 316 SED        104/yr, 55 min, 181 SED    1.40
+     V   146/yr, 102 min, 468 SED       104/yr, 108 min, 353 SED    1.40
     VI   183/yr, 100 min, 576 SED        146/yr, 86 min, 397 SED    1.40
 
   Least TOTAL UV (a different question from fewest sessions):
    FST            uniform spacing                   free spacing
   ----------------------------------------------------------------
-     I       365/yr, 90 SED total           365/yr, 64 SED total
-    II       365/yr, 98 SED total           365/yr, 69 SED total
-   III      365/yr, 116 SED total           365/yr, 81 SED total
+     I       365/yr, 91 SED total           365/yr, 64 SED total
+    II       365/yr, 99 SED total           365/yr, 69 SED total
+   III      365/yr, 117 SED total           365/yr, 81 SED total
     IV      365/yr, 170 SED total          365/yr, 115 SED total
      V      365/yr, 270 SED total          365/yr, 179 SED total
     VI      365/yr, 373 SED total          365/yr, 240 SED total
@@ -206,7 +206,7 @@ BACKGROUND / DIAGNOSTIC TIER: gross_synth_per_SED
 
   1. No interior optimum. argmax by search bound: {30: 30, 60: 60, 90: 90}
      argmax tracks the search bound: True
-     Spearman rho(interval, metric) = +0.9964 over 0.545-1.556; 5 local dips, largest 0.0099
+     Spearman rho(interval, metric) = +0.9964 over 0.543-1.555; 5 local dips, largest 0.0098
      (the dips are integer-grid quantisation -- 365/interval is not
      a whole number of sessions -- not an interior peak)
 
@@ -243,29 +243,29 @@ VALIDATION SUITE
   delta-D = 1.47 nmol/L  (expected 1.47, ±2%)
   PASS
 
-[TIER: INTERNAL] Docstring proves the measured quantity is an algebraic identity independent of K_const/A/D_max/feedback form, pinned at K_ATTEN=0 so it cannot fail as shipped. Docstring: "NOT evidence ... a ONE-SIDED RETIREMENT GUARD."
-[Sanity 3] Photoadaptation reduction (FST III, M 0.21 -> 0.41 [M_ceiling])
+[TIER: INTERNAL] Docstring proves the measured quantity is an algebraic identity independent of K_const/A/D_max/feedback form. K_ATTEN is active and calibrated (0.34, reinstated 2026-08-21, user-approved), not pinned at 0, so this check now measures the live value rather than being pinned to pass by construction. Docstring: "NOT evidence ... a drift guard sharing its evidence with the calibration."
+[Sanity 3] Photoadaptation reduction (FST III, M 0.21 -> 0.45 [M_ceiling])
   untanned synthesis: 1.47  tanned synthesis: 1.37
   reduction = 6.6%  (guard range 0-10%; evaluated at structural ceiling M_ceiling)
-  equivalent bracket: K_ATTEN in [0.000, 0.527]; K_ATTEN is RETIRED at 0.34, so this is a one-sided drift guard, NOT evidence.
+  equivalent bracket: K_ATTEN in [0.000, 0.443]; K_ATTEN is ACTIVE and calibrated at 0.29 (reinstated 2026-08-21), so this measures the live parameter and is a drift guard sharing its evidence with the calibration, NOT an independent check.
   PASS
 
 [TIER: DIRECTIONAL] Docstring: "Checks direction only ... Quantitative MI comparison is not possible." External de Boer 2025 protocol; asserts melanin up / SC up / synthesis down, no numeric target.
 [Lit 1] de Boer 2025 - photoadaptation direction (replaces Matsuoka 1990)
   Protocol: 0.8 SED 3x/week x 9 weeks, FST III (de Boer 2025)
-  Baseline M=0.210, After M=0.224, increased: YES
-  Baseline SC=0.0, After SC=0.1360, increased: YES
-  Untanned delta-D=1.242, Tanned delta-D=1.079
+  Baseline M=0.210, After M=0.226, increased: YES
+  Baseline SC=0.0, After SC=0.1419, increased: YES
+  Untanned delta-D=1.242, Tanned delta-D=1.073
   Synthesis decreased after photoadaptation: YES
   PASS
 
 [TIER: CIRCULAR] Docstring: "[C7-SC-FITTED] alpha_SC=0.12, SC_max_by_FST ... Calibrated with de Boer 2025 Supplementary Table S1." The SC parameters generating the model's trajectory were fitted to the same dataset this check compares that trajectory against.
 [SC Check] de Boer 2025 SC validation (warning-only)
   Protocol: 0.8 SED 3x/week x 9 weeks (T1 = 35 d, T2 = 63 d)
-  FST III (FP I-III proxy, SC_max=0.23): SC=0.1404 (increased: YES, range [0.08,0.23]: OK)
+  FST III (FP I-III proxy, SC_max=0.24): SC=0.1465 (increased: YES, range [0.08,0.24]: OK)
   FST V  (FP IV-VI proxy, SC_max=0.36): SC=0.2198 (increased: YES, range [0.14,0.36]: OK)
   SC_V >= SC_III * 0.8: YES
-  SHAPE (reported, not asserted): model T1=+0.134 T2=+0.136 vs observed -0.259 / +0.293
+  SHAPE (reported, not asserted): model T1=+0.140 T2=+0.142 vs observed -0.259 / +0.293
     Observed SC dips ~26% BELOW baseline at week 5. Model cannot
     reproduce that at k_damage=0.0, which is deliberate: the
     parameter is unidentifiable from 3 group medians. See
@@ -276,7 +276,7 @@ VALIDATION SUITE
 [Lit 2] Bogh 2012 - quantitative NB-UVB validation  [C1]
   Protocol: 18 sessions 3x/week x 6 weeks, cohort FST mix, baseline 19.2
   Dose: 9.0 J/cm2 cumulative -> 49.5 erythemal SED (TL-01 x5.5), E_source=2.44, BSA=0.9
-  Model D_final = 70.6 nmol/L (delta = +51.4)
+  Model D_final = 70.4 nmol/L (delta = +51.2)
   Study observed: 19.2 -> 75.0 nmol/L, delta +55.8 nmol/L
   Acceptance: |delta - 55.8| <= 10.0 nmol/L  (range 45.8-65.8)
   PASS
@@ -303,8 +303,8 @@ VALIDATION SUITE
 [Lit 5] Karppinen 2017/P33 - baseline feedback calibration target
   Protocol: 1.18 SED/day x 10 days, FST III, BSA=0.07, E_source=2.0
   DEFAULT feedback mode ('biphasic'):
-    Low baseline (62.4 nmol/L) change:  +2.47 nmol/L (observed +6.0)
-    High baseline (116.9 nmol/L) change: -5.70 nmol/L (observed -6.7)
+    Low baseline (62.4 nmol/L) change:  +2.45 nmol/L (observed +6.0)
+    High baseline (116.9 nmol/L) change: -5.71 nmol/L (observed -6.7)
     Low baseline increased: YES
     High baseline decreased: YES
     Within target bounds: YES
@@ -316,7 +316,7 @@ VALIDATION SUITE
     auc_above_sufficiency (threshold 50): 0.0000 (target: 0.0)
     AUC above sufficiency = 0: YES
   Standard schedule (1.0 SED every 2d, D0=25.0):
-    auc_above_baseline: 35.8432 (target: > 0.0)
+    auc_above_baseline: 35.6828 (target: > 0.0)
     AUC above baseline > 0: YES
   PASS
 
@@ -324,11 +324,11 @@ VALIDATION SUITE
 
 [K_ATTEN seasonal amplitude] NH White vs NH Black seasonal rise
   Protocol: daily 0.333 SED x 84d, E_source=1.89, BSA=0.3
-  NH White (FST=2, code 3): observed amplitude = 6.46, model amplitude = 9.63
+  NH White (FST=2, code 3): observed amplitude = 6.46, model amplitude = 9.53
   NH Black (FST=5, code 4): observed amplitude = 4.45, model amplitude = 10.89
   Observed ratio (White/Black): 1.449
-  Model ratio (White/Black):    0.885
-  Difference: -39.0% (target: within +/-50%)
+  Model ratio (White/Black):    0.876
+  Difference: -39.6% (target: within +/-50%)
   PASS
 
 [TIER: CIRCULAR] DEMOTED to warning-only 2026-08-21 (was required, band included zero). Kift 2013 is one of the four within-study/field routes K_const=0.98 was fitted to (vitd_model.py K_const entry; scripts/kconst_recalibration.py). See function docstring for the full argument and the option-(a)-vs-(b) decision.
@@ -353,23 +353,23 @@ VALIDATION SUITE
      1      5.05       1.00        3.7       1.00
      2      6.30       1.25        4.0       1.08
      3      7.60       1.50        4.8       1.28
-     4     11.35       2.25        6.7       1.81
-     5     15.15       3.00       10.6       2.86
-     6     25.25       5.00       14.6       3.93
-  FST VI:I  reported 5.00  model 3.93
-  FST V:II  reported 2.40  model 2.64
+     4     11.35       2.25        6.7       1.80
+     5     15.15       3.00       10.6       2.85
+     6     25.25       5.00       14.6       3.92
+  FST VI:I  reported 5.00  model 3.92
+  FST V:II  reported 2.40  model 2.63
   PASS - model's minutes ratio vs the MED-table-derived ratio (advisory only, not a vitamin-D check)
 
 [TIER: QUANTITATIVE] Cross-study multi-scenario benchmark: simulates all registered clinical trial protocols (Farrar 2013, Young 2021, Felton 2016, de Boer 2025, etc.) and checks physiological bounds, synthesis deltas, and cancer risk metrics.
 [Reference Scenarios Benchmark] Clinical Trial Protocols vs Model Predictions:
   Scenario                    FST    D0  Model dD   Obs dD    SCC  Interm  Burn%  Status
   ----------------------------------------------------------------------------------
-  deboer2025_barrier            3  25.0    +15.7      N/A   0.21    0.07     0%    PASS
+  deboer2025_barrier            3  25.0    +15.6      N/A   0.21    0.07     0%    PASS
   farrar2013_fst5_uk            5  17.2    +18.7    +21.7   0.07    0.00     0%    PASS
-  felton2016_fst2_matched       2  36.5    +23.7    +17.8   0.26    0.40     0%    PASS
+  felton2016_fst2_matched       2  36.5    +23.6    +17.8   0.26    0.40     0%    PASS
   felton2016_fst5_matched       5  17.2    +18.7     +8.3   0.07    0.00     0%    PASS
-  summer_midday_reference       3  25.0    +35.2      N/A   0.50    0.18     0%    PASS
-  webb2018_uk_guidance          2  25.0    +49.4      N/A   0.69    0.11     0%    PASS
+  summer_midday_reference       3  25.0    +35.1      N/A   0.50    0.18     0%    PASS
+  webb2018_uk_guidance          2  25.0    +49.2      N/A   0.69    0.11     0%    PASS
   young2021_fst2_solar          2  34.6    +18.7    +36.1   0.06    0.40     0%    PASS
   PASS
 
@@ -408,6 +408,101 @@ NHANES POPULATION VALIDATION
 
 ```
 
+## 1a. Single session: dose-response and washout
+
+**The question this answers**, put by the project's advisor: *plot how vitamin D concentration changes with exposure duration for a single session, including how it decays once the session is over.* Everything above and below this section scores a *schedule*; this one scores a single exposure, which is the unit those schedules are built from. It is the dose-response and washout kernel behind the trajectories in section 12 and the interval orderings in sections 5 and 5a.
+
+**What is held fixed.** One session at t = 0 and nothing afterwards, then an observation window long enough for the washout to complete. Session length in minutes is converted to erythemal SED under the single frozen reference scenario quoted at the top of this report (`vitd_scenario`) — no latitude, date or posture enters. Only the session DURATION varies between curves. Each panel also carries a no-exposure control run from the same baseline, because the model has no dietary or endogenous source term, so baseline 25(OH)D is an initial condition rather than a fixed point and the curves decay *through* it. The session's effect is therefore read as the GAP to that control, not as an absolute level.
+
+**Headline, generated from this run's own output table.** For the darkest skin type carried here, under the default (impulse-synthesis) model, a 24-fold increase in session length (5 -> 120 minutes) buys only a 10.7-fold increase in the peak 25(OH)D gap over the no-exposure control: the marginal yield falls from 0.0285 to 0.0075 nmol/L per extra minute across that range. The washout is correspondingly slow — 8% of the peak gap from the longest session is still present at the end of the observation window. Longer sessions are subject to diminishing returns because per-session synthesis is logarithmic in dose; this is the single-session statement of the same concavity that makes frequent-and-small win in sections 5, 5a and 17.
+
+**Limitation — the decay limb is an extrapolation, and the washout times are unvalidated.** The state-dependent decay rate `ModelParams.k_decay_D` (Datta 2017 power law) was fitted over a 25(OH)D range that this figure sits almost entirely *below*, so the half-life the power law returns here is longer than any half-life Datta measured. The script computes the fitted range and the model half-lives inside and outside it at run time and renders them both into the log below and onto the figure itself, so they cannot drift from the parameterisation:
+
+- `k_decay_D` was fitted over 25(OH)D **43-132 nmol/L**; model half-life is **88 d** at 132 nmol/L and **197 d** at 43 nmol/L (both inside the fitted range), against **291 d** at the 25 nmol/L default baseline this figure starts from — outside it.
+
+Peak heights and the marginal-yield ranking do **not** depend on that rate — they are set by the synthesis term at t = 0 — but every washout time in this section does, and should be treated as unvalidated. A second caveat is structural: in the default model a session's synthesis is credited to serum as an instantaneous impulse, so the rise is a vertical step rather than a ramp. That is a property of the impulse formulation, not a physiological claim; the transit-delay variant (`ModelParams.use_transit_delay`, whose half-life is flagged `[PRIOR]` in `vitd_model.py`) is plotted alongside it, and the default column is the one every other headline number in this report uses.
+
+```
+FROZEN REFERENCE SCENARIO
+  ambient UV index      : 6
+  geometry factor       : 0.35 (horizontal ambient -> personal, Cockell 2001)
+  exposed BSA           : 35% (t-shirt and shorts with partial coverage (face, neck, forearms, hands and part of the legs bare))
+  erythemal SED/minute  : 0.0315 (derived)
+  held constant on every exposure day; see vitd_scenario.py
+
+All results assume a fixed ambient UV index of 6, a horizontal-to-personal geometry factor of 0.35, and 35% exposed body surface area (t-shirt and shorts with partial coverage (face, neck, forearms, hands and part of the legs bare)), held constant on every exposure day. Real ambient UV varies with latitude, season, time of day, altitude, cloud and ozone, and real personal dose varies with posture and clothing. We do not model that variation. Every duration reported here should therefore be read as a duration under these reference conditions, not as a calendar recommendation for a specific place or date.
+
+Baseline 25(OH)D (ModelParams.D0_default) : 25 nmol/L
+Observation window                        : 1095 days
+25(OH)D half-life at baseline             : 291 d   (from ModelParams.k_decay_D)
+  half-life at the Datta fit's low end    : 197 d (D = 43 nmol/L)
+  half-life at the Datta fit's high end   : 88 d (D = 132 nmol/L)
+  *** EXTRAPOLATION: baseline 25 nmol/L is BELOW the 43-132 nmol/L range k_decay_D was fitted over, and the decay only goes lower. Every washout time below is off the low end of the source data. See this module's docstring. ***
+Baseline-return tolerance                 : 1 nmol/L
+PRACTICAL_MAX_MINUTES (vitd_objectives)   : 120 min
+  All plotted durations are at or below the practical cap.
+
+Integrator audit over 1095 d (0.5-d exponential-Euler vs closed form):
+  FST 5  max relative error 2.31e-04
+  FST 6  max relative error 2.29e-04
+  FST 2  max relative error 2.43e-04
+  worst 2.43e-04  ->  OK -- no meaningful drift
+  D > 0 and monotone decreasing after the peak for all 36 runs
+Wrote C:\Users\Ahaan\sunresearch\Sun-Exposure-Intervals\tables\single_session_response.csv
+Wrote C:\Users\Ahaan\sunresearch\Sun-Exposure-Intervals\figs\single_session_response.png
+
+--- Impulse synthesis (DEFAULT model) ---
+  FST V (priority population)
+        5 min   0.16 SED  peak  25.18  delta  0.18  gap  0.18  marginal 0.0354 nmol/L/extra-min  t_half(effect)   196 d  remaining at d1095  8.0%
+       10 min   0.32 SED  peak  25.33  delta  0.33  gap  0.33  marginal 0.0308 nmol/L/extra-min  t_half(effect)   196 d  remaining at d1095  7.9%
+       20 min   0.63 SED  peak  25.59  delta  0.59  gap  0.59  marginal 0.0260 nmol/L/extra-min  t_half(effect)   194 d  remaining at d1095  7.9%
+       40 min   1.26 SED  peak  25.99  delta  0.99  gap  0.99  marginal 0.0198 nmol/L/extra-min  t_half(effect)   194 d  remaining at d1095  7.8%
+       80 min   2.52 SED  peak  26.52  delta  1.52  gap  1.52  marginal 0.0134 nmol/L/extra-min  t_half(effect)   192 d  remaining at d1095  7.7%
+      120 min   3.78 SED  peak  26.89  delta  1.89  gap  1.89  marginal 0.0092 nmol/L/extra-min  t_half(effect)   191 d  remaining at d1095  7.7%
+  FST VI (priority population)
+        5 min   0.16 SED  peak  25.14  delta  0.14  gap  0.14  marginal 0.0285 nmol/L/extra-min  t_half(effect)   196 d  remaining at d1095  8.0%
+       10 min   0.32 SED  peak  25.27  delta  0.27  gap  0.27  marginal 0.0249 nmol/L/extra-min  t_half(effect)   196 d  remaining at d1095  7.9%
+       20 min   0.63 SED  peak  25.48  delta  0.48  gap  0.48  marginal 0.0209 nmol/L/extra-min  t_half(effect)   195 d  remaining at d1095  7.9%
+       40 min   1.26 SED  peak  25.79  delta  0.79  gap  0.79  marginal 0.0159 nmol/L/extra-min  t_half(effect)   194 d  remaining at d1095  7.9%
+       80 min   2.52 SED  peak  26.23  delta  1.23  gap  1.23  marginal 0.0108 nmol/L/extra-min  t_half(effect)   193 d  remaining at d1095  7.8%
+      120 min   3.78 SED  peak  26.52  delta  1.52  gap  1.52  marginal 0.0075 nmol/L/extra-min  t_half(effect)   192 d  remaining at d1095  7.7%
+  FST II (light-skin contrast)
+        5 min   0.16 SED  peak  25.35  delta  0.35  gap  0.35  marginal 0.0709 nmol/L/extra-min  t_half(effect)   196 d  remaining at d1095  7.9%
+       10 min   0.32 SED  peak  25.66  delta  0.66  gap  0.66  marginal 0.0619 nmol/L/extra-min  t_half(effect)   194 d  remaining at d1095  7.9%
+       20 min   0.63 SED  peak  26.18  delta  1.18  gap  1.18  marginal 0.0521 nmol/L/extra-min  t_half(effect)   193 d  remaining at d1095  7.8%
+       40 min   1.26 SED  peak  26.98  delta  1.98  gap  1.98  marginal 0.0396 nmol/L/extra-min  t_half(effect)   191 d  remaining at d1095  7.7%
+       80 min   2.52 SED  peak  28.05  delta  3.05  gap  3.05  marginal 0.0269 nmol/L/extra-min  t_half(effect)   188 d  remaining at d1095  7.5%
+      120 min   3.78 SED  peak  28.79  delta  3.79  gap  3.79  marginal 0.0185 nmol/L/extra-min  t_half(effect)   186 d  remaining at d1095  7.4%
+
+--- With D3 transit delay (use_transit_delay=True) ---
+  FST V (priority population)
+        5 min   0.16 SED  peak  25.03  delta  0.03  gap  0.17  marginal 0.0343 nmol/L/extra-min  t_half(effect)   208 d  remaining at d1095  8.3%
+       10 min   0.32 SED  peak  25.13  delta  0.13  gap  0.32  marginal 0.0299 nmol/L/extra-min  t_half(effect)   208 d  remaining at d1095  8.2%
+       20 min   0.63 SED  peak  25.33  delta  0.33  gap  0.57  marginal 0.0252 nmol/L/extra-min  t_half(effect)   206 d  remaining at d1095  8.2%
+       40 min   1.26 SED  peak  25.68  delta  0.68  gap  0.96  marginal 0.0191 nmol/L/extra-min  t_half(effect)   206 d  remaining at d1095  8.1%
+       80 min   2.52 SED  peak  26.17  delta  1.17  gap  1.47  marginal 0.0130 nmol/L/extra-min  t_half(effect)   204 d  remaining at d1095  8.0%
+      120 min   3.78 SED  peak  26.52  delta  1.52  gap  1.83  marginal 0.0090 nmol/L/extra-min  t_half(effect)   203 d  remaining at d1095  8.0%
+  FST VI (priority population)
+        5 min   0.16 SED  peak  25.01  delta  0.01  gap  0.14  marginal 0.0276 nmol/L/extra-min  t_half(effect)   208 d  remaining at d1095  8.3%
+       10 min   0.32 SED  peak  25.08  delta  0.08  gap  0.26  marginal 0.0241 nmol/L/extra-min  t_half(effect)   208 d  remaining at d1095  8.2%
+       20 min   0.63 SED  peak  25.24  delta  0.24  gap  0.46  marginal 0.0203 nmol/L/extra-min  t_half(effect)   207 d  remaining at d1095  8.2%
+       40 min   1.26 SED  peak  25.51  delta  0.51  gap  0.77  marginal 0.0154 nmol/L/extra-min  t_half(effect)   206 d  remaining at d1095  8.1%
+       80 min   2.52 SED  peak  25.90  delta  0.90  gap  1.19  marginal 0.0105 nmol/L/extra-min  t_half(effect)   205 d  remaining at d1095  8.1%
+      120 min   3.78 SED  peak  26.17  delta  1.17  gap  1.48  marginal 0.0072 nmol/L/extra-min  t_half(effect)   204 d  remaining at d1095  8.0%
+  FST II (light-skin contrast)
+        5 min   0.16 SED  peak  25.15  delta  0.15  gap  0.34  marginal 0.0687 nmol/L/extra-min  t_half(effect)   208 d  remaining at d1095  8.2%
+       10 min   0.32 SED  peak  25.40  delta  0.40  gap  0.64  marginal 0.0599 nmol/L/extra-min  t_half(effect)   206 d  remaining at d1095  8.2%
+       20 min   0.63 SED  peak  25.86  delta  0.86  gap  1.15  marginal 0.0504 nmol/L/extra-min  t_half(effect)   205 d  remaining at d1095  8.1%
+       40 min   1.26 SED  peak  26.60  delta  1.60  gap  1.91  marginal 0.0384 nmol/L/extra-min  t_half(effect)   203 d  remaining at d1095  7.9%
+       80 min   2.52 SED  peak  27.61  delta  2.61  gap  2.95  marginal 0.0260 nmol/L/extra-min  t_half(effect)   200 d  remaining at d1095  7.8%
+      120 min   3.78 SED  peak  28.32  delta  3.32  gap  3.67  marginal 0.0179 nmol/L/extra-min  t_half(effect)   198 d  remaining at d1095  7.7%
+
+```
+
+![single session dose-response and washout](figs/single_session_response.png)
+
+Per-duration table: [`tables/single_session_response.csv`](tables/single_session_response.csv).
+
 ## 2. Alpha sensitivity sweep (Priority 1 completed in Session 2)
 
 Varies the photoadaptation rise rate (alpha) and checks whether the optimal inter-session interval shifts. Alpha was calibrated from light-skin Miyamura 2011 data; whether it is larger in FST V-VI is untested, which is the reason for the sweep.
@@ -431,7 +526,7 @@ FST 5:
 FST 6:
   alpha=0.010:  optimal interval = 1d (ss D 46.4, net_eff 0.28)
   alpha=0.025:  optimal interval = 1d (ss D 46.1, net_eff 0.28)
-  alpha=0.050:  optimal interval = 1d (ss D 45.9, net_eff 0.27)
+  alpha=0.050:  optimal interval = 1d (ss D 45.8, net_eff 0.27)
   alpha=0.100:  optimal interval = 1d (ss D 45.7, net_eff 0.27)
   alpha=0.200:  optimal interval = 1d (ss D 45.5, net_eff 0.27)
   alpha=0.400:  optimal interval = 1d (ss D 45.5, net_eff 0.27)
@@ -472,7 +567,7 @@ FST 6:
 
 ## 4. K_ATTEN sensitivity sweep
 
-Varies the melanin attenuation coefficient `K_ATTEN`, the *induced*-pigment term. Its calibrated value and provenance live in the `vitd_model.py` module docstring and are not restated here; the value this run used is **0.34**, read from `ModelParams()` at report time so this line cannot drift from the code. The sweep explores sensitivity around it.
+Varies the melanin attenuation coefficient `K_ATTEN`, the *induced*-pigment term. Its calibrated value and provenance live in the `vitd_model.py` module docstring and are not restated here; the value this run used is **0.288972**, read from `ModelParams()` at report time so this line cannot drift from the code. The sweep explores sensitivity around it.
 
 Note that `K_ATTEN` is the coefficient on *acquired* melanin `exp(-K_ATTEN * (M - M_baseline))`; the constitutive skin-type penalty is `K_const`, a separate parameter, and the two are jointly unidentifiable from the present data (section 16).
 
@@ -487,18 +582,18 @@ Optimal interval by K_ATTEN (steady-state 25(OH)D framing):
 FST 5:
   K=0.2:  opt interval=1d (D 51.1, net_eff 0.34)
   K=0.5:  opt interval=1d (D 51.0, net_eff 0.34)
-  K=1.0:  opt interval=1d (D 50.9, net_eff 0.34)
-  K=2.0:  opt interval=1d (D 50.6, net_eff 0.33)
-  K=4.0:  opt interval=1d (D 50.1, net_eff 0.33)
-  K=8.0:  opt interval=1d (D 49.1, net_eff 0.31)
+  K=1.0:  opt interval=1d (D 50.8, net_eff 0.34)
+  K=2.0:  opt interval=1d (D 50.5, net_eff 0.33)
+  K=4.0:  opt interval=1d (D 49.9, net_eff 0.32)
+  K=8.0:  opt interval=1d (D 48.7, net_eff 0.31)
 
 FST 6:
   K=0.2:  opt interval=1d (D 46.6, net_eff 0.28)
-  K=0.5:  opt interval=1d (D 46.6, net_eff 0.28)
+  K=0.5:  opt interval=1d (D 46.5, net_eff 0.28)
   K=1.0:  opt interval=1d (D 46.4, net_eff 0.28)
-  K=2.0:  opt interval=1d (D 46.2, net_eff 0.28)
-  K=4.0:  opt interval=1d (D 45.8, net_eff 0.27)
-  K=8.0:  opt interval=1d (D 44.9, net_eff 0.26)
+  K=2.0:  opt interval=1d (D 46.1, net_eff 0.28)
+  K=4.0:  opt interval=1d (D 45.6, net_eff 0.27)
+  K=8.0:  opt interval=1d (D 44.6, net_eff 0.26)
 
 ```
 
@@ -506,10 +601,36 @@ FST 6:
 
 ## 5. Two-framing schedule comparison
 
-Central handoff finding: the optimal interval depends on what's being optimized.
+Central handoff finding: the optimal interval depends on what's being optimized. A schedule claim only means something relative to what is held fixed, so the conditions come first and the claim is stated conditioned on them.
 
-- **Framing 1**: matched cumulative SED (42 SED over 12 weeks). UV budget is the constraint; we just choose how to distribute it.
-- **Framing 2**: matched per-session dose (1 SED per session). Per-session dose is fixed; cumulative UV exposure varies with frequency.
+### What is held fixed
+
+Identical across **every row of both framings**. Each value is read from `vitd_analyses`' module constants or `vitd_model.ModelParams()` at report time, so this list cannot drift from the code that ran:
+
+- **Horizon**: 84 days (12 weeks), `vitd_analyses.PROTOCOL_DAYS`. Every schedule is scored over the same window, and steady-state D is read from the end of it.
+- **Baseline 25(OH)D**: every arm starts at `ModelParams.D0_default` = 25 nmol/L. No arm is given a head start.
+- **Exposed BSA**: `ModelParams.exposed_bsa` = 0.35 of body surface, the same in every arm. Posture, clothing and body-site geometry are not varied, so a longer interval buys no extra skin.
+- **Skin types**: FST 5, 6 only (`vitd_analyses.TWO_FRAMING_FSTS`) - the dark-skin target population. FST I-IV are not in this table and nothing here should be read as a light-skin result.
+- **Feedback mode**: `ModelParams.feedback_mode` = 'biphasic'. Substrate feedback is active, so a large single dose is penalised for landing on an already-higher 25(OH)D.
+- **UV source**: `ModelParams.E_source` = 1, the broadband solar reference. This section does **not** use the `solar_summer` calibration that section 11 uses, so absolute D values here are not comparable with section 11's.
+- **Spacing is uniform only**: sessions come from `vitd_model.build_pulse_schedule`, which emits equally spaced pulses from day 0. Irregular, clustered and burst schedules are never tested here. The intervals compared are the fixed grid 1, 2, 3, 5, 7, 10, 14, 21 days (`vitd_analyses.INTERVALS_DAYS`).
+- **Both photoadaptation channels are active**: induced melanin and stratum-corneum thickening both run at their `ModelParams()` defaults, starting from `M = M_baseline(FST)` and `SC = 0`. Neither is ablated, so the penalty for concentrating UV into few large sessions carries both mechanisms.
+- **Doses are absolute SED, not a fraction of MED.** Both framings specify UV in SED and neither rescales by the individual MED. Under fractional-MED framing the skin-type response pattern differs materially (section 0), so these rows do not transfer to it.
+
+### What each framing varies
+
+- **Framing 1**: matched cumulative SED - a fixed 42 SED budget spread over the 84-day horizon. Total UV is the constraint and the only free choice is how to distribute it, so a longer interval necessarily means a larger per-session dose.
+- **Framing 2**: matched per-session dose - 1 SED every session regardless of interval. Per-session dose is the constraint; cumulative UV falls as the interval lengthens, so these arms are *not* matched on total exposure.
+
+### The claim, conditioned
+
+**Under Framing 1 - at fixed total UV over the horizon, with everything in the list above held fixed - daily dosing beats every longer spacing tested.** It wins on steady-state D, final D, net delta-D per SED and AUC above baseline per SED, for both skin types. The relationship is **monotone in interval across the whole tested grid**: every step from daily toward wider spacing is worse than the step before it, and there is no interior optimum. The finding is therefore 'as often as you can manage', not 'an optimal gap of N days'.
+
+Two qualifications, both visible in the log below. First, part of what rules out the widest spacing is **dose safety, not vitamin D efficiency**: concentrating the whole budget into the longest-interval schedule pushes a single session above one MED, flagged as an overdose on the safety line. Second, the monotonicity is a Framing-1 property. Under Framing 2 daily still reaches the highest 25(OH)D, but only by delivering far more total UV than the wide-interval arms (compare the `cumulative_SED` column), and on the per-SED efficiency columns Framing 2 has an **interior** optimum at an intermediate interval where daily is not the most UV-efficient choice. 'Daily is best' and 'daily is most efficient per unit UV' are different claims, and only the first survives both framings.
+
+### Out of scope for this section
+
+Both framings vary the **interval**. Neither holds frequency fixed while varying the per-session dose, so nothing here addresses **daily small doses versus daily large doses** - that comparison is not in the table and this section cannot answer it. The dose axis is treated elsewhere: section 10 compares one session against a split one at a matched UV rate, and section 13b frees the per-session dose while holding the session count fixed.
 
 ```
 
@@ -523,25 +644,25 @@ Framing 1 (matched cumulative SED = 42):
    5              2             1.00          42           42.00           39.54    41.05     0.79                        0.38                       19.54                           0.00
    5              3             1.50          28           42.00           37.86    39.10     0.79                        0.34                       17.35                           0.00
    5              5             2.47          17           42.00           35.49    36.47     0.80                        0.27                       14.29                           0.00
-   5              7             3.50          12           42.00           33.97    34.46     0.80                        0.23                       12.41                           0.00
+   5              7             3.50          12           42.00           33.97    34.46     0.81                        0.23                       12.41                           0.00
    5             10             4.67           9           42.00           32.13    33.10     0.81                        0.19                       10.10                           0.00
-   5             14             7.00           6           42.00           30.98    30.73     0.82                        0.14                        8.74                           0.00
-   5             21            10.50           4           42.00           29.33    28.82     0.83                        0.09                        7.01                           0.00
+   5             14             7.00           6           42.00           30.98    30.73     0.83                        0.14                        8.74                           0.00
+   5             21            10.50           4           42.00           29.33    28.82     0.84                        0.09                        7.01                           0.00
    6              1             0.50          84           42.00           38.50    40.07     1.01                        0.36                       17.97                           0.00
    6              2             1.00          42           42.00           36.50    37.75     1.01                        0.30                       15.37                           0.00
    6              3             1.50          28           42.00           35.06    36.05     1.01                        0.26                       13.51                           0.00
-   6              5             2.47          17           42.00           33.04    33.79     1.01                        0.21                       10.93                           0.00
+   6              5             2.47          17           42.00           33.04    33.79     1.02                        0.21                       10.93                           0.00
    6              7             3.50          12           42.00           31.75    32.08     1.02                        0.17                        9.35                           0.00
-   6             10             4.67           9           42.00           30.20    30.92     1.02                        0.14                        7.43                           0.00
-   6             14             7.00           6           42.00           29.24    28.94     1.03                        0.09                        6.30                           0.00
-   6             21            10.50           4           42.00           27.87    27.34     1.05                        0.06                        4.86                           0.00
+   6             10             4.67           9           42.00           30.20    30.92     1.03                        0.14                        7.42                           0.00
+   6             14             7.00           6           42.00           29.24    28.94     1.04                        0.09                        6.30                           0.00
+   6             21            10.50           4           42.00           27.87    27.34     1.06                        0.06                        4.86                           0.00
 
 Framing 2 (matched 1 SED per session):
  FST  interval_days  sed_per_session  n_sessions  cumulative_SED  steady_state_D  final_D  final_M  net_final_D_change_per_SED  auc_above_baseline_per_SED  auc_above_sufficiency_per_SED
    5              1             1.00          84           84.00           51.02    53.53     0.80                        0.34                       17.79                           0.45
    5              2             1.00          42           42.00           39.54    41.05     0.79                        0.38                       19.54                           0.00
    5              3             1.00          28           28.00           34.74    35.70     0.79                        0.38                       19.58                           0.00
-   5              5             1.00          17           17.00           30.31    30.78     0.78                        0.34                       17.73                           0.00
+   5              5             1.00          17           17.00           30.31    30.78     0.79                        0.34                       17.73                           0.00
    5              7             1.00          12           12.00           28.14    28.19     0.78                        0.27                       15.31                           0.00
    5             10             1.00           9            9.00           26.41    26.61     0.78                        0.18                       10.04                           0.00
    5             14             1.00           6            6.00           25.15    24.71     0.78                       -0.05                        4.10                           0.00
@@ -560,6 +681,846 @@ Framing 2 (matched 1 SED per session):
 ```
 
 ![two framings](figs/two_framings.png)
+
+## 5a. Front-load or split? A fixed UV budget, three mechanism rungs
+
+**The question this answers**, put by the project's advisor: *for a fixed total exposure time per week, is it better to front load rather than split time across days?* — and, explicitly, *answer it with just melanin dynamics first, then add skin thickening, then add skin cancer risk.* That staging is why this section is run at three rungs of `vitd_ablation` rather than once: `melanin_only`, `melanin_plus_sc`, and `melanin_sc_risk`.
+
+Section 5 varies the **interval** at a fixed budget. This section separates the two distinct things "front-loading" can mean and reports them as separate arms:
+
+- **Arm (a), within-week concentration.** The weekly SED budget is held fixed and only the number of days it is spread over changes, from a session every day down to one session a week. The pattern repeats every week, so nothing is front-loaded across the horizon — only within each week. This is the advisor's question read literally.
+- **Arm (b), across-horizon taper.** The total SED over the whole horizon is held fixed and the dose *profile* is varied from flat to front-loaded-and-tapering (two-phase and exponential families), crossed with a monotone spacing warp (`gamma = 1` is uniform, `> 1` front-loaded). Every profile is rescaled to deliver exactly the same total SED, so only the shape is swept.
+
+**What is held fixed.** The same frozen reference scenario as every other section; the same baseline; FST V and VI as the priority population with FST II carried only as an explicitly-labelled light-skin contrast; and, within each comparison, the SED budget. The method is a **deterministic grid sweep with no constraint applied** — deliberately not the risk-constrained optimisers of sections 13b/13c, whose sufficiency floor and erythema cap would silently delete exactly the concentrated arms the question is about. Because no cap is applied, every row instead carries the largest single session as a fraction of MED, checked against the sub-erythemal ceiling (70% MED) and against a frank burn at 1.0 MED. An arm that wins while requiring a burn has not won, and is flagged as such in the CSV, the console summary and the plots.
+
+**The answer in one line, because the two arms answer different halves of it.** The steady-state *plateau* is set by the budget and by how finely it is split across days (arm a); rearranging the same budget over the horizon does not move it (arm b, a null that gets cleaner at the longer horizon). What front-loading actually buys is the *transient*: reaching sufficiency fast and minimising the deficiency accumulated on the way. Arm (b) is therefore ranked on accumulated deficiency below sufficiency - a horizon-integrated measure - with steady-state and final 25(OH)D retained as reported secondary terminal measures. Limitation 1 below says why that choice is not cosmetic.
+
+**Arm (a) - within-week concentration. Splitting beats concentrating, monotonically.** Holding the weekly SED budget fixed, going from a session every day to one session a week changes steady-state 25(OH)D by between -11.0% and -28.8% across the 9 skin-type x budget cells, and steady-state 25(OH)D rises monotonically with sessions per week in 9 of those 9 cells. This is the advisor's question read literally, and the sign is unambiguous: at fixed weekly UV, front-loading into fewer days is worse. It is also unsafe at the concentrated end - the worst arm on the grid (FST 2, 7 SED/week, 1 session(s) per week) reaches 269% of one MED in a single session, i.e. a frank burn.
+
+**Arm (b) - the plateau is a null, and the longer horizon makes it cleaner, not weaker.** Every arm is referenced to the flat, uniformly spaced arm at the *same* session count, so the session-count effect is divided out and only dose shape and spacing remain:
+
+- **84-day horizon**: over 36 matched-N cells (2052 front-loaded arms), the best front-loaded profile differs from flat-and-uniform on steady-state 25(OH)D by a mean of +0.38% and at best +0.97%. The largest POSITIVE plateau gain available anywhere on the front-loaded half of the grid is **+0.97%**.
+- **365-day horizon**: over 36 matched-N cells (2052 front-loaded arms), the best front-loaded profile differs from flat-and-uniform on steady-state 25(OH)D by a mean of -7.52% and at best -6.34%. The largest POSITIVE plateau gain available anywhere on the front-loaded half of the grid is **+0.00%**.
+
+Giving the three-parameter shape families four times the horizon to express themselves did not produce a plateau gain; it removed what little there was. That forecloses the obvious objection that the shapes simply had no room to work. **The steady-state level is set by the budget and by how finely that budget is split (arm a). Arranging the same budget differently over the horizon does not move it.**
+
+**But front-loading has large, real leverage on the TRANSIENT.** Ranked on accumulated deficiency below sufficiency - a horizon-integrated measure rather than a terminal one - the picture inverts from a null to a substantial effect:
+
+- **84-day horizon**: mean **49.4% reduction** in accumulated deficiency below sufficiency versus flat-and-uniform at the same session count (max 98.7%); mean 44.8% when the search is restricted to sub-erythemal arms only. The deficit-optimal spacing exponent is 2.5 - front-loaded - and reaches sufficiency in a median of 3 days, against 37 days at the spacing that maximises the terminal plateau instead.
+- **365-day horizon**: mean **68.9% reduction** in accumulated deficiency below sufficiency versus flat-and-uniform at the same session count (max 99.9%); mean 65.1% when the search is restricted to sub-erythemal arms only. The deficit-optimal spacing exponent is 1.4, 1.8, 2.5 - front-loaded - and reaches sufficiency in a median of 8 days, against 239 days at the spacing that maximises the terminal plateau instead.
+
+**This is the section's headline.** What front-loading buys is not a higher plateau but a faster climb to one: reaching sufficiency in weeks rather than months, and spending far less time deficient on the way. The effect survives the erythema cap, so it is not bought with a burn.
+
+**The large terminal 'gain' at the long horizon is an artefact and must not be quoted bare.**
+
+- **84-day horizon**: no such artefact. The terminal winner here is gamma = 1.4 (front-loaded), it wins by only +1.0%, and its accumulated deficiency is 0.89x the flat reference - so the terminal and integrated measures are not being pulled apart at this horizon.
+- **365-day horizon**: the arm that maximises the terminal plateau wins it by +22.1% - at gamma = 0.4, i.e. **back**-loading. It opens with a 35-day no-exposure gap and stacks dose underneath the final-28-day averaging window, and pays for it with **10.4x worse** accumulated deficiency than the flat reference. That is an artefact of the measurement window, not a schedule anyone should follow.
+
+Steady-state 25(OH)D is a mean over the final 28 days, so at a 365-day horizon the averaging window is under 8% of the run, and any schedule that piles dose into the endpoint wins it. That is why arm (b) is ranked on deficit AUC with the terminal measures retained as reported secondaries.
+
+**Metric-conflict caveat - no taper sign may be stated without naming the metric it was read off, and the conflict WIDENS with horizon.**
+
+- **84-day horizon**: across the spacing exponent the terminal measure moves by ~6 percentage points while the horizon-integrated measure moves by ~108. The terminal argmax is gamma = 0.8, 1, 1.4, 1.8 and the integrated argmax is gamma = 2.5.
+- **365-day horizon**: across the spacing exponent the terminal measure moves by ~39 percentage points while the horizon-integrated measure moves by ~368. The terminal argmax is gamma = 0.4 and the integrated argmax is gamma = 1.4, 1.8, 2.5.
+
+Note what this rules out. `steady_state_D` and `final_D` are **both terminal measures**, and as the horizon grows the averaging window shrinks toward the endpoint, so the two converge on each other. Their agreement at the long horizon is co-movement between two views of the same instant, **not corroboration**, and must never be presented as two metrics independently confirming a result.
+
+**Limitations — these three constrain what may be read off this section.**
+
+1. **Session count must be matched before any taper claim is made, and the outcome measure must be named.** An unmatched comparison - one that lets the tapered arm also use a different number of sessions - shows a gain of several percent that is an artefact of the session-count difference, not of the dose shape. Referenced to the flat, uniformly spaced arm at the *same* N, the plateau effect is sub-percent at the protocol horizon and vanishes entirely at the longer one. Any "front-loading helps" claim taken from this material must therefore say (i) whether N was matched - if it was not, the claim is about how often you go outside, not about how the dose is shaped - and (ii) which outcome it was read off, because the sign of the taper depends on that choice and the dependence **widens with the horizon**. The terminal measures (`steady_state_D`, `final_D`) reward whatever sits nearest the endpoint; the horizon-integrated measure (deficit AUC below sufficiency) rewards getting there early. Arm (b) is ranked on the integrated measure for that reason, with the terminal measures retained as reported secondaries, and the disagreement is plotted rather than resolved by picking a favourite.
+2. **The back-loaded winner on the terminal measure is an artefact, not a schedule.** At the long horizon the arm that maximises steady-state 25(OH)D does so by maximum back-loading: it opens with a long no-exposure gap, leaves the subject deficient for most of the year, and stacks dose underneath the final-28-day averaging window. The numbers that expose it - its deficit AUC relative to the flat reference, and its days-to-sufficiency - are generated above so the "gain" cannot be quoted bare.
+3. **`melanin_only` is an ABLATION, not a re-fit.** Turning the stratum-corneum channel off does not re-estimate anything, so absolute 25(OH)D levels under that rung are a mechanism-isolation diagnostic and are **not comparable across rungs**. Only *within*-rung schedule rankings are defensible. This is why the headline figure plots each arm relative to its own rung's reference schedule and the absolute-level figure keeps the rungs in separate panels. Relatedly, `melanin_sc_risk` is dynamically **identical** to `melanin_plus_sc` — it is a *reporting* rung that obliges the analysis to show the skin-cancer indices `simulate()` computes anyway, not "cancer risk added to the model", and its trace sits exactly on top of `melanin_plus_sc` on every plot.
+
+```
+
+==============================================================================
+ARM (a)  WITHIN-WEEK CONCENTRATION -- fixed weekly SED budget
+==============================================================================
+
+  rung: Melanin only (melanin_only)
+    FST V                         1.75 SED/wk | 7-day split D_ss= 36.20 | 1-day concentrated D_ss= 31.82 (-12.10%)
+      deficit<50 nmol/L.d: 7-day   1494.2 -> 1-day   1717.9 | days-to-suff: never -> never
+      unconstrained best = 7/wk (D_ss=36.20, peak 3% MED)
+      sub-erythemal best = 7/wk (D_ss=36.20, peak 3% MED)
+    FST V                          3.5 SED/wk | 7-day split D_ss= 45.62 | 1-day concentrated D_ss= 36.23 (-20.58%)
+      deficit<50 nmol/L.d: 7-day    958.5 -> 1-day   1468.0 | days-to-suff: never -> never
+      unconstrained best = 7/wk (D_ss=45.62, peak 7% MED)
+      sub-erythemal best = 7/wk (D_ss=45.62, peak 7% MED)
+    FST V                            7 SED/wk | 7-day split D_ss= 57.23 | 1-day concentrated D_ss= 40.79 (-28.73%)
+      deficit<50 nmol/L.d: 7-day    483.7 -> 1-day   1201.4 | days-to-suff: 45.0 -> never
+      unconstrained best = 7/wk (D_ss=57.23, peak 13% MED)
+      sub-erythemal best = 7/wk (D_ss=57.23, peak 13% MED)
+    FST VI                        1.75 SED/wk | 7-day split D_ss= 33.64 | 1-day concentrated D_ss= 29.94 (-11.01%)
+      deficit<50 nmol/L.d: 7-day   1635.2 -> 1-day   1822.7 | days-to-suff: never -> never
+      unconstrained best = 7/wk (D_ss=33.64, peak 2% MED)
+      sub-erythemal best = 7/wk (D_ss=33.64, peak 2% MED)
+    FST VI                         3.5 SED/wk | 7-day split D_ss= 41.79 | 1-day concentrated D_ss= 33.66 (-19.46%)
+      deficit<50 nmol/L.d: 7-day   1179.3 -> 1-day   1614.5 | days-to-suff: never -> never
+      unconstrained best = 7/wk (D_ss=41.79, peak 3% MED)
+      sub-erythemal best = 7/wk (D_ss=41.79, peak 3% MED)
+    FST VI                           7 SED/wk | 7-day split D_ss= 52.18 | 1-day concentrated D_ss= 37.58 (-27.98%)
+      deficit<50 nmol/L.d: 7-day    632.9 -> 1-day   1388.9 | days-to-suff: 60.0 -> never
+      unconstrained best = 7/wk (D_ss=52.18, peak 7% MED)
+      sub-erythemal best = 7/wk (D_ss=52.18, peak 7% MED)
+    FST II  [light-skin contrast]  1.75 SED/wk | 7-day split D_ss= 47.54 | 1-day concentrated D_ss= 40.55 (-14.70%)
+      deficit<50 nmol/L.d: 7-day    845.9 -> 1-day   1217.4 | days-to-suff: 82.0 -> never
+      unconstrained best = 7/wk (D_ss=47.54, peak 10% MED)
+      sub-erythemal best = 7/wk (D_ss=47.54, peak 10% MED)
+    FST II  [light-skin contrast]   3.5 SED/wk | 7-day split D_ss= 61.30 | 1-day concentrated D_ss= 47.60 (-22.34%)
+      deficit<50 nmol/L.d: 7-day    398.8 -> 1-day    793.5 | days-to-suff: 37.0 -> 77.0
+      unconstrained best = 7/wk (D_ss=61.30, peak 19% MED)
+      sub-erythemal best = 7/wk (D_ss=61.30, peak 19% MED)
+    FST II  [light-skin contrast]     7 SED/wk | 7-day split D_ss= 76.51 | 1-day concentrated D_ss= 54.49 (-28.78%)
+      deficit<50 nmol/L.d: 7-day    213.4 -> 1-day    491.8 | days-to-suff: 19.0 -> 49.0
+      unconstrained best = 7/wk (D_ss=76.51, peak 38% MED)
+      sub-erythemal best = 7/wk (D_ss=76.51, peak 38% MED)
+
+  rung: Melanin + SC (melanin_plus_sc)
+    FST V                         1.75 SED/wk | 7-day split D_ss= 34.40 | 1-day concentrated D_ss= 30.64 (-10.94%)
+      deficit<50 nmol/L.d: 7-day   1580.0 -> 1-day   1773.2 | days-to-suff: never -> never
+      unconstrained best = 7/wk (D_ss=34.40, peak 3% MED)
+      sub-erythemal best = 7/wk (D_ss=34.40, peak 3% MED)
+    FST V                          3.5 SED/wk | 7-day split D_ss= 41.85 | 1-day concentrated D_ss= 33.97 (-18.82%)
+      deficit<50 nmol/L.d: 7-day   1151.6 -> 1-day   1578.8 | days-to-suff: never -> never
+      unconstrained best = 7/wk (D_ss=41.85, peak 7% MED)
+      sub-erythemal best = 7/wk (D_ss=41.85, peak 7% MED)
+    FST V                            7 SED/wk | 7-day split D_ss= 51.02 | 1-day concentrated D_ss= 37.31 (-26.88%)
+      deficit<50 nmol/L.d: 7-day    643.7 -> 1-day   1381.2 | days-to-suff: 64.0 -> never
+      unconstrained best = 7/wk (D_ss=51.02, peak 13% MED)
+      sub-erythemal best = 7/wk (D_ss=51.02, peak 13% MED)
+    FST VI                        1.75 SED/wk | 7-day split D_ss= 32.12 | 1-day concentrated D_ss= 28.96 (-9.85%)
+      deficit<50 nmol/L.d: 7-day   1707.2 -> 1-day   1868.5 | days-to-suff: never -> never
+      unconstrained best = 7/wk (D_ss=32.12, peak 2% MED)
+      sub-erythemal best = 7/wk (D_ss=32.12, peak 2% MED)
+    FST VI                         3.5 SED/wk | 7-day split D_ss= 38.50 | 1-day concentrated D_ss= 31.75 (-17.54%)
+      deficit<50 nmol/L.d: 7-day   1345.3 -> 1-day   1707.2 | days-to-suff: never -> never
+      unconstrained best = 7/wk (D_ss=38.50, peak 3% MED)
+      sub-erythemal best = 7/wk (D_ss=38.50, peak 3% MED)
+    FST VI                           7 SED/wk | 7-day split D_ss= 46.60 | 1-day concentrated D_ss= 34.60 (-25.75%)
+      deficit<50 nmol/L.d: 7-day    873.8 -> 1-day   1541.1 | days-to-suff: never -> never
+      unconstrained best = 7/wk (D_ss=46.60, peak 7% MED)
+      sub-erythemal best = 7/wk (D_ss=46.60, peak 7% MED)
+    FST II  [light-skin contrast]  1.75 SED/wk | 7-day split D_ss= 45.61 | 1-day concentrated D_ss= 39.18 (-14.09%)
+      deficit<50 nmol/L.d: 7-day    941.8 -> 1-day   1283.3 | days-to-suff: never -> never
+      unconstrained best = 7/wk (D_ss=45.61, peak 10% MED)
+      sub-erythemal best = 7/wk (D_ss=45.61, peak 10% MED)
+    FST II  [light-skin contrast]   3.5 SED/wk | 7-day split D_ss= 57.66 | 1-day concentrated D_ss= 45.14 (-21.70%)
+      deficit<50 nmol/L.d: 7-day    446.9 -> 1-day    919.5 | days-to-suff: 43.0 -> never
+      unconstrained best = 7/wk (D_ss=57.66, peak 19% MED)
+      sub-erythemal best = 7/wk (D_ss=57.66, peak 19% MED)
+    FST II  [light-skin contrast]     7 SED/wk | 7-day split D_ss= 71.03 | 1-day concentrated D_ss= 50.90 (-28.34%)
+      deficit<50 nmol/L.d: 7-day    240.4 -> 1-day    591.9 | days-to-suff: 23.0 -> 63.0
+      unconstrained best = 7/wk (D_ss=71.03, peak 38% MED)
+      sub-erythemal best = 7/wk (D_ss=71.03, peak 38% MED)
+
+  rung: Melanin + SC + risk (melanin_sc_risk)
+    FST V                         1.75 SED/wk | 7-day split D_ss= 34.40 | 1-day concentrated D_ss= 30.64 (-10.94%)
+      deficit<50 nmol/L.d: 7-day   1580.0 -> 1-day   1773.2 | days-to-suff: never -> never
+      unconstrained best = 7/wk (D_ss=34.40, peak 3% MED)
+      sub-erythemal best = 7/wk (D_ss=34.40, peak 3% MED)
+    FST V                          3.5 SED/wk | 7-day split D_ss= 41.85 | 1-day concentrated D_ss= 33.97 (-18.82%)
+      deficit<50 nmol/L.d: 7-day   1151.6 -> 1-day   1578.8 | days-to-suff: never -> never
+      unconstrained best = 7/wk (D_ss=41.85, peak 7% MED)
+      sub-erythemal best = 7/wk (D_ss=41.85, peak 7% MED)
+    FST V                            7 SED/wk | 7-day split D_ss= 51.02 | 1-day concentrated D_ss= 37.31 (-26.88%)
+      deficit<50 nmol/L.d: 7-day    643.7 -> 1-day   1381.2 | days-to-suff: 64.0 -> never
+      unconstrained best = 7/wk (D_ss=51.02, peak 13% MED)
+      sub-erythemal best = 7/wk (D_ss=51.02, peak 13% MED)
+    FST VI                        1.75 SED/wk | 7-day split D_ss= 32.12 | 1-day concentrated D_ss= 28.96 (-9.85%)
+      deficit<50 nmol/L.d: 7-day   1707.2 -> 1-day   1868.5 | days-to-suff: never -> never
+      unconstrained best = 7/wk (D_ss=32.12, peak 2% MED)
+      sub-erythemal best = 7/wk (D_ss=32.12, peak 2% MED)
+    FST VI                         3.5 SED/wk | 7-day split D_ss= 38.50 | 1-day concentrated D_ss= 31.75 (-17.54%)
+      deficit<50 nmol/L.d: 7-day   1345.3 -> 1-day   1707.2 | days-to-suff: never -> never
+      unconstrained best = 7/wk (D_ss=38.50, peak 3% MED)
+      sub-erythemal best = 7/wk (D_ss=38.50, peak 3% MED)
+    FST VI                           7 SED/wk | 7-day split D_ss= 46.60 | 1-day concentrated D_ss= 34.60 (-25.75%)
+      deficit<50 nmol/L.d: 7-day    873.8 -> 1-day   1541.1 | days-to-suff: never -> never
+      unconstrained best = 7/wk (D_ss=46.60, peak 7% MED)
+      sub-erythemal best = 7/wk (D_ss=46.60, peak 7% MED)
+    FST II  [light-skin contrast]  1.75 SED/wk | 7-day split D_ss= 45.61 | 1-day concentrated D_ss= 39.18 (-14.09%)
+      deficit<50 nmol/L.d: 7-day    941.8 -> 1-day   1283.3 | days-to-suff: never -> never
+      unconstrained best = 7/wk (D_ss=45.61, peak 10% MED)
+      sub-erythemal best = 7/wk (D_ss=45.61, peak 10% MED)
+    FST II  [light-skin contrast]   3.5 SED/wk | 7-day split D_ss= 57.66 | 1-day concentrated D_ss= 45.14 (-21.70%)
+      deficit<50 nmol/L.d: 7-day    446.9 -> 1-day    919.5 | days-to-suff: 43.0 -> never
+      unconstrained best = 7/wk (D_ss=57.66, peak 19% MED)
+      sub-erythemal best = 7/wk (D_ss=57.66, peak 19% MED)
+    FST II  [light-skin contrast]     7 SED/wk | 7-day split D_ss= 71.03 | 1-day concentrated D_ss= 50.90 (-28.34%)
+      deficit<50 nmol/L.d: 7-day    240.4 -> 1-day    591.9 | days-to-suff: 23.0 -> 63.0
+      unconstrained best = 7/wk (D_ss=71.03, peak 38% MED)
+      sub-erythemal best = 7/wk (D_ss=71.03, peak 38% MED)
+
+==============================================================================
+ARM (b)  ACROSS-HORIZON TAPER -- fixed TOTAL SED over the horizon (84 d)
+PRIMARY metric: AUC_deficit_below_sufficiency (minimise).  SECONDARY: steady_state_D (maximise).
+==============================================================================
+
+  rung: Melanin only (melanin_only)
+    FST V                         1.75 SED/wk | flat+uniform ref (N=36): deficit=1568 nmol/L.d, D_ss=34.77
+      PRIMARY  best by deficit: two_phase / load x4 to 30%T gamma=2.5 N=84 -> deficit=1117 (-28.8%), to-suff NEVER, peak 5% MED
+      PRIMARY  sub-erythemal best: two_phase / load x4 to 30%T gamma=2.5 N=84 -> deficit=1117 (-28.8%), to-suff NEVER, peak 5% MED
+      2ndary   best by plateau D_ss: exponential / exp r=4 tau=56d gamma=1.4 N=84 -> D_ss=36.52 (+5.02%)
+      N=12   deficit -12.4% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.53% (front-loaded half only)
+      N=24   deficit -17.4% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.69% (front-loaded half only)
+      N=36   deficit -20.2% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.71% (front-loaded half only)
+      N=84   deficit -25.3% (best: load x4 to 30%T gamma=2.5)  |  plateau D_ss +0.92% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.8 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST V                          3.5 SED/wk | flat+uniform ref (N=36): deficit=1148 nmol/L.d, D_ss=42.19
+      PRIMARY  best by deficit: exponential / exp r=4 tau=21d gamma=2.5 N=84 -> deficit=409 (-64.4%), to-suff NEVER, peak 11% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=4 tau=21d gamma=2.5 N=84 -> deficit=409 (-64.4%), to-suff NEVER, peak 11% MED
+      2ndary   best by plateau D_ss: exponential / exp r=4 tau=56d gamma=1.0 N=84 -> D_ss=45.83 (+8.63%)
+      N=12   deficit -19.1% (best: exp r=4 tau=56d gamma=2.5)  |  plateau D_ss +0.48% (front-loaded half only)
+      N=24   deficit -30.3% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.53% (front-loaded half only)
+      N=36   deficit -38.4% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.53% (front-loaded half only)
+      N=84   deficit -57.3% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.52% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST V                            7 SED/wk | flat+uniform ref (N=36): deficit=679 nmol/L.d, D_ss=50.64
+      PRIMARY  best by deficit: exponential / exp r=4 tau=7d gamma=2.5 N=84 -> deficit=19 (-97.1%), to-suff day 3, peak 29% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=4 tau=7d gamma=2.5 N=84 -> deficit=19 (-97.1%), to-suff day 3, peak 29% MED
+      2ndary   best by plateau D_ss: exponential / exp r=1.5 tau=56d gamma=1.0 N=84 -> D_ss=57.28 (+13.11%)
+      N=12   deficit -28.7% (best: exp r=4 tau=56d gamma=2.5)  |  plateau D_ss +0.40% (front-loaded half only)  *** OVERDOSE ***
+      N=24   deficit -55.2% (best: load x4 to 50%T gamma=2.5)  |  plateau D_ss +0.33% (front-loaded half only)
+      N=36   deficit -82.2% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.28% (front-loaded half only)
+      N=84   deficit -96.0% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.15% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST VI                        1.75 SED/wk | flat+uniform ref (N=36): deficit=1697 nmol/L.d, D_ss=32.43
+      PRIMARY  best by deficit: two_phase / load x4 to 30%T gamma=2.5 N=84 -> deficit=1317 (-22.4%), to-suff NEVER, peak 2% MED
+      PRIMARY  sub-erythemal best: two_phase / load x4 to 30%T gamma=2.5 N=84 -> deficit=1317 (-22.4%), to-suff NEVER, peak 2% MED
+      2ndary   best by plateau D_ss: two_phase / load x2.5 to 50%T gamma=1.4 N=84 -> D_ss=33.96 (+4.71%)
+      N=12   deficit -9.7% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.52% (front-loaded half only)
+      N=24   deficit -13.5% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.69% (front-loaded half only)
+      N=36   deficit -15.6% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.74% (front-loaded half only)
+      N=84   deficit -19.4% (best: load x4 to 30%T gamma=2.5)  |  plateau D_ss +0.97% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.8 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST VI                         3.5 SED/wk | flat+uniform ref (N=36): deficit=1343 nmol/L.d, D_ss=38.79
+      PRIMARY  best by deficit: exponential / exp r=4 tau=21d gamma=2.5 N=84 -> deficit=704 (-47.5%), to-suff NEVER, peak 5% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=4 tau=21d gamma=2.5 N=84 -> deficit=704 (-47.5%), to-suff NEVER, peak 5% MED
+      2ndary   best by plateau D_ss: two_phase / load x1.5 to 50%T gamma=1.4 N=84 -> D_ss=42.04 (+8.39%)
+      N=12   deficit -14.6% (best: exp r=4 tau=56d gamma=2.5)  |  plateau D_ss +0.51% (front-loaded half only)
+      N=24   deficit -22.5% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.63% (front-loaded half only)
+      N=36   deficit -28.1% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.61% (front-loaded half only)
+      N=84   deficit -40.3% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.65% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.8 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST VI                           7 SED/wk | flat+uniform ref (N=36): deficit=910 nmol/L.d, D_ss=46.25
+      PRIMARY  best by deficit: exponential / exp r=4 tau=7d gamma=2.5 N=84 -> deficit=61 (-93.4%), to-suff day 8, peak 14% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=4 tau=7d gamma=2.5 N=84 -> deficit=61 (-93.4%), to-suff day 8, peak 14% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=1.4 N=84 -> D_ss=52.27 (+13.03%)
+      N=12   deficit -21.1% (best: exp r=4 tau=56d gamma=2.5)  |  plateau D_ss +0.46% (front-loaded half only)
+      N=24   deficit -37.5% (best: load x4 to 50%T gamma=2.5)  |  plateau D_ss +0.44% (front-loaded half only)
+      N=36   deficit -53.0% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.41% (front-loaded half only)
+      N=84   deficit -90.4% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.23% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST II  [light-skin contrast]  1.75 SED/wk | flat+uniform ref (N=36): deficit=965 nmol/L.d, D_ss=45.33
+      PRIMARY  best by deficit: exponential / exp r=4 tau=21d gamma=2.5 N=84 -> deficit=232 (-75.9%), to-suff NEVER, peak 16% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=4 tau=21d gamma=2.5 N=84 -> deficit=232 (-75.9%), to-suff NEVER, peak 16% MED
+      2ndary   best by plateau D_ss: exponential / exp r=4 tau=56d gamma=1.0 N=84 -> D_ss=47.84 (+5.55%)
+      N=12   deficit -30.4% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.42% (front-loaded half only)  *** OVERDOSE ***
+      N=24   deficit -45.2% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.43% (front-loaded half only)
+      N=36   deficit -54.6% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.45% (front-loaded half only)
+      N=84   deficit -72.5% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.68% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST II  [light-skin contrast]   3.5 SED/wk | flat+uniform ref (N=36): deficit=488 nmol/L.d, D_ss=56.46
+      PRIMARY  best by deficit: exponential / exp r=4 tau=7d gamma=2.5 N=84 -> deficit=10 (-98.0%), to-suff day 2, peak 41% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=4 tau=7d gamma=2.5 N=84 -> deficit=10 (-98.0%), to-suff day 2, peak 41% MED
+      2ndary   best by plateau D_ss: exponential / exp r=4 tau=56d gamma=0.8 N=84 -> D_ss=61.47 (+8.87%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 2-day gap and reaches sufficiency day 36; deficit 413 vs 488 for flat+uniform.
+      N=12   deficit -57.8% (best: exp r=4 tau=56d gamma=2.5)  |  plateau D_ss +0.21% (front-loaded half only)  *** OVERDOSE ***
+      N=24   deficit -92.4% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.12% (front-loaded half only)  *** OVERDOSE ***
+      N=36   deficit -95.8% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.08% (front-loaded half only)  [INFEASIBLE > ceiling]
+      N=84   deficit -97.6% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.17% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST II  [light-skin contrast]     7 SED/wk | flat+uniform ref (N=36): deficit=281 nmol/L.d, D_ss=67.87
+      PRIMARY  best by deficit: exponential / exp r=4 tau=7d gamma=2.5 N=84 -> deficit=3 (-99.0%), to-suff day 1, peak 82% MED  [INFEASIBLE > ceiling]
+      PRIMARY  sub-erythemal best: exponential / exp r=1.5 tau=7d gamma=2.5 N=84 -> deficit=4 (-98.5%), to-suff day 1, peak 64% MED
+      2ndary   best by plateau D_ss: exponential / exp r=0.5 tau=56d gamma=0.8 N=84 -> D_ss=76.63 (+12.92%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 2-day gap and reaches sufficiency day 24; deficit 300 vs 281 for flat+uniform.
+      N=12   deficit -91.8% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=24   deficit -96.4% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=36   deficit -97.5% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=84   deficit -98.7% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  [INFEASIBLE > ceiling]
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.0 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+
+  rung: Melanin + SC (melanin_plus_sc)
+    FST V                         1.75 SED/wk | flat+uniform ref (N=36): deficit=1644 nmol/L.d, D_ss=33.16
+      PRIMARY  best by deficit: two_phase / load x4 to 30%T gamma=2.5 N=84 -> deficit=1284 (-21.9%), to-suff NEVER, peak 5% MED
+      PRIMARY  sub-erythemal best: two_phase / load x4 to 30%T gamma=2.5 N=84 -> deficit=1284 (-21.9%), to-suff NEVER, peak 5% MED
+      2ndary   best by plateau D_ss: exponential / exp r=1.5 tau=56d gamma=1.4 N=84 -> D_ss=34.60 (+4.32%)
+      N=12   deficit -9.2% (best: load x4 to 50%T gamma=2.5)  |  plateau D_ss +0.35% (front-loaded half only)
+      N=24   deficit -12.8% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.46% (front-loaded half only)
+      N=36   deficit -14.9% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.49% (front-loaded half only)
+      N=84   deficit -18.7% (best: load x4 to 30%T gamma=2.5)  |  plateau D_ss +0.60% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.8 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST V                          3.5 SED/wk | flat+uniform ref (N=36): deficit=1313 nmol/L.d, D_ss=38.92
+      PRIMARY  best by deficit: exponential / exp r=4 tau=21d gamma=2.5 N=84 -> deficit=736 (-44.0%), to-suff NEVER, peak 11% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=4 tau=21d gamma=2.5 N=84 -> deficit=736 (-44.0%), to-suff NEVER, peak 11% MED
+      2ndary   best by plateau D_ss: exponential / exp r=0.5 tau=56d gamma=1.4 N=84 -> D_ss=42.00 (+7.92%)
+      N=12   deficit -13.0% (best: exp r=4 tau=56d gamma=2.5)  |  plateau D_ss +0.34% (front-loaded half only)
+      N=24   deficit -20.1% (best: load x4 to 50%T gamma=2.5)  |  plateau D_ss +0.41% (front-loaded half only)
+      N=36   deficit -25.0% (best: load x4 to 50%T gamma=2.5)  |  plateau D_ss +0.44% (front-loaded half only)
+      N=84   deficit -36.1% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.42% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST V                            7 SED/wk | flat+uniform ref (N=36): deficit=933 nmol/L.d, D_ss=45.38
+      PRIMARY  best by deficit: two_phase / load x2.5 to 15%T gamma=2.5 N=84 -> deficit=98 (-89.5%), to-suff day 16, peak 19% MED
+      PRIMARY  sub-erythemal best: two_phase / load x2.5 to 15%T gamma=2.5 N=84 -> deficit=98 (-89.5%), to-suff day 16, peak 19% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=1.4 N=84 -> D_ss=51.10 (+12.59%)
+      N=12   deficit -18.1% (best: exp r=4 tau=56d gamma=2.5)  |  plateau D_ss +0.31% (front-loaded half only)  *** OVERDOSE ***
+      N=24   deficit -32.0% (best: exp r=4 tau=56d gamma=2.5)  |  plateau D_ss +0.35% (front-loaded half only)
+      N=36   deficit -44.7% (best: load x4 to 50%T gamma=2.5)  |  plateau D_ss +0.34% (front-loaded half only)
+      N=84   deficit -84.8% (best: load x2.5 to 15%T gamma=2.5)  |  plateau D_ss +0.19% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST VI                        1.75 SED/wk | flat+uniform ref (N=36): deficit=1761 nmol/L.d, D_ss=31.07
+      PRIMARY  best by deficit: two_phase / load x4 to 30%T gamma=2.5 N=84 -> deficit=1460 (-17.1%), to-suff NEVER, peak 2% MED
+      PRIMARY  sub-erythemal best: two_phase / load x4 to 30%T gamma=2.5 N=84 -> deficit=1460 (-17.1%), to-suff NEVER, peak 2% MED
+      2ndary   best by plateau D_ss: exponential / exp r=1.5 tau=56d gamma=1.4 N=84 -> D_ss=32.31 (+3.97%)
+      N=12   deficit -7.2% (best: load x4 to 50%T gamma=2.5)  |  plateau D_ss +0.33% (front-loaded half only)
+      N=24   deficit -10.0% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.46% (front-loaded half only)
+      N=36   deficit -11.6% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.50% (front-loaded half only)
+      N=84   deficit -14.5% (best: load x4 to 30%T gamma=2.5)  |  plateau D_ss +0.62% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.8 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST VI                         3.5 SED/wk | flat+uniform ref (N=36): deficit=1483 nmol/L.d, D_ss=35.97
+      PRIMARY  best by deficit: exponential / exp r=4 tau=21d gamma=2.5 N=84 -> deficit=990 (-33.3%), to-suff NEVER, peak 5% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=4 tau=21d gamma=2.5 N=84 -> deficit=990 (-33.3%), to-suff NEVER, peak 5% MED
+      2ndary   best by plateau D_ss: exponential / exp r=0.5 tau=56d gamma=1.4 N=84 -> D_ss=38.68 (+7.54%)
+      N=12   deficit -10.1% (best: exp r=4 tau=56d gamma=2.5)  |  plateau D_ss +0.35% (front-loaded half only)
+      N=24   deficit -15.2% (best: load x4 to 50%T gamma=2.5)  |  plateau D_ss +0.44% (front-loaded half only)
+      N=36   deficit -18.7% (best: load x4 to 50%T gamma=2.5)  |  plateau D_ss +0.48% (front-loaded half only)
+      N=84   deficit -26.4% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.50% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST VI                           7 SED/wk | flat+uniform ref (N=36): deficit=1158 nmol/L.d, D_ss=41.59
+      PRIMARY  best by deficit: exponential / exp r=4 tau=21d gamma=2.5 N=84 -> deficit=394 (-66.0%), to-suff NEVER, peak 11% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=4 tau=21d gamma=2.5 N=84 -> deficit=394 (-66.0%), to-suff NEVER, peak 11% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=1.4 N=84 -> D_ss=46.72 (+12.33%)
+      N=12   deficit -13.7% (best: exp r=4 tau=56d gamma=2.5)  |  plateau D_ss +0.35% (front-loaded half only)
+      N=24   deficit -23.2% (best: exp r=4 tau=56d gamma=2.5)  |  plateau D_ss +0.41% (front-loaded half only)
+      N=36   deficit -31.1% (best: load x4 to 50%T gamma=2.5)  |  plateau D_ss +0.43% (front-loaded half only)
+      N=84   deficit -55.0% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.32% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST II  [light-skin contrast]  1.75 SED/wk | flat+uniform ref (N=36): deficit=1053 nmol/L.d, D_ss=43.56
+      PRIMARY  best by deficit: two_phase / load x4 to 30%T gamma=2.5 N=84 -> deficit=411 (-61.0%), to-suff NEVER, peak 13% MED
+      PRIMARY  sub-erythemal best: two_phase / load x4 to 30%T gamma=2.5 N=84 -> deficit=411 (-61.0%), to-suff NEVER, peak 13% MED
+      2ndary   best by plateau D_ss: exponential / exp r=4 tau=56d gamma=1.0 N=84 -> D_ss=45.83 (+5.23%)
+      N=12   deficit -24.3% (best: load x4 to 50%T gamma=2.5)  |  plateau D_ss +0.33% (front-loaded half only)  [INFEASIBLE > ceiling]
+      N=24   deficit -35.7% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.37% (front-loaded half only)
+      N=36   deficit -42.9% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.39% (front-loaded half only)
+      N=84   deficit -56.4% (best: load x4 to 30%T gamma=2.5)  |  plateau D_ss +0.54% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST II  [light-skin contrast]   3.5 SED/wk | flat+uniform ref (N=36): deficit=556 nmol/L.d, D_ss=53.17
+      PRIMARY  best by deficit: exponential / exp r=4 tau=7d gamma=2.5 N=84 -> deficit=14 (-97.5%), to-suff day 3, peak 41% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=4 tau=7d gamma=2.5 N=84 -> deficit=14 (-97.5%), to-suff day 3, peak 41% MED
+      2ndary   best by plateau D_ss: exponential / exp r=4 tau=56d gamma=0.8 N=84 -> D_ss=57.74 (+8.59%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 2-day gap and reaches sufficiency day 42; deficit 459 vs 556 for flat+uniform.
+      N=12   deficit -41.4% (best: exp r=4 tau=56d gamma=2.5)  |  plateau D_ss +0.16% (front-loaded half only)  *** OVERDOSE ***
+      N=24   deficit -78.6% (best: exp r=1.5 tau=21d gamma=2.5)  |  plateau D_ss +0.13% (front-loaded half only)  [INFEASIBLE > ceiling]
+      N=36   deficit -91.5% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.11% (front-loaded half only)  [INFEASIBLE > ceiling]
+      N=84   deficit -96.9% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.13% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST II  [light-skin contrast]     7 SED/wk | flat+uniform ref (N=36): deficit=324 nmol/L.d, D_ss=63.00
+      PRIMARY  best by deficit: exponential / exp r=4 tau=7d gamma=2.5 N=84 -> deficit=4 (-98.8%), to-suff day 1, peak 82% MED  [INFEASIBLE > ceiling]
+      PRIMARY  sub-erythemal best: two_phase / load x4 to 15%T gamma=2.5 N=84 -> deficit=6 (-98.1%), to-suff day 1, peak 63% MED
+      2ndary   best by plateau D_ss: exponential / exp r=0.5 tau=56d gamma=0.8 N=84 -> D_ss=71.08 (+12.82%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 2-day gap and reaches sufficiency day 28; deficit 331 vs 324 for flat+uniform.
+      N=12   deficit -77.9% (best: exp r=1.5 tau=21d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=24   deficit -94.8% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=36   deficit -96.6% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=84   deficit -98.3% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  [INFEASIBLE > ceiling]
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.0 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+
+  rung: Melanin + SC + risk (melanin_sc_risk)
+    FST V                         1.75 SED/wk | flat+uniform ref (N=36): deficit=1644 nmol/L.d, D_ss=33.16
+      PRIMARY  best by deficit: two_phase / load x4 to 30%T gamma=2.5 N=84 -> deficit=1284 (-21.9%), to-suff NEVER, peak 5% MED
+      PRIMARY  sub-erythemal best: two_phase / load x4 to 30%T gamma=2.5 N=84 -> deficit=1284 (-21.9%), to-suff NEVER, peak 5% MED
+      2ndary   best by plateau D_ss: exponential / exp r=1.5 tau=56d gamma=1.4 N=84 -> D_ss=34.60 (+4.32%)
+      N=12   deficit -9.2% (best: load x4 to 50%T gamma=2.5)  |  plateau D_ss +0.35% (front-loaded half only)
+      N=24   deficit -12.8% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.46% (front-loaded half only)
+      N=36   deficit -14.9% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.49% (front-loaded half only)
+      N=84   deficit -18.7% (best: load x4 to 30%T gamma=2.5)  |  plateau D_ss +0.60% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.8 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST V                          3.5 SED/wk | flat+uniform ref (N=36): deficit=1313 nmol/L.d, D_ss=38.92
+      PRIMARY  best by deficit: exponential / exp r=4 tau=21d gamma=2.5 N=84 -> deficit=736 (-44.0%), to-suff NEVER, peak 11% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=4 tau=21d gamma=2.5 N=84 -> deficit=736 (-44.0%), to-suff NEVER, peak 11% MED
+      2ndary   best by plateau D_ss: exponential / exp r=0.5 tau=56d gamma=1.4 N=84 -> D_ss=42.00 (+7.92%)
+      N=12   deficit -13.0% (best: exp r=4 tau=56d gamma=2.5)  |  plateau D_ss +0.34% (front-loaded half only)
+      N=24   deficit -20.1% (best: load x4 to 50%T gamma=2.5)  |  plateau D_ss +0.41% (front-loaded half only)
+      N=36   deficit -25.0% (best: load x4 to 50%T gamma=2.5)  |  plateau D_ss +0.44% (front-loaded half only)
+      N=84   deficit -36.1% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.42% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST V                            7 SED/wk | flat+uniform ref (N=36): deficit=933 nmol/L.d, D_ss=45.38
+      PRIMARY  best by deficit: two_phase / load x2.5 to 15%T gamma=2.5 N=84 -> deficit=98 (-89.5%), to-suff day 16, peak 19% MED
+      PRIMARY  sub-erythemal best: two_phase / load x2.5 to 15%T gamma=2.5 N=84 -> deficit=98 (-89.5%), to-suff day 16, peak 19% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=1.4 N=84 -> D_ss=51.10 (+12.59%)
+      N=12   deficit -18.1% (best: exp r=4 tau=56d gamma=2.5)  |  plateau D_ss +0.31% (front-loaded half only)  *** OVERDOSE ***
+      N=24   deficit -32.0% (best: exp r=4 tau=56d gamma=2.5)  |  plateau D_ss +0.35% (front-loaded half only)
+      N=36   deficit -44.7% (best: load x4 to 50%T gamma=2.5)  |  plateau D_ss +0.34% (front-loaded half only)
+      N=84   deficit -84.8% (best: load x2.5 to 15%T gamma=2.5)  |  plateau D_ss +0.19% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST VI                        1.75 SED/wk | flat+uniform ref (N=36): deficit=1761 nmol/L.d, D_ss=31.07
+      PRIMARY  best by deficit: two_phase / load x4 to 30%T gamma=2.5 N=84 -> deficit=1460 (-17.1%), to-suff NEVER, peak 2% MED
+      PRIMARY  sub-erythemal best: two_phase / load x4 to 30%T gamma=2.5 N=84 -> deficit=1460 (-17.1%), to-suff NEVER, peak 2% MED
+      2ndary   best by plateau D_ss: exponential / exp r=1.5 tau=56d gamma=1.4 N=84 -> D_ss=32.31 (+3.97%)
+      N=12   deficit -7.2% (best: load x4 to 50%T gamma=2.5)  |  plateau D_ss +0.33% (front-loaded half only)
+      N=24   deficit -10.0% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.46% (front-loaded half only)
+      N=36   deficit -11.6% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.50% (front-loaded half only)
+      N=84   deficit -14.5% (best: load x4 to 30%T gamma=2.5)  |  plateau D_ss +0.62% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.8 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST VI                         3.5 SED/wk | flat+uniform ref (N=36): deficit=1483 nmol/L.d, D_ss=35.97
+      PRIMARY  best by deficit: exponential / exp r=4 tau=21d gamma=2.5 N=84 -> deficit=990 (-33.3%), to-suff NEVER, peak 5% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=4 tau=21d gamma=2.5 N=84 -> deficit=990 (-33.3%), to-suff NEVER, peak 5% MED
+      2ndary   best by plateau D_ss: exponential / exp r=0.5 tau=56d gamma=1.4 N=84 -> D_ss=38.68 (+7.54%)
+      N=12   deficit -10.1% (best: exp r=4 tau=56d gamma=2.5)  |  plateau D_ss +0.35% (front-loaded half only)
+      N=24   deficit -15.2% (best: load x4 to 50%T gamma=2.5)  |  plateau D_ss +0.44% (front-loaded half only)
+      N=36   deficit -18.7% (best: load x4 to 50%T gamma=2.5)  |  plateau D_ss +0.48% (front-loaded half only)
+      N=84   deficit -26.4% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.50% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST VI                           7 SED/wk | flat+uniform ref (N=36): deficit=1158 nmol/L.d, D_ss=41.59
+      PRIMARY  best by deficit: exponential / exp r=4 tau=21d gamma=2.5 N=84 -> deficit=394 (-66.0%), to-suff NEVER, peak 11% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=4 tau=21d gamma=2.5 N=84 -> deficit=394 (-66.0%), to-suff NEVER, peak 11% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=1.4 N=84 -> D_ss=46.72 (+12.33%)
+      N=12   deficit -13.7% (best: exp r=4 tau=56d gamma=2.5)  |  plateau D_ss +0.35% (front-loaded half only)
+      N=24   deficit -23.2% (best: exp r=4 tau=56d gamma=2.5)  |  plateau D_ss +0.41% (front-loaded half only)
+      N=36   deficit -31.1% (best: load x4 to 50%T gamma=2.5)  |  plateau D_ss +0.43% (front-loaded half only)
+      N=84   deficit -55.0% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.32% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST II  [light-skin contrast]  1.75 SED/wk | flat+uniform ref (N=36): deficit=1053 nmol/L.d, D_ss=43.56
+      PRIMARY  best by deficit: two_phase / load x4 to 30%T gamma=2.5 N=84 -> deficit=411 (-61.0%), to-suff NEVER, peak 13% MED
+      PRIMARY  sub-erythemal best: two_phase / load x4 to 30%T gamma=2.5 N=84 -> deficit=411 (-61.0%), to-suff NEVER, peak 13% MED
+      2ndary   best by plateau D_ss: exponential / exp r=4 tau=56d gamma=1.0 N=84 -> D_ss=45.83 (+5.23%)
+      N=12   deficit -24.3% (best: load x4 to 50%T gamma=2.5)  |  plateau D_ss +0.33% (front-loaded half only)  [INFEASIBLE > ceiling]
+      N=24   deficit -35.7% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.37% (front-loaded half only)
+      N=36   deficit -42.9% (best: exp r=4 tau=21d gamma=2.5)  |  plateau D_ss +0.39% (front-loaded half only)
+      N=84   deficit -56.4% (best: load x4 to 30%T gamma=2.5)  |  plateau D_ss +0.54% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST II  [light-skin contrast]   3.5 SED/wk | flat+uniform ref (N=36): deficit=556 nmol/L.d, D_ss=53.17
+      PRIMARY  best by deficit: exponential / exp r=4 tau=7d gamma=2.5 N=84 -> deficit=14 (-97.5%), to-suff day 3, peak 41% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=4 tau=7d gamma=2.5 N=84 -> deficit=14 (-97.5%), to-suff day 3, peak 41% MED
+      2ndary   best by plateau D_ss: exponential / exp r=4 tau=56d gamma=0.8 N=84 -> D_ss=57.74 (+8.59%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 2-day gap and reaches sufficiency day 42; deficit 459 vs 556 for flat+uniform.
+      N=12   deficit -41.4% (best: exp r=4 tau=56d gamma=2.5)  |  plateau D_ss +0.16% (front-loaded half only)  *** OVERDOSE ***
+      N=24   deficit -78.6% (best: exp r=1.5 tau=21d gamma=2.5)  |  plateau D_ss +0.13% (front-loaded half only)  [INFEASIBLE > ceiling]
+      N=36   deficit -91.5% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.11% (front-loaded half only)  [INFEASIBLE > ceiling]
+      N=84   deficit -96.9% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.13% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST II  [light-skin contrast]     7 SED/wk | flat+uniform ref (N=36): deficit=324 nmol/L.d, D_ss=63.00
+      PRIMARY  best by deficit: exponential / exp r=4 tau=7d gamma=2.5 N=84 -> deficit=4 (-98.8%), to-suff day 1, peak 82% MED  [INFEASIBLE > ceiling]
+      PRIMARY  sub-erythemal best: two_phase / load x4 to 15%T gamma=2.5 N=84 -> deficit=6 (-98.1%), to-suff day 1, peak 63% MED
+      2ndary   best by plateau D_ss: exponential / exp r=0.5 tau=56d gamma=0.8 N=84 -> D_ss=71.08 (+12.82%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 2-day gap and reaches sufficiency day 28; deficit 331 vs 324 for flat+uniform.
+      N=12   deficit -77.9% (best: exp r=1.5 tau=21d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=24   deficit -94.8% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=36   deficit -96.6% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=84   deficit -98.3% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  [INFEASIBLE > ceiling]
+      argmax gamma: 2.5 by deficit (PRIMARY) | 1.0 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+
+==============================================================================
+ARM (b)  ACROSS-HORIZON TAPER -- fixed TOTAL SED over the horizon (365 d)
+PRIMARY metric: AUC_deficit_below_sufficiency (minimise).  SECONDARY: steady_state_D (maximise).
+==============================================================================
+
+  rung: Melanin only (melanin_only)
+    FST V                         1.75 SED/wk | flat+uniform ref (N=156): deficit=3687 nmol/L.d, D_ss=45.15
+      PRIMARY  best by deficit: uniform / flat gamma=2.5 N=364 -> deficit=1853 (-49.7%), to-suff day 35, peak 3% MED
+      PRIMARY  sub-erythemal best: uniform / flat gamma=2.5 N=364 -> deficit=1853 (-49.7%), to-suff day 35, peak 3% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=56.31 (+24.70%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 307; deficit 5751 vs 3687 for flat+uniform.
+      N=52   deficit -20.1% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=104  deficit -28.2% (best: load x2.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=156  deficit -33.0% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=364  deficit -38.1% (best: flat gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST V                          3.5 SED/wk | flat+uniform ref (N=156): deficit=1296 nmol/L.d, D_ss=55.51
+      PRIMARY  best by deficit: exponential / exp r=1.5 tau=7d gamma=1.8 N=364 -> deficit=53 (-95.9%), to-suff day 7, peak 14% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=1.5 tau=7d gamma=1.8 N=364 -> deficit=53 (-95.9%), to-suff day 7, peak 14% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=72.06 (+29.80%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 229; deficit 4203 vs 1296 for flat+uniform.
+      N=52   deficit -35.7% (best: flat gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=104  deficit -61.5% (best: exp r=0.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=156  deficit -80.2% (best: exp r=4 tau=7d gamma=1.4)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=364  deficit -94.6% (best: exp r=1.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 1.8 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST V                            7 SED/wk | flat+uniform ref (N=156): deficit=682 nmol/L.d, D_ss=65.18
+      PRIMARY  best by deficit: exponential / exp r=1.5 tau=7d gamma=2.5 N=364 -> deficit=2 (-99.7%), to-suff day 0, peak 26% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=1.5 tau=7d gamma=2.5 N=364 -> deficit=2 (-99.7%), to-suff day 0, peak 26% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=87.74 (+34.62%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 176; deficit 3188 vs 682 for flat+uniform.
+      N=52   deficit -63.0% (best: flat gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)  [INFEASIBLE > ceiling]
+      N=104  deficit -93.9% (best: exp r=4 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=156  deficit -98.7% (best: exp r=0.5 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=364  deficit -99.5% (best: exp r=1.5 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST VI                        1.75 SED/wk | flat+uniform ref (N=156): deficit=4843 nmol/L.d, D_ss=41.23
+      PRIMARY  best by deficit: two_phase / load x4 to 50%T gamma=2.5 N=364 -> deficit=2930 (-39.5%), to-suff day 47, peak 2% MED
+      PRIMARY  sub-erythemal best: two_phase / load x4 to 50%T gamma=2.5 N=364 -> deficit=2930 (-39.5%), to-suff day 47, peak 2% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=51.11 (+23.96%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 342; deficit 6454 vs 4843 for flat+uniform.
+      N=52   deficit -15.6% (best: load x2.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=104  deficit -21.0% (best: load x2.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=156  deficit -24.3% (best: load x2.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=364  deficit -30.5% (best: load x4 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST VI                         3.5 SED/wk | flat+uniform ref (N=156): deficit=1934 nmol/L.d, D_ss=51.05
+      PRIMARY  best by deficit: exponential / exp r=4 tau=7d gamma=1.4 N=364 -> deficit=262 (-86.5%), to-suff day 27, peak 13% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=4 tau=7d gamma=1.4 N=364 -> deficit=262 (-86.5%), to-suff day 27, peak 13% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=66.12 (+29.52%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 254; deficit 4704 vs 1934 for flat+uniform.
+      N=52   deficit -25.3% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=104  deficit -39.2% (best: flat gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=156  deficit -51.3% (best: exp r=0.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=364  deficit -80.6% (best: exp r=4 tau=7d gamma=1.4)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 1.8 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST VI                           7 SED/wk | flat+uniform ref (N=156): deficit=919 nmol/L.d, D_ss=60.31
+      PRIMARY  best by deficit: exponential / exp r=1.5 tau=7d gamma=2.5 N=364 -> deficit=6 (-99.4%), to-suff day 1, peak 13% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=1.5 tau=7d gamma=2.5 N=364 -> deficit=6 (-99.4%), to-suff day 1, peak 13% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=81.18 (+34.61%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 196; deficit 3563 vs 919 for flat+uniform.
+      N=52   deficit -38.5% (best: flat gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=104  deficit -82.8% (best: exp r=0.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=156  deficit -93.2% (best: exp r=1.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=364  deficit -99.1% (best: exp r=1.5 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST II  [light-skin contrast]  1.75 SED/wk | flat+uniform ref (N=156): deficit=987 nmol/L.d, D_ss=59.33
+      PRIMARY  best by deficit: exponential / exp r=1.5 tau=7d gamma=1.8 N=364 -> deficit=34 (-96.6%), to-suff day 5, peak 21% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=1.5 tau=7d gamma=1.8 N=364 -> deficit=34 (-96.6%), to-suff day 5, peak 21% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=74.92 (+26.26%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 218; deficit 3993 vs 987 for flat+uniform.
+      N=52   deficit -61.9% (best: flat gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=104  deficit -88.3% (best: exp r=4 tau=7d gamma=1.4)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=156  deficit -93.5% (best: exp r=1.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=364  deficit -96.0% (best: exp r=1.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 1.8 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST II  [light-skin contrast]   3.5 SED/wk | flat+uniform ref (N=156): deficit=489 nmol/L.d, D_ss=71.22
+      PRIMARY  best by deficit: exponential / exp r=4 tau=7d gamma=2.5 N=364 -> deficit=1 (-99.9%), to-suff day 0, peak 55% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=4 tau=7d gamma=2.5 N=364 -> deficit=1 (-99.9%), to-suff day 0, peak 55% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=92.88 (+30.41%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 164; deficit 2937 vs 489 for flat+uniform.
+      N=52   deficit -93.8% (best: exp r=4 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=104  deficit -99.4% (best: exp r=1.5 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=156  deficit -99.5% (best: exp r=1.5 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  [INFEASIBLE > ceiling]
+      N=364  deficit -99.9% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST II  [light-skin contrast]     7 SED/wk | flat+uniform ref (N=156): deficit=282 nmol/L.d, D_ss=82.10
+      PRIMARY  best by deficit: exponential / exp r=4 tau=7d gamma=2.5 N=364 -> deficit=0 (-99.9%), to-suff day 0, peak 111% MED  *** OVERDOSE ***
+      PRIMARY  sub-erythemal best: exponential / exp r=1.5 tau=21d gamma=2.5 N=364 -> deficit=0 (-99.9%), to-suff day 0, peak 67% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=110.48 (+34.57%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 127; deficit 2228 vs 282 for flat+uniform.
+      N=52   deficit -99.2% (best: exp r=1.5 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=104  deficit -99.7% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=156  deficit -99.8% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=364  deficit -99.9% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      argmax gamma: 2.5 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+
+  rung: Melanin + SC (melanin_plus_sc)
+    FST V                         1.75 SED/wk | flat+uniform ref (N=156): deficit=4629 nmol/L.d, D_ss=41.71
+      PRIMARY  best by deficit: two_phase / load x2.5 to 50%T gamma=2.5 N=364 -> deficit=2970 (-35.8%), to-suff NEVER, peak 4% MED
+      PRIMARY  sub-erythemal best: two_phase / load x2.5 to 50%T gamma=2.5 N=364 -> deficit=2970 (-35.8%), to-suff NEVER, peak 4% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=50.84 (+21.89%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 344; deficit 6257 vs 4629 for flat+uniform.
+      N=52   deficit -13.3% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=104  deficit -17.9% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=156  deficit -20.7% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=364  deficit -25.9% (best: load x2.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST V                          3.5 SED/wk | flat+uniform ref (N=156): deficit=1982 nmol/L.d, D_ss=50.44
+      PRIMARY  best by deficit: exponential / exp r=4 tau=7d gamma=1.4 N=364 -> deficit=317 (-84.0%), to-suff day 39, peak 27% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=4 tau=7d gamma=1.4 N=364 -> deficit=317 (-84.0%), to-suff day 39, peak 27% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=64.35 (+27.58%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 256; deficit 4587 vs 1982 for flat+uniform.
+      N=52   deficit -21.3% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=104  deficit -36.5% (best: flat gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=156  deficit -46.0% (best: exp r=0.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=364  deficit -76.4% (best: exp r=4 tau=7d gamma=1.4)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 1.8 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST V                            7 SED/wk | flat+uniform ref (N=156): deficit=957 nmol/L.d, D_ss=58.66
+      PRIMARY  best by deficit: exponential / exp r=0.5 tau=7d gamma=2.5 N=364 -> deficit=8 (-99.1%), to-suff day 1, peak 18% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=0.5 tau=7d gamma=2.5 N=364 -> deficit=8 (-99.1%), to-suff day 1, peak 18% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=78.16 (+33.24%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 199; deficit 3497 vs 957 for flat+uniform.
+      N=52   deficit -35.5% (best: flat gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  [INFEASIBLE > ceiling]
+      N=104  deficit -76.2% (best: exp r=0.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=156  deficit -91.9% (best: exp r=1.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=364  deficit -98.7% (best: exp r=0.5 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 1.8 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST VI                        1.75 SED/wk | flat+uniform ref (N=156): deficit=5690 nmol/L.d, D_ss=38.02
+      PRIMARY  best by deficit: two_phase / load x2.5 to 50%T gamma=2.5 N=364 -> deficit=4147 (-27.1%), to-suff NEVER, peak 2% MED
+      PRIMARY  sub-erythemal best: two_phase / load x2.5 to 50%T gamma=2.5 N=364 -> deficit=4147 (-27.1%), to-suff NEVER, peak 2% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=46.02 (+21.03%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency NEVER; deficit 7070 vs 5690 for flat+uniform.
+      N=52   deficit -10.5% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=104  deficit -13.7% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=156  deficit -15.7% (best: load x2.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=364  deficit -19.2% (best: load x2.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST VI                         3.5 SED/wk | flat+uniform ref (N=156): deficit=3278 nmol/L.d, D_ss=46.23
+      PRIMARY  best by deficit: exponential / exp r=0.5 tau=21d gamma=1.8 N=364 -> deficit=1187 (-63.8%), to-suff day 61, peak 5% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=0.5 tau=21d gamma=1.8 N=364 -> deficit=1187 (-63.8%), to-suff day 61, peak 5% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=58.79 (+27.17%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 288; deficit 5188 vs 3278 for flat+uniform.
+      N=52   deficit -15.8% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=104  deficit -24.9% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=156  deficit -32.3% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=364  deficit -43.9% (best: exp r=0.5 tau=21d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST VI                           7 SED/wk | flat+uniform ref (N=156): deficit=1375 nmol/L.d, D_ss=54.08
+      PRIMARY  best by deficit: exponential / exp r=1.5 tau=7d gamma=1.8 N=364 -> deficit=53 (-96.1%), to-suff day 8, peak 14% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=1.5 tau=7d gamma=1.8 N=364 -> deficit=53 (-96.1%), to-suff day 8, peak 14% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=72.02 (+33.16%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 223; deficit 3948 vs 1375 for flat+uniform.
+      N=52   deficit -23.9% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=104  deficit -45.8% (best: exp r=0.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=156  deficit -71.7% (best: exp r=0.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=364  deficit -94.0% (best: exp r=1.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 1.8 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST II  [light-skin contrast]  1.75 SED/wk | flat+uniform ref (N=156): deficit=1135 nmol/L.d, D_ss=56.58
+      PRIMARY  best by deficit: exponential / exp r=1.5 tau=7d gamma=1.8 N=364 -> deficit=52 (-95.4%), to-suff day 7, peak 21% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=1.5 tau=7d gamma=1.8 N=364 -> deficit=52 (-95.4%), to-suff day 7, peak 21% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=70.50 (+24.60%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 229; deficit 4132 vs 1135 for flat+uniform.
+      N=52   deficit -45.0% (best: exp r=0.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)  [INFEASIBLE > ceiling]
+      N=104  deficit -76.0% (best: exp r=4 tau=7d gamma=1.4)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=156  deficit -87.9% (best: exp r=4 tau=7d gamma=1.4)  |  plateau D_ss +0.00% (front-loaded half only)  [INFEASIBLE > ceiling]
+      N=364  deficit -94.6% (best: exp r=1.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 1.8 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST II  [light-skin contrast]   3.5 SED/wk | flat+uniform ref (N=156): deficit=558 nmol/L.d, D_ss=67.26
+      PRIMARY  best by deficit: exponential / exp r=1.5 tau=7d gamma=2.5 N=364 -> deficit=2 (-99.7%), to-suff day 0, peak 38% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=1.5 tau=7d gamma=2.5 N=364 -> deficit=2 (-99.7%), to-suff day 0, peak 38% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=86.83 (+29.11%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 173; deficit 3045 vs 558 for flat+uniform.
+      N=52   deficit -89.2% (best: exp r=1.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=104  deficit -98.5% (best: exp r=0.5 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  [INFEASIBLE > ceiling]
+      N=156  deficit -99.4% (best: exp r=1.5 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  [INFEASIBLE > ceiling]
+      N=364  deficit -99.6% (best: exp r=1.5 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST II  [light-skin contrast]     7 SED/wk | flat+uniform ref (N=156): deficit=325 nmol/L.d, D_ss=77.02
+      PRIMARY  best by deficit: exponential / exp r=4 tau=7d gamma=2.5 N=364 -> deficit=0 (-99.9%), to-suff day 0, peak 111% MED  *** OVERDOSE ***
+      PRIMARY  sub-erythemal best: exponential / exp r=1.5 tau=21d gamma=2.5 N=364 -> deficit=1 (-99.8%), to-suff day 0, peak 67% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=103.00 (+33.73%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 134; deficit 2316 vs 325 for flat+uniform.
+      N=52   deficit -98.2% (best: exp r=0.5 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=104  deficit -99.6% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=156  deficit -99.8% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=364  deficit -99.9% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      argmax gamma: 2.5 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+
+  rung: Melanin + SC + risk (melanin_sc_risk)
+    FST V                         1.75 SED/wk | flat+uniform ref (N=156): deficit=4629 nmol/L.d, D_ss=41.71
+      PRIMARY  best by deficit: two_phase / load x2.5 to 50%T gamma=2.5 N=364 -> deficit=2970 (-35.8%), to-suff NEVER, peak 4% MED
+      PRIMARY  sub-erythemal best: two_phase / load x2.5 to 50%T gamma=2.5 N=364 -> deficit=2970 (-35.8%), to-suff NEVER, peak 4% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=50.84 (+21.89%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 344; deficit 6257 vs 4629 for flat+uniform.
+      N=52   deficit -13.3% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=104  deficit -17.9% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=156  deficit -20.7% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=364  deficit -25.9% (best: load x2.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST V                          3.5 SED/wk | flat+uniform ref (N=156): deficit=1982 nmol/L.d, D_ss=50.44
+      PRIMARY  best by deficit: exponential / exp r=4 tau=7d gamma=1.4 N=364 -> deficit=317 (-84.0%), to-suff day 39, peak 27% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=4 tau=7d gamma=1.4 N=364 -> deficit=317 (-84.0%), to-suff day 39, peak 27% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=64.35 (+27.58%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 256; deficit 4587 vs 1982 for flat+uniform.
+      N=52   deficit -21.3% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=104  deficit -36.5% (best: flat gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=156  deficit -46.0% (best: exp r=0.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=364  deficit -76.4% (best: exp r=4 tau=7d gamma=1.4)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 1.8 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST V                            7 SED/wk | flat+uniform ref (N=156): deficit=957 nmol/L.d, D_ss=58.66
+      PRIMARY  best by deficit: exponential / exp r=0.5 tau=7d gamma=2.5 N=364 -> deficit=8 (-99.1%), to-suff day 1, peak 18% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=0.5 tau=7d gamma=2.5 N=364 -> deficit=8 (-99.1%), to-suff day 1, peak 18% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=78.16 (+33.24%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 199; deficit 3497 vs 957 for flat+uniform.
+      N=52   deficit -35.5% (best: flat gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  [INFEASIBLE > ceiling]
+      N=104  deficit -76.2% (best: exp r=0.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=156  deficit -91.9% (best: exp r=1.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=364  deficit -98.7% (best: exp r=0.5 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 1.8 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST VI                        1.75 SED/wk | flat+uniform ref (N=156): deficit=5690 nmol/L.d, D_ss=38.02
+      PRIMARY  best by deficit: two_phase / load x2.5 to 50%T gamma=2.5 N=364 -> deficit=4147 (-27.1%), to-suff NEVER, peak 2% MED
+      PRIMARY  sub-erythemal best: two_phase / load x2.5 to 50%T gamma=2.5 N=364 -> deficit=4147 (-27.1%), to-suff NEVER, peak 2% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=46.02 (+21.03%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency NEVER; deficit 7070 vs 5690 for flat+uniform.
+      N=52   deficit -10.5% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=104  deficit -13.7% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=156  deficit -15.7% (best: load x2.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=364  deficit -19.2% (best: load x2.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST VI                         3.5 SED/wk | flat+uniform ref (N=156): deficit=3278 nmol/L.d, D_ss=46.23
+      PRIMARY  best by deficit: exponential / exp r=0.5 tau=21d gamma=1.8 N=364 -> deficit=1187 (-63.8%), to-suff day 61, peak 5% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=0.5 tau=21d gamma=1.8 N=364 -> deficit=1187 (-63.8%), to-suff day 61, peak 5% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=58.79 (+27.17%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 288; deficit 5188 vs 3278 for flat+uniform.
+      N=52   deficit -15.8% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=104  deficit -24.9% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=156  deficit -32.3% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=364  deficit -43.9% (best: exp r=0.5 tau=21d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST VI                           7 SED/wk | flat+uniform ref (N=156): deficit=1375 nmol/L.d, D_ss=54.08
+      PRIMARY  best by deficit: exponential / exp r=1.5 tau=7d gamma=1.8 N=364 -> deficit=53 (-96.1%), to-suff day 8, peak 14% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=1.5 tau=7d gamma=1.8 N=364 -> deficit=53 (-96.1%), to-suff day 8, peak 14% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=72.02 (+33.16%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 223; deficit 3948 vs 1375 for flat+uniform.
+      N=52   deficit -23.9% (best: load x1.5 to 50%T gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=104  deficit -45.8% (best: exp r=0.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=156  deficit -71.7% (best: exp r=0.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      N=364  deficit -94.0% (best: exp r=1.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 1.8 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST II  [light-skin contrast]  1.75 SED/wk | flat+uniform ref (N=156): deficit=1135 nmol/L.d, D_ss=56.58
+      PRIMARY  best by deficit: exponential / exp r=1.5 tau=7d gamma=1.8 N=364 -> deficit=52 (-95.4%), to-suff day 7, peak 21% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=1.5 tau=7d gamma=1.8 N=364 -> deficit=52 (-95.4%), to-suff day 7, peak 21% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=70.50 (+24.60%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 229; deficit 4132 vs 1135 for flat+uniform.
+      N=52   deficit -45.0% (best: exp r=0.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)  [INFEASIBLE > ceiling]
+      N=104  deficit -76.0% (best: exp r=4 tau=7d gamma=1.4)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=156  deficit -87.9% (best: exp r=4 tau=7d gamma=1.4)  |  plateau D_ss +0.00% (front-loaded half only)  [INFEASIBLE > ceiling]
+      N=364  deficit -94.6% (best: exp r=1.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 1.8 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST II  [light-skin contrast]   3.5 SED/wk | flat+uniform ref (N=156): deficit=558 nmol/L.d, D_ss=67.26
+      PRIMARY  best by deficit: exponential / exp r=1.5 tau=7d gamma=2.5 N=364 -> deficit=2 (-99.7%), to-suff day 0, peak 38% MED
+      PRIMARY  sub-erythemal best: exponential / exp r=1.5 tau=7d gamma=2.5 N=364 -> deficit=2 (-99.7%), to-suff day 0, peak 38% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=86.83 (+29.11%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 173; deficit 3045 vs 558 for flat+uniform.
+      N=52   deficit -89.2% (best: exp r=1.5 tau=7d gamma=1.8)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=104  deficit -98.5% (best: exp r=0.5 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  [INFEASIBLE > ceiling]
+      N=156  deficit -99.4% (best: exp r=1.5 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  [INFEASIBLE > ceiling]
+      N=364  deficit -99.6% (best: exp r=1.5 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)
+      argmax gamma: 2.5 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+    FST II  [light-skin contrast]     7 SED/wk | flat+uniform ref (N=156): deficit=325 nmol/L.d, D_ss=77.02
+      PRIMARY  best by deficit: exponential / exp r=4 tau=7d gamma=2.5 N=364 -> deficit=0 (-99.9%), to-suff day 0, peak 111% MED  *** OVERDOSE ***
+      PRIMARY  sub-erythemal best: exponential / exp r=1.5 tau=21d gamma=2.5 N=364 -> deficit=1 (-99.8%), to-suff day 0, peak 67% MED
+      2ndary   best by plateau D_ss: uniform / flat gamma=0.4 N=364 -> D_ss=103.00 (+33.73%)
+               ^ BACK-loaded winner: this is a TERMINAL-METRIC ARTEFACT, not a schedule.
+                 It opens with a 35-day gap and reaches sufficiency day 134; deficit 2316 vs 325 for flat+uniform.
+      N=52   deficit -98.2% (best: exp r=0.5 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=104  deficit -99.6% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=156  deficit -99.8% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      N=364  deficit -99.9% (best: exp r=4 tau=7d gamma=2.5)  |  plateau D_ss +0.00% (front-loaded half only)  *** OVERDOSE ***
+      argmax gamma: 2.5 by deficit (PRIMARY) | 0.4 by D_ss, 0.4 by final D (both TERMINAL, co-moving)
+
+==============================================================================
+ARM (b) CONCLUSION
+==============================================================================
+  The plateau is set by the weekly budget and by how finely it is split (arm a); its ARRANGEMENT over the horizon does not move it. What front-loading buys is the TRANSIENT -- reaching sufficiency fast and minimising accumulated deficiency on the way.
+
+  arm (b) ranked on AUC_deficit_below_sufficiency (minimise); aligned with the PRIMARY objective 'min_dose_min_sessions_to_hold_sufficiency' in vitd_objectives.OBJECTIVE_HIERARCHY. Plateau metric steady_state_D reported as SECONDARY.
+
+  Matched-N throughout: every arm is referenced to flat + uniform
+  spacing at the SAME session count, so the session-count effect
+  is divided out and only shape and spacing remain.
+==============================================================================
+
+  horizon = 84 d  (108 cells)
+    [1] PRIMARY -- deficiency burden cut by front-loading (the RESULT):
+        melanin_only         mean 49.4%  max 98.7%   (sub-erythemal only: mean 44.8%)
+        melanin_plus_sc      mean 38.9%  max 98.3%   (sub-erythemal only: mean 34.2%)
+        melanin_sc_risk      mean 38.9%  max 98.3%   (sub-erythemal only: mean 34.2%)
+        argmax gamma by deficit: [2.5]  |  sub-erythemal only: [2.5]
+        days to sufficiency at the deficit optimum: 17.9 (vs 43.6 at the plateau optimum)
+    [2] SECONDARY -- plateau (D_ss) gain from front-loading, gamma >= 1 (the NULL):
+        melanin_only         mean +0.43%  max +0.97%
+        melanin_plus_sc      mean +0.34%  max +0.62%
+        melanin_sc_risk      mean +0.34%  max +0.62%
+        Front-loading does not raise the plateau. At 365 d it does not move it at all.
+    [3] ARTEFACT WARNING -- the raw plateau maximum over the whole grid is +1.0%.
+        Back-loading wins the plateau in only 3% of cells at this horizon.
+    [4] METRIC SIGN CHECK: D_ss and final-D argmax gamma agree in 3/108 cells (3%).
+        Both are TERMINAL measures, so agreement is CO-MOVEMENT, not corroboration; as the averaging window
+        shrinks against the horizon they collapse onto each other. The PRIMARY metric disagrees with both.
+        argmax gamma -- deficit [2.5] | D_ss [0.8, 1.0, 1.4, 1.8] | final D [0.4]
+    [5] ERYTHEMA CAP: trims the deficit gain but never flips its direction.
+        15/108 cells have NO sub-erythemal arm at any spacing -- the budget itself is infeasible there.
+
+  horizon = 365 d  (108 cells)
+    [1] PRIMARY -- deficiency burden cut by front-loading (the RESULT):
+        melanin_only         mean 68.9%  max 99.9%   (sub-erythemal only: mean 65.1%)
+        melanin_plus_sc      mean 57.2%  max 99.9%   (sub-erythemal only: mean 52.7%)
+        melanin_sc_risk      mean 57.2%  max 99.9%   (sub-erythemal only: mean 52.7%)
+        argmax gamma by deficit: [1.8, 2.5]  |  sub-erythemal only: [1.4, 1.8, 2.5]
+        days to sufficiency at the deficit optimum: 20.6 (vs 248.8 at the plateau optimum)
+    [2] SECONDARY -- plateau (D_ss) gain from front-loading, gamma >= 1 (the NULL):
+        melanin_only         mean +0.00%  max +0.00%
+        melanin_plus_sc      mean +0.00%  max +0.00%
+        melanin_sc_risk      mean +0.00%  max +0.00%
+        Front-loading does not raise the plateau. At 365 d it does not move it at all.
+    [3] ARTEFACT WARNING -- the raw plateau maximum over the whole grid is +22.1%.
+        It is won by BACK-loading in 100% of cells and is NOT a schedule result.
+        That arm opens with a 54-day gap (max gap 54 d), carries deficit 4977 nmol/L.d against 2362 for flat+uniform,
+        and reaches sufficiency on day 249 against day 21. It stacks dose under the measurement window.
+    [4] METRIC SIGN CHECK: D_ss and final-D argmax gamma agree in 108/108 cells (100%).
+        Both are TERMINAL measures, so agreement is CO-MOVEMENT, not corroboration; as the averaging window
+        shrinks against the horizon they collapse onto each other. The PRIMARY metric disagrees with both.
+        argmax gamma -- deficit [1.8, 2.5] | D_ss [0.4] | final D [0.4]
+    [5] ERYTHEMA CAP: trims the deficit gain but never flips its direction.
+        15/108 cells have NO sub-erythemal arm at any spacing -- the budget itself is infeasible there.
+
+==============================================================================
+REPORTING RUNG 'melanin_sc_risk': skin-cancer indices. The trajectory is IDENTICAL to
+melanin_plus_sc -- this rung adds no dynamics, only the obligation to show these.
+==============================================================================
+    FST V                         1.75 SED/wk | combined index 7/wk=0.0029 -> 1/wk=0.0201 | burn fraction 0.00 -> 0.00
+    FST V                          3.5 SED/wk | combined index 7/wk=0.0147 -> 1/wk=0.1026 | burn fraction 0.00 -> 0.00
+    FST V                            7 SED/wk | combined index 7/wk=0.0747 -> 1/wk=0.5230 | burn fraction 0.00 -> 0.00
+    FST VI                        1.75 SED/wk | combined index 7/wk=0.0005 -> 1/wk=0.0036 | burn fraction 0.00 -> 0.00
+    FST VI                         3.5 SED/wk | combined index 7/wk=0.0026 -> 1/wk=0.0183 | burn fraction 0.00 -> 0.00
+    FST VI                           7 SED/wk | combined index 7/wk=0.0133 -> 1/wk=0.0931 | burn fraction 0.00 -> 0.00
+    FST II  [light-skin contrast]  1.75 SED/wk | combined index 7/wk=0.0530 -> 1/wk=0.3707 | burn fraction 0.00 -> 0.00
+    FST II  [light-skin contrast]   3.5 SED/wk | combined index 7/wk=0.2700 -> 1/wk=1.8900 | burn fraction 0.00 -> 1.00
+    FST II  [light-skin contrast]     7 SED/wk | combined index 7/wk=1.3765 -> 1/wk=9.6355 | burn fraction 0.00 -> 1.00
+
+  Wrote tables/frontload_within_week.csv (189 rows)
+  Wrote tables/frontload_horizon_taper.csv (14364 rows, horizon 84 d)
+  Wrote tables/frontload_horizon_taper_365d.csv (14364 rows, horizon 365 d)
+  Wrote tables/frontload_taper_horizon_comparison.csv (216 rows)
+  Wrote figs/frontload_within_week.png
+  Wrote figs/frontload_within_week_absolute.png
+  Wrote figs/frontload_safety.png
+  Wrote figs/frontload_taper_metric_conflict.png
+  Wrote figs/frontload_horizon_taper.png
+  Wrote figs/frontload_horizon_taper_365d.png
+
+```
+
+![front-load vs split, within week](figs/frontload_within_week.png)
+
+![front-load vs split, absolute levels by rung](figs/frontload_within_week_absolute.png)
+
+![across-horizon taper, protocol horizon](figs/frontload_horizon_taper.png)
+
+![across-horizon taper, 365-day horizon](figs/frontload_horizon_taper_365d.png)
+
+![taper metric conflict: terminal vs horizon-integrated outcomes](figs/frontload_taper_metric_conflict.png)
+
+![front-load safety sidecar](figs/frontload_safety.png)
+
+Tables: [`tables/frontload_within_week.csv`](tables/frontload_within_week.csv) (arm a), [`tables/frontload_horizon_taper.csv`](tables/frontload_horizon_taper.csv) (arm b), and [`tables/frontload_taper_horizon_comparison.csv`](tables/frontload_taper_horizon_comparison.csv) (the matched-N horizon check, one row per rung x skin type x budget x session count, carrying `best_gain_pct`, `spacing_only_gain_pct` and the three argmax-gamma columns the paragraph above is computed from). The 365-day re-run of arm (b) writes [`tables/frontload_horizon_taper_365d.csv`](tables/frontload_horizon_taper_365d.csv) and its own figure. If the script is run over a different set of horizons it writes one `tables/frontload_horizon_taper_<N>d.csv` and one matching figure per extra horizon; the exact filenames written on this run are listed at the end of the log above.
 
 ## 6. Fine-grid interval sweep
 
@@ -596,7 +1557,7 @@ FST 5:
   Net-change optimum: interval=2d, net_change=0.382 nmol/L/SED (60 evals, exhaustive over 1-60d)
   Absolute D optimum: interval=1d, steady_state_D=51.0 nmol/L (60 evals, exhaustive over 1-60d)
   Cross-check: ss_D at net-change optimum = 39.5, net_change at D optimum = 0.340
-  AUC deficit at 50 nmol/L for optimal schedule: 1279.4
+  AUC deficit at 50 nmol/L for optimal schedule: 1279.5
   AUC deficit at 30 nmol/L for optimal schedule: 33.7
 
 FST 6:
@@ -753,7 +1714,7 @@ ANALYSIS L: constant-sessions optimization sweep
     SED/session:     1.000
     Interval:        7.0 days
     Max D:           38.8 nmol/L
-    AUC deficit @50: 5565.1 nmol/L·days
+    AUC deficit @50: 5565.2 nmol/L·days
     Net ΔD/SED:      0.249 nmol/L/SED
 
     N  SED/sesh  Interval   Max D  Deficit@50  NetΔD/SED  Roll7d                 Flag
@@ -761,55 +1722,55 @@ ANALYSIS L: constant-sessions optimization sweep
     1   52.000    365.0    30.6     10687.8     -0.205    52.0     UV safety: review
     2   26.000    182.5    29.7     10166.0     -0.156    26.0     UV safety: review
     3   17.333    121.7    29.3      9795.5     -0.119    17.3     UV safety: review
-    4   13.000     91.2    28.9      9498.8     -0.089    13.0     UV safety: review
-    5   10.400     73.0    28.7      9247.8     -0.064    10.4     UV safety: review
-    6    8.667     60.8    28.5      9027.6     -0.042     8.7     UV safety: review
-    7    7.429     52.1    28.3      8830.0     -0.023     7.4     UV safety: review
-    8    6.500     45.6    28.1      8650.1     -0.006     6.5     UV safety: review
+    4   13.000     91.2    28.9      9498.9     -0.089    13.0     UV safety: review
+    5   10.400     73.0    28.7      9247.9     -0.064    10.4     UV safety: review
+    6    8.667     60.8    28.5      9027.7     -0.042     8.7     UV safety: review
+    7    7.429     52.1    28.3      8830.1     -0.023     7.4     UV safety: review
+    8    6.500     45.6    28.1      8650.2     -0.006     6.5     UV safety: review
     9    5.778     40.6    28.2      8484.6      0.009     5.8     UV safety: review
-   10    5.200     36.5    28.8      8331.1      0.023     5.2     UV safety: review
+   10    5.200     36.5    28.8      8331.2      0.023     5.2     UV safety: review
    11    4.727     33.2    29.3      8188.1      0.036     4.7                      
-   12    4.333     30.4    29.8      8054.1      0.048     4.3                      
-   13    4.000     28.1    30.3      7928.2      0.059     4.0                      
-   14    3.714     26.1    30.7      7809.4      0.070     3.7                      
-   15    3.467     24.3    31.1      7697.1      0.079     3.5                      
-   16    3.250     22.8    31.5      7590.6      0.089     3.2                      
+   12    4.333     30.4    29.8      8054.2      0.048     4.3                      
+   13    4.000     28.1    30.3      7928.3      0.059     4.0                      
+   14    3.714     26.1    30.7      7809.5      0.070     3.7                      
+   15    3.467     24.3    31.1      7697.2      0.079     3.5                      
+   16    3.250     22.8    31.5      7590.7      0.089     3.2                      
    17    3.059     21.5    31.9      7489.5      0.097     3.1                      
-   18    2.889     20.3    32.3      7393.1      0.105     2.9                      
-   19    2.737     19.2    32.6      7301.3      0.113     2.7                      
-   20    2.600     18.2    32.9      7213.5      0.120     2.6                      
-   21    2.476     17.4    33.2      7129.6      0.127     2.5                      
+   18    2.889     20.3    32.3      7393.2      0.105     2.9                      
+   19    2.737     19.2    32.6      7301.4      0.113     2.7                      
+   20    2.600     18.2    32.9      7213.6      0.120     2.6                      
+   21    2.476     17.4    33.2      7129.7      0.127     2.5                      
    22    2.364     16.6    33.5      7049.2      0.134     2.4                      
-   23    2.261     15.9    33.8      6972.0      0.140     2.3                      
-   24    2.167     15.2    34.1      6897.9      0.146     2.2                      
-   25    2.080     14.6    34.3      6826.7      0.152     2.1                      
-   26    2.000     14.0    34.6      6758.1      0.157     2.0                      
-   27    1.926     13.5    34.8      6692.1      0.163     1.9                      
-   28    1.857     13.0    35.1      6628.4      0.168     1.9                      
-   29    1.793     12.6    35.3      6566.9      0.173     1.8                      
+   23    2.261     15.9    33.8      6972.1      0.140     2.3                      
+   24    2.167     15.2    34.1      6898.0      0.146     2.2                      
+   25    2.080     14.6    34.3      6826.8      0.152     2.1                      
+   26    2.000     14.0    34.6      6758.2      0.157     2.0                      
+   27    1.926     13.5    34.8      6692.2      0.163     1.9                      
+   28    1.857     13.0    35.1      6628.5      0.168     1.9                      
+   29    1.793     12.6    35.3      6567.0      0.173     1.8                      
    30    1.733     12.2    35.5      6507.6      0.177     1.7                      
    31    1.677     11.8    35.7      6450.2      0.182     1.7                      
-   32    1.625     11.4    35.9      6394.6      0.186     1.6                      
-   33    1.576     11.1    36.1      6340.9      0.190     1.6                      
-   34    1.529     10.7    36.3      6288.8      0.194     1.5                      
+   32    1.625     11.4    35.9      6394.7      0.186     1.6                      
+   33    1.576     11.1    36.1      6341.0      0.190     1.6                      
+   34    1.529     10.7    36.3      6288.9      0.194     1.5                      
    35    1.486     10.4    36.5      6238.4      0.198     1.5                      
-   36    1.444     10.1    36.6      6189.4      0.202     1.4                      
-   37    1.405      9.9    36.8      6141.9      0.206     1.4                      
+   36    1.444     10.1    36.6      6189.5      0.202     1.4                      
+   37    1.405      9.9    36.8      6142.0      0.206     1.4                      
    38    1.368      9.6    37.0      6095.8      0.209     1.4                      
    39    1.333      9.4    37.1      6051.0      0.213     1.3                      
-   40    1.300      9.1    37.3      6007.4      0.216     1.3                      
-   41    1.268      8.9    37.4      5965.0      0.219     1.3                      
-   42    1.238      8.7    37.6      5923.8      0.222     1.2                      
-   43    1.209      8.5    37.7      5883.7      0.226     1.2                      
-   44    1.182      8.3    37.9      5844.6      0.228     1.2                      
-   45    1.156      8.1    38.0      5806.5      0.231     1.2                      
+   40    1.300      9.1    37.3      6007.5      0.216     1.3                      
+   41    1.268      8.9    37.4      5965.1      0.219     1.3                      
+   42    1.238      8.7    37.6      5923.9      0.222     1.2                      
+   43    1.209      8.5    37.7      5883.8      0.225     1.2                      
+   44    1.182      8.3    37.9      5844.7      0.228     1.2                      
+   45    1.156      8.1    38.0      5806.6      0.231     1.2                      
    46    1.130      7.9    38.1      5769.5      0.234     1.1                      
    47    1.106      7.8    38.3      5733.3      0.237     1.1                      
-   48    1.083      7.6    38.4      5698.0      0.240     1.1                      
+   48    1.083      7.6    38.4      5698.1      0.239     1.1                      
    49    1.061      7.4    38.5      5663.6      0.242     1.1                      
    50    1.040      7.3    38.6      5630.0      0.245     1.0                      
-   51    1.020      7.2    38.7      5597.1      0.247     1.0                      
-   52    1.000      7.0    38.8      5565.1      0.249     1.0                      
+   51    1.020      7.2    38.7      5597.2      0.247     1.0                      
+   52    1.000      7.0    38.8      5565.2      0.249     1.0                      
 
 ```
 
@@ -830,26 +1791,26 @@ ANALYSIS 13a: spacing optimisation at fixed dose
 
    FST  N/yr   gap   meanD  finalD    minD  <50d     SCC     INT    burn
   -------------------------------------------------------------------
-     I    52     4    43.1    31.2    25.0   279   1.000   1.000   0.000
-     I   104     2    54.7    37.0    25.0   133   3.249   2.000   0.000
-     I   146     1    60.8    34.4    25.0   130   5.784   2.808   0.000
-     I   183     1    66.0    39.1    25.0    90   8.491   3.519   0.000
-     I   260     1    74.3    52.2    25.0    21  15.426   5.000   0.000
-     I   365     1    79.4    87.0    25.0    21  27.459   7.019   0.000
+     I    52     4    43.0    31.2    25.0   280   1.000   1.000   0.000
+     I   104     2    54.5    36.9    25.0   134   3.249   2.000   0.000
+     I   146     1    60.6    34.4    25.0   131   5.784   2.808   0.000
+     I   183     1    65.9    39.0    25.0    90   8.491   3.519   0.000
+     I   260     1    74.1    52.1    25.0    21  15.426   5.000   0.000
+     I   365     1    79.2    86.7    25.0    21  27.459   7.019   0.000
 
-    II    52     3    42.0    27.9    25.0   278   0.993   0.523   0.000
-    II   104     2    53.3    36.4    25.0   143   3.225   1.046   0.000
-    II   146     1    59.4    34.0    25.0   137   5.740   1.468   0.000
-    II   183     1    64.5    38.5    25.0    96   8.427   1.840   0.000
-    II   260     1    72.5    51.3    25.0    23  15.310   2.615   0.000
-    II   365     1    77.5    85.1    25.0    23  27.254   3.671   0.000
+    II    52     4    41.9    30.6    25.0   312   0.993   0.523   0.000
+    II   104     2    53.2    36.3    25.0   144   3.225   1.046   0.000
+    II   146     1    59.3    33.9    25.0   137   5.740   1.468   0.000
+    II   183     1    64.3    38.5    25.0    96   8.427   1.840   0.000
+    II   260     1    72.3    51.2    25.0    23  15.310   2.615   0.000
+    II   365     1    77.3    84.8    25.0    23  27.254   3.671   0.000
 
-   III    52     3    40.0    26.9    25.0   319   0.942   0.266   0.000
-   III   104     2    50.7    35.2    25.0   166   3.060   0.532   0.000
-   III   146     1    56.7    33.1    25.0   150   5.447   0.747   0.000
-   III   183     1    61.5    37.5    25.0   109   7.997   0.937   0.000
-   III   260     1    69.1    49.7    25.0    28  14.529   1.331   0.000
-   III   365     1    73.8    81.4    25.0    27  25.863   1.868   0.000
+   III    52     3    39.9    26.9    25.0   321   0.942   0.266   0.000
+   III   104     2    50.6    35.1    25.0   167   3.060   0.532   0.000
+   III   146     1    56.5    33.0    25.0   150   5.447   0.747   0.000
+   III   183     1    61.4    37.4    25.0   109   7.997   0.937   0.000
+   III   260     1    68.9    49.6    25.0    29  14.529   1.331   0.000
+   III   365     1    73.6    81.2    25.0    27  25.863   1.868   0.000
 
     IV    52     3    36.1    24.9    24.9   365   0.473   0.025   0.000
     IV   104     2    45.4    32.5    25.0   234   1.536   0.050   0.000
@@ -902,82 +1863,82 @@ ANALYSIS M: variable-dose optimisation
 
   FST    N       family      risk  vs unif%   totSED  SED sav%  trough  t->suff
   ----------------------------------------------------------------------------------
-    2  104      uniform    3.5971       0.0    138.4       0.0   50.00      84d
-    2  104    two_phase    1.4777      58.9     86.0      37.9   50.00      84d
-    2  104  exponential    1.7431      51.5     88.5      36.0   50.00      74d
-    2  104     seasonal    3.5971       0.0    138.4       0.0   50.00      84d
-    2  104  gap_coupled    3.5971       0.0    138.4      -0.0   50.00      84d
+    2  104      uniform    3.6730       0.0    139.7       0.0   50.00      84d
+    2  104    two_phase    1.4848      59.6     86.3      38.2   50.00      84d
+    2  104  exponential    1.7574      52.2     89.0      36.3   50.00      74d
+    2  104     seasonal    3.6730       0.0    139.7       0.0   50.00      84d
+    2  104  gap_coupled    3.6730       0.0    139.7      -0.0   50.00      84d
 
-    2  122      uniform    2.4684       0.0    126.2       0.0   50.00      87d
-    2  122    two_phase    1.2620      48.9     82.0      35.0   50.00      66d
-    2  122  exponential    1.2480      49.4     88.8      29.7   50.00      87d
-    2  122     seasonal    2.4684       0.0    126.2       0.0   50.00      87d
-    2  122  gap_coupled    2.4684       0.0    126.2       0.0   50.00      87d
+    2  122      uniform    2.5155       0.0    127.3       0.0   50.00      87d
+    2  122    two_phase    1.2746      49.3     82.7      35.0   50.00      66d
+    2  122  exponential    1.2724      49.4     89.5      29.7   50.00      87d
+    2  122     seasonal    2.5155       0.0    127.3       0.0   50.00      87d
+    2  122  gap_coupled    2.5155       0.0    127.3       0.0   50.00      87d
 
-    2  146      uniform    1.8553       0.0    120.7       0.0   50.00      85d
-    2  146    two_phase    0.8148      56.1     76.9      36.3   50.00      78d
-    2  146  exponential    0.9195      50.4     84.2      30.3   50.00      85d
-    2  146     seasonal    1.8553       0.0    120.7       0.0   50.00      85d
-    2  146  gap_coupled    1.8553       0.0    120.7       0.0   50.00      85d
+    2  146      uniform    1.8881       0.0    121.6       0.0   50.00      85d
+    2  146    two_phase    0.8187      56.6     77.1      36.6   50.00      78d
+    2  146  exponential    0.9361      50.4     84.8      30.2   50.00      85d
+    2  146     seasonal    1.8881       0.0    121.6       0.0   50.00      85d
+    2  146  gap_coupled    1.8881       0.0    121.6       0.0   50.00      85d
 
-    2  183      uniform    1.2054       0.0    110.6       0.0   50.00      88d
-    2  183    two_phase    0.7083      41.2     74.7      32.4   50.00      56d
-    2  183  exponential    0.6030      50.0     77.4      30.0   50.00      86d
-    2  183     seasonal    1.2054       0.0    110.6       0.0   50.00      88d
-    2  183  gap_coupled    1.2054       0.0    110.6       0.0   50.00      88d
+    2  183      uniform    1.2247       0.0    111.3       0.0   50.00      88d
+    2  183    two_phase    0.7164      41.5     75.4      32.3   50.00      56d
+    2  183  exponential    0.6129      50.0     78.0      30.0   50.00      86d
+    2  183     seasonal    1.2247       0.0    111.3       0.0   50.00      88d
+    2  183  gap_coupled    1.2247       0.0    111.3       0.0   50.00      88d
 
-    3  104      uniform    4.3261       0.0    174.8       0.0   50.00      84d
-    3  104    two_phase    2.3303      46.1    112.8      35.5   50.00      67d
-    3  104  exponential    1.9509      54.9    108.2      38.1   50.00      77d
-    3  104     seasonal    4.3261       0.0    174.8       0.0   50.00      84d
-    3  104  gap_coupled    4.3261       0.0    174.8       0.0   50.00      84d
+    3  104      uniform    4.4347       0.0    176.7       0.0   50.00      84d
+    3  104    two_phase    2.3411      47.2    113.3      35.9   50.00      67d
+    3  104  exponential    1.9958      55.0    109.7      37.9   50.00      77d
+    3  104     seasonal    4.4347       0.0    176.7       0.0   50.00      84d
+    3  104  gap_coupled    4.4347       0.0    176.7       0.0   50.00      84d
 
-    3  122      uniform    2.8565       0.0    156.8       0.0   50.00      87d
-    3  122    two_phase    1.4530      49.1    102.3      34.8   50.00      66d
-    3  122  exponential    1.4479      49.3    110.4      29.6   50.00      87d
-    3  122     seasonal    2.8565       0.0    156.8       0.0   50.00      87d
-    3  122  gap_coupled    2.8565       0.0    156.8       0.0   50.00      87d
+    3  122      uniform    2.9204       0.0    158.3       0.0   50.00      87d
+    3  122    two_phase    1.5055      48.5    105.1      33.6   50.00      69d
+    3  122  exponential    1.4810      49.3    111.5      29.6   50.00      87d
+    3  122     seasonal    2.9204       0.0    158.3       0.0   50.00      87d
+    3  122  gap_coupled    2.9204       0.0    158.3       0.0   50.00      87d
 
-    3  146      uniform    2.0853       0.0    148.1       0.0   50.00      85d
-    3  146    two_phase    0.9002      56.8     92.9      37.2   50.00      78d
-    3  146  exponential    1.0356      50.3    103.4      30.2   50.00      85d
-    3  146     seasonal    2.0853       0.0    148.1       0.0   50.00      85d
-    3  146  gap_coupled    2.0853       0.0    148.1       0.0   50.00      85d
+    3  146      uniform    2.1280       0.0    149.3       0.0   50.00      85d
+    3  146    two_phase    0.9049      57.5     93.3      37.5   50.00      78d
+    3  146  exponential    1.0573      50.3    104.3      30.2   50.00      85d
+    3  146     seasonal    2.1280       0.0    149.3       0.0   50.00      85d
+    3  146  gap_coupled    2.1280       0.0    149.3       0.0   50.00      85d
 
-    3  183      uniform    1.3106       0.0    133.8       0.0   50.00      88d
-    3  183    two_phase    0.7801      40.5     89.9      32.8   50.00      56d
-    3  183  exponential    0.6567      49.9     93.8      29.9   50.00      88d
-    3  183     seasonal    1.3106       0.0    133.8       0.0   50.00      88d
-    3  183  gap_coupled    1.3106       0.0    133.8       0.0   50.00      88d
+    3  183      uniform    1.3345       0.0    134.8       0.0   50.00      88d
+    3  183    two_phase    0.7915      40.7     91.0      32.5   50.00      56d
+    3  183  exponential    0.6690      49.9     94.5      29.9   50.00      88d
+    3  183     seasonal    1.3345       0.0    134.8       0.0   50.00      88d
+    3  183  gap_coupled    1.3345       0.0    134.8       0.0   50.00      88d
 
-    5  122      uniform    4.2680       0.0    550.6       0.0   50.00      87d
-    5  122    two_phase    1.6679      60.9    303.6      44.9   50.00      78d
-    5  122  exponential    1.8130      57.5    344.2      37.5   50.00      87d
-    5  122     seasonal    4.2680       0.0    550.6       0.0   50.00      87d
-    5  122  gap_coupled    4.2680       0.0    550.6      -0.0   50.00      87d
+    5  122      uniform    4.2729       0.0    550.8       0.0   50.00      87d
+    5  122    two_phase    1.6681      61.0    303.7      44.9   50.00      78d
+    5  122  exponential    1.8154      57.5    344.4      37.5   50.00      87d
+    5  122     seasonal    4.2729       0.0    550.8       0.0   50.00      87d
+    5  122  gap_coupled    4.2729       0.0    550.8      -0.0   50.00      87d
 
-    5  146      uniform    2.4274       0.0    467.4       0.0   50.00      85d
-    5  146    two_phase    1.0830      55.4    272.7      41.7   50.00      72d
-    5  146  exponential    1.0427      57.0    290.5      37.9   50.00      85d
-    5  146     seasonal    2.4274       0.0    467.4       0.0   50.00      85d
-    5  146  gap_coupled    2.4274       0.0    467.4       0.0   50.00      85d
+    5  146      uniform    2.4290       0.0    467.6       0.0   50.00      85d
+    5  146    two_phase    1.0831      55.4    272.7      41.7   50.00      72d
+    5  146  exponential    1.0435      57.0    290.6      37.9   50.00      85d
+    5  146     seasonal    2.4290       0.0    467.6       0.0   50.00      85d
+    5  146  gap_coupled    2.4290       0.0    467.6       0.0   50.00      85d
 
-    5  183      uniform    1.1595       0.0    375.8       0.0   50.00      88d
-    5  183    two_phase    0.5627      51.5    231.6      38.4   50.00      72d
-    5  183  exponential    0.5862      49.4    264.4      29.6   50.00      88d
-    5  183     seasonal    1.1595       0.0    375.8       0.0   50.00      88d
-    5  183  gap_coupled    1.1595       0.0    375.8       0.0   50.00      88d
+    5  183      uniform    1.1599       0.0    375.8       0.0   50.00      88d
+    5  183    two_phase    0.5628      51.5    231.6      38.4   50.00      72d
+    5  183  exponential    0.5865      49.4    264.4      29.6   50.00      88d
+    5  183     seasonal    1.1599       0.0    375.8       0.0   50.00      88d
+    5  183  gap_coupled    1.1599       0.0    375.8       0.0   50.00      88d
 
   Lowest-risk family at each operating point:
-    FST 2, 104 sessions/yr: two_phase (58.9% less risk, 37.9% less total UV)
+    FST 2, 104 sessions/yr: two_phase (59.6% less risk, 38.2% less total UV)
     FST 2, 122 sessions/yr: exponential (49.4% less risk, 29.7% less total UV)
-    FST 2, 146 sessions/yr: two_phase (56.1% less risk, 36.3% less total UV)
+    FST 2, 146 sessions/yr: two_phase (56.6% less risk, 36.6% less total UV)
     FST 2, 183 sessions/yr: exponential (50.0% less risk, 30.0% less total UV)
-    FST 3, 104 sessions/yr: exponential (54.9% less risk, 38.1% less total UV)
+    FST 3, 104 sessions/yr: exponential (55.0% less risk, 37.9% less total UV)
     FST 3, 122 sessions/yr: exponential (49.3% less risk, 29.6% less total UV)
-    FST 3, 146 sessions/yr: two_phase (56.8% less risk, 37.2% less total UV)
+    FST 3, 146 sessions/yr: two_phase (57.5% less risk, 37.5% less total UV)
     FST 3, 183 sessions/yr: exponential (49.9% less risk, 29.9% less total UV)
-    FST 5, 122 sessions/yr: two_phase (60.9% less risk, 44.9% less total UV)
+    FST 5, 122 sessions/yr: two_phase (61.0% less risk, 44.9% less total UV)
     FST 5, 146 sessions/yr: exponential (57.0% less risk, 37.9% less total UV)
     FST 5, 183 sessions/yr: two_phase (51.5% less risk, 38.4% less total UV)
 
@@ -1034,43 +1995,43 @@ ANALYSIS N: joint timing + dose optimisation
    FST    N   spacing       family  gamma    SCC%  interm%  combined%   totSED  t->suff
   ------------------------------------------------------------------------------------------------
      I  104   uniform    two_phase   1.00     0.0      0.0        0.0     75.9      84d
-     I  104      free  exponential   1.29    -7.4     23.7        9.5     79.1      83d
+     I  104      free    two_phase   1.27    -9.7     15.2        3.5     80.1      78d
 
-     I  146   uniform    two_phase   1.00     0.0      0.0        0.0     68.2      85d
-     I  146      free    two_phase   1.23    -7.8     15.4        4.5     71.2      77d
+     I  146   uniform    two_phase   1.00     0.0      0.0        0.0     68.4      85d
+     I  146      free    two_phase   1.29    -9.7     14.8        3.3     72.2      82d
 
-     I  183   uniform    two_phase   1.00     0.0      0.0        0.0     64.5      88d
-     I  183      free    two_phase   1.15    -8.1      6.0       -0.8     67.6      82d
+     I  183   uniform    two_phase   1.00     0.0      0.0        0.0     65.0      86d
+     I  183      free    two_phase   1.35   -11.0     13.2        1.9     69.1      84d
 
-     I  260   uniform    two_phase   1.00     0.0      0.0        0.0     62.4      83d
-     I  260      free    two_phase   1.02    -0.2      8.5        4.3     62.5      88d
+     I  260   uniform    two_phase   1.00     0.0      0.0        0.0     62.2      88d
+     I  260      free    two_phase   1.34    -8.3     14.1        3.6     65.2      86d
 
-    II  104   uniform    two_phase   1.00     0.0      0.0        0.0     83.6      84d
-    II  104      free    two_phase   1.39    -8.7     23.5        8.8     87.8      83d
+    II  104   uniform    two_phase   1.00     0.0      0.0        0.0     83.9      84d
+    II  104      free    two_phase   1.43    -7.1     25.8       10.9     87.3      80d
 
-    II  146   uniform    two_phase   1.00     0.0      0.0        0.0     74.7      85d
-    II  146      free    two_phase   1.39   -10.6     17.2        4.3     79.3      82d
+    II  146   uniform    two_phase   1.00     0.0      0.0        0.0     75.6      85d
+    II  146      free    two_phase   1.31    -8.1     20.2        7.1     79.1      83d
 
-    II  183   uniform    two_phase   1.00     0.0      0.0        0.0     71.3      88d
-    II  183      free    two_phase   1.29    -7.4     15.2        4.6     74.3      84d
+    II  183   uniform    two_phase   1.00     0.0      0.0        0.0     71.0      88d
+    II  183      free    two_phase   1.30    -8.8     15.2        3.9     74.7      84d
 
-    II  260   uniform    two_phase   1.00     0.0      0.0        0.0     66.4      88d
-    II  260      free  exponential   1.28   -11.8      7.8       -1.5     70.9      86d
+    II  260   uniform    two_phase   1.00     0.0      0.0        0.0     66.8      88d
+    II  260      free    two_phase   1.28    -8.9     12.2        2.3     70.2      86d
 
-   III  104   uniform    two_phase   1.00     0.0      0.0        0.0    103.2      84d
-   III  104      free    two_phase   1.26    -3.4     31.3       15.7    105.3      83d
+   III  104   uniform    two_phase   1.00     0.0      0.0        0.0    103.5      84d
+   III  104      free    two_phase   1.27    -6.9     26.6       11.4    107.7      76d
 
-   III  146   uniform    two_phase   1.00     0.0      0.0        0.0     89.9      85d
-   III  146      free  exponential   1.33    -9.5     20.4        6.6     94.8      83d
+   III  146   uniform    two_phase   1.00     0.0      0.0        0.0     91.5      85d
+   III  146      free  exponential   1.28    -8.5     21.5        7.7     96.0      85d
 
-   III  183   uniform    two_phase   1.00     0.0      0.0        0.0     85.0      88d
-   III  183      free  exponential   1.31    -8.7     17.6        5.4     89.3      86d
+   III  183   uniform    two_phase   1.00     0.0      0.0        0.0     88.3      88d
+   III  183      free  exponential   1.26    -4.2     17.9        7.5     90.5      86d
 
-   III  260   uniform    two_phase   1.00     0.0      0.0        0.0     78.6      88d
-   III  260      free    two_phase   1.31   -10.4     11.9        1.3     83.3      87d
+   III  260   uniform    two_phase   1.00     0.0      0.0        0.0     81.6      88d
+   III  260      free    two_phase   1.38    -5.3     16.0        5.9     84.2      87d
 
     IV  104   uniform    two_phase   1.00     0.0      0.0        0.0    173.6      84d
-    IV  104      free    two_phase   1.25     0.9     44.1       25.6    172.7      83d
+    IV  104      free    two_phase   1.26     0.5     43.9       25.3    173.1      83d
 
     IV  146   uniform    two_phase   1.00     0.0      0.0        0.0    140.0      85d
     IV  146      free    two_phase   1.43    -6.8     31.4       14.4    145.5      83d
@@ -1078,32 +2039,32 @@ ANALYSIS N: joint timing + dose optimisation
     IV  183   uniform    two_phase   1.00     0.0      0.0        0.0    127.8      88d
     IV  183      free    two_phase   1.40   -10.5     21.2        6.7    135.5      83d
 
-    IV  260   uniform    two_phase   1.00     0.0      0.0        0.0    115.4      88d
-    IV  260      free  exponential   1.29   -11.8     14.4        2.2    123.2      86d
+    IV  260   uniform    two_phase   1.00     0.0      0.0        0.0    115.1      88d
+    IV  260      free  exponential   1.29   -12.2     13.2        1.3    123.2      86d
 
      V  104   uniform           --     --      --       --         --       --       --   INFEASIBLE: C1 erythema cap (70% MED) at this session budget
-     V  104      free    two_phase   1.30      --       --        nan    340.3      78d
+     V  104      free    two_phase   1.35      --       --        nan    340.1      83d
 
-     V  146   uniform    two_phase   1.00     0.0      0.0        0.0    249.4      85d
-     V  146      free    two_phase   1.43    -4.1     43.6       23.4    255.4      83d
+     V  146   uniform    two_phase   1.00     0.0      0.0        0.0    262.5      85d
+     V  146      free    two_phase   1.43     4.6     46.1       28.3    255.4      83d
 
      V  183   uniform    two_phase   1.00     0.0      0.0        0.0    217.3      88d
-     V  183      free  exponential   1.35    -8.5     30.8       13.4    227.9      79d
+     V  183      free  exponential   1.33    -6.0     33.5       16.1    224.9      84d
 
      V  260   uniform    two_phase   1.00     0.0      0.0        0.0    185.7      86d
      V  260      free    two_phase   1.32    -7.2     26.7       11.4    193.4      86d
 
     VI  104   uniform           --     --      --       --         --       --       --   INFEASIBLE: C1 erythema cap (70% MED) at this session budget
-    VI  104      free    two_phase   1.36      --       --        nan    567.7      83d
+    VI  104      free  exponential   1.36      --       --        nan    567.2      83d
 
-    VI  146   uniform    two_phase   1.00     0.0      0.0        0.0    385.2      85d
-    VI  146      free    two_phase   1.30    -0.4     52.7       31.1    386.2      82d
+    VI  146   uniform    two_phase   1.00     0.0      0.0        0.0    385.4      85d
+    VI  146      free    two_phase   1.30    -0.4     52.7       31.1    386.3      82d
 
-    VI  183   uniform    two_phase   1.00     0.0      0.0        0.0    328.6      88d
-    VI  183      free    two_phase   1.39     1.5     42.1       24.5    325.7      86d
+    VI  183   uniform    two_phase   1.00     0.0      0.0        0.0    313.0      88d
+    VI  183      free    two_phase   1.40   -11.2     35.4       15.2    333.2      77d
 
-    VI  260   uniform    two_phase   1.00     0.0      0.0        0.0    255.4      88d
-    VI  260      free    two_phase   1.29    -7.2     28.2       12.2    266.2      85d
+    VI  260   uniform    two_phase   1.00     0.0      0.0        0.0    263.3      84d
+    VI  260      free    two_phase   1.29    -1.9     38.0       20.5    266.2      85d
 
   Feasibility: 22 of 24 (skin type, session budget) cells admit a schedule.
   Infeasible cells, reported as results rather than dropped:
@@ -1114,22 +2075,12 @@ ANALYSIS N: joint timing + dose optimisation
   tests/test_vitd_optimization.py::TestRecalibratedFeasibility,
   and are mapped in scripts/feasibility_map_kconst.py.
   Free spacing vs uniform spacing, 22 operating points:
-    SCC (cumulative-dose axis):        median -7.61%   best +1.50%   worst -11.77%
-    Intermittent (BCC/melanoma axis):  median +22.32%   best +52.70%   worst +6.02%
-    Combined (ranking-only, NOT literature-anchored as a combination): median +7.72%   best +31.07%   worst -1.52%
+    SCC (cumulative-dose axis):        median -7.65%   best +4.56%   worst -12.23%
+    Intermittent (BCC/melanoma axis):  median +21.36%   best +52.74%   worst +12.23%
+    Combined (ranking-only, NOT literature-anchored as a combination): median +7.62%   best +31.11%   worst +1.31%
     Front-loading trades a small SCC (cumulative-dose) INCREASE for a large intermittent (BCC/melanoma) DECREASE --
     the two axes move in OPPOSITE directions. Report them separately; a single combined percentage hides this.
-    gamma chosen: median 1.31 (1.00 = uniform), range 1.02-1.43
-
-    A negative entry is not a real loss: gamma = 1 is
-    inside the search bounds, so the free arm can reproduce
-    the control exactly and cannot truly do worse. The worst
-    entry (-1.5%) therefore LOWER-BOUNDS solver noise
-    (direct seed replication at one cell spans ~9 percentage
-    points, roughly 2-3x this figure -- see the CAVEAT comment
-    in analysis_joint_schedule). Gains below roughly 10%
-    should not be read as real, and cross-cell magnitude
-    comparisons below that are not supported.
+    gamma chosen: median 1.31 (1.00 = uniform), range 1.26-1.43
 
   Mechanism. Free spacing does NOT win by lowering cumulative dose
   -- total SED is usually slightly HIGHER. It wins by lowering the
@@ -1146,10 +2097,7 @@ ANALYSIS N: joint timing + dose optimisation
   needs to carry -- and front-loading takes over.
 
   Precisely: the search selected gamma > 1 at 24 of 24 points,
-  and beat the uniform control at 20 of 22.
-  The 2 remaining point(s) sit inside the solver-noise bound
-  above, so they are not evidence against front-loading -- but
-  they are not evidence for it either. The claim is 20/22, not unanimous.
+  and beat the uniform control at 22 of 22.
 
   Saved tables/joint_schedule_optimization.csv
 
@@ -1202,25 +2150,25 @@ SECONDARY: tri-objective frontier -- sessions x spacing x cancer risk
      52   1.40     9.8        --       --       --        --       --  INFEASIBLE
      52   2.00    13.9        --       --       --        --       --  INFEASIBLE
     104   0.70    14.1        --       --       --        --       --  INFEASIBLE
-    104   1.00     3.5    2.6905    103.2    1.470      46.7      81d  YES
-    104   1.40     4.9    1.4286     81.3    0.782      24.8      73d  YES
-    104   2.00     7.0    3.2166    114.3    1.141      36.2      15d  
+    104   1.00     3.5    2.7752    104.9    1.470      46.7      81d  YES
+    104   1.40     4.9    1.4503     81.8    0.787      25.0      73d  YES
+    104   2.00     7.0    3.2689    115.1    1.150      36.5      16d  
     146   0.70    11.1        --       --       --        --       --  INFEASIBLE
-    146   1.00     2.5    1.4689     93.2    0.882      28.0      82d  YES
-    146   1.40     3.5    0.8012     73.4    0.503      16.0      77d  YES
-    146   2.00     5.0    1.7686    102.8    0.704      22.4      12d  
-    183   0.70     9.5    1.9611     79.5    1.470      46.7      75d  
-    183   1.00     2.0    0.8738     69.8    0.882      28.0      52d  YES
-    183   1.40     2.8    0.5696     69.9    0.382      12.1      77d  YES
-    183   2.00     4.0    1.2071     96.2    0.526      16.7      12d  
-    260   0.70     7.4    1.0033     71.7    0.882      28.0      77d  
-    260   1.00     1.4    0.7865     74.5    0.882      28.0      83d  YES
-    260   1.40     2.0    0.3516     66.1    0.254       8.1      80d  YES
-    260   2.00     2.8    0.7125     89.3    0.343      10.9      12d  
-    365   0.70     5.9    0.8992     76.7    0.882      28.0      57d  
-    365   1.00     1.0    0.5219     90.4    0.248       7.9      88d  YES
-    365   1.40     1.4    0.2294     63.7    0.174       5.5      81d  YES
-    365   2.00     2.0    0.4517     85.0    0.233       7.4      13d  
+    146   1.00     2.5    1.5126     94.6    0.882      28.0      82d  YES
+    146   1.40     3.5    0.8119     73.8    0.506      16.1      77d  YES
+    146   2.00     5.0    1.7952    103.5    0.709      22.5      12d  
+    183   0.70     9.5    1.9677     79.8    1.470      46.7      75d  
+    183   1.00     2.0    0.8772     70.0    0.882      28.0      52d  YES
+    183   1.40     2.8    0.5767     70.3    0.384      12.2      78d  YES
+    183   2.00     4.0    1.2237     96.8    0.529      16.8      12d  
+    260   0.70     7.4    1.0066     71.9    0.882      28.0      77d  
+    260   1.00     1.4    0.7946     75.1    0.882      28.0      83d  YES
+    260   1.40     2.0    0.3557     66.4    0.256       8.1      80d  YES
+    260   2.00     2.8    0.7214     89.8    0.345      11.0      12d  
+    365   0.70     5.9    0.9079     77.5    0.882      28.0      57d  
+    365   1.00     1.0    0.5285     90.8    0.249       7.9      88d  YES
+    365   1.40     1.4    0.2320     64.0    0.175       5.6      81d  YES
+    365   2.00     2.0    0.4570     85.4    0.234       7.4      13d  
     Nondominated: 10 of 18 feasible cells.
 
   FST II
@@ -1231,25 +2179,25 @@ SECONDARY: tri-objective frontier -- sessions x spacing x cancer risk
      52   1.40     9.8        --       --       --        --       --  INFEASIBLE
      52   2.00    13.9        --       --       --        --       --  INFEASIBLE
     104   0.70    14.1        --       --       --        --       --  INFEASIBLE
-    104   1.00     3.5    2.3040    106.0    1.820      57.8      77d  YES
-    104   1.40     4.9    1.2999     89.8    0.863      27.4      73d  YES
-    104   2.00     7.0    3.0701    129.2    1.272      40.4      13d  
+    104   1.00     3.5    2.3707    107.9    1.820      57.8      77d  YES
+    104   1.40     4.9    1.3213     90.4    0.869      27.6      73d  YES
+    104   2.00     7.0    3.1233    130.1    1.282      40.7      13d  
     146   0.70    11.1        --       --       --        --       --  INFEASIBLE
-    146   1.00     2.5    1.1441     91.6    1.092      34.7      78d  YES
-    146   1.40     3.5    0.7143     80.4    0.551      17.5      77d  YES
-    146   2.00     5.0    1.6003    113.3    0.776      24.6      12d  
-    183   0.70     9.5    2.1956     92.0    1.820      57.8      72d  
-    183   1.00     2.0    0.9467     79.7    1.092      34.7      48d  YES
-    183   1.40     2.8    0.5031     76.2    0.417      13.2      78d  YES
-    183   2.00     4.0    1.0778    105.4    0.576      18.3      12d  
-    260   0.70     7.4    1.1137     82.3    1.092      34.7      71d  
-    260   1.00     1.4    0.7095    102.5    0.394      12.5      88d  YES
-    260   1.40     2.0    0.3073     71.8    0.276       8.8      80d  YES
-    260   2.00     2.8    0.6272     97.2    0.374      11.9      12d  
-    365   0.70     5.9    0.9321     82.0    1.092      34.7      54d  
-    365   1.00     1.0    0.4563     98.1    0.269       8.5      88d  YES
-    365   1.40     1.4    0.1992     68.9    0.189       6.0      81d  YES
-    365   2.00     2.0    0.3940     92.2    0.253       8.0      13d  
+    146   1.00     2.5    1.1755     93.1    1.092      34.7      80d  YES
+    146   1.40     3.5    0.7245     80.9    0.554      17.6      77d  YES
+    146   2.00     5.0    1.6261    114.1    0.781      24.8      12d  
+    183   0.70     9.5    2.2021     92.3    1.820      57.8      72d  
+    183   1.00     2.0    0.9502     79.9    1.092      34.7      48d  YES
+    183   1.40     2.8    0.5098     76.7    0.419      13.3      78d  YES
+    183   2.00     4.0    1.0937    106.1    0.580      18.4      12d  
+    260   0.70     7.4    1.1169     82.6    1.092      34.7      71d  
+    260   1.00     1.4    0.7197    103.1    0.397      12.6      88d  YES
+    260   1.40     2.0    0.3111     72.2    0.278       8.8      80d  YES
+    260   2.00     2.8    0.6355     97.8    0.376      11.9      12d  
+    365   0.70     5.9    0.9382     82.6    1.092      34.7      54d  
+    365   1.00     1.0    0.4624     98.7    0.270       8.6      88d  YES
+    365   1.40     1.4    0.2015     69.3    0.190       6.0      81d  YES
+    365   2.00     2.0    0.3989     92.7    0.254       8.1      13d  
     Nondominated: 10 of 18 feasible cells.
 
   FST III
@@ -1260,25 +2208,25 @@ SECONDARY: tri-objective frontier -- sessions x spacing x cancer risk
      52   1.40     9.8        --       --       --        --       --  INFEASIBLE
      52   2.00    13.9        --       --       --        --       --  INFEASIBLE
     104   0.70    14.1        --       --       --        --       --  INFEASIBLE
-    104   1.00     3.5    2.8560    137.9    2.240      71.1      81d  YES
-    104   1.40     4.9    1.4683    110.4    1.061      33.7      73d  YES
-    104   2.00     7.0    3.6439    162.1    1.601      50.8      13d  
+    104   1.00     3.5    2.9561    140.7    2.240      71.1      81d  YES
+    104   1.40     4.9    1.4966    111.3    1.070      34.0      73d  YES
+    104   2.00     7.0    3.7195    163.5    1.617      51.3      13d  
     146   0.70    11.1        --       --       --        --       --  INFEASIBLE
-    146   1.00     2.5    1.2994    113.0    1.344      42.7      80d  YES
-    146   1.40     3.5    0.7693     96.9    0.663      21.1      77d  YES
-    146   2.00     5.0    1.7839    138.5    0.949      30.1      12d  
-    183   0.70     9.5    2.4605    111.9    2.240      71.1      72d  
-    183   1.00     2.0    1.0464     95.9    1.344      42.7      48d  YES
-    183   1.40     2.8    0.5302     91.0    0.497      15.8      78d  YES
-    183   2.00     4.0    1.1651    127.2    0.695      22.1      12d  
-    260   0.70     7.4    1.2394     99.4    1.344      42.7      71d  
-    260   1.00     1.4    0.7460    122.2    0.470      14.9      88d  YES
-    260   1.40     2.0    0.3163     84.8    0.326      10.4      80d  YES
-    260   2.00     2.8    0.6561    115.7    0.445      14.1      12d  
-    365   0.70     5.9    1.0323     98.5    1.344      42.7      54d  
-    365   1.00     1.0    0.4697    116.0    0.318      10.1      88d  YES
-    365   1.40     1.4    0.2019     81.0    0.222       7.0      81d  YES
-    365   2.00     2.0    0.4037    108.7    0.298       9.5      13d  
+    146   1.00     2.5    1.3395    115.1    1.344      42.7      80d  YES
+    146   1.40     3.5    0.7819     97.5    0.668      21.2      77d  YES
+    146   2.00     5.0    1.8173    139.6    0.956      30.4      12d  
+    183   0.70     9.5    2.4687    112.4    2.240      71.1      75d  
+    183   1.00     2.0    1.0506     96.3    1.344      42.7      48d  YES
+    183   1.40     2.8    0.5382     91.6    0.501      15.9      78d  YES
+    183   2.00     4.0    1.1847    128.1    0.700      22.2      12d  
+    260   0.70     7.4    1.2432     99.7    1.344      42.7      73d  
+    260   1.00     1.4    0.7581    123.0    0.473      15.0      88d  YES
+    260   1.40     2.0    0.3206     85.3    0.328      10.4      80d  YES
+    260   2.00     2.8    0.6659    116.4    0.448      14.2      12d  
+    365   0.70     5.9    1.0397     99.3    1.344      42.7      54d  
+    365   1.00     1.0    0.4767    116.7    0.320      10.1      88d  YES
+    365   1.40     1.4    0.2045     81.4    0.223       7.1      81d  YES
+    365   2.00     2.0    0.4093    109.4    0.300       9.5      13d  
     Nondominated: 10 of 18 feasible cells.
 
   FST IV
@@ -1289,24 +2237,24 @@ SECONDARY: tri-objective frontier -- sessions x spacing x cancer risk
      52   1.40     9.8        --       --       --        --       --  INFEASIBLE
      52   2.00    13.9        --       --       --        --       --  INFEASIBLE
     104   0.70    14.1        --       --       --        --       --  INFEASIBLE
-    104   1.00     3.5    2.7048    266.4    3.780     120.0      81d  YES
-    104   1.40     4.9    1.0164    180.9    1.740      55.2      73d  YES
-    104   2.00     7.0    2.9681    284.5    2.827      89.7      15d  
+    104   1.00     3.5    2.7081    266.5    3.780     120.0      81d  YES
+    104   1.40     4.9    1.0168    181.0    1.740      55.2      73d  YES
+    104   2.00     7.0    2.9704    284.6    2.828      89.8      15d  
     146   0.70    11.1        --       --       --        --       --  INFEASIBLE
-    146   1.00     2.5    0.9252    186.0    2.268      72.0      80d  YES
-    146   1.40     3.5    0.4612    149.3    1.023      32.5      77d  YES
-    146   2.00     5.0    1.1867    223.3    1.529      48.5      12d  
-    183   0.70     9.5    1.7510    180.4    3.780     120.0      77d  
+    146   1.00     2.5    0.9257    186.0    2.268      72.0      80d  YES
+    146   1.40     3.5    0.4613    149.4    1.023      32.5      77d  YES
+    146   2.00     5.0    1.1872    223.3    1.529      48.6      12d  
+    183   0.70     9.5    1.7512    180.4    3.780     120.0      77d  
     183   1.00     2.0    0.7133    149.5    2.268      72.0      48d  YES
-    183   1.40     2.8    0.2977    136.5    0.746      23.7      80d  YES
-    183   2.00     4.0    0.7069    197.2    1.077      34.2      13d  
-    260   0.70     7.4    0.8647    156.7    2.268      72.0      73d  
+    183   1.40     2.8    0.2978    136.5    0.746      23.7      80d  YES
+    183   2.00     4.0    0.7071    197.2    1.077      34.2      13d  
+    260   0.70     7.4    0.8648    156.7    2.268      72.0      73d  
     260   1.00     1.4    0.4237    184.1    0.708      22.5      88d  YES
-    260   1.40     2.0    0.1653    123.4    0.475      15.1      81d  YES
+    260   1.40     2.0    0.1654    123.4    0.475      15.1      81d  YES
     260   2.00     2.8    0.3608    172.0    0.661      21.0      13d  
-    365   0.70     5.9    0.7059    152.0    2.268      72.0      54d  
-    365   1.00     1.0    0.2498    169.9    0.465      14.8      88d  YES
-    365   1.40     1.4    0.1007    115.4    0.316      10.0      83d  YES
+    365   0.70     5.9    0.7060    152.0    2.268      72.0      54d  
+    365   1.00     1.0    0.2499    169.9    0.466      14.8      88d  YES
+    365   1.40     1.4    0.1008    115.4    0.316      10.0      83d  YES
     365   2.00     2.0    0.2086    157.3    0.431      13.7      13d  
     Nondominated: 10 of 18 feasible cells.
 
@@ -1319,24 +2267,24 @@ SECONDARY: tri-objective frontier -- sessions x spacing x cancer risk
      52   2.00    13.9        --       --       --        --       --  INFEASIBLE
     104   0.70    14.1        --       --       --        --       --  INFEASIBLE
     104   1.00     3.5        --       --       --        --       --  INFEASIBLE
-    104   1.40     4.9    1.6918    345.3    3.408     108.2      79d  YES
+    104   1.40     4.9    1.6933    345.5    3.410     108.2      79d  YES
     104   2.00     7.0        --       --       --        --       --  INFEASIBLE
     146   0.70    11.1        --       --       --        --       --  INFEASIBLE
-    146   1.00     2.5    1.8056    405.0    3.780     120.0      85d  YES
-    146   1.40     3.5    0.6246    262.3    1.797      57.0      77d  YES
-    146   2.00     5.0    1.7916    409.0    2.906      92.3      15d  
+    146   1.00     2.5    1.8079    405.3    3.780     120.0      85d  YES
+    146   1.40     3.5    0.6248    262.4    1.797      57.0      77d  YES
+    146   2.00     5.0    1.7929    409.1    2.907      92.3      15d  
     183   0.70     9.5        --       --       --        --       --  INFEASIBLE
-    183   1.00     2.0    0.8433    246.1    3.780     120.0      56d  YES
-    183   1.40     2.8    0.3616    228.9    1.251      39.7      78d  YES
-    183   2.00     4.0    0.9740    348.9    1.907      60.5      13d  
-    260   0.70     7.4    1.0242    258.1    3.780     120.0      79d  
-    260   1.00     1.4    0.4193    214.8    2.268      72.0      51d  YES
-    260   1.40     2.0    0.1787    196.9    0.757      24.0      81d  YES
-    260   2.00     2.8    0.4219    283.8    1.091      34.7      13d  
+    183   1.00     2.0    0.8434    246.2    3.780     120.0      56d  YES
+    183   1.40     2.8    0.3617    228.9    1.251      39.7      78d  YES
+    183   2.00     4.0    0.9745    349.0    1.907      60.5      13d  
+    260   0.70     7.4    1.0244    258.1    3.780     120.0      79d  
+    260   1.00     1.4    0.4193    214.9    2.268      72.0      51d  YES
+    260   1.40     2.0    0.1788    196.9    0.757      24.0      81d  YES
+    260   2.00     2.8    0.4220    283.8    1.092      34.7      13d  
     365   0.70     5.9    0.4959    222.4    2.268      72.0      75d  
-    365   1.00     1.0    0.2681    270.3    0.741      23.5      88d  YES
-    365   1.40     1.4    0.1012    178.5    0.489      15.5      83d  YES
-    365   2.00     2.0    0.2205    248.7    0.681      21.6      13d  
+    365   1.00     1.0    0.2682    270.4    0.741      23.5      88d  YES
+    365   1.40     1.4    0.1012    178.6    0.489      15.5      83d  YES
+    365   2.00     2.0    0.2205    248.8    0.682      21.6      13d  
     Nondominated: 9 of 15 feasible cells.
 
   FST VI
@@ -1352,18 +2300,18 @@ SECONDARY: tri-objective frontier -- sessions x spacing x cancer risk
     104   2.00     7.0        --       --       --        --       --  INFEASIBLE
     146   0.70    11.1        --       --       --        --       --  INFEASIBLE
     146   1.00     2.5        --       --       --        --       --  INFEASIBLE
-    146   1.40     3.5    0.2857    390.9    2.758      87.5      84d  YES
+    146   1.40     3.5    0.2859    391.0    2.759      87.6      84d  YES
     146   2.00     5.0        --       --       --        --       --  INFEASIBLE
     183   0.70     9.5        --       --       --        --       --  INFEASIBLE
-    183   1.00     2.0    0.4177    497.1    3.780     120.0      88d  YES
-    183   1.40     2.8    0.1539    331.6    1.812      57.5      78d  YES
-    183   2.00     4.0    0.4371    514.8    2.920      92.7      16d  
+    183   1.00     2.0    0.4182    497.4    3.780     120.0      88d  YES
+    183   1.40     2.8    0.1540    331.7    1.813      57.5      78d  YES
+    183   2.00     4.0    0.4374    515.0    2.921      92.7      16d  
     260   0.70     7.4        --       --       --        --       --  INFEASIBLE
-    260   1.00     1.4    0.1333    337.3    2.268      72.0      86d  YES
-    260   1.40     2.0    0.0683    272.6    1.049      33.3      81d  YES
-    260   2.00     2.8    0.1736    405.3    1.559      49.5      13d  
-    365   0.70     5.9    0.2709    338.8    3.780     120.0      72d  
-    365   1.00     1.0    0.0973    312.9    2.268      72.0      87d  YES
+    260   1.00     1.4    0.1334    337.4    2.268      72.0      86d  YES
+    260   1.40     2.0    0.0684    272.7    1.049      33.3      81d  YES
+    260   2.00     2.8    0.1737    405.4    1.559      49.5      13d  
+    365   0.70     5.9    0.2710    338.8    3.780     120.0      72d  
+    365   1.00     1.0    0.0973    313.0    2.268      72.0      87d  YES
     365   1.40     1.4    0.0362    240.3    0.658      20.9      82d  YES
     365   2.00     2.0    0.0827    341.6    0.936      29.7      13d  
     Nondominated: 7 of 11 feasible cells.
@@ -1430,7 +2378,7 @@ SCC tracks cumulative dose; melanoma/BCC track intermittent bursts
 
   FST 2, 1-year horizon, target 50 nmol/L:
     Lowest-risk schedule that stays sufficient: 2.0 SED every 1d (365 sessions, 730 SED total)
-      mean D 89.6, days below 50: 14, SCC idx 88.55, melanoma idx 29.366, burn fraction 0%
+      mean D 89.4, days below 50: 14, SCC idx 88.55, melanoma idx 29.366, burn fraction 0%
     Pareto frontier (6 nondominated points):
         SED  interval    d<50     SCC  melanoma
        4.00        1d       9  287.69   234.931
@@ -1458,7 +2406,7 @@ geometry correction applied. 'would burn' flags unusable advice.
 
    FST   UVI    BSA  target   minutes   %MED   burn
      2   3.5   0.35    50.0         6     4%     no   UK Mar-Sep avg
-     2   3.5   0.35    85.8        34    24%     no   UK Mar-Sep avg
+     2   3.5   0.35    85.8        35    24%     no   UK Mar-Sep avg
      5   3.5   0.35    50.0        14     4%     no   UK Mar-Sep avg
      5   3.5   0.35    85.8       161    40%     no   UK Mar-Sep avg
      6   3.5   0.35    50.0        20     2%     no   UK Mar-Sep avg
@@ -1468,11 +2416,11 @@ geometry correction applied. 'would burn' flags unusable advice.
      5   7.0   0.35    50.0         7     4%     no   UK midsummer
      5   7.0   0.35    85.8        81    40%     no   UK midsummer
      6   7.0   0.35    50.0        10     2%     no   UK midsummer
-     6   7.0   0.35    85.8       145    35%     no   UK midsummer
+     6   7.0   0.35    85.8       146    35%     no   UK midsummer
      2   7.0   0.10    50.0         6     9%     no   hands+face only
-     2   7.0   0.10    85.8        55    77%     no   hands+face only
+     2   7.0   0.10    85.8        56    79%     no   hands+face only
      5   7.0   0.10    50.0        18     9%     no   hands+face only
-     5   7.0   0.10    85.8       591   290%    YES   hands+face only
+     5   7.0   0.10    85.8       593   290%    YES   hands+face only
      6   7.0   0.10    50.0        27     6%     no   hands+face only
      6   7.0   0.10    85.8       n/a      -      -   hands+face only
 
@@ -1500,11 +2448,11 @@ A. LOWEST-RISK SCHEDULE THAT HOLDS SUFFICIENCY, BY SKIN TYPE
 
   FST    MED  binding  interval  sess/yr  SED/sess  min/sess   %MED    ss D     SCC  melanoma  combined
   --- ------ -------- --------- -------- --------- --------- ------ ------- ------- --------- ---------
-    1    2.1      MED        1d      365      0.25         8     12    60.7    2.56    0.1065    0.5219
-    2    2.6      MED        1d      365      0.27         9     10    60.7    2.92    0.0713    0.4563
-    3    3.2      MED        1d      365      0.32        10     10    60.7    3.68    0.0599    0.4697
-    4    5.6  minutes        1d      365      0.47        15      8    60.5    3.54    0.0176    0.2498
-    5    7.5  minutes        1d      365      0.74        24     10    60.6    4.35    0.0165    0.2681
+    1    2.1      MED        1d      365      0.25         8     12    60.7    2.58    0.1082    0.5285
+    2    2.6      MED        1d      365      0.27         9     10    60.7    2.95    0.0725    0.4624
+    3    3.2      MED        1d      365      0.32        10     10    60.7    3.72    0.0611    0.4767
+    4    5.6  minutes        1d      365      0.47        15      8    60.5    3.54    0.0176    0.2499
+    5    7.5  minutes        1d      365      0.74        24     10    60.6    4.35    0.0165    0.2682
     6   15.2  minutes        1d      365      1.02        32      7    60.7    3.86    0.0027    0.1015
 
   Saved C:\Users\Ahaan\sunresearch\Sun-Exposure-Intervals\tables\risk_aware_schedule_by_fst.csv
@@ -1611,9 +2559,9 @@ Nothing in this repository is calibrated to this study. Every other check in the
     reported = 2.5-3.0x
     FAIL
   [diagnostic, not gated] FST V : FST II required-minutes ratio (UVI 3.5, 35% BSA, target 85.8)
-    model    = 5.28  (80.3 vs 424.2 min)
+    model    = 5.21  (81.5 vs 424.9 min)
     reported = 2.78 (25 min / 9 min -- algebraically the same fact as the 2.5-3.0x above)
-  NOTE: model under-predicts the skin-type penalty. Farrar 2013 (the
+  NOTE: model over-predicts the skin-type penalty. Farrar 2013 (the
   source of Webb/Kift's 2.5-3.0x) is ITSELF a matched-dose, simulated-
   sunlight (lamp) trial at ~35% BSA against a matched-dose white
   comparator (Rhodes 2010) -- it contains NO behavioural exposure term,
@@ -1639,7 +2587,7 @@ ONE-AT-A-TIME SENSITIVITY (FST 5, 1 SED every 3 d, 84 d)
   K_const                 0.2 - 0.9         8.19   23.6%
   K_SC                      0.5 - 2         2.83    8.2%
   alpha_SC               0.08 - 0.2         0.94    2.7%
-  K_ATTEN                     0 - 2         0.09    0.3%
+  K_ATTEN                     0 - 2         0.11    0.3%
   beta           0.005776 - 0.03301         0.01    0.0%
   SC_max                  0.2 - 0.4         0.00    0.0%
   D_max                   116 - 250         0.00    0.0%
@@ -1654,19 +2602,19 @@ PAIRWISE IDENTIFIABILITY (steady-state D response surface)
   pair                       1-D ridge  ss_D spread  verdict
   A~D_max                      1.0000         8.61  UNIDENTIFIABLE (only the combination is constrained)
   alpha_SC~SC_max              1.0000         0.94  UNIDENTIFIABLE (only the combination is constrained)
-  K_const~K_ATTEN              0.9998         8.30  UNIDENTIFIABLE (only the combination is constrained)
-  K_ATTEN~K_SC                 0.9990         2.92  UNIDENTIFIABLE (only the combination is constrained)
+  K_const~K_ATTEN              0.9997         8.32  UNIDENTIFIABLE (only the combination is constrained)
+  K_ATTEN~K_SC                 0.9986         2.93  UNIDENTIFIABLE (only the combination is constrained)
   A~K_const                    0.7095        18.35  separable
 
 ==========================================================================
 UNCERTAINTY PROPAGATION (400 draws, uniform over prior ranges)
 ==========================================================================
-  steady_state_D   median   36.647   95% range [30.462, 44.458]
-  net_per_SED      median    0.455   95% range [0.213, 0.757]
+  steady_state_D   median   36.638   95% range [30.457, 44.439]
+  net_per_SED      median    0.454   95% range [0.213, 0.757]
   best interval under net-gain-per-SED, frequency across draws:
       1 d :    5 ( 1.2%) 
-      2 d :  109 (27.2%) ###########
-      3 d :  133 (33.2%) #############
+      2 d :  108 (27.0%) ###########
+      3 d :  134 (33.5%) #############
       4 d :   81 (20.2%) ########
       5 d :   71 (17.8%) #######
       7 d :    1 ( 0.2%) 
@@ -1715,9 +2663,9 @@ yields more 25(OH)D. D-feedback and photoadaptation both modulate the *size* of
 the gap; neither creates it.
 
 The induced-melanin coefficient `K_ATTEN` was never a candidate cause: its value
-is 0.34 (see the `vitd_model.py` docstring), so that term is inert
+is 0.288972 (see the `vitd_model.py` docstring), so that term is inert
 *by calibration*, not merely by ablation. `spacing_study/` swept it as far as
-100 (against a literature-implied 0.34-1.00) inside
+100 (against a literature-implied 0.288972-0.838389) inside
 `allow_retired_parameter_sweep()` without ever producing a non-daily optimum
 under a matched total budget.
 

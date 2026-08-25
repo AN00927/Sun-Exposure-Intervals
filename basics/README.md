@@ -84,9 +84,14 @@ reviewer needs to see:
 
 - Melanin (`K_const`) carries the **skin-type** result, and survives scrutiny in
   direction.
-- Stratum corneum (`K_SC`, `alpha_SC`, `SC_max`) is the only **live**
-  photoadaptation channel (`K_ATTEN` is retired at 0), and does not survive
-  scrutiny as calibrated parameters.
+- Stratum corneum (`K_SC`, `alpha_SC`, `SC_max`) does not survive scrutiny as
+  calibrated parameters. [Note, 2026-08-24: at the time this was written
+  `K_ATTEN` was a retired structural constant pinned at 0, making SC the only
+  live photoadaptation channel; `K_ATTEN` was reinstated as an active,
+  calibrated parameter on 2026-08-21 (`vitd_model.py`, `RETIRED_PARAMETERS` is
+  now empty), so facultative melanin is a second live photoadaptation channel
+  again. This file's own identifiability analysis above is unaffected — it
+  already treats `K_ATTEN` as jointly unidentifiable with `K_SC`.]
 
 The third candidate — that photoadaptation drives the **interval** result — was
 tested separately in [`../spacing_study/`](../spacing_study/) and refuted: the

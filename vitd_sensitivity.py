@@ -33,7 +33,7 @@ PARAM_RANGES = {
     # (low, high, evidence note)
     "A":          (1.6, 3.8, "Young 2021 fair-skin slopes 2.0-5.0 nmol/L/SED imply A up to ~3.8"),
     "K_const":    (0.20, 0.90, "Young 2020 FST II:VI 1.3-1.4; Webb/Kift naturalistic 2.5-3.0x implies higher"),
-    "K_ATTEN":    (0.0, 2.0, "Matsuoka 1990 abstract (in repo) implies 0.34-1.00 once its baseline-25(OH)D confound is deconvolved; 0 = no tanning penalty"),
+    "K_ATTEN":    (0.0, 2.0, "Matsuoka 1990 abstract (in repo) implies 0.288972-0.838389 once its baseline-25(OH)D confound is deconvolved; 0 = no tanning penalty"),
     "K_SC":       (0.5, 2.0, "no direct vitamin-D attenuation measurement exists"),
     "SC_max":     (0.20, 0.40, "de Boer 2025 +23% (FP I-III) to +36% (FP IV-VI)"),
     "alpha_SC":   (0.08, 0.20, "fitted to 3 group-mean timepoints only"),
@@ -69,11 +69,13 @@ def one_at_a_time_sensitivity(fst: int = 5, verbose: bool = True) -> list[dict]:
     rows = []
     for name, (lo, hi, note) in PARAM_RANGES.items():
         p_lo, p_hi = ModelParams(), ModelParams()
-        # PARAM_RANGES still contains RETIRED parameters (K_ATTEN). Sweeping
-        # them here is the point -- this function MEASURES how little they
-        # matter, which is the evidence the retirement rests on. It is not a
+        # PARAM_RANGES may contain RETIRED parameters. Sweeping them here is
+        # the point -- this function MEASURES how little they matter, which
+        # would be the evidence any future retirement rests on. It is not a
         # calibration, and the named context manager keeps that distinction
-        # visible at the call site.
+        # visible at the call site. As of 2026-08-21, K_ATTEN is reinstated
+        # and not retired (vitd_model.RETIRED_PARAMETERS is empty), so the
+        # context manager below is currently a no-op guard for K_ATTEN.
         with allow_retired_parameter_sweep():
             setattr(p_lo, name, lo)
             setattr(p_hi, name, hi)

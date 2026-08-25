@@ -71,7 +71,7 @@ def _p(name, attr, lo, hi, label, note, log=False):
 PARAMETERS = [
     _p("K_ATTEN", "K_ATTEN", 0.0, 1.0,
        "melanin attenuation $K_{ATTEN}$",
-       "0.34-1.00 implied by Matsuoka 1990 after deconvolving baseline feedback "
+       "0.288972-0.838389 implied by Matsuoka 1990 after deconvolving baseline feedback "
         "(MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 29); 0 included as "
         "ablation"),
     _p("K_const", "K_const", 0.15, 0.50,
@@ -102,7 +102,8 @@ PARAMETERS = [
        "Ravnbak 2008 measured 4-5 month fade; bracket spans 28-120 d half-life"),
     _p("M_TAN_HEADROOM", "M_TAN_HEADROOM", 0.05, 0.40,
        "facultative tanning headroom",
-       "PRIOR, magnitude not separately identified"),
+       "PRIOR; lower-bounded by Ravnbak 2008's largest measured tan "
+       "(dM=0.237724) since 2026-08-25, shipped value 0.238"),
     _p("k_decay_SC", "k_decay_SC", np.log(2) / 28, np.log(2) / 21,
        "SC regression rate $k_{decay,SC}$",
        "epidermal turnover 21-28 d"),
@@ -157,9 +158,12 @@ def sweep_parameter(spec: dict, fst: int) -> dict:
            "mean_D_at_opt": []}
     for v in values:
         p = ModelParams()
-        # PARAMETERS still lists RETIRED parameters (K_ATTEN). Sweeping one
-        # here MEASURES its influence; it does not calibrate it. See
-        # vitd_model.RETIRED_PARAMETERS.
+        # PARAMETERS may list RETIRED parameters; sweeping one here MEASURES
+        # its influence, and does not calibrate it. As of 2026-08-21 K_ATTEN
+        # is reinstated and not retired (vitd_model.RETIRED_PARAMETERS is
+        # empty), so allow_retired_parameter_sweep() below is currently a
+        # no-op guard for K_ATTEN specifically -- kept in place for whatever
+        # parameter is retired next.
         with allow_retired_parameter_sweep():
             setattr(p, spec["attr"], float(v))
         # SC_max_by_FST overrides the scalar SC_max inside simulate(), so keep

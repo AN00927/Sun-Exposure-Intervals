@@ -106,15 +106,28 @@ def _feedback_factor(D: float, mode: str, params: ModelParams) -> float:
 
 
 def derive_K_ATTEN(feedback_mode: str = "linear",
-                   excess_M: float = 0.20,
+                   excess_M: float | None = None,
                    params: ModelParams | None = None) -> dict:
     """Back out K_ATTEN from the Matsuoka data under a given feedback form.
 
-    excess_M is the assumed (M - M_baseline) of a midsummer tan in fair skin.
-    Default 0.20 = ModelParams.M_TAN_HEADROOM, i.e. a fully developed tan.
+    excess_M is the assumed (M - M_baseline) of a midsummer tan in fair skin,
+    i.e. a fully developed tan. It DEFAULTS TO params.M_TAN_HEADROOM, read
+    live rather than hardcoded.
+
+    That default matters: K_ATTEN is not independently measured, it is derived
+    from the Matsuoka residual attenuation divided through by the size of a
+    full tan. So K_ATTEN is a function of M_TAN_HEADROOM, and hardcoding one
+    while recalibrating the other silently decouples the parameter from the
+    measurement it encodes. That is exactly what happened on 2026-08-25 when
+    M_TAN_HEADROOM moved 0.20 -> 0.238 (Ravnbak 2008): the shipped K_ATTEN of
+    0.34 would have applied 7.7733% facultative attenuation where Matsuoka
+    supports 6.6%. Reading the headroom live makes the coupling structural.
+
     """
     if params is None:
         params = ModelParams()
+    if excess_M is None:
+        excess_M = params.M_TAN_HEADROOM
 
     fb_untanned = _feedback_factor(UNTANNED_25OHD, feedback_mode, params)
     fb_tanned = _feedback_factor(TANNED_25OHD, feedback_mode, params)
@@ -147,7 +160,11 @@ def derive_K_ATTEN(feedback_mode: str = "linear",
 def run(verbose: bool = True) -> dict:
     """Report the K_ATTEN range implied by Matsuoka across feedback forms."""
     params = ModelParams()
-    results = [derive_K_ATTEN(m, 0.20, params)
+    # excess_M=None so derive_K_ATTEN reads params.M_TAN_HEADROOM live. It was
+    # hardcoded at 0.20 until 2026-08-25, which silently pinned the implied
+    # range to the pre-recalibration headroom and would have reported the
+    # (correctly re-derived) K_ATTEN as INCONSISTENT with its own source.
+    results = [derive_K_ATTEN(m, None, params)
                for m in ("linear", "biphasic", "saturating", "none")]
     valid_Ks = [r["K_ATTEN"] for r in results
                 if r["valid"] and r["feedback_mode"] != "none"]
@@ -155,7 +172,7 @@ def run(verbose: bool = True) -> dict:
     current = params.K_ATTEN
     # bool(), not the bare comparison: valid_Ks are np.float64, so the chained
     # comparison yields np.bool_ and callers doing `is False` silently fail.
-    # Tolerance of 0.01 allows the rounded point estimate 0.34 to sit within [0.344, 0.998].
+    # Tolerance of 0.01 absorbs rounding in the shipped point estimate.
     consistent = bool(valid_Ks) and bool(min(valid_Ks) - 0.01 <= current <= max(valid_Ks) + 0.01)
 
     if verbose:

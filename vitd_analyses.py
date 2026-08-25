@@ -65,6 +65,14 @@ os.makedirs(TAB_DIR, exist_ok=True)
 INTERVALS_DAYS = [1, 2, 3, 5, 7, 10, 14, 21]
 PROTOCOL_DAYS = 84   # 12 weeks
 
+# --- Analysis C (two-framing comparison) held-fixed quantities -------------
+# Module-level so run_all.py can read them at report time and state the
+# assumptions in the generated RESULTS.md without retyping the numbers.
+# Values unchanged from when they were function locals.
+TWO_FRAMING_FSTS = [5, 6]
+TWO_FRAMING_TOTAL_SED = 42.0        # Framing 1: cumulative SED budget
+TWO_FRAMING_PER_SESSION_SED = 1.0   # Framing 2: SED delivered per session
+
 
 # ===========================================================================
 # Analysis A: alpha sensitivity sweep
@@ -241,23 +249,42 @@ def analysis_K_ATTEN_sweep():
 # ===========================================================================
 def analysis_two_framings():
     """
-    Two framings side-by-side for FST V and VI:
+    Two framings side-by-side for the skin types in TWO_FRAMING_FSTS.
 
-    Framing 1: MATCHED CUMULATIVE SED (UV budget unconstrained, distributing
-               a fixed total). Total = 42 SED over 84 days.
-               Daily would deliver 0.5 SED/session; every-21-day would
-               deliver 10.5 SED/session.
+    Framing 1: MATCHED CUMULATIVE SED (UV budget is the constraint; only the
+               distribution is free). Total = TWO_FRAMING_TOTAL_SED over
+               PROTOCOL_DAYS, so a longer interval necessarily means a larger
+               per-session dose.
 
-    Framing 2: MATCHED PER-SESSION DOSE (UV is the constrained resource).
-               1 SED per session regardless of interval. Daily yields 84
-               cumulative SED; every-21-day yields ~4 cumulative SED.
+    Framing 2: MATCHED PER-SESSION DOSE. TWO_FRAMING_PER_SESSION_SED per
+               session regardless of interval, so cumulative UV falls as the
+               interval lengthens and the arms are NOT matched on total UV.
+
+    Held fixed across every row of both framings (state these whenever the
+    output is quoted -- the comparison is only meaningful relative to them):
+      * horizon = PROTOCOL_DAYS;
+      * baseline 25(OH)D = ModelParams.D0_default (simulate's D0 default);
+      * exposed BSA = ModelParams.exposed_bsa, no posture/clothing variation;
+      * feedback_mode and E_source at their ModelParams defaults -- note this
+        is NOT the solar_summer E_source used by analysis_sun_exposure;
+      * spacing is UNIFORM only (build_pulse_schedule), over the fixed grid
+        INTERVALS_DAYS; no irregular, clustered or burst schedules;
+      * both photoadaptation channels active (induced melanin and stratum
+        corneum) from M = M_baseline(FST), SC = 0;
+      * doses are ABSOLUTE SED, never a fraction of the individual MED.
+
+    NOT answered here: both framings vary the INTERVAL. Neither holds
+    frequency fixed while varying the per-session dose, so this analysis
+    cannot address "daily small doses vs daily large doses". See
+    analysis_maintenance_split and the variable-dose optimisation.
     """
     print("\n" + "=" * 70)
     print("ANALYSIS C: two-framing schedule comparison")
     print("=" * 70)
 
-    fsts = [5, 6]
-    TOTAL_SED = 42.0   # for framing 1
+    fsts = TWO_FRAMING_FSTS
+    TOTAL_SED = TWO_FRAMING_TOTAL_SED   # for framing 1
+    PER_SESSION_SED = TWO_FRAMING_PER_SESSION_SED   # for framing 2
 
     rows_f1 = []
     rows_f2 = []
@@ -282,12 +309,12 @@ def analysis_two_framings():
                 "auc_above_sufficiency_per_SED": auc_above_sufficiency_per_SED(r1),
             })
             # Framing 2: matched per-session dose
-            sched2 = build_pulse_schedule(PROTOCOL_DAYS, 1.0, interval)
+            sched2 = build_pulse_schedule(PROTOCOL_DAYS, PER_SESSION_SED, interval)
             r2 = simulate(fst=fst, schedule=sched2, duration_days=PROTOCOL_DAYS, dose_framing="fixed_per_session_SED")
             rows_f2.append({
                 "FST": fst,
                 "interval_days": interval,
-                "sed_per_session": 1.0,
+                "sed_per_session": PER_SESSION_SED,
                 "n_sessions": len(r2["synthesis_log"]),
                 "cumulative_SED": r2["cumulative_SED"],
                 "steady_state_D": steady_state_D(r2),
@@ -366,10 +393,10 @@ def analysis_two_framings():
     r1_safe = simulate(fst=fsts[0], schedule=sched, duration_days=PROTOCOL_DAYS)
     print_safety_summary(r1_safe.get("safety_log", []),
         f" [FST {fsts[0]}, framing 1, {max_int}d interval, {sed_f1:.1f} SED/session]")
-    sched2 = build_pulse_schedule(PROTOCOL_DAYS, 1.0, max_int)
+    sched2 = build_pulse_schedule(PROTOCOL_DAYS, PER_SESSION_SED, max_int)
     r2_safe = simulate(fst=fsts[0], schedule=sched2, duration_days=PROTOCOL_DAYS)
     print_safety_summary(r2_safe.get("safety_log", []),
-        f" [FST {fsts[0]}, framing 2, {max_int}d interval, 1.0 SED/session]")
+        f" [FST {fsts[0]}, framing 2, {max_int}d interval, {PER_SESSION_SED:.1f} SED/session]")
     return df1, df2
 
 

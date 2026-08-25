@@ -180,9 +180,14 @@ them). Each line names the claim and what is missing.
     SED conversion factor (5.5, cabinet-specific to a Waldmann UV7002).
     Journal, volume, pages, and full author list are not recorded anywhere in
     the repository, only the measured irradiance values themselves.
-15. **Miyamura 2011**, named in `MODEL_AND_EVIDENCE.md` gap 7 as an early source for
-    the melanin-induction rate parameter. No further bibliographic detail
-    recorded.
+15. ~~Miyamura 2011~~ **Resolved 2026-08-25.** Full bibliographic detail is now
+    in `paper/references.bib` (`miyamura2011`; doi:10.1111/j.1755-148X.2010.00764.x,
+    PMID 20979596, PMC3021652), and the PDF is on disk in `Research_Papers/`.
+    Beyond being named in `MODEL_AND_EVIDENCE.md` gap 7 as an early source for
+    the melanin-induction rate parameter, it is now used directly by
+    `scripts/fit_melanin_kinetics.py` as the out-of-sample check for
+    `M_TAN_HEADROOM` and, jointly with de Boer 2025, as corroboration for
+    `SC_max_by_FST` I-III — see `docs/MELANIN_MODEL.md` sec.2.5 and sec.2.7a.
 16. **Rhodes 2017** ("P22" in `vitd_model.py`), the CPD/DNA-damage
     co-occurrence source distinct from Shih et al. 2018 ("P24," which has a
     complete citation). Not confirmed whether P22 and P24 are the same

@@ -68,8 +68,16 @@ class TestDeconvolution:
 
 
 class TestConsistencyWithModel:
-    """The model uses K_ATTEN = 0.34, anchored to Matsuoka 1990 deconvolution
-    under default biphasic feedback (implied range [0.34, 1.00]).
+    """K_ATTEN is anchored to the Matsuoka 1990 deconvolution under default
+    biphasic feedback.
+
+    These tests deliberately read the live value and the live implied range
+    from vitd_calibration.run() rather than hardcoding either. K_ATTEN is a
+    FUNCTION of M_TAN_HEADROOM (it is the Matsuoka residual divided by the
+    size of a full tan), so both move together whenever the headroom is
+    recalibrated -- as happened on 2026-08-25, when the headroom went
+    0.20 -> 0.238 and K_ATTEN followed 0.34 -> 0.288972. Hardcoding either
+    number here would make this suite fail for the wrong reason next time.
     """
 
     def test_current_K_ATTEN_sits_within_the_matsuoka_facultative_range(self):
