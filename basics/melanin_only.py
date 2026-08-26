@@ -333,6 +333,99 @@ def dynamic_attenuation(M, fst: int, params: ModelParams | None = None):
     return constitutive_factor, facultative_factor, combined
 
 
+# ---------------------------------------------------------------------------
+# PART 3 -- full serum-D simulation with melanin varying, SC ablated
+# ---------------------------------------------------------------------------
+
+def simulate_D_melanin_only(schedule, duration_days: int, params: ModelParams,
+                            fst: int, D0: float = 40.0, dt: float = 0.5
+                            ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Full serum 25(OH)D trajectory with SC ablated, melanin dynamics active.
+
+    Integrates D(t) = S(sed, M, D, SC=0) - k_decay_D(D)*D using the same
+    sub-step scheme as vitd_model.simulate() but with:
+      - SC = 0 always (no stratum corneum attenuation)
+      - M(t) from simulate_melanin() (melanin dynamics active)
+      - Full A, BSA, feedback g(D), and power-law decay
+
+    Returns (t, D, M) arrays at dt resolution.
+
+    This is the "what does the full model predict for serum D when only
+    melanin is varying" baseline that Part 2's attenuation-only factor
+    cannot supply.
+    """
+    from vitd_model import synthesis_per_session
+
+    # Get the melanin trajectory
+    t_m, M = simulate_melanin(schedule, duration_days, params, fst, dt=dt)
+    n = len(t_m)
+
+    # Build pulse lookup
+    pending = {round(day / dt): sed for day, sed in schedule}
+
+    D_arr = np.zeros(n)
+    D_arr[0] = D0
+    M_base = params.M_baseline(fst)
+
+    for i in range(1, n):
+        delta = dt
+        D_prev = D_arr[i - 1]
+
+        # Decay between pulses (power-law, state-dependent)
+        D_decay = D_prev * np.exp(-params.k_decay_D(D_prev) * delta)
+
+        # Synthesis at pulse (if any)
+        sed = pending.get(i)
+        if sed and sed > 0:
+            delta_D = synthesis_per_session(
+                sed=sed,
+                M=M[i],
+                M_baseline=M_base,
+                D=D_decay,
+                SC=0.0,          # SC ablated
+                params=params,
+            )
+            D_arr[i] = D_decay + delta_D
+        else:
+            D_arr[i] = D_decay
+
+    return t_m, D_arr, M
+
+
+def _cross_check_vs_vitd_model_full_D(fst: int, schedule, duration_days: int,
+                                       params: ModelParams, D0: float = 40.0
+                                       ) -> dict:
+    """Cross-check: does simulate_D_melanin_only agree with vitd_model.simulate()
+    when both run the same ablation (SC=0)?"""
+    from vitd_model import synthesis_per_session
+
+    # Reference: vitd_model.simulate() with SC ablated
+    full = vitd_model.simulate(fst=fst, schedule=schedule,
+                               duration_days=duration_days, params=params,
+                               D0=D0,
+                               **vitd_ablation.rung_overrides("melanin_only"))
+    t_ref, D_ref, M_ref = full["t"], full["D"], full["M"]
+
+    # Collapse duplicate timestamps (pre/post pulse)
+    keep = np.ones(len(t_ref), dtype=bool)
+    keep[:-1] = np.diff(t_ref) != 0.0
+    t_ref_dedup = t_ref[keep]
+    D_ref_dedup = D_ref[keep]
+
+    t_mine, D_mine, M_mine = simulate_D_melanin_only(
+        schedule, duration_days, params, fst, D0=D0, dt=0.5)
+
+    D_interp = np.interp(t_ref_dedup, t_mine, D_mine)
+    abs_err = np.abs(D_interp - D_ref_dedup)
+
+    return {
+        "max_abs_err_D": float(np.max(abs_err)),
+        "n_duplicate_timestamps_collapsed": int(len(t_ref) - len(t_ref_dedup)),
+        "t_ref": t_ref_dedup, "D_ref": D_ref_dedup, "D_interp": D_interp,
+        "t_mine": t_mine, "D_mine": D_mine, "M_mine": M_mine,
+    }
+
+
 def _cross_check_vs_vitd_model(fst: int, schedule, duration_days: int,
                                params: ModelParams):
     """Prove simulate_melanin() reproduces vitd_model.simulate()'s own M(t),
@@ -850,6 +943,91 @@ def run(verbose: bool = True) -> dict:
         print("  section 5.5); this file computes fresh numbers for the ATTENUATION")
         print("  magnitude (section 5 above) but does not re-run the scheduling")
         print("  sweep itself.")
+        print()
+
+    # =========================================================================
+    # PART 3 -- full serum-D simulation with melanin varying, SC ablated
+    # =========================================================================
+    if verbose:
+        print("=" * 74)
+        print("PART 3 -- full serum-D simulation, melanin only (SC ablated)")
+        print("=" * 74)
+        print("  This runs the FULL D(t) model: A, BSA, feedback g(D),")
+        print("  power-law decay k_decay_D(D), with SC = 0 and M(t) from")
+        print("  Part 2's simulate_melanin(). Unlike Part 2 (attenuation-")
+        print("  only factors), this produces absolute 25(OH)D trajectories.")
+        print()
+
+    # --- 10. cross-check against vitd_model.simulate() -----------------------
+    D0_demo = 40.0
+    cc_d = _cross_check_vs_vitd_model_full_D(5, demo_schedule, 250, p, D0=D0_demo)
+
+    out["part3_cross_check"] = {
+        "max_abs_err_D": cc_d["max_abs_err_D"],
+        "n_duplicate_timestamps_collapsed": cc_d["n_duplicate_timestamps_collapsed"],
+    }
+
+    if verbose:
+        print("-" * 74)
+        print("10. Cross-check: does simulate_D_melanin_only() match the real code?")
+        print("-" * 74)
+        print(f"  FST V, D0 = {D0_demo:.0f} nmol/L, SC ablated via")
+        print(f"  vitd_ablation.rung_overrides('melanin_only'), same schedule as")
+        print(f"  section 4:")
+        print(f"    max |D_mine - D_reference| = {cc_d['max_abs_err_D']:.3e}")
+        print(f"    ({cc_d['n_duplicate_timestamps_collapsed']} duplicate timestamps collapsed)")
+        print()
+
+    # --- 11. demonstration: D(t) across FSTs --------------------------------
+    fst_demo = [1, 2, 3, 5]
+    D0_demo2 = 40.0
+    duration_demo = 365
+
+    if verbose:
+        print("-" * 74)
+        print(f"11. Demonstration: full D(t) for FST I/II/III/V, D0 = {D0_demo2:.0f}")
+        print(f"    {duration_demo} d, de Boer-style schedule (Mon/Wed/Fri 1.0 SED)")
+        print("-" * 74)
+
+    part3_results = {}
+    for fst_d in fst_demo:
+        t_d, D_d, M_d = simulate_D_melanin_only(
+            demo_schedule, duration_demo, p, fst_d, D0=D0_demo2, dt=0.5)
+        d_end = float(D_d[-1])
+        d_max = float(D_d.max())
+        t_max_idx = int(np.argmax(D_d))
+        d_half_life = float(np.log(2) / p.k_decay_D(float(D_d.max())))
+        part3_results[fst_d] = {
+            "D_end": d_end, "D_max": d_max, "D0": D0_demo2,
+            "D_half_life_at_peak": d_half_life,
+        }
+        if verbose:
+            print(f"  FST {FST_ROMAN[fst_d]:>2}: D0={D0_demo2:.0f}, "
+                  f"D_peak={d_max:.1f} (day {t_d[t_max_idx]:.0f}), "
+                  f"D_end={d_end:.1f}, "
+                  f"t1/2 at peak={d_half_life:.0f} d")
+
+    out["part3_demonstration"] = part3_results
+
+    if verbose:
+        print()
+        print("  SUFFICIENCY THRESHOLD (25(OH)D >= 50 nmol/L):")
+        for fst_d in fst_demo:
+            t_d, D_d, _ = simulate_D_melanin_only(
+                demo_schedule, duration_demo, p, fst_d, D0=D0_demo2, dt=0.5)
+            above = D_d >= 50.0
+            if above.any():
+                first_above = int(np.argmax(above))
+                days_above = int(above.sum()) * 0.5
+                print(f"    FST {FST_ROMAN[fst_d]:>2}: first >= 50 at day "
+                      f"{t_d[first_above]:.0f}, {days_above:.0f} d above threshold")
+            else:
+                print(f"    FST {FST_ROMAN[fst_d]:>2}: never reaches 50 nmol/L")
+        print()
+        print("  CAVATARE: SC is ablated here, so these are UPPER BOUNDS on")
+        print("  what melanin-only dynamics produce. The real model's SC channel")
+        print("  attenuates further, especially at higher SC thickness. This is")
+        print("  the baseline against which SC's impact is measured.")
         print()
     return out
 

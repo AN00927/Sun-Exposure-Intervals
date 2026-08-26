@@ -106,7 +106,8 @@ PARAMETERS = [
        "(dM=0.237724) since 2026-08-25, shipped value 0.238"),
     _p("k_decay_SC", "k_decay_SC", np.log(2) / 28, np.log(2) / 21,
        "SC regression rate $k_{decay,SC}$",
-       "epidermal turnover 21-28 d"),
+       "PRIOR: Weinstein & Van Scott 1965 transit time 26-27 d (ln(2)/T "
+       "conversion); Pearse 1987 cited for levels not rates"),
     _p("k_repair_SC", "k_repair_SC", np.log(2) / 14, np.log(2) / 3,
        "barrier repair rate $k_{repair,SC}$",
        "PRIOR, not separately measured by de Boer"),

@@ -247,7 +247,7 @@ Parameters & Sources
     difference is the net state:
         SC = SC_build - SC_damage
     SC_build  : slow hyperplasia toward SC_max, regressing at epidermal
-                turnover rate (k_decay_SC, ~28 d half-life)
+                turnover rate (k_decay_SC, ~28 d half-life [PRIOR, see :826])
     SC_damage : fast UV-driven barrier disruption, additive per SED
                 (k_damage), repairing on a days timescale (k_repair_SC)
     The difference may be NEGATIVE. de Boer 2025 Supp Table S1 shows SC
@@ -677,7 +677,9 @@ class ModelParams:
     K_const: float = 0.98
     # Facultative (tanning) headroom above constitutive pigmentation, on the
     # normalized 0-1 melanin scale. The absolute ceiling for a given FST is
-    # M_baseline(FST) + M_TAN_HEADROOM, capped at 1.0 -- see M_ceiling().
+    # M_baseline(FST) + M_TAN_HEADROOM -- see M_ceiling(). NOT capped at 1.0
+    # (FST VI: 1.00 + 0.238 = 1.238); 1.0 caps only the constitutive baseline.
+    # (An earlier revision said "capped at 1.0"; corrected 2026-08-25.)
     #
     # A single global M_max was wrong: M_max=0.95 sat BELOW
     # M_baseline_by_FST[6]=1.00, so the saturating pulse update
@@ -779,7 +781,8 @@ class ModelParams:
     #   FP IV-VI: SC 6.6->9.0 um (+36% -> SC_max=0.36)
     # alpha_SC=0.12 calibrated so SC reaches ~90% of SC_max within
     # 27 sessions (0.8 SED 3x/week, de Boer protocol).
-    # k_decay_SC remains at 28d half-life (epidermal turnover literature).
+    # k_decay_SC: ~28 d half-life [PRIOR, Weinstein & Van Scott 1965 via
+    #   Rothberg 1961 -- transit time, not measured half-life; see :826].
     # k_damage (UV-driven desquamation) fits the week-5 SC dip only
     # weakly from 3 group-mean timepoints; kept at 0.0 until individual-
     # level data is available for joint fitting.
@@ -796,6 +799,12 @@ class ModelParams:
     # n=6, so this corroborates magnitude and does not tighten the prior --
     # SC_max stays flagged as uncalibrated when absolute D is presented
     # (CLAUDE.md). Derivation: scripts/fit_melanin_kinetics.py sec.6.
+    # Caveat (added 2026-08-25): Miyamura's own Table 1 flags the SC cell NS
+    # ("20.7 +/- 3.6 NS" vs control; text: SC thickness "did not change
+    # significantly in any of the specimens", "increasing trend"). With
+    # n=6 SEM and suberythemal dose, NS is a power statement, not evidence
+    # of absence -- corroborates TREND and MAGNITUDE, not an independently
+    # significant replication. Verified against the PDF twice independently.
     # FST IV-VI is unchanged at 0.36: Miyamura enrolled FST II-III only and
     # provides no constraint on darker skin.
     SC_max_by_FST: Dict[int, float] = field(default_factory=lambda: {
@@ -810,11 +819,19 @@ class ModelParams:
     # zero, so no value of k_damage could fit the dip -- it was pinned at 0.0 for
     # a structural reason that was misdiagnosed as missing data.
     k_damage: float = 0.0
-    # Repair rate of acute damage, 1/day. Barrier recovery after UV is a
-    # days-scale process, much faster than the ~28 d epidermal turnover that
-    # governs regression of hyperplasia. 7-day half-life.
-    # [PRIOR] Not separately measured by de Boer; set so the T1 dip recovers by
-    # T2 under continued dosing.
+    # Repair rate of acute damage, 1/day. [PRIOR, UNCITED] No measured barrier-
+    # repair rate constant exists in any source this repo holds (checked
+    # 2026-08-25) nor in a 100-paper broad literature search (Consensus,
+    # 2026-08-26): human in vivo UV-specific SC repair kinetics are a known
+    # gap. Closest anchor: Abe & Mayuzumi 1979 -- TEWL returns to control by
+    # 3 wk after single 2 MED UVB, but no intermediate timepoints to fit an
+    # exponential. Mouse UVB shows delayed peak at ~4 d, recovery by ~5 d
+    # (Haratake 1997; Jiang 2007; Holleran 1997), but that is a biphasic
+    # insult-repair process, not a first-order decay from time zero.
+    # 7-day half-life is structural: days-scale recovery, dip visible at T1,
+    # recovered by T2 under continued dosing. Not identifiable:
+    # (k_damage, k_repair_SC) is a ridge on T0/T1/T2 group medians
+    # (basics/sc_only.py sec.2; scripts/fit_sc_deboer2025.py scanned t1/2 3/7/14 d).
     k_repair_SC: float = np.log(2) / 7.0
     # [C7-SC-FITTED] Evidence-based ranges for SC parameters.
     # SC_max: de Boer 2025 (P2) reports +23% (FP I-III) and +36% (FP IV-VI).
@@ -823,15 +840,29 @@ class ModelParams:
     #   9 weeks (0.8 SED 3x/week). Prior range 0.003-0.008 was too low.
     #   Experimental range: 0.08-0.20 (fitting uncertainty from 3 timepoints).
     #   Default 0.12 is the mid-range fitted value.
-    # k_decay_SC: 21-28 day half-life. Pearse 1987 (P23) measured SC after
-    #   6 weeks of 3x/week UVB. Epidermal turnover literature: 26-28 days.
-    #   de Boer 2025 shows SC still rising at 9 weeks -> decay slower than rise.
+    # k_decay_SC: 21-28 day half-life. SOURCE: Weinstein & Van Scott 1965
+    #   (J Invest Dermatol 45:257-262, PMID 5837896) via Rothberg 1961:
+    #   stratum malpighii turnover 13 d + stratum corneum turnover 13-14 d =
+    #   26-27 d total epidermal transit. This is a TRANSIT TIME, not an
+    #   exponential half-life; converting via ln(2)/T is a modeling choice,
+    #   not a measured rate constant. Pearse 1987 (P23) measured SC thickness
+    #   after 6 weeks of 3x/week UVB -- a level, not a rate -- and is cited
+    #   for the thickening phenomenon only, never for this number. de Boer
+    #   2025 shows SC still rising at 9 weeks -> decay slower than rise.
+    #   Post-1972 literature (Halprin 1972; Bergstresser & Taylor 1977;
+    #   Iizuka 1994; Datta 2019) revises whole-epidermis turnover upward to
+    #   40-56 d. 21-28 d is retained as a plausible lower bound for SC
+    #   regression specifically (faster than whole-epidermis turnover because
+    #   SC hyperplasia regresses from the top down).
     # K_SC: Attenuation strength. Pearse 1987 did not measure vitamin D
     #   attenuation directly. K_SC=1.0 gives exp(-0.30)=74% at SC_max.
     #   Range 0.5-2.0 reflects uncertainty.
     # k_damage: de Boer 2025 Supp Table S1 shows SC dipping BELOW baseline at
     #   week 5 (T1: 5.8 -> 4.3 um ALL, FP I-III: 5.6 -> 4.3 um, FP IV-VI: 6.6 -> 4.3 um)
     #   then overshooting at week 9 (T2: 7.5 um ALL, FP I-III: 6.9 um, FP IV-VI: 9.0 um).
+    #   Significance (Supp S1, double-verified 2026-08-25): T1-vs-T0 dip p=.016
+    #   pooled, NS within stratum (I-III .170, IV-VI .134); T2-vs-T0 overshoot
+    #   p<=.002 in ALL groups. Dip is pooled-real; stratum-level evidence weaker.
     #   At T1 (+8.8 SED), net SC = 4.3/5.8 - 1 = -25.9% below baseline.
     #   Identifiability of k_damage requires individual-level time-course data at
     #   sub-session resolution, NOT just T0/T1/T2 group medians. k_damage is an acute
