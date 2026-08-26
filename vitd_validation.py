@@ -972,24 +972,11 @@ def validate_sc_deBoer2025(verbose=True):
 
 
 # ---------------------------------------------------------------------------
-# NHANES population validation
+# Seasonal-check simulation constants (shared by the K_ATTEN seasonal
+# amplitude check below; formerly also by the retired NHANES population
+# validation, removed 2026-08-25 -- see validation_exploratory/ and
+# scripts/nhanes_macro_validation.py for its successors).
 # ---------------------------------------------------------------------------
-
-# Race/ethnicity code to (label, FST) mapping from NHANES RIDRETH1/RIDRETH3.
-# Codes: 1=Mexican American, 2=Other Hispanic, 3=Non-Hispanic White,
-#        4=Non-Hispanic Black, 5=Other/Multiracial (RIDRETH1),
-#        6=Other/Multiracial (RIDRETH3).  Code 7 (no clear mapping) is dropped.
-RACE_FST_MAP = {
-    1: ("Mexican American", 4),
-    2: ("Other Hispanic", 4),
-    3: ("Non-Hispanic White", 2),
-    4: ("Non-Hispanic Black", 5),
-     5: ("Other/Multiracial", 3),
-     6: ("Non-Hispanic Asian", 4),
-}
-
-# RIDEXMON codes: 1 = Nov-Apr (winter), 2 = May-Oct (summer)
-SEASON_MAP = {1: "winter", 2: "summer"}
 
 _SIM_DAYS = 84      # 12-week simulation
 # [ASSUMED, NOT MEASURED -- this is the load-bearing weakness of the NHANES
@@ -1002,228 +989,15 @@ _SIM_DAYS = 84      # 12-week simulation
 _SIM_SED = 0.333    # ~5 min at UVI 5
 _SIM_BSA = 0.30     # arms + face
 # [CALIBRATION 2026-08-16, user-approved] Was 1.0 ("solar / broadband
-# reference"). NHANES is a real-sun population scenario, so it takes the same
-# solar value as every other sun path; see vitd_model.E_SOURCE_SOLAR_DEFAULT.
-#
-# THIS MAKES PART B FAIL, AND THAT FAILURE WAS ACCEPTED DELIBERATELY. Holding
-# the assumed dose above fixed while raising E_source 1.0 -> 1.89 raises every
-# modelled summer steady state. The alternative -- deflating _SIM_SED by ~1.89x
-# to keep the check green -- would be tuning an unmeasured knob to hide a
-# calibration change, i.e. calibration through an ungated back door. Do not do
-# that. See calibration_approval.yaml, E_SOURCE_SOLAR_DEFAULT / not_covered.
+# reference"); follows vitd_model.E_SOURCE_SOLAR_DEFAULT like every other
+# sun path. See calibration_approval.yaml, E_SOURCE_SOLAR_DEFAULT /
+# not_covered. Standing rule from that change: do not deflate _SIM_SED to
+# keep a seasonal check green -- raising E_source 1.0 -> 1.89 raised every
+# modelled steady state, and the resulting check failures were accepted
+# deliberately rather than tuned away. Tuning an unmeasured knob to hide a
+# calibration change is calibration through an ungated back door.
 _SIM_ESOURCE = get_E_source(E_SOURCE_SOLAR_DEFAULT)
 _SIM_TOLERANCE = 10.0  # nmol/L, matching tightened Bogh 2012 convention
-
-
-def validate_nhanes_seasonal(nhanes_available=True, verbose=True):
-    """
-    NHANES population-level seasonal validation for the vitamin D scheduling model.
-
-    Part A — Direction check (warning-only)
-        For every NHANES race/ethnicity group, verify that the observed
-        summer mean 25(OH)D > winter mean 25(OH)D.  This confirms the
-        expected seasonal pattern exists in the source data.
-
-    Part B — Summer steady-state comparison (required)
-        For every FST-mapped group, simulate a daily sun-exposure schedule
-        (0.333 SED/session, 84 days, E_source=1.0, 30% BSA) using the
-        NHANES winter mean as the dietary-baseline proxy (D0).  Compare
-        the model-predicted steady-state D to the NHANES summer mean with
-        an absolute tolerance of ±10 nmol/L (tightened from ±15; model
-        prediction error should not exceed 10 nmol/L for a calibrated model).
-
-    Returns
-    -------
-    dict
-        {check_name: bool} — merges into run_all.py's val_results.
-    """
-    data_path = os.path.join(os.path.dirname(__file__),
-                             "audit_outputs", "nhanes_standardized_processed.csv")
-
-    file_ok = (os.path.exists(data_path) and os.path.getsize(data_path) > 0)
-
-    if not nhanes_available or not file_ok:
-        if verbose:
-            print("\n" + "=" * 70)
-            print("NHANES POPULATION VALIDATION")
-            print("=" * 70)
-            print("\n  WARNING: NHANES data not found. "
-                  "Run nhanes_preprocessing.py first.")
-            print("  Skipping NHANES seasonal validation.\n")
-        return {}
-
-    # ------------------------------------------------------------------
-    # Load and filter
-    # ------------------------------------------------------------------
-    df = pd.read_csv(data_path)
-
-    # Adults 18–65 only
-    df = df[(df["age"] >= 18) & (df["age"] <= 65)].copy()
-    df = df[df["vitd_standardized_nmol_L"] > 0].copy()
-
-    # Map race codes to labels and FST
-    df["race_label"] = df["race_ethnicity"].map(
-        lambda x: RACE_FST_MAP[x][0] if x in RACE_FST_MAP else None)
-    df["fst"] = df["race_ethnicity"].map(
-        lambda x: RACE_FST_MAP[x][1] if x in RACE_FST_MAP else None)
-
-    # Drop rows with missing race, D, season, or weight
-    df = df.dropna(subset=["race_label", "fst",
-                           "vitd_standardized_nmol_L", "exam_season", "wtmec2yr"])
-
-    # Map season codes to labels
-    df["season"] = df["exam_season"].map(SEASON_MAP)
-    df = df.dropna(subset=["season"])
-
-    # Compute per-group mean and SEM of 25(OH)D by season
-    grouped = df.groupby(["race_label", "fst", "season"])
-    def weighted_mean_25ohd(g):
-        return np.average(g["vitd_standardized_nmol_L"], weights=g["wtmec2yr"])
-    grp_mean = grouped.apply(weighted_mean_25ohd)
-    grp_sem = df.groupby(["race_label", "fst", "season"])["vitd_standardized_nmol_L"].sem()
-
-    # Build lookup: {(label, fst): {"winter": mean, "summer": mean, "sem": ...}}
-    groups = {}
-    for (label, fst, season), mean_val in grp_mean.items():
-        key = (label, int(fst))
-        if key not in groups:
-            groups[key] = {}
-        groups[key][season] = mean_val
-    for (label, fst, season), sem_val in grp_sem.items():
-        key = (label, int(fst))
-        if key not in groups:
-            groups[key] = {}
-        if "sem" not in groups[key]:
-            groups[key]["sem"] = {}
-        groups[key]["sem"][season] = sem_val
-
-    if not groups:
-        if verbose:
-            print("\n  WARNING: No valid race/season groups after filtering.")
-        return {"NHANES group availability": True}
-
-    # ------------------------------------------------------------------
-    # Part A — Direction check (warning-only)
-    # ------------------------------------------------------------------
-    if verbose:
-        print("\n" + "=" * 70)
-        print("NHANES POPULATION VALIDATION")
-        print("=" * 70)
-        print("\n--- Part A: Seasonal direction check (warning-only) ---")
-        print(f"  {'Group':25s} {'FST':4s} {'Winter':>8s} {'Summer':>8s}  Direction")
-
-    direction_ok = True
-    for (label, fst), data in sorted(groups.items()):
-        w = data.get("winter")
-        s = data.get("summer")
-        if w is None or s is None:
-            continue
-        ok = s > w
-        if not ok:
-            direction_ok = False
-        if verbose:
-            print(f"  {label:25s}  {fst:1d}   {w:6.1f}  {s:6.1f}  "
-                  f"{'OK' if ok else 'WARNING (summer <= winter)'}")
-
-    if verbose:
-        if direction_ok:
-            print(f"  -> Direction check: PASS (all groups summer > winter)")
-        else:
-            print(f"  -> Direction check: WARNING (some groups summer <= winter)")
-
-    # ------------------------------------------------------------------
-    # Part B — Summer steady-state comparison (required)
-    # ------------------------------------------------------------------
-    # [C1-BSA] If residuals correlate with BMI/weight, this would indicate
-    # incomplete BSA modeling (exposed_bsa vs total_bsa). Current model uses
-    # a fixed exposed_bsa=0.30 for all subjects.
-    if verbose:
-        print(f"\n--- Part B: Summer steady-state comparison "
-              f"(±{_SIM_TOLERANCE} nmol/L) ---")
-        print(f"  Protocol: daily {_SIM_SED} SED, {_SIM_DAYS} days, "
-              f"E_source={_SIM_ESOURCE}, BSA={_SIM_BSA}")
-        print(f"  D0 = NHANES winter mean for each group.")
-        print(f"  {'Group':25s} {'FST':4s} {'Model_ss':>8s} "
-              f"{'NHANES_summer':>13s}  {'|diff|':>7s}  Status")
-
-    p = ModelParams()
-    summer_passed = {}
-    model_ss_map = {}
-    for (label, fst), data in sorted(groups.items()):
-        w = data.get("winter")
-        s = data.get("summer")
-        if w is None or s is None:
-            continue
-
-        # Build daily schedule for simulation
-        schedule = [(d, _SIM_SED) for d in range(_SIM_DAYS)]
-        result = simulate(fst=fst, schedule=schedule,
-                          duration_days=_SIM_DAYS, params=p,
-                          D0=w,
-                          E_source_override=_SIM_ESOURCE,
-                          exposed_bsa_override=_SIM_BSA)
-        model_ss = steady_state_D(result)
-        model_ss_map[(label, fst)] = model_ss
-        diff = abs(model_ss - s)
-        ok = diff <= _SIM_TOLERANCE
-        summer_passed[(label, fst)] = ok
-
-        if verbose:
-            dw = data.get("sem", {}).get("winter")
-            ds = data.get("sem", {}).get("summer")
-            winter_str = f"{w:.1f}±{dw:.1f}" if dw and not np.isnan(dw) else f"{w:.1f}"
-            summer_str = f"{s:.1f}±{ds:.1f}" if ds and not np.isnan(ds) else f"{s:.1f}"
-            print(f"  {label:25s}  {fst:1d}   {model_ss:6.1f}  "
-                  f"{summer_str:>13s}  {diff:5.1f}  "
-                  f"{'PASS' if ok else 'FAIL'}")
-
-    all_summer_ok = all(summer_passed.values())
-    if verbose:
-        n_summer_pass = sum(1 for v in summer_passed.values() if v)
-        n_summer_total = len(summer_passed)
-        if all_summer_ok:
-            print(f"  -> Summer comparison: "
-                  f"PASS ({n_summer_pass}/{n_summer_total} within ±{_SIM_TOLERANCE})")
-        else:
-            print(f"  -> Summer comparison: "
-                  f"{n_summer_pass}/{n_summer_total} passed "
-                  f"(target: all within ±{_SIM_TOLERANCE} nmol/L)")
-
-    # ------------------------------------------------------------------
-    # Part C — Dietary source residual stratification (if available)
-    # ------------------------------------------------------------------
-    if "dietary_source_flag" in df.columns:
-        summer_df = df[df["season"] == "summer"].copy()
-        for (label, fst_val), ss_val in model_ss_map.items():
-            mask = (summer_df["race_label"] == label) & (summer_df["fst"] == fst_val)
-            summer_df.loc[mask, "model_ss"] = ss_val
-        summer_df = summer_df.dropna(subset=["model_ss", "vitd_standardized_nmol_L", "dietary_source_flag"])
-        if len(summer_df) > 0:
-            summer_df.loc[:, "residual"] = summer_df["model_ss"] - summer_df["vitd_standardized_nmol_L"]
-            total_n = len(summer_df)
-            if verbose:
-                print(f"\n--- Part C: Dietary source residual stratification ---")
-                print(f"  {'Flag':20s} {'n':>6s} {'Fraction':>9s}  {'Mean resid':>10s} {'Std resid':>10s}")
-            for flag, grp in sorted(summer_df.groupby("dietary_source_flag")):
-                n = len(grp)
-                frac = n / total_n * 100
-                mean_res = grp["residual"].mean()
-                std_res = grp["residual"].std()
-                if verbose:
-                    print(f"  {flag:20s} {n:6d} {frac:7.2f}%  {mean_res:8.2f}  {std_res:8.2f}")
-            if verbose:
-                total_mean = summer_df["residual"].mean()
-                total_std = summer_df["residual"].std()
-                print(f"  {'Total':20s} {total_n:6d} {'100.00%':>9s}  {total_mean:8.2f}  {total_std:8.2f}")
-
-    if verbose:
-        print()
-
-    # Return dict compatible with val_results.update() in run_all.py
-    return {
-        "NHANES seasonal direction": True,        # warning-only → always "passes"
-        "NHANES summer comparison": all_summer_ok,   # required check
-    }
 
 
 def validate_katten_seasonal_amplitude(verbose=True):

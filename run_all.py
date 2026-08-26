@@ -6,6 +6,7 @@ End-to-end run: validation + all priority analyses + summary report.
 Usage:  python3 run_all.py
 """
 
+import argparse
 import datetime as _dt
 import os
 import sys
@@ -426,9 +427,58 @@ def _frontload_headline(df):
                 "log and CSVs below.)*\n" % (type(exc).__name__, exc))
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="End-to-end run: validation + all priority analyses + summary report."
+    )
+    parser.add_argument(
+        "--baseline-source",
+        choices=["preset", "nhanes"],
+        default="preset",
+        help="Baseline 25(OH)D source: 'preset' (default scenario constants) or 'nhanes' (empirical survey-weighted priors)",
+    )
+    parser.add_argument(
+        "--run-macro-scripts",
+        action="store_true",
+        help="Run NHANES population macro-validation, dietary partitioning, and weight dilution diagnostic scripts",
+    )
+    args = parser.parse_args()
+
+    # Configure baseline source in vitd_scenario
+    vitd_scenario.set_default_baseline_source(args.baseline_source)
+
     print("=" * 70)
     print("Vitamin D scheduling model: full pipeline")
+    print(f"Baseline Configuration: {args.baseline_source.upper()}")
     print("=" * 70)
+    print(
+        "NOTE: Running NHANES population macro-validation scripts is RECOMMENDED\n"
+        "whenever baseline assumptions, scenario definitions, or calibrations change:\n"
+        "  - scripts/nhanes_macro_validation.py (52-week population steady-state)\n"
+        "  - scripts/nhanes_dietary_partitioning.py (baseline floor & dietary lift)\n"
+        "  - scripts/nhanes_weight_dilution_check.py (body weight scaling validation)\n"
+        "Pass --run-macro-scripts to execute them automatically.\n"
+    )
+
+    # Optional: Run NHANES macro diagnostic suite if requested
+    if args.run_macro_scripts:
+        print("=" * 70)
+        print("RUNNING NHANES MACRO DIAGNOSTIC SUITE")
+        print("=" * 70)
+        _macro_val = _import_script_module("nhanes_macro_validation")
+        _diet_part = _import_script_module("nhanes_dietary_partitioning")
+        _wt_dil = _import_script_module("nhanes_weight_dilution_check")
+
+        log_mv, res_mv, err_mv = capture_log_safe("nhanes_macro_validation", _macro_val.evaluate_macro_validation)
+        if log_mv:
+            print(log_mv.strip())
+        log_dp, res_dp, err_dp = capture_log_safe("nhanes_dietary_partitioning", _diet_part.analyze_dietary_partitioning)
+        if log_dp:
+            print(log_dp.strip())
+        log_wd, res_wd, err_wd = capture_log_safe("nhanes_weight_dilution_check", _wt_dil.run_weight_dilution_check)
+        if log_wd:
+            print(log_wd.strip())
+        print("=" * 70)
+        print("NHANES Macro Suite Execution Complete.\n")
 
     # 1. Validation
     buf = StringIO()
@@ -439,17 +489,10 @@ def main():
     # 1b. NHANES preprocessing RETIRED 2026-08-21 to exploratory/ --
     # its own seasonal validation check was already EXPLORATORY_ONLY and
     # this block was already an optional try/except, so nothing that fed
-    # a headline number is lost. See exploratory/README.md and
+    # a headline number is lost. Population-level NHANES validation now
+    # lives in scripts/nhanes_macro_validation.py (run via
+    # --run-macro-scripts). See exploratory/README.md and
     # docs/REPO_SCOPE_AUDIT.md.
-    nhanes_available = False
-
-    # 1c. NHANES seasonal validation
-    from vitd_validation import validate_nhanes_seasonal
-    buf_nhanes = StringIO()
-    with redirect_stdout(buf_nhanes):
-        nhanes_results = validate_nhanes_seasonal(nhanes_available=nhanes_available)
-    val_log += buf_nhanes.getvalue()
-    val_results.update(nhanes_results)
 
     # 2. Analyses
     analyses = [

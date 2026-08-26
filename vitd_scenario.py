@@ -12,10 +12,13 @@ constants.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import os
+import functools
+from dataclasses import dataclass, field, replace
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
+import pandas as pd
 
 from vitd_model import BSA_REF, build_pulse_schedule, get_E_source
 from vitd_model import ModelParams, simulate
@@ -249,16 +252,114 @@ def describe() -> str:
 
 
 # ---------------------------------------------------------------------------
+# NHANES Empirical Baseline Priors & Source Configuration
+# ---------------------------------------------------------------------------
+
+_REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
+_PRIORS_FILE = os.path.join(_REPO_ROOT, "tables", "nhanes_baseline_priors.csv")
+
+BASELINE_SOURCES: Tuple[str, ...] = ("preset", "nhanes")
+DEFAULT_BASELINE_SOURCE: str = "preset"
+
+# Empirical fallback priors (unsupplemented winter/spring medians, nmol/L)
+# from NHANES 2001-2023 standardized LC-MS/MS data:
+NHANES_FALLBACK_BASELINE_D0: Dict[int, float] = {
+    1: 56.8,
+    2: 65.9,
+    3: 59.6,
+    4: 54.5,
+    5: 50.2,
+    6: 35.1,
+}
+
+
+@functools.lru_cache(maxsize=1)
+def _load_priors_df() -> Optional[pd.DataFrame]:
+    if os.path.exists(_PRIORS_FILE):
+        try:
+            return pd.read_csv(_PRIORS_FILE)
+        except Exception:
+            return None
+    return None
+
+
+def get_nhanes_baseline_D0(
+    fst: int,
+    season: str = "winter_spring",
+    dietary_status: str = "all_unsupplemented",
+    percentile: str = "p50",
+) -> float:
+    """Look up empirical survey-weighted baseline 25(OH)D from NHANES priors.
+    
+    Parameters
+    ----------
+    fst : int
+        Fitzpatrick skin type (1 to 6).
+    season : str
+        'winter_spring' (default), 'summer_autumn', or 'all_year'.
+    dietary_status : str
+        'all_unsupplemented' (default), 'UV-only', 'food-only', 'supplemented', 'all'.
+    percentile : str
+        'p50' (median, default), 'p05', 'p10', 'p25', 'p75', 'p90', 'p95', or 'weighted_mean'.
+    """
+    df = _load_priors_df()
+    if df is not None:
+        sub = df[
+            (df["strata_type"] == "fst_proxy") &
+            (df["strata_value"] == f"FST_{fst}") &
+            (df["season"] == season) &
+            (df["dietary_status"] == dietary_status)
+        ]
+        if not sub.empty and percentile in sub.columns:
+            val = sub.iloc[0][percentile]
+            if pd.notna(val):
+                return float(val)
+    return NHANES_FALLBACK_BASELINE_D0.get(fst, 50.0)
+
+
+def get_baseline_D0(
+    fst: int,
+    baseline_source: Optional[str] = None,
+    default_preset: float = 25.0,
+    season: str = "winter_spring",
+) -> float:
+    """Return baseline 25(OH)D according to the requested baseline source."""
+    src = baseline_source or DEFAULT_BASELINE_SOURCE
+    if src == "nhanes":
+        return get_nhanes_baseline_D0(fst, season=season)
+    return default_preset
+
+
+def set_default_baseline_source(source: str) -> None:
+    """Set global default baseline source ('preset' or 'nhanes')."""
+    global DEFAULT_BASELINE_SOURCE
+    if source not in BASELINE_SOURCES:
+        raise ValueError(
+            f"Invalid baseline source '{source}'. Must be one of {BASELINE_SOURCES}"
+        )
+    DEFAULT_BASELINE_SOURCE = source
+
+
+# ---------------------------------------------------------------------------
 # Helper functions
 # ---------------------------------------------------------------------------
 
-def get_scenario(name: str) -> ExposureScenario:
-    """Retrieve a scenario by name. Raises KeyError if not found."""
+def get_scenario(name: str, baseline_source: Optional[str] = None) -> ExposureScenario:
+    """Retrieve a scenario by name.
+    
+    If baseline_source is 'nhanes', the scenario's baseline_D0 is overridden
+    with the empirical NHANES median for the target FST.
+    """
     if name not in SCENARIO_REGISTRY:
         raise KeyError(
-            f"Unknown scenario \'{name}\'. Available: {sorted(SCENARIO_REGISTRY)}"
+            f"Unknown scenario '{name}'. Available: {sorted(SCENARIO_REGISTRY)}"
         )
-    return SCENARIO_REGISTRY[name]
+    sc = SCENARIO_REGISTRY[name]
+    src = baseline_source or DEFAULT_BASELINE_SOURCE
+    if src == "nhanes":
+        nhanes_d0 = get_nhanes_baseline_D0(sc.target_fst)
+        return replace(sc, baseline_D0=nhanes_d0)
+    return sc
 
 
 def list_scenarios() -> List[str]:

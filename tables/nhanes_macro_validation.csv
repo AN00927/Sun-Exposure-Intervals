@@ -1,0 +1,7 @@
+FST,Model Summer Peak,NHANES Summer Median [IQR],Model Winter Nadir,NHANES Winter Median [IQR],Model Annual Mean,Macro Validation Status
+1,67.1,69.0 [56.6-83.5],43.4,56.8 [42.1-71.2],56.1,PASS (IQR)
+2,65.4,74.0 [58.9-92.5],42.5,65.9 [50.2-86.4],54.8,PASS (90% CI)
+3,62.1,69.2 [56.2-83.9],40.7,59.6 [45.2-73.6],52.1,PASS (90% CI)
+4,55.5,61.7 [47.6-77.4],37.3,54.5 [40.4-69.9],47.0,PASS (90% CI)
+5,48.3,61.4 [46.1-77.2],33.4,50.2 [36.8-67.7],41.2,PASS (90% CI)
+6,43.9,41.1 [30.6-55.3],30.6,35.1 [26.6-47.2],37.5,PASS (IQR)

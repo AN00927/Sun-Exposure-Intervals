@@ -165,6 +165,19 @@ That command must pass with `exploratory/` absent from `sys.path` entirely.
   going, don't stop and wait for a reply.
 - **Do NOT** pool NHANES 2001-2006 (`LBDVIDMS`) with 2007+ (`LBXVIDMS`) without
   harmonization code.
+- **DO** leverage the NHANES macro diagnostic suite in `scripts/`:
+  * `scripts/nhanes_macro_validation.py` (`RECURRING`): 52-week population
+    steady-state macro-validation against unsupplemented NHANES cohorts.
+  * `scripts/nhanes_dietary_partitioning.py` (`RECURRING`): Unsupplemented
+    baseline floor ($D_{\text{floor}}$) and solar vs dietary contribution analysis.
+  * `scripts/nhanes_weight_dilution_check.py` (`RECURRING`): Cross-sectional
+    body-weight dilution scaling check ($70/\text{weight\_kg}$ vs BMI).
+  * `tables/nhanes_baseline_priors.csv`: Survey-weighted baseline $D_0$ quantiles
+    by FST, season, and diet (switchable via `--baseline-source nhanes`).
+- **DO** note: When model calibration, baseline assumptions, or scenario constants
+  are updated, running the NHANES macro scripts is recommended to verify
+  population-level plausibility. **Always ask the user if they would like to run
+  these macro scripts right after completing core model modifications.**
 - **Do NOT** invent validation counts. Re-run
   `PYTHONIOENCODING=utf-8 python3 run_all.py` before quoting any count.
 - **Do NOT** cite Tadokoro 2005 for tanning decay timescale.

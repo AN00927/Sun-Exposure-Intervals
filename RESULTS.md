@@ -243,7 +243,7 @@ VALIDATION SUITE
   delta-D = 1.47 nmol/L  (expected 1.47, ±2%)
   PASS
 
-[TIER: INTERNAL] Docstring proves the measured quantity is an algebraic identity independent of K_const/A/D_max/feedback form. K_ATTEN is active and calibrated (0.34, reinstated 2026-08-21, user-approved), not pinned at 0, so this check now measures the live value rather than being pinned to pass by construction. Docstring: "NOT evidence ... a drift guard sharing its evidence with the calibration."
+[TIER: INTERNAL] Docstring proves the measured quantity is an algebraic identity independent of K_const/A/D_max/feedback form. K_ATTEN is active and calibrated (reinstated 2026-08-21, re-derived 2026-08-25 to track M_TAN_HEADROOM), not pinned at 0, so this check measures the live value rather than being pinned to pass by construction. Docstring: "NOT evidence ... a drift guard sharing its evidence with the calibration."
 [Sanity 3] Photoadaptation reduction (FST III, M 0.21 -> 0.45 [M_ceiling])
   untanned synthesis: 1.47  tanned synthesis: 1.37
   reduction = 6.6%  (guard range 0-10%; evaluated at structural ceiling M_ceiling)
@@ -364,13 +364,13 @@ VALIDATION SUITE
 [Reference Scenarios Benchmark] Clinical Trial Protocols vs Model Predictions:
   Scenario                    FST    D0  Model dD   Obs dD    SCC  Interm  Burn%  Status
   ----------------------------------------------------------------------------------
-  deboer2025_barrier            3  25.0    +15.6      N/A   0.21    0.07     0%    PASS
-  farrar2013_fst5_uk            5  17.2    +18.7    +21.7   0.07    0.00     0%    PASS
-  felton2016_fst2_matched       2  36.5    +23.6    +17.8   0.26    0.40     0%    PASS
-  felton2016_fst5_matched       5  17.2    +18.7     +8.3   0.07    0.00     0%    PASS
-  summer_midday_reference       3  25.0    +35.1      N/A   0.50    0.18     0%    PASS
-  webb2018_uk_guidance          2  25.0    +49.2      N/A   0.69    0.11     0%    PASS
-  young2021_fst2_solar          2  34.6    +18.7    +36.1   0.06    0.40     0%    PASS
+  deboer2025_barrier            3  59.6     -2.0      N/A   0.21    0.07     0%    PASS
+  farrar2013_fst5_uk            5  50.2     +4.9    +21.7   0.07    0.00     0%    PASS
+  felton2016_fst2_matched       2  65.9     +7.2    +17.8   0.26    0.40     0%    PASS
+  felton2016_fst5_matched       5  50.2     +4.9     +8.3   0.07    0.00     0%    PASS
+  summer_midday_reference       3  59.6     +9.2      N/A   0.50    0.18     0%    PASS
+  webb2018_uk_guidance          2  65.9    +15.5      N/A   0.69    0.11     0%    PASS
+  young2021_fst2_solar          2  65.9     +9.0    +36.1   0.06    0.40     0%    PASS
   PASS
 
 ======================================================================
@@ -448,8 +448,8 @@ Integrator audit over 1095 d (0.5-d exponential-Euler vs closed form):
   FST 2  max relative error 2.43e-04
   worst 2.43e-04  ->  OK -- no meaningful drift
   D > 0 and monotone decreasing after the peak for all 36 runs
-Wrote C:\Users\Ahaan\sunresearch\Sun-Exposure-Intervals\tables\single_session_response.csv
-Wrote C:\Users\Ahaan\sunresearch\Sun-Exposure-Intervals\figs\single_session_response.png
+Wrote /mnt/c/Users/Ahaan/sunresearch/Sun-Exposure-Intervals/tables/single_session_response.csv
+Wrote /mnt/c/Users/Ahaan/sunresearch/Sun-Exposure-Intervals/figs/single_session_response.png
 
 --- Impulse synthesis (DEFAULT model) ---
   FST V (priority population)
@@ -1915,7 +1915,7 @@ ANALYSIS M: variable-dose optimisation
     5  122    two_phase    1.6681      61.0    303.7      44.9   50.00      78d
     5  122  exponential    1.8154      57.5    344.4      37.5   50.00      87d
     5  122     seasonal    4.2729       0.0    550.8       0.0   50.00      87d
-    5  122  gap_coupled    4.2729       0.0    550.8      -0.0   50.00      87d
+    5  122  gap_coupled    4.2729       0.0    550.8       0.0   50.00      87d
 
     5  146      uniform    2.4290       0.0    467.6       0.0   50.00      85d
     5  146    two_phase    1.0831      55.4    272.7      41.7   50.00      72d
@@ -1994,23 +1994,23 @@ ANALYSIS N: joint timing + dose optimisation
 
    FST    N   spacing       family  gamma    SCC%  interm%  combined%   totSED  t->suff
   ------------------------------------------------------------------------------------------------
-     I  104   uniform    two_phase   1.00     0.0      0.0        0.0     75.9      84d
-     I  104      free    two_phase   1.27    -9.7     15.2        3.5     80.1      78d
+     I  104   uniform    two_phase   1.00     0.0      0.0        0.0     75.8      84d
+     I  104      free    two_phase   1.27   -10.0     15.1        3.3     80.1      78d
 
      I  146   uniform    two_phase   1.00     0.0      0.0        0.0     68.4      85d
-     I  146      free    two_phase   1.29    -9.7     14.8        3.3     72.2      82d
+     I  146      free  exponential   1.31   -10.4     16.2        3.8     72.5      85d
 
      I  183   uniform    two_phase   1.00     0.0      0.0        0.0     65.0      86d
      I  183      free    two_phase   1.35   -11.0     13.2        1.9     69.1      84d
 
      I  260   uniform    two_phase   1.00     0.0      0.0        0.0     62.2      88d
-     I  260      free    two_phase   1.34    -8.3     14.1        3.6     65.2      86d
+     I  260      free    two_phase   1.34    -8.6     13.6        3.1     65.3      84d
 
-    II  104   uniform    two_phase   1.00     0.0      0.0        0.0     83.9      84d
-    II  104      free    two_phase   1.43    -7.1     25.8       10.9     87.3      80d
+    II  104   uniform    two_phase   1.00     0.0      0.0        0.0     83.8      84d
+    II  104      free    two_phase   1.43    -7.2     25.5       10.6     87.3      80d
 
-    II  146   uniform    two_phase   1.00     0.0      0.0        0.0     75.6      85d
-    II  146      free    two_phase   1.31    -8.1     20.2        7.1     79.1      83d
+    II  146   uniform    two_phase   1.00     0.0      0.0        0.0     75.3      85d
+    II  146      free    two_phase   1.31    -8.8     18.6        5.9     79.1      83d
 
     II  183   uniform    two_phase   1.00     0.0      0.0        0.0     71.0      88d
     II  183      free    two_phase   1.30    -8.8     15.2        3.9     74.7      84d
@@ -2028,28 +2028,28 @@ ANALYSIS N: joint timing + dose optimisation
    III  183      free  exponential   1.26    -4.2     17.9        7.5     90.5      86d
 
    III  260   uniform    two_phase   1.00     0.0      0.0        0.0     81.6      88d
-   III  260      free    two_phase   1.38    -5.3     16.0        5.9     84.2      87d
+   III  260      free  exponential   1.24    -4.1     12.1        4.3     83.6      86d
 
     IV  104   uniform    two_phase   1.00     0.0      0.0        0.0    173.6      84d
-    IV  104      free    two_phase   1.26     0.5     43.9       25.3    173.1      83d
+    IV  104      free  exponential   1.36    -2.7     43.0       23.5    176.4      83d
 
     IV  146   uniform    two_phase   1.00     0.0      0.0        0.0    140.0      85d
     IV  146      free    two_phase   1.43    -6.8     31.4       14.4    145.5      83d
 
     IV  183   uniform    two_phase   1.00     0.0      0.0        0.0    127.8      88d
-    IV  183      free    two_phase   1.40   -10.5     21.2        6.7    135.5      83d
+    IV  183      free    two_phase   1.39    -9.3     22.8        8.1    134.6      86d
 
-    IV  260   uniform    two_phase   1.00     0.0      0.0        0.0    115.1      88d
-    IV  260      free  exponential   1.29   -12.2     13.2        1.3    123.2      86d
+    IV  260   uniform    two_phase   1.00     0.0      0.0        0.0    115.4      88d
+    IV  260      free  exponential   1.29   -11.8     14.4        2.2    123.2      86d
 
      V  104   uniform           --     --      --       --         --       --       --   INFEASIBLE: C1 erythema cap (70% MED) at this session budget
-     V  104      free    two_phase   1.35      --       --        nan    340.1      83d
+     V  104      free    two_phase   1.36      --       --        nan    342.1      83d
 
      V  146   uniform    two_phase   1.00     0.0      0.0        0.0    262.5      85d
      V  146      free    two_phase   1.43     4.6     46.1       28.3    255.4      83d
 
-     V  183   uniform    two_phase   1.00     0.0      0.0        0.0    217.3      88d
-     V  183      free  exponential   1.33    -6.0     33.5       16.1    224.9      84d
+     V  183   uniform    two_phase   1.00     0.0      0.0        0.0    217.5      88d
+     V  183      free  exponential   1.35    -8.3     30.8       13.5    227.9      79d
 
      V  260   uniform    two_phase   1.00     0.0      0.0        0.0    185.7      86d
      V  260      free    two_phase   1.32    -7.2     26.7       11.4    193.4      86d
@@ -2064,7 +2064,7 @@ ANALYSIS N: joint timing + dose optimisation
     VI  183      free    two_phase   1.40   -11.2     35.4       15.2    333.2      77d
 
     VI  260   uniform    two_phase   1.00     0.0      0.0        0.0    263.3      84d
-    VI  260      free    two_phase   1.29    -1.9     38.0       20.5    266.2      85d
+    VI  260      free    two_phase   1.33    -2.4     38.8       20.8    267.0      86d
 
   Feasibility: 22 of 24 (skin type, session budget) cells admit a schedule.
   Infeasible cells, reported as results rather than dropped:
@@ -2075,12 +2075,12 @@ ANALYSIS N: joint timing + dose optimisation
   tests/test_vitd_optimization.py::TestRecalibratedFeasibility,
   and are mapped in scripts/feasibility_map_kconst.py.
   Free spacing vs uniform spacing, 22 operating points:
-    SCC (cumulative-dose axis):        median -7.65%   best +4.56%   worst -12.23%
-    Intermittent (BCC/melanoma axis):  median +21.36%   best +52.74%   worst +12.23%
-    Combined (ranking-only, NOT literature-anchored as a combination): median +7.62%   best +31.11%   worst +1.31%
+    SCC (cumulative-dose axis):        median -8.38%   best +4.56%   worst -11.76%
+    Intermittent (BCC/melanoma axis):  median +22.15%   best +52.74%   worst +12.07%
+    Combined (ranking-only, NOT literature-anchored as a combination): median +7.94%   best +31.11%   worst +1.86%
     Front-loading trades a small SCC (cumulative-dose) INCREASE for a large intermittent (BCC/melanoma) DECREASE --
     the two axes move in OPPOSITE directions. Report them separately; a single combined percentage hides this.
-    gamma chosen: median 1.31 (1.00 = uniform), range 1.26-1.43
+    gamma chosen: median 1.32 (1.00 = uniform), range 1.24-1.43
 
   Mechanism. Free spacing does NOT win by lowering cumulative dose
   -- total SED is usually slightly HIGHER. It wins by lowering the
@@ -2455,7 +2455,7 @@ A. LOWEST-RISK SCHEDULE THAT HOLDS SUFFICIENCY, BY SKIN TYPE
     5    7.5  minutes        1d      365      0.74        24     10    60.6    4.35    0.0165    0.2682
     6   15.2  minutes        1d      365      1.02        32      7    60.7    3.86    0.0027    0.1015
 
-  Saved C:\Users\Ahaan\sunresearch\Sun-Exposure-Intervals\tables\risk_aware_schedule_by_fst.csv
+  Saved /mnt/c/Users/Ahaan/sunresearch/Sun-Exposure-Intervals/tables/risk_aware_schedule_by_fst.csv
 
   All skin types land on the shortest interval on the grid (1d). Not a solver artefact:
   the sufficiency floor kills long intervals (they cannot reach the target within the
@@ -2470,7 +2470,7 @@ A. LOWEST-RISK SCHEDULE THAT HOLDS SUFFICIENCY, BY SKIN TYPE
   Elwood & Jopson. Interval and minutes columns do not depend on it.
   Minutes carry at least +/-40% geometric uncertainty (gap 26) and assume the UV index
   holds at 6 for the whole session.
-Saved C:\Users\Ahaan\sunresearch\Sun-Exposure-Intervals\figs\deficiency_risk_frontier.png
+Saved /mnt/c/Users/Ahaan/sunresearch/Sun-Exposure-Intervals/figs/deficiency_risk_frontier.png
 
 ```
 
