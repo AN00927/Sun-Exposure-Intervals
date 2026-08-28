@@ -90,7 +90,7 @@ paper/*.out
 paper/*.synctex.gz
 paper/*.fls
 paper/*.fdb_latexmk
-# FEW-TIME: fitting/checking scripts whose committed artefacts (tables/debug/)
-# are the durable output; kept off disk-tracking, kept on disk for provenance.
 scripts/abstract_reconciliation_check.py
 scripts/abstract_reconciliation_seeds.py
+presentation/PRESENTATION_PLAN.md
+presentation

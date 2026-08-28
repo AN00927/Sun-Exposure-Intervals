@@ -841,19 +841,28 @@ class ModelParams:
     #   Experimental range: 0.08-0.20 (fitting uncertainty from 3 timepoints).
     #   Default 0.12 is the mid-range fitted value.
     # k_decay_SC: 21-28 day half-life. SOURCE: Weinstein & Van Scott 1965
-    #   (J Invest Dermatol 45:257-262, PMID 5837896) via Rothberg 1961:
-    #   stratum malpighii turnover 13 d + stratum corneum turnover 13-14 d =
-    #   26-27 d total epidermal transit. This is a TRANSIT TIME, not an
-    #   exponential half-life; converting via ln(2)/T is a modeling choice,
-    #   not a measured rate constant. Pearse 1987 (P23) measured SC thickness
-    #   after 6 weeks of 3x/week UVB -- a level, not a rate -- and is cited
-    #   for the thickening phenomenon only, never for this number. de Boer
-    #   2025 shows SC still rising at 9 weeks -> decay slower than rise.
-    #   Post-1972 literature (Halprin 1972; Bergstresser & Taylor 1977;
+    #   (J Invest Dermatol 45:257-262, PMID 5837896) via Rothberg 1961, which
+    #   breaks whole-epidermis transit into two legs: stratum malpighii
+    #   13 d (basal cell to granular layer) + stratum corneum 13-14 d
+    #   (cornification to desquamation) = 26-27 d combined. k_decay_SC models
+    #   clearance of EXCESS SC thickness once hyperplasia stops -- i.e.
+    #   desquamation of already-cornified cells -- which is the SC-residence
+    #   leg (13-14 d) alone, not the combined figure: a cell already in the
+    #   SC when UV stops does not need to re-transit the malpighian layer to
+    #   shed. Read this way the source's own numbers sit BELOW the adopted
+    #   21-28 d range, not above it. This is a TRANSIT TIME either way, not
+    #   an exponential half-life; converting via ln(2)/T is a modeling
+    #   choice, not a measured rate constant. Pearse 1987 (P23) measured SC
+    #   thickness after 6 weeks of 3x/week UVB -- a level, not a rate -- and
+    #   is cited for the thickening phenomenon only, never for this number.
+    #   de Boer 2025 shows SC still rising at 9 weeks -> decay slower than
+    #   rise. Post-1972 literature (Halprin 1972; Bergstresser & Taylor 1977;
     #   Iizuka 1994; Datta 2019) revises whole-epidermis turnover upward to
-    #   40-56 d. 21-28 d is retained as a plausible lower bound for SC
-    #   regression specifically (faster than whole-epidermis turnover because
-    #   SC hyperplasia regresses from the top down).
+    #   40-56 d, which is the wrong leg for the same reason the 26-27 d
+    #   combined figure is. 21-28 d is retained as an interior, uncalibrated
+    #   choice: no source measures SC-hyperplasia regression directly, and
+    #   the closest conceptual match (13-14 d SC residence) and the various
+    #   whole-epidermis figures (26-56 d) bracket it from opposite sides.
     # K_SC: Attenuation strength. Pearse 1987 did not measure vitamin D
     #   attenuation directly. K_SC=1.0 gives exp(-0.30)=74% at SC_max.
     #   Range 0.5-2.0 reflects uncertainty.
