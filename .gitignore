@@ -110,21 +110,3 @@ paper/*.fls
 paper/*.fdb_latexmk
 paper/*.pdf
 
-# Throwaway reusable-check scripts
-scripts/abstract_reconciliation_check.py
-scripts/abstract_reconciliation_seeds.py
-scripts/repo_hygiene_check.py
-presentation/figs/slidestyle.py
-presentation/PRESENTATION_PLAN.md
-.gitignore
-docs/ABSTRACT_RECONCILIATION.md
-docs/MODEL_AND_EVIDENCE_RECONSTRUCTED.md
-docs/OPTIMIZATION_METHODOLOGY.md
-docs/REPO_HYGIENE.md
-docs/REPO_SCOPE_AUDIT.md
-docs/superpowers/plans/2026-08-21-exposure-scenario.md
-docs/superpowers/plans/2026-08-21-spacing-fixed-dose-pipeline.md
-docs/superpowers/specs/2026-08-17-readme-cornell-restructure-design.md
-docs/superpowers/specs/2026-08-21-exposure-scenario-design.md
-docs/superpowers/specs/2026-08-21-spacing-fixed-dose-pipeline.md
-presentation/QA_PREP.md
