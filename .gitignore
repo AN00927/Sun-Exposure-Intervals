@@ -1,26 +1,38 @@
 # Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.pyo
+*.pyd
 *.egg-info/
+.eggs/
 dist/
 build/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.htmlcov/
 
-# Virtualenvs
+# Virtual environments
 .venv/
 venv/
+env/
+.conda/
 
 # Editor / OS
 .DS_Store
+Thumbs.db
 .idea/
 .vscode/
+*.swp
+*.swo
 
-# Research papers & PDFs (copyrighted materials)
+# Local-only research material and copyrighted PDFs
 Research_Papers/
 *.pdf
 modelpaper.pdf
 
-# Evidence registers, notes, and direct extractions
+# Working notes and private research logs
 MODEL_AND_EVIDENCE.md
 PAPER_SUMMARIES.md
 SCIENTIFIC_AUDIT_HANDOFF.md
@@ -38,11 +50,13 @@ AGENTS.md
 AGENT_PROMPT.md
 PART_C_REPORT.md
 
-# Reports and design documents
+# Generated / local-only docs and presentation artifacts
 reports/
-docs/
 
-# Intermediate extraction outputs and scratchpads
+# Canonical tracked documentation and presentation materials stay in the repo.
+# The active project docs/presentation are source-of-truth project assets, not private scratch.
+
+# Extraction scratchpads and temporary outputs
 audit_outputs/extracted_text/
 audit_outputs/new_paper_numeric_snippets.md
 audit_outputs/paper_numeric_snippets.md
@@ -53,12 +67,16 @@ audit_outputs/pdf_*.json
 audit_outputs/trial_subject_level.csv
 extracted_texts/
 tmp_katten/
+*.tmp
+*.bak
+*.orig
 
-# Claude / Validation exploratory
+# Claude / validation / exploratory local state
 .claude/
+.superpowers/
 validation_exploratory/
 
-# Unneeded dataset text dumps
+# Unneeded dataset-side text dumps
 Papers_and_Datasets/extracted_pdfs.txt
 Papers_and_Datasets/additional info.txt
 Papers_and_Datasets/manifest_raw.csv
@@ -90,7 +108,23 @@ paper/*.out
 paper/*.synctex.gz
 paper/*.fls
 paper/*.fdb_latexmk
+paper/*.pdf
+
+# Throwaway reusable-check scripts
 scripts/abstract_reconciliation_check.py
 scripts/abstract_reconciliation_seeds.py
+scripts/repo_hygiene_check.py
+presentation/figs/slidestyle.py
 presentation/PRESENTATION_PLAN.md
-presentation
+.gitignore
+docs/ABSTRACT_RECONCILIATION.md
+docs/MODEL_AND_EVIDENCE_RECONSTRUCTED.md
+docs/OPTIMIZATION_METHODOLOGY.md
+docs/REPO_HYGIENE.md
+docs/REPO_SCOPE_AUDIT.md
+docs/superpowers/plans/2026-08-21-exposure-scenario.md
+docs/superpowers/plans/2026-08-21-spacing-fixed-dose-pipeline.md
+docs/superpowers/specs/2026-08-17-readme-cornell-restructure-design.md
+docs/superpowers/specs/2026-08-21-exposure-scenario-design.md
+docs/superpowers/specs/2026-08-21-spacing-fixed-dose-pipeline.md
+presentation/QA_PREP.md
