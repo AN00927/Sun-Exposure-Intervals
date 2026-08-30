@@ -1523,8 +1523,8 @@ def run_all(verbose=True):
     print("C5 C7 C8: see vitd_model.py docstring and parameter comments")
     print("=" * 70)
     print()
-    print("EVIDENCE TIER BREAKDOWN -- all 13 checks, orthogonal to the")
-    print("required/warning-only split above. See docs/REPO_SCOPE_AUDIT.md")
+    print(f"EVIDENCE TIER BREAKDOWN -- all {len(CHECK_REGISTRY)} checks, orthogonal to")
+    print("the required/warning-only split above. See docs/REPO_SCOPE_AUDIT.md")
     print("section 2: the REQUIRED count above is real but misleading --")
     print("most of what it counts is self-consistency, not biology.")
     for tier in TIER_ORDER:
@@ -1537,9 +1537,26 @@ def run_all(verbose=True):
     print()
     print("HELD-OUT (not run inside this suite, un-gated by design):")
     print("  Webb/Kift 2018 -- RESULTS.md section 15, vitd_benchmark_webbkift.py.")
-    print("  The one genuinely un-fitted external check in the pipeline. As of")
-    print("  the 2026-08-21 audit run it FAILS on the minutes ratio: model 4.80")
-    print("  vs reported 2.78 (dose ratio 3.01x vs reported 2.5-3.0x, a near-pass).")
+    print("  The one genuinely un-fitted external check in the pipeline. Gating")
+    print("  is on the dose ratio only (geometry/climate-independent); the")
+    print("  minutes ratio is diagnostic context, not a second pass/fail --")
+    print("  see that module's docstring, 'ONE NUMBER, NOT TWO'. Recomputed on")
+    print("  every run rather than quoted here, because a stale figure printed")
+    print("  above the live section-15 number is exactly the drift this fix")
+    print("  removes:")
+    try:
+        import vitd_benchmark_webbkift as _wk
+        _bk = _wk.run(verbose=False)
+        _verdict = "PASS" if _bk["webbkift_dose_ratio"] else "FAIL"
+        _mr = (f"{_bk['model_minutes_ratio']:.2f}"
+               if _bk["model_minutes_ratio"] is not None else "n/a")
+        print(f"    {_verdict}: model dose ratio {_bk['model_dose_ratio']:.2f}x "
+              f"vs reported {_wk.WK_DOSE_RATIO_LOW}-{_wk.WK_DOSE_RATIO_HIGH}x "
+              f"(diagnostic minutes ratio {_mr} vs reported "
+              f"{_wk.WK_MINUTES_FST_V / _wk.WK_MINUTES_WHITE:.2f})")
+    except Exception as _exc:
+        print(f"    (live re-run unavailable: {type(_exc).__name__}: {_exc} "
+              "-- see RESULTS.md section 15 instead)")
     print("  See docs/REPO_SCOPE_AUDIT.md section 2 for the full re-run.")
     print("=" * 70)
 

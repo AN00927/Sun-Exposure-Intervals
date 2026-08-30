@@ -182,9 +182,13 @@ def _interpret(results):
         print("  C9 therefore acts as a feasibility test, not a selector.")
     print("\n  Cross-skin-type comparisons of the risk index VALUES rest on the"
           " FST susceptibility")
-    print("  prior in vitd_physiology.cancer_risk — an order-of-magnitude guess"
-          " NOT anchored by")
-    print("  Elwood & Jopson. Interval and minutes columns do not depend on it.")
+    print("  axis in vitd_physiology.cancer_risk (basal_damage_fraction) —"
+          " derived from measured")
+    print("  basal-layer CPD (Shih 2018, Fajuyigbe 2018), fitted to one number"
+          " and checked against")
+    print("  three it was not fitted to; it replaced an earlier"
+          " order-of-magnitude prior. See section")
+    print("  14c. Interval and minutes columns do not depend on it.")
     print("  Minutes carry at least +/-40% geometric uncertainty (gap 26) and "
           "assume the UV index")
     print(f"  holds at {UV_INDEX_REF:.0f} for the whole session.")

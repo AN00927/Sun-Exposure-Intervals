@@ -94,11 +94,17 @@ def one_at_a_time_sensitivity(fst: int = 5, verbose: bool = True) -> list[dict]:
         print("=" * 74)
         print("ONE-AT-A-TIME SENSITIVITY (FST %d, 1 SED every 3 d, 84 d)" % fst)
         print("=" * 74)
-        print(f"  {'parameter':10} {'range':>22} {'ss_D swing':>12} {'rel':>8}")
+        # G8: final_D and net_per_SED relative swings were computed but never
+        # printed -- whether a parameter's influence agrees on the plateau
+        # and on the terminal/efficiency measures is exactly the
+        # metric-conflict question RESULTS.md section 5a raises separately.
+        print(f"  {'parameter':10} {'range':>22} {'ss_D swing':>12} {'ss rel':>8} "
+              f"{'finalD rel':>11} {'perSED rel':>11}")
         for r in rows:
             rng = f"{r['low']:.4g} - {r['high']:.4g}"
             print(f"  {r['parameter']:10} {rng:>22} "
-                  f"{r['steady_state_D_range']:12.2f} {r['steady_state_D_rel']:7.1%}")
+                  f"{r['steady_state_D_range']:12.2f} {r['steady_state_D_rel']:7.1%} "
+                  f"{r['final_D_rel']:10.1%} {r['net_per_SED_rel']:10.1%}")
         print("\n  Interpretation: parameters at the top drive results; those at the")
         print("  bottom cannot be blamed for prediction error no matter how")
         print("  uncertain their citation trail is.")
@@ -219,11 +225,28 @@ def uncertainty_propagation(fst: int = 5, n_draws: int = 400,
     return summary
 
 
-def run(verbose: bool = True) -> dict:
-    s = one_at_a_time_sensitivity(verbose=verbose)
-    ident = identifiability_pairs(verbose=verbose)
-    unc = uncertainty_propagation(verbose=verbose)
-    return {"sensitivity": s, "identifiability": ident, "uncertainty": unc}
+def run(verbose: bool = True, fsts: tuple[int, ...] = (5, 6)) -> dict:
+    """Run all three analyses at each FST in `fsts`.
+
+    G7: previously hardcoded to FST 5 only (every function's own default).
+    FST 6 is this project's stated priority population and had no
+    identifiability or uncertainty statement at all before this change.
+    Note: `uncertainty_propagation` is 400 draws x 9 intervals x a full
+    84-day `simulate` per draw, so adding a second FST roughly doubles this
+    function's wall-clock cost -- the other two analyses are comparatively
+    cheap.
+
+    Returns ``{fst: {"sensitivity", "identifiability", "uncertainty"}}`` for
+    each fst in `fsts`.
+    """
+    out = {}
+    for fst in fsts:
+        out[fst] = {
+            "sensitivity": one_at_a_time_sensitivity(fst=fst, verbose=verbose),
+            "identifiability": identifiability_pairs(fst=fst, verbose=verbose),
+            "uncertainty": uncertainty_propagation(fst=fst, verbose=verbose),
+        }
+    return out
 
 
 if __name__ == "__main__":

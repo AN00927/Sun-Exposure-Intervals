@@ -1,0 +1,1020 @@
+%% ===================================================================
+%% Vitamin D Scheduling Model -- manuscript
+%%
+%% Draft generated 2026-08-29. Every quantitative figure in this file
+%% is read from the committed RESULTS.md (generated 2026-08-27 18:22,
+%% commit cdd6f18) and its underlying generated tables, NOT from the
+%% interpretive prose paragraphs of that document, several of which
+%% were found to have drifted from their own code and were repaired in
+%% run_all.py on 2026-08-29 (uncommitted at time of writing).
+%%
+%% Bibliography: paper/references.bib. Four sources cited in the model
+%% code are NOT yet present there (Moan 1989; Gandini 2005;
+%% Rhodes 2010; Weinstein & Van Scott 1965 / Rothberg 1961) and are
+%% referred to in prose without \cite until verified entries are added.
+%% ===================================================================
+
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}   % scalable fonts: required for microtype expansion
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[margin=1in]{geometry}
+\usepackage{microtype}
+\usepackage{authblk}
+\usepackage[colorlinks=true,allcolors=blue]{hyperref}
+
+\newcommand{\nmol}{\si{\nano\mole\per\litre}}
+\newcommand{\SED}{SED}
+
+\title{\bfseries Splitting, not front-loading, sets the plateau:\\
+dose-response concavity aligns the vitamin D optimum\\
+with the skin-cancer optimum in sun-exposure schedules}
+
+\author[1]{Ahaan Nigam}
+\affil[1]{\small Independent researcher}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+% ===================================================================
+\begin{abstract}
+\noindent
+Public-health guidance on sun exposure implicitly assumes a trade-off:
+more ultraviolet (UV) means more vitamin D and also more skin-cancer
+risk, so advice must sit somewhere between them. We show, in a
+three-state mechanistic model of serum 25-hydroxyvitamin D
+(25(OH)D) dynamics under photoadaptation, that for a \emph{fixed}
+total UV budget this trade-off does not exist: the schedule that
+maximises 25(OH)D is also the schedule that minimises modelled
+melanoma and basal-cell-carcinoma risk. Both point to frequent, small,
+sub-erythemal sessions.
+
+We separate two distinct claims that the phrase ``front-loading''
+conflates. Concentrating a fixed \emph{weekly} budget into fewer days
+lowers steady-state 25(OH)D monotonically, by 11.0--28.8\,\% across
+nine skin-type $\times$ budget cells, and does so in 9 of 9 cells.
+Redistributing a fixed \emph{horizon} budget from a flat to a
+front-loaded profile, at matched session count, does not move the
+plateau at all (mean $+0.38\,\%$ over 84 days; $-7.52\,\%$ over 365
+days). What front-loading buys is transient, not terminal: it reduces
+accumulated deficiency below the sufficiency threshold by a mean of
+49.4\,\% at 84 days and 68.9\,\% at 365 days, and reaches sufficiency
+in a median of 3 days rather than 37.
+
+Mechanism ablation attributes the ordering to the concavity of the
+logarithmic dose-response term alone; disabling product-feedback
+inhibition or the photoadaptation channels changes the magnitude of
+the gap but never its sign. Under a risk-constrained optimisation, all
+six Fitzpatrick skin types select the shortest available interval.
+
+We state the limits rather than minimise them. Four parameter pairs
+are jointly unidentifiable; the single genuinely held-out external
+benchmark \emph{fails}; and the synthesis scalar is calibrated on
+Fitzpatrick I--II subjects only, making every absolute prediction for
+darker skin an explicit extrapolation. The interval ranking survives
+all of this because it depends on the shape of the dose-response
+rather than its scale. No absolute duration reported here should be
+read as a dosing instruction.
+\end{abstract}
+
+\vspace{0.5em}
+\noindent\textbf{Keywords:} vitamin D; 25(OH)D; ultraviolet radiation;
+exposure scheduling; photoadaptation; skin cancer risk; dose-response
+concavity; parameter identifiability
+
+% ===================================================================
+\section*{Author summary}
+\addcontentsline{toc}{section}{Author summary}
+
+Advice about sunlight usually assumes you must choose between making
+enough vitamin D and keeping your skin-cancer risk low. Using a
+computational model of how vitamin D builds up and decays in the body,
+we find that for a fixed amount of total sun, you do not have to
+choose. Many short exposures beat a few long ones on both counts at
+once.
+
+The reason is a mathematical property rather than a biological one.
+Vitamin D synthesis rises with the logarithm of UV dose, so it
+saturates: the second half of a long session yields less than the
+first half did. Splitting the same total dose into more, smaller
+sessions therefore produces more vitamin D. Independently, the
+epidemiology of melanoma tracks intermittent bursts of intense
+exposure rather than accumulated dose, so the same split schedule is
+also the lower-risk one.
+
+We also separate two things people mean by ``front-loading''. Getting
+your weekly sun in fewer days is worse. Getting more of your sun early
+in a longer programme does not raise where you eventually end up, but
+it does get you there much faster, and time spent deficient is itself
+a harm worth avoiding.
+
+We are explicit about what the model cannot support. It reproduces the
+ordering of schedules reliably; it does not reliably predict how many
+minutes any particular person needs.
+
+% ===================================================================
+\section{Introduction}
+
+Cutaneous synthesis is the dominant source of vitamin D for most
+populations, and the dose-response linking ultraviolet exposure to a
+rise in serum 25-hydroxyvitamin D (25(OH)D) is well characterised in
+its broad shape: the response is positive, saturating, and modulated
+by constitutive pigmentation \citep{webb2021,young2021pnas,young2020}.
+What remains contested is not whether sunlight raises 25(OH)D but how
+exposure should be \emph{arranged in time}. Guidance is typically
+issued as a duration and a frequency --- some minutes, some number of
+times per week --- without an explicit account of why that particular
+partition of total exposure was chosen over another delivering the
+same cumulative dose.
+
+The question has a natural adversarial framing. Photoadaptation
+supplies a mechanism by which frequent exposure should become
+progressively less productive: repeated UV drives facultative melanin
+upregulation and stratum corneum thickening, both of which attenuate
+subsequent synthesis \citep{deboer2025,pearse1987,datta2019}.
+Product-feedback inhibition supplies a second: as 25(OH)D rises,
+further synthesis is inhibited, so a subject held near sufficiency
+converts each new dose less efficiently. If either effect is strong
+enough, spacing exposures further apart --- allowing pigment to fade
+and serum levels to fall between sessions --- could plausibly extract
+more 25(OH)D per unit of UV than daily exposure does. That hypothesis
+is the direct motivation for the present analysis.
+
+Set against it is a purely mathematical consideration. If synthesis
+per session is concave in dose, then for any fixed total budget,
+subdividing that budget into more and smaller sessions must increase
+total synthesis, by Jensen's inequality, irrespective of any state
+dynamics. Which of these two forces dominates is an empirical question
+about parameter magnitudes, and it is not answerable by inspection.
+
+A second question runs alongside the first. The scheduling literature
+generally treats vitamin D benefit and skin-cancer risk as opposed,
+because both increase with UV. But the epidemiology does not support
+treating ``UV'' as one exposure. Squamous cell carcinoma tracks
+\emph{cumulative} dose, whereas melanoma and basal cell carcinoma
+track \emph{intermittent}, intense exposure --- and heavy continuous
+occupational exposure is associated with a \emph{lower} melanoma odds
+ratio than intermittent recreational exposure
+\citep{elwood1997,leiter2009,calzavarapinton2015}. If risk is scored
+on the pathway that actually carries it, the direction of the
+supposed trade-off is no longer obvious.
+
+This paper addresses three questions:
+
+\begin{enumerate}
+\item At a fixed UV budget, does concentrating exposure into fewer
+      sessions raise or lower steady-state 25(OH)D, and by how much?
+\item Which mechanism produces that ordering --- dose-response
+      concavity, photoadaptation, or feedback inhibition?
+\item Do the vitamin D objective and the skin-cancer objective select
+      the same schedule or different ones?
+\end{enumerate}
+
+We answer them within a single frozen exposure scenario, with the
+model's uncertainty, its unidentifiable parameter combinations, and
+its one failing out-of-sample test reported alongside the results
+rather than after them. That reporting posture is deliberate. An
+earlier iteration of this work published a headline optimum derived
+from an objective function that had no interior optimum; the
+safeguards described in Section~\ref{sec:objectives} exist because of
+that failure.
+
+% ===================================================================
+\section{Methods}
+
+\subsection{Model structure}
+
+We model three coupled states: effective serum 25(OH)D, $D(t)$
+(\nmol); an effective melanin index, $M(t)$, dimensionless on the
+Datta reflectance scale where $0$ denotes Fitzpatrick skin type (FST)
+I and $1$ denotes FST VI \citep{datta2019}; and additional stratum
+corneum thickness above baseline, $\mathrm{SC}(t)$, dimensionless.
+
+\begin{align}
+\frac{dD}{dt}  &= S\big(UV(t), M, \mathrm{SC}, D, F, b\big) - k_{\mathrm{decay}}(D)\, D \\[2pt]
+\frac{dM}{dt}  &= \alpha\, UV(t)\,\big(M_{\max} - M\big) - \beta\big(M - M_{\mathrm{base}}(F)\big) \\[2pt]
+\frac{d\mathrm{SC}}{dt} &= \alpha_{\mathrm{SC}}\, UV(t)\,\big(\mathrm{SC}_{\max} - \mathrm{SC}\big) - k_{\mathrm{decay,SC}}\,\mathrm{SC} - k_{\mathrm{damage}}\, UV(t)\, \mathrm{SC}
+\end{align}
+
+The synthesis term takes the logarithmic form reported by Webb and
+colleagues \citep{webb2021}, attenuated multiplicatively by
+constitutive pigment, facultative pigment, and stratum corneum, scaled
+by exposed body surface area, and inhibited by accumulated product:
+
+\begin{equation}
+\label{eq:synth}
+S = \underbrace{A \ln\!\big(1 + UV \cdot E_{\mathrm{source}}\big)}_{\text{concave in dose}}
+\cdot\, \phi(b)
+\cdot\, e^{-K_{\mathrm{const}} M_{\mathrm{base}}(F)}
+\cdot\, e^{-K_{\mathrm{ATTEN}} \max(0,\, M - M_{\mathrm{base}}(F))}
+\cdot\, e^{-K_{\mathrm{SC}} \mathrm{SC}}
+\cdot\, g(D)
+\end{equation}
+
+where $\phi(b) = (b/b_{\mathrm{ref}})^{0.5}$ is a sub-linear
+body-surface-area factor and $g(D)$ is the feedback factor. The
+feedback form in force throughout this paper is the biphasic
+$g(D) = 1/\big(1 + (D/56.0)^2\big)$, whose inflection is an output of
+a breakpoint fitted on the vitamin D$_3$ axis \citep{scholze2026}
+rather than a free regressor. Decay is state-dependent, following a
+power law fitted to the three-group means of Datta and colleagues
+\citep{datta2017}; the fit reproduces all three reported half-lives
+to within 1.4\,\%.
+
+Equation~\eqref{eq:synth} is the analytical heart of this paper. The
+first factor is concave, and no other factor depends on how a fixed
+budget is partitioned within a day. The remaining factors are all
+state-dependent attenuations bounded in $(0,1]$. Whether concavity or
+attenuation dominates the schedule ordering is settled empirically in
+Section~\ref{sec:mechanism}.
+
+Parameter values and their full source derivations are not restated
+here. The module docstring of \texttt{vitd\_model.py} is the single
+canonical source in the accompanying repository, and it records for
+each parameter the study, the arithmetic, and the evidence status.
+
+\subsection{Frozen reference scenario}
+
+Every schedule in this paper is evaluated under one fixed exposure
+scenario, held identical on every exposure day: a constant ambient UV
+index, a fixed horizontal-to-personal geometry factor
+\citep{cockell2001}, and a fixed exposed body surface area of 35\,\%,
+corresponding to a t-shirt-and-shorts configuration with partial
+coverage. The constants are defined in \texttt{vitd\_scenario.py},
+which is their only canonical source.
+
+The scenario is a deliberate scope restriction. An audit of an earlier
+version of this work found that a location-based dosimetry chain
+--- solar position to ambient UV index to posture and site geometry to
+exposed body surface area --- stacked four independent and separately
+plausible uncertainties into a single product that had never been
+validated as a product. That chain was retired. Nothing it produces
+reaches any number reported here.
+
+The consequence must be stated plainly: every duration in this paper
+is a duration \emph{under these reference conditions}, not a calendar
+recommendation for a place or a date. Real ambient UV varies with
+latitude, season, time of day, altitude, cloud and ozone; real
+personal dose varies with posture and clothing. We do not model that
+variation.
+
+\subsection{Objective hierarchy and its safeguards}
+\label{sec:objectives}
+
+The model admits several scoring functions, and they do not agree. To
+prevent the recurrence of a specific past failure --- reporting as
+advice an optimum drawn from a metric with no interior optimum --- the
+objectives are ranked in code, and report-generating routines that
+attempt to present a diagnostic-tier metric as a recommendation raise
+an exception rather than print.
+
+\begin{description}
+\item[Primary.] Minimum dose and fewest sessions to reach and then
+      hold sufficiency, subject to a sub-erythemal per-session cap and
+      a practical session-length ceiling. Everything reported as
+      advice derives from here.
+\item[Secondary.] The tri-objective frontier and the fixed-budget risk
+      minimisation. These refine a recommendation; they never replace
+      one.
+\item[Diagnostic.] Per-\SED{} efficiency ratios. Informative about the
+      model, barred from being reported as advice.
+\end{description}
+
+The demotion of the per-\SED{} efficiency metric is re-derived on
+every run rather than remembered. Its argmax is recomputed under three
+different search bounds --- a genuine peak does not move when the
+bound moves, and this one does --- and the terminal 25(OH)D at that
+argmax is compared against baseline. It selects schedules that finish
+\emph{below} their starting concentration: a net loss of vitamin D
+scored as maximal efficiency.
+
+\subsection{Experimental arms}
+
+We distinguish two operations that the term ``front-loading'' conflates,
+and analyse them separately.
+
+\paragraph{Arm (a): within-week concentration.} The weekly \SED{}
+budget is held fixed and only the number of days over which it is
+spread varies, from daily down to a single weekly session. The pattern
+repeats weekly, so nothing is front-loaded across the horizon. This is
+the question in its literal form.
+
+\paragraph{Arm (b): across-horizon taper.} Total \SED{} over the whole
+horizon is held fixed and the dose \emph{profile} is varied from flat
+to front-loaded-and-tapering (two-phase and exponential families),
+crossed with a one-parameter monotone spacing warp in which
+$\gamma = 1$ is uniform spacing and $\gamma > 1$ is front-loaded.
+Every profile is rescaled to deliver exactly the same total \SED{}, so
+only shape is swept.
+
+Arm (b) is referenced throughout to the flat, uniformly spaced arm at
+the \emph{same session count}. This matching is not cosmetic. An
+unmatched comparison, which lets the tapered arm also use a different
+number of sessions, shows a gain of several percent that is an
+artefact of the session-count difference rather than of dose shape.
+
+Both arms use a deterministic grid sweep with \emph{no} constraint
+applied, deliberately rather than the constrained optimisers described
+below, because a sufficiency floor and an erythema cap would silently
+delete exactly the concentrated arms the question is about. Since no
+cap is applied, every row instead carries its largest single session
+as a fraction of the minimal erythemal dose (MED), checked against a
+sub-erythemal ceiling of 70\,\% MED and against frank burn at
+1.0 MED. An arm that wins while requiring a burn has not won, and is
+flagged as such.
+
+\subsection{Mechanism ablation}
+\label{sec:ablation}
+
+Schedule comparisons are run at three ablation rungs: melanin dynamics
+only; melanin plus stratum corneum; and melanin plus stratum corneum
+with skin-cancer indices reported. The third rung is
+\emph{dynamically identical} to the second by construction --- it is a
+reporting obligation, requiring the analysis to display the risk
+indices the simulator computes regardless, not an addition of cancer
+risk to the dynamics.
+
+A caveat governs how the first rung may be read. Model parameters were
+fitted with the stratum corneum channel present, and nothing is
+re-fitted when it is removed. Deleting an attenuating channel without
+re-estimating the terms it is collinear with inflates predicted
+synthesis by an uncharacterised amount. Absolute 25(OH)D values under
+that rung are therefore \emph{not} calibrated predictions and are not
+comparable across rungs; only \emph{within}-rung schedule rankings are
+defensible. Every ranking we report from that rung is accompanied by
+the same test repeated at all three rungs, so that the reader can see
+whether the sign survives.
+
+A separate, self-contained sub-study additionally ablates each
+mechanism individually: photoadaptation off, stratum corneum off,
+melanin adaptation off, feedback $g(D)$ off, and decay off, together
+with a sweep of the facultative-melanin attenuation coefficient across
+two orders of magnitude beyond its calibrated value.
+
+\subsection{Skin-cancer risk model}
+
+Risk is scored on two epidemiologically distinct axes, reported
+separately, with a geometric mean retained only as a ranking
+convenience that is not itself literature-anchored. The cumulative
+axis is a power law rather than a linear term: incidence follows
+$\mathrm{dose}^{A_b}$ with a biological amplification factor of
+$1.6$--$1.8$ for squamous cell carcinoma, so doubling cumulative dose
+costs a factor of $3.25$ rather than $2$. The intermittent axis rises
+steeply with per-session dose, following the intermittent-exposure
+odds ratios reported in the epidemiological literature
+\citep{elwood1997,leiter2009,calzavarapinton2015}.
+
+The skin-type axis is not a prior. It is the modelled fraction of DNA
+damage reaching the germinative basal layer, derived from measured
+melanin percentages and basal-to-whole cyclobutane pyrimidine dimer
+protection ratios \citep{shih2018,fajuyigbe2018}. It reproduces a
+published melanoma relative risk for FST I versus FST IV (2.09
+measured against 2.12 derived) without having been fitted to it. That
+external agreement is the strongest single piece of corroboration in
+the risk model, and it is limited: the underlying protection-ratio
+measurement covers only extreme phototypes, so FST III, IV and V rest
+on the melanin percentages alone.
+
+\subsection{Constrained optimisation}
+
+Where a single recommendation is required rather than a frontier, we
+minimise the combined risk index subject to: sufficiency
+($\ge 50$~\nmol) on every day after a ramp-in period; a per-session
+dose at or below 70\,\% MED; and a session length within a practical
+ceiling. Spacing and dose are searched jointly using a dose vector in
+which a zero entry encodes ``no session that day'', so timing and dose
+are represented without integer variables. The comparison arm pins
+spacing to uniform and is searched by the same solver at the same
+budget, because population size scales with parameter count and an
+extra free dimension would otherwise confound spacing with search
+effort.
+
+\subsection{Sensitivity and identifiability}
+
+We report one-at-a-time sensitivity over documented prior ranges,
+pairwise identifiability computed as the fraction of the
+steady-state-D response surface explained by a single linear
+combination, and Monte Carlo uncertainty propagation over 400 draws
+uniform on those ranges.
+
+% ===================================================================
+\section{Results}
+
+\subsection{Concentrating a fixed weekly budget is monotonically worse}
+
+Holding the weekly \SED{} budget fixed and varying only the number of
+days across which it is delivered, steady-state 25(OH)D falls
+monotonically as exposure is concentrated. Moving from a session every
+day to a single weekly session changes steady-state 25(OH)D by
+between $-11.0\,\%$ and $-28.8\,\%$ across the nine skin-type
+$\times$ budget cells, and steady-state 25(OH)D rises monotonically
+with sessions per week in 9 of those 9 cells.
+
+The effect is largest at the largest budgets, which is the signature
+of a saturating dose-response rather than of an adaptive state: at
+\SI{7}{\SED\per week} the penalty for weekly concentration reaches
+$-28.7\,\%$ at FST V and $-27.98\,\%$ at FST VI, whereas at
+\SI{1.75}{\SED\per week} it is $-12.10\,\%$ and $-11.01\,\%$
+respectively. A larger session sits further out on the concave part of
+the curve, so more of it is wasted.
+
+Concentration is also unsafe at its extreme. The worst arm on the grid
+--- FST II, \SI{7}{\SED\per week} delivered in one session --- reaches
+269\,\% of one MED in a single exposure, a frank burn. The
+schedules that lose on vitamin D are, at this end of the grid, the
+same schedules that are dangerous.
+
+The deficiency consequences are larger than the plateau differences
+suggest. At FST V and \SI{7}{\SED\per week}, splitting across seven
+days reaches sufficiency on day 45 and accumulates
+\SI{483.7}{\nmol\per\litre\day} of deficit; the same budget in one
+weekly session never reaches sufficiency at all and accumulates
+\SI{1201.4}{}. At FST VI the corresponding split schedule reaches
+sufficiency on day 60 while the concentrated one never does.
+
+\subsection{Redistributing a fixed horizon budget does not move the plateau}
+
+Arm (b) gives a null on the terminal measure. Over 36 matched-N cells
+(2052 front-loaded arms), the best front-loaded profile differs from
+flat-and-uniform on steady-state 25(OH)D by a mean of $+0.38\,\%$ at
+an 84-day horizon, with the largest positive plateau gain available
+anywhere on the front-loaded half of the grid being $+0.97\,\%$.
+
+Extending the horizon does not give the shape families room to work;
+it removes what little effect there was. At 365 days the same
+comparison yields a mean of $-7.52\,\%$, and the largest positive
+plateau gain available anywhere on the front-loaded half of the grid
+is $+0.00\,\%$. This forecloses the obvious objection that the
+three-parameter shape families were simply horizon-limited.
+
+The steady-state level is therefore set by the budget and by how
+finely that budget is divided across days --- arm (a) --- and not by
+how the same budget is arranged over the horizon.
+
+\subsection{Front-loading buys the transient, not the plateau}
+
+Ranked instead on accumulated deficiency below the sufficiency
+threshold, a horizon-integrated rather than terminal measure, the
+picture inverts from a null to a large effect.
+
+At the 84-day horizon, front-loading produces a mean 49.4\,\%
+reduction in accumulated deficiency relative to flat-and-uniform at
+the same session count (maximum 98.7\,\%), or 44.8\,\% when the search
+is restricted to sub-erythemal arms only. The deficit-optimal spacing
+exponent is $\gamma = 2.5$, and it reaches sufficiency in a median of
+3 days against 37 days at the spacing that maximises the terminal
+plateau instead.
+
+At 365 days the reduction is a mean of 68.9\,\% (maximum 99.9\,\%),
+65.1\,\% among sub-erythemal arms, reaching sufficiency in a median of
+8 days against 239 days for the plateau-maximising spacing.
+
+The effect survives the erythema cap, so it is not purchased with a
+burn.
+
+\subsection{The two measures conflict, and the conflict widens with horizon}
+
+No taper sign may be stated without naming the measure it was read
+from. Across the spacing exponent at 84 days, the terminal measure
+moves by approximately 6 percentage points while the horizon-integrated
+measure moves by approximately 108; the terminal argmax lies at
+$\gamma \in \{0.8, 1, 1.4, 1.8\}$ and the integrated argmax at
+$\gamma = 2.5$. At 365 days the terminal measure moves by
+approximately 39 points against approximately 368 for the integrated
+one, and the argmaxes separate completely: $\gamma = 0.4$ against
+$\gamma \in \{1.4, 1.8, 2.5\}$.
+
+The terminal winner at the long horizon is an artefact and must not be
+quoted bare. Steady-state 25(OH)D is computed as a mean over the final
+28 days, so at a 365-day horizon the averaging window is under 8\,\%
+of the run and any schedule that piles dose into the endpoint wins it.
+The arm that maximises the terminal plateau does so by
+\emph{back}-loading at $\gamma = 0.4$: it opens with a 35-day
+no-exposure gap, stacks dose beneath the averaging window, wins the
+terminal measure by $+22.1\,\%$, and pays for it with $10.4\times$
+worse accumulated deficiency than the flat reference. It leaves the
+subject deficient for most of the year.
+
+A related caution applies to corroboration. Steady-state 25(OH)D and
+final 25(OH)D are \emph{both} terminal measures, and as the horizon
+grows the averaging window shrinks toward the endpoint, so the two
+converge. Their agreement at long horizons is co-movement between two
+views of the same instant, not independent confirmation, and must
+never be presented as two metrics agreeing.
+
+\subsection{The ordering comes from concavity, not from adaptation}
+\label{sec:mechanism}
+
+The interval ordering is produced by neither photoadaptation nor
+feedback inhibition. Disabling $g(D)$ entirely leaves the ordering
+unchanged and \emph{widens} daily dosing's margin rather than
+narrowing it; disabling every state mechanism simultaneously leaves
+daily winning by more still. What carries the result is that
+$S \propto \ln(1 + UV \cdot E)$ is concave, so at a fixed total budget
+dividing that budget into more and smaller sessions always yields more
+25(OH)D. Feedback and photoadaptation modulate the \emph{size} of the
+gap; neither creates it.
+
+The facultative-melanin attenuation coefficient was never a candidate
+cause. At its calibrated value the corresponding term is nearly inert
+--- the one-at-a-time sensitivity analysis moves steady-state 25(OH)D
+by $0.3\,\%$ across its entire prior range, against $24.8\,\%$ for the
+synthesis scalar $A$ --- so the term is inert by calibration, not
+merely by ablation. Sweeping it two orders of magnitude past its
+literature-implied range never produced a non-daily optimum under a
+matched total budget.
+
+The monotonicity result of arm (a) is reported from the melanin-only
+rung, and per Section~\ref{sec:ablation} that rung licenses rankings
+but not levels. The sign survives at every rung, which is what the
+ablation is entitled to establish.
+
+We record one important caveat on the mechanism sub-study. Its
+generated findings file was produced under a configuration in which
+the facultative-melanin coefficient was pinned at zero, which is no
+longer the shipped configuration. Its \emph{magnitudes} are therefore
+stale and are not quoted in this paper; its direction and verdict are
+unaffected, because the coefficient sweep described above spans the
+live value by two orders of magnitude.
+
+\subsection{The vitamin D optimum and the risk optimum coincide}
+
+The two objectives select the same schedules. Under the constrained
+problem --- minimise combined skin-cancer risk subject to holding
+sufficiency without burning and within a practical session length ---
+all six Fitzpatrick types land on the shortest interval available on
+the grid, one day (Table~\ref{tab:riskaware}).
+
+\begin{table}[htbp]
+\centering
+\caption{Lowest-risk schedule that holds sufficiency, by skin type.
+Constraints: per-session dose $\le 70\,\%$ MED; 25(OH)D $\ge 50$~\nmol{}
+every day after day 90; session length $\le \SI{120}{\minute}$.
+Exposed BSA 35\,\%. Minutes are given under the frozen reference
+scenario and carry at least $\pm40\,\%$ geometric uncertainty.
+Cross-skin-type comparison of the index \emph{values} depends on the
+skin-type susceptibility axis; the interval and minutes columns do
+not.}
+\label{tab:riskaware}
+\small
+\begin{tabular}{cccccccc}
+\toprule
+FST & MED & binding & interval & \SED/session & min/session & \%MED & combined index \\
+\midrule
+I   & 2.1  & MED     & 1 d & 0.25 & 8  & 12 & 0.5285 \\
+II  & 2.6  & MED     & 1 d & 0.27 & 9  & 10 & 0.4624 \\
+III & 3.2  & MED     & 1 d & 0.32 & 10 & 10 & 0.4767 \\
+IV  & 5.6  & minutes & 1 d & 0.47 & 15 & 8  & 0.2499 \\
+V   & 7.5  & minutes & 1 d & 0.74 & 24 & 10 & 0.2682 \\
+VI  & 15.2 & minutes & 1 d & 1.02 & 32 & 7  & 0.1015 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+This convergence is not a solver artefact, and the reason it is not is
+worth stating precisely, because the two constraints bite from
+opposite directions. The sufficiency floor eliminates long intervals,
+which cannot reach target within the erythema and session-length caps.
+Among the schedules that survive, the intermittency term rises steeply
+with per-session dose, so the most frequent schedule is also the
+lowest-risk one. The risk cap therefore acts as a feasibility test
+rather than as a selector.
+
+The agreement is a property of the \emph{constrained} problem, not a
+universal one. Over the unconstrained grid the Pareto frontier still
+trades off: at FST II over a one-year horizon, the frontier runs from
+\SI{4.00}{\SED} daily (9 days below sufficiency, melanoma index
+234.931) down to \SI{0.25}{\SED} every 28 days (365 days below
+sufficiency, melanoma index 0.002). Removing the requirement to
+actually reach sufficiency restores the trade-off immediately, because
+the least-risk schedule in an unconstrained problem is always no
+exposure at all.
+
+The joint timing-and-dose optimisation shows the same structure from a
+third direction. Freeing the spacing exponent against a uniform
+control at matched budget reduces cumulative-axis risk by roughly
+8--11\,\% while raising intermittent-axis risk by 13--15\,\%, and the
+two axes must be read separately rather than through their geometric
+mean. The session budget is part of the problem statement rather than
+an add-on: without one the optimum is degenerate, since at fixed
+cumulative dose the intermittency term is minimised by spreading over
+as many days as possible, driving the solution to a daily schedule by
+construction.
+
+\subsection{``Daily'' is conditional on being able to afford daily}
+\label{sec:budget}
+
+The preceding results all hold total \SED{} or weekly \SED{} fixed. A
+different and equally practical constraint is a fixed number of
+sessions per year at a fixed dose each --- the situation of someone who
+will take the same exposure every time and can only get outside so
+often. Under that constraint the optimal spacing is \emph{not} always
+the shortest one, and the reason is instructive.
+
+Fixing the dose at \SI{1.0}{\SED} per session over a 365-day horizon
+and searching the uniform gap, the best gap at FST I is 4 days at 52
+sessions per year, 2 days at 104, and 1 day at 146 and above. The same
+pattern holds at FST III, where the best gap at 52 sessions is 3 days.
+Only once the session budget is large enough to cover a substantial
+fraction of the horizon does the optimum collapse onto the daily
+schedule that the fixed-budget analyses select.
+
+The mechanism is decay, not adaptation. With a fixed number of
+sessions delivered at the shortest possible gap, the entire programme
+is compressed into the first weeks of the year and the remaining
+months are pure elimination; 25(OH)D peaks early and then falls for
+the rest of the horizon. Spreading a limited number of sessions across
+the horizon trades a lower peak for a higher mean and far fewer days
+below sufficiency. At FST I with 52 sessions the best schedule spends
+280 days below \SI{50}{\nmol}; at 365 sessions it spends 21.
+
+This qualifies the paper's headline claim in a way that matters for
+how it should be used. ``More sessions, each smaller'' is the correct
+reading at a fixed \emph{dose budget}. ``Go out every day'' is the
+correct reading only when the session budget is sufficient to sustain
+daily exposure across the whole period of interest. Below that
+threshold, the right advice is to distribute the sessions one can
+afford evenly rather than to take them as quickly as possible --- and
+the cumulative-dose risk index rises steeply with session count
+regardless, from 1.000 at 52 sessions to 27.459 at 365 for FST I,
+which is the cost side of that same choice.
+
+\subsection{Feasibility is a result, not a gap}
+
+For darker skin types the model returns infeasibility under a range of
+session budgets, and we report those cells as findings rather than
+filling them by relaxing a constraint. Over the coarse dose grid at a
+one-year horizon, no schedule keeps FST V sufficient: its Pareto
+frontier runs from \SI{4.00}{\SED} daily with 24 days below
+sufficiency down to \SI{0.25}{\SED} every 28 days with all 365 days
+below.
+
+This does not contradict Table~\ref{tab:riskaware}, and the
+distinction matters. The frontier above is computed over a coarse
+grid of fixed per-session doses; the constrained optimisation searches
+per-session dose continuously and finds a feasible FST V schedule at
+\SI{0.74}{\SED} daily, holding a steady state of 60.6~\nmol{}. What
+the coarse frontier shows is that none of a small set of round-numbered
+doses happens to work, not that no dose works. Both statements are
+reported because a reader who sees only one of them draws the wrong
+conclusion.
+
+The tri-objective frontier likewise prints infeasible cells rather
+than dropping them, and their pattern is informative: at the lowest
+session budgets every spacing is infeasible for every skin type, and
+some budgets are feasible under a warped spacing while infeasible
+under uniform spacing at the same budget and the same ceiling. The
+sufficiency constraint binds at the ramp-in boundary rather than at
+the end of the horizon, so a schedule that reaches target faster can
+hold a budget that uniform spacing misses.
+
+\subsection{What the model does not pin down}
+
+Two parameters dominate the response. Across documented prior ranges,
+the synthesis scalar $A$ swings steady-state 25(OH)D by 8.61~\nmol{}
+(24.8\,\%) and the constitutive-pigment coefficient
+$K_{\mathrm{const}}$ by 8.19~\nmol{} (23.6\,\%). The stratum corneum
+attenuation strength contributes 8.2\,\%, and every remaining
+parameter contributes under 3\,\%. Parameters at the bottom of that
+table cannot be blamed for prediction error however uncertain their
+citation trail.
+
+Four parameter pairs are jointly unidentifiable from the current data,
+in the sense that more than 99\,\% of the steady-state-D response
+surface is explained by a single linear combination:
+$A \sim D_{\max}$ (ridge 1.0000), $\alpha_{\mathrm{SC}} \sim
+\mathrm{SC}_{\max}$ (1.0000), $K_{\mathrm{const}} \sim
+K_{\mathrm{ATTEN}}$ (0.9997), and $K_{\mathrm{ATTEN}} \sim
+K_{\mathrm{SC}}$ (0.9986). Only their combinations are constrained.
+Reporting either member of such a pair as a separately calibrated
+value overstates what the data support: melanin and stratum corneum
+are both exponential attenuations of a saturating state driven by the
+same UV input, so they trade off along a ridge.
+
+Propagating the prior ranges through 400 Monte Carlo draws gives a
+median steady-state 25(OH)D of 36.638~\nmol{} with a 95\,\% range of
+$[30.457, 44.439]$. The best interval under a per-\SED{} gain
+criterion is not a single value across draws: 3 days is selected in
+33.5\,\% of draws, 2 days in 27.0\,\%, 4 days in 20.2\,\% and 5 days
+in 17.8\,\%. These are intervals, and a single headline number would
+imply precision the evidence does not support.
+
+\subsection{The one held-out test fails}
+
+Nothing in the model is calibrated to the Webb and Kift dataset
+\citep{webbkift2018}, which makes it the only genuinely out-of-sample
+evidence available. It reports that FST V requires 2.5--3.0 times the
+dose of white Caucasians for an equivalent 25(OH)D response. The model
+returns $3.01\times$, marginally outside the upper bound: a
+\textbf{fail}, and we report it as one.
+
+A diagnostic minutes ratio computed under the same conditions gives
+$5.21$ against a reported $2.78$. That figure is not a second failure
+but an algebraic restatement of the same fact, and is gated as
+diagnostic context rather than as an independent check.
+
+The direction of the miss is that the model over-predicts the
+skin-type penalty. The relevant literature disagreement is not, as an
+earlier version of this work recorded, between lamp-based and
+naturalistic exposure. The source of the 2.5--3.0 band is itself a
+matched-dose, simulated-sunlight trial at approximately 35\,\% BSA
+against a matched-dose white comparator \citep{farrar2013}, and
+the study to which the constitutive-pigment coefficient is calibrated
+reports a ratio of 1.3--1.4 under equally matched-dose lamp conditions
+\citep{young2020}. The two disagree with each other, lamp against
+lamp. The model sits at one end of a genuine and unresolved conflict
+in the source literature.
+
+\subsection{Validation status, disaggregated}
+
+The validation suite reports 14 of 14 checks passing, and that number
+is misleading in a way worth decomposing rather than repeating. The
+suite tags each check with an evidence tier, and most of what the pass
+count counts is self-consistency rather than biology.
+
+Checks tagged \textsc{internal} verify that the simulator computes its
+own documented mathematics --- that numerical integration matches the
+analytic solution of the same ODE, or that a single-bolus response
+equals a value rebuilt from the model's own live parameters. These
+cannot fail for biological reasons. Checks tagged \textsc{circular}
+compare model output against the dataset from which the relevant
+parameters were fitted; the stratum corneum check compares a
+trajectory against the data used to fit the parameters that generate
+it. Checks tagged \textsc{directional} assert only a sign, with no
+numeric target.
+
+Only two of the fourteen are quantitative external comparisons. The
+pass count is real; it is not evidence of predictive accuracy, and the
+held-out benchmark in the preceding section is the only test in this
+work that could have failed on biological grounds --- and did.
+
+% ===================================================================
+\section{Discussion}
+
+\subsection{A trade-off that dissolves under a budget}
+
+The central finding is structural rather than parametric. Once total
+UV is fixed and sufficiency is required, the vitamin D objective and
+the melanoma/BCC objective stop competing, because they are both
+minimised by reducing per-session intensity while holding cumulative
+dose. Vitamin D benefits because a concave dose-response wastes less
+of a small session; melanoma and BCC risk falls because the pathway
+that carries that risk is intermittency, not accumulation
+\citep{elwood1997,leiter2009}. The squamous-cell axis does track
+cumulative dose and therefore does not improve, which is why we report
+the two axes separately and treat their geometric mean as a ranking
+convenience only.
+
+This has a practical reading that is worth stating in plain terms:
+under the reference conditions modelled here, the advice ``go outside
+briefly and often'' is not a compromise between two competing goods.
+It is the joint optimum of both.
+
+\subsection{Two questions hiding inside one word}
+
+The arm (a) and arm (b) results answer different questions and give
+opposite-looking answers, which is precisely why they must be
+separated. Compressing a weekly budget into fewer days is harmful.
+Weighting a longer programme toward its beginning is neutral on where
+you end up and strongly beneficial on how fast you get there.
+
+The methodological point generalises beyond this model. The sign of
+the taper effect depends on whether the outcome is terminal or
+horizon-integrated, and that dependence \emph{widens} with the length
+of the horizon. Any schedule-shape claim that does not name its
+outcome measure and confirm that session count was matched is
+under-specified. Our own back-loading artefact is the cautionary case:
+a schedule that leaves a subject deficient for most of a year wins the
+terminal measure by 22.1\,\% purely by exploiting the averaging
+window.
+
+\subsection{Where the interval ranking is safe and the minutes are not}
+
+The interval ranking depends on the \emph{shape} of the dose-response
+curve rather than its scale, which is why it survives the model's
+considerable parametric uncertainty: the two parameters that dominate
+steady-state 25(OH)D, $A$ and $K_{\mathrm{const}}$, are both
+multiplicative scalars in Equation~\eqref{eq:synth} and do not alter
+the concavity that produces the ordering.
+
+Absolute durations have no such protection. They inherit the full
+uncertainty of the synthesis scalar, the pigment coefficient, the
+geometry factor and the exposed-area assumption, and they additionally
+assume the ambient UV index holds constant for the whole session. The
+geometry factor alone is a scalar prior carrying at least $\pm40\,\%$
+uncertainty, and it multiplies every duration reported here.
+
+We therefore draw a sharp line: the interval recommendation is the
+usable output of this work, and no absolute-minutes figure in it
+should be treated as a dosing instruction.
+
+\subsection{Implications for how guidance is expressed}
+
+Sun-exposure guidance is conventionally issued as a duration paired
+with a frequency, and the two are treated as independently
+adjustable. The results here suggest that this is the wrong
+factorisation. What determines the plateau is the product of frequency
+and per-session dose --- the budget --- together with how finely that
+budget is divided; what determines the speed of approach is the
+weighting of the budget over time; and what determines melanoma and
+BCC risk is per-session intensity, which is the budget divided by the
+frequency. Guidance expressed as a single duration therefore
+under-determines all three quantities at once.
+
+A more defensible formulation states a budget and a minimum
+frequency, with the duration derived. This also makes the safety
+constraint explicit rather than implicit: the schedules that fail in
+our grid fail by requiring a session above the erythemal threshold,
+and that failure is invisible in advice phrased purely as a weekly
+duration.
+
+The qualification in Section~\ref{sec:budget} should travel with any
+such recommendation. The daily optimum is conditional on a session
+budget sufficient to sustain it; for anyone who cannot get outside
+that often, the correct advice inverts from ``as often as possible''
+to ``as evenly as possible''. Guidance that states only the former
+gives the wrong instruction to precisely the population that finds
+adherence hardest.
+
+\subsection{Relation to the photoadaptation hypothesis}
+
+The hypothesis that motivated this analysis --- that photoadaptation
+should reward spacing exposures apart --- is not supported, and the
+reason is quantitative rather than conceptual. Photoadaptation is real
+in the model and is directionally validated against an external
+protocol \citep{deboer2025}: melanin rises, stratum corneum thickens,
+and synthesis falls. But at the sub-erythemal doses that any sensible
+schedule uses, the melanin state barely moves over a twelve-week
+protocol, and the attenuation it produces is an order of magnitude
+smaller than the concavity effect it would need to overcome.
+
+This is a case where the correct answer was available analytically and
+the modelling effort served mainly to establish that no parameter
+value in the plausible range overturns it.
+
+\subsection{What would resolve the unidentifiability}
+
+The four unidentifiable pairs are not equally tractable, and
+distinguishing them indicates where measurement effort would actually
+pay. Two of the pairs --- the stratum corneum growth rate against its
+ceiling, and the two attenuation coefficients against each other ---
+are unidentifiable because the available calibration data are group
+medians at a small number of timepoints. Individual-level longitudinal
+trajectories of stratum corneum thickness and melanin index under a
+controlled protocol would break both ridges directly, because the
+ridge exists only when the rate and the asymptote cannot be observed
+separately, and a within-subject time course observes them separately
+by construction.
+
+The pair joining the synthesis scalar to the feedback saturation
+constant is different in kind. Those two parameters trade off because
+the calibration data span a narrow range of baseline 25(OH)D; the
+feedback term is only weakly excited when every subject starts near
+the same concentration. Resolving it requires calibration data across
+a wide baseline range rather than more timepoints at one baseline. The
+same limitation explains why the feedback form itself is weakly
+constrained: the inflection is inherited from a breakpoint fitted on a
+different axis \citep{scholze2026} rather than estimated from the
+25(OH)D response, and the exponent cannot be fitted from that source
+at all.
+
+We report these as ridges rather than as calibrated values because the
+alternative --- quoting a point estimate for each member --- would
+represent as independently determined a quantity that the data
+constrain only in combination.
+
+% ===================================================================
+\section{Limitations}
+
+\paragraph{Uncalibrated priors.} The stratum corneum parameters
+($\mathrm{SC}_{\max}$, $\alpha_{\mathrm{SC}}$, $K_{\mathrm{SC}}$) are
+priors rather than calibrated values, and the stratum corneum decay
+rate is an interior, uncalibrated choice: no source measures
+regression of stratum corneum hyperplasia directly. Any absolute
+25(OH)D prediction should be read with that flagged.
+
+\paragraph{Light-skin extrapolation.} The synthesis scalar $A$ is
+anchored on a study whose subjects were FST I--II only, and whose
+authors explicitly disclaim generalisation beyond those types
+\citep{young2021pnas}. Because $A$ is a whole-model scalar applied at
+every skin type, every absolute prediction for FST V--VI is a
+light-skin extrapolation. This is mitigated but not removed by the
+fact that the pigment gradient is anchored separately on matched-dose
+data in darker skin \citep{young2020,farrar2013,felton2016,kift2013}:
+what is extrapolated is the overall level, not the gradient. Given
+that darker skin is the population for which sun-exposure guidance is
+least adequate, this is the limitation we regard as most consequential.
+
+\paragraph{Unidentifiability.} Four parameter pairs are jointly
+unidentifiable. Individual-level longitudinal stratum corneum and
+melanin trajectories would break two of those ridges; group medians
+cannot.
+
+\paragraph{Fixed scenario.} No location, date, weather, posture or
+behaviour is modelled. Durations are conditional on the frozen
+reference scenario throughout.
+
+\paragraph{Dietary and supplemental intake.} The model has no oral
+intake term. Real populations obtain a non-trivial baseline from diet
+and supplementation, so the absolute sufficiency conclusions
+--- particularly the infeasibility results for darker skin --- describe
+a sun-only counterfactual rather than a realistic total-intake
+scenario.
+
+\paragraph{Risk index scope.} Cross-skin-type comparison of risk index
+\emph{values} depends on a susceptibility axis derived from data
+covering only extreme phototypes. Interval and minutes columns do not
+depend on it.
+
+\paragraph{Single failing external test.} We have one genuinely
+held-out benchmark and it fails. A model with one out-of-sample test
+has weak external support regardless of how many internal checks pass.
+
+% ===================================================================
+\section{Conclusions}
+
+For a fixed UV budget under a frozen reference exposure scenario,
+dividing exposure into more and smaller sessions raises steady-state
+25(OH)D monotonically, by 11.0--28.8\,\% across the tested grid, and
+the mechanism is the concavity of the logarithmic dose-response rather
+than photoadaptation or product-feedback inhibition, both of which
+modulate the magnitude of the effect without changing its sign.
+
+Redistributing a fixed horizon budget from flat to front-loaded does
+not raise the plateau at any horizon tested, but reduces accumulated
+deficiency by 49.4\,\% at 84 days and 68.9\,\% at 365 days, and
+reaches sufficiency in days rather than months. The two claims that
+``front-loading'' can denote must therefore be stated separately, with
+the outcome measure named, because their signs differ and the
+divergence widens with horizon.
+
+Under a constrained optimisation requiring sufficiency without
+erythema, all six Fitzpatrick types select the shortest available
+interval, so the vitamin D objective and the melanoma/BCC objective
+agree rather than trade off. That agreement is a property of the
+constrained problem; over an unconstrained grid the frontier still
+trades off, because the least-risk unconstrained schedule is no
+exposure.
+
+These conclusions are ordinal and should be used as such. The model's
+one held-out external test fails, four of its parameter pairs are
+jointly unidentifiable, and its synthesis scalar is calibrated on
+light-skinned subjects only. The interval ranking survives that
+uncertainty because it depends on curve shape rather than curve scale.
+No absolute duration reported here is a dosing instruction.
+
+% ===================================================================
+\section*{Declarations}
+\addcontentsline{toc}{section}{Declarations}
+
+\paragraph{Data and code availability.} All model code, the frozen
+scenario definition, the parameter derivations with their sources, the
+generated results document and the tables and figures underlying every
+number in this paper are available in the accompanying repository. The
+results document is regenerated in full by a single pipeline entry
+point; parameter values are documented at their point of definition,
+which is their only canonical source. Third-party source PDFs are not
+redistributed.
+
+\paragraph{Ethics.} This work is a computational simulation study. It
+involves no human or animal subjects and no identifiable individual
+data. No ethical approval was required. Published summary statistics
+from prior trials were used for calibration and validation under fair
+academic use.
+
+\paragraph{Clinical disclaimer.} Nothing in this paper is medical
+advice. The absolute durations reported are conditional on a fixed
+modelled scenario and carry uncertainty large enough that they must
+not be used as dosing instructions.
+
+\paragraph{Author contributions (CRediT).} A.N.: Conceptualization,
+Methodology, Software, Validation, Formal analysis, Investigation,
+Data curation, Writing --- original draft, Writing --- review and
+editing, Visualization, Project administration.
+
+\paragraph{Competing interests.} The author declares no competing
+interests.
+
+\paragraph{Funding.} This research received no specific grant from any
+funding agency in the public, commercial, or not-for-profit sectors.
+
+\paragraph{Use of AI tools.} Generative AI assistance was used for
+code review, documentation auditing, prose drafting and editing. All
+scientific parameter values, calibration decisions and result
+interpretations were reviewed by the author. Numerical results were
+generated by the deterministic model code rather than by a language
+model, and no AI system is credited as an author.
+
+% ===================================================================
+\bibliographystyle{vancouver}
+\bibliography{references}
+
+\end{document}
