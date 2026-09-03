@@ -17,13 +17,16 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "f5_evidence_tiers.png")
 
 # (tier, count, gloss, colour)  -- strongest evidence first
+# Not used on any slide (cut from both decks); retained here for the
+# write-up and Q&A. Tier labels are plain English, not the internal
+# validation-tier constants (NOT_EVIDENCE, CIRCULAR, etc.).
 TIERS = [
-    ("QUANTITATIVE", 2, "external data, real numeric comparison", ACCENT),
-    ("DIRECTIONAL",  3, "external data, direction only",          GREYS[0]),
-    ("INTERNAL",     4, "self-consistency, not biology",          GREYS[1]),
-    ("CIRCULAR",     3, "data the model was fitted to",           GREYS[2]),
-    ("NOT_EVIDENCE", 2, "its own docstring says it is not "
-                        "vitamin-D evidence",                     GREYS[3]),
+    ("external, numeric",       2, "external data, real numeric comparison", ACCENT),
+    ("direction only",          3, "external data, direction only",          GREYS[0]),
+    ("self-consistency",        4, "self-consistency, not biology",          GREYS[1]),
+    ("fitted to this data",     3, "data the model was fitted to",           GREYS[2]),
+    ("not vitamin-D evidence",  2, "its own docstring says it is not "
+                                    "vitamin-D evidence",                    GREYS[3]),
 ]
 
 TOTAL = 14

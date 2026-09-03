@@ -28,7 +28,7 @@ REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
 sys.path.insert(0, HERE)
 sys.path.insert(0, REPO)
 
-from slidestyle import use_slide_style, ACCENT, FST_COLORS, TEXT_COLOR  # noqa: E402
+from slidestyle import use_slide_style, ACCENT, FST_COLORS, TEXT_COLOR, pct  # noqa: E402
 from vitd_model import simulate, ModelParams  # noqa: E402
 
 OUT = os.path.join(HERE, "f7_fixed_vs_coupled.png")
@@ -40,6 +40,24 @@ INTERVAL_DAYS = 3
 SED_PER_SESSION = 4.0
 MED_FST_VI = 15.2   # SED, vitd_model.compute_safety_sidecar med_by_fst[6]
 D0 = 25.0
+SUFFICIENCY_FLOOR = 50.0
+
+
+def crossing_day(t, D, threshold=SUFFICIENCY_FLOOR):
+    """First day D(t) reaches threshold, linearly interpolated between the
+    two straddling simulation samples."""
+    t = np.asarray(t)
+    D = np.asarray(D)
+    idx = int(np.argmax(D >= threshold))
+    assert D[idx] >= threshold, (
+        f"F7: series never reaches {threshold} nmol/L over the simulated range"
+    )
+    if idx == 0:
+        return float(t[0])
+    t0, t1 = t[idx - 1], t[idx]
+    D0_, D1_ = D[idx - 1], D[idx]
+    frac = (threshold - D0_) / (D1_ - D0_)
+    return float(t0 + frac * (t1 - t0))
 
 
 def main():
@@ -90,13 +108,25 @@ def main():
     ax.fill_between(t_p, D_c_on_p, D_p, color=ACCENT, alpha=0.12,
                     linewidth=0, zorder=2)
     ax.plot(t_p, D_p, color="#4d4d4d", lw=2.6, zorder=4,
-            label="skin states held at baseline")
+            label="If skin never adapted")
     ax.plot(t_c, D_c, color=FST_COLORS[FST - 1], lw=2.6, zorder=5,
-            label="melanin + stratum corneum allowed to adapt")
+            label="Real skin (tans and thickens)")
 
-    ax.axhline(50.0, color="#9a9a9a", lw=1.2, ls=(0, (5, 4)), zorder=3)
-    ax.text(2, 50.9, "50 nmol/L sufficiency floor", fontsize=12.5,
-            color="#6f6f6f", va="bottom", ha="left")
+    ax.axhline(SUFFICIENCY_FLOOR, color="#9a9a9a", lw=1.2, ls=(0, (5, 4)), zorder=3)
+    ax.text(2, SUFFICIENCY_FLOOR + 0.9, "50 nmol/L sufficiency floor",
+            fontsize=12.5, color="#6f6f6f", va="bottom", ha="left")
+
+    day_pinned = crossing_day(t_p, D_p)
+    day_coupled = crossing_day(t_c, D_c)
+    print(f"F7: crosses {SUFFICIENCY_FLOOR:.0f} nmol/L on day "
+          f"{day_pinned:.4f} (pinned), day {day_coupled:.4f} (coupled).")
+    for day, color, dy in ((day_pinned, "#4d4d4d", 3.0), (day_coupled, FST_COLORS[FST - 1], -3.6)):
+        ax.plot([day], [SUFFICIENCY_FLOOR], "o", ms=7, color=color,
+                markeredgecolor="white", markeredgewidth=1.0, zorder=6)
+        ax.annotate(f"day {round(day):.0f}", xy=(day, SUFFICIENCY_FLOOR),
+                    xytext=(day, SUFFICIENCY_FLOOR + dy),
+                    ha="center", va="center", fontsize=12.5, fontweight="bold",
+                    color=color, zorder=6)
 
     # session rug
     ylo = 20.0
@@ -111,7 +141,7 @@ def main():
     ax.annotate("", xy=(DURATION, d_c), xytext=(DURATION, d_p),
                 arrowprops=dict(arrowstyle="<->", color=ACCENT, lw=1.8))
     ax.text(DURATION - 5, (d_c + d_p) / 2 - 0.9,
-            f"{gap:.1f} nmol/L\nlost to adaptation",
+            f"{gap:.0f} nmol/L\nlost to adaptation",
             ha="right", va="center", fontsize=13, fontweight="bold",
             color=ACCENT)
 
@@ -154,9 +184,9 @@ def main():
             f"({gap / d_p * 100:.2f}% of the pinned value). The same UV "
             "budget buys less as the skin adapts.\n"
             "\n"
-            "Absolute predictions here rest on the uncalibrated SC priors "
-            "(SC_max, alpha_SC, K_SC) - read the size of the gap as "
-            "illustrative of the mechanism, not as a calibrated quantity.\n"
+            "Our estimate of how fast the outer skin layer thickens is still "
+            "rough, so read the size of the gap as the mechanism, not a "
+            "calibrated quantity.\n"
         )
     print(f"wrote {CAPTION}")
 

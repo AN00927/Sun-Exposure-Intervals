@@ -6,4 +6,4 @@ Both curves are vitd_model.simulate on the identical schedule from D0 = 25.0 nmo
 
 Day-180 25(OH)D: 51.0596 nmol/L coupled vs 58.0184 nmol/L pinned, a shortfall of 6.9588 nmol/L (11.99% of the pinned value). The same UV budget buys less as the skin adapts.
 
-Absolute predictions here rest on the uncalibrated SC priors (SC_max, alpha_SC, K_SC) - read the size of the gap as illustrative of the mechanism, not as a calibrated quantity.
+Our estimate of how fast the outer skin layer thickens is still rough, so read the size of the gap as the mechanism, not a calibrated quantity.

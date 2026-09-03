@@ -2074,6 +2074,14 @@ ANALYSIS N: joint timing + dose optimisation
     the two axes move in OPPOSITE directions. Report them separately; a single combined percentage hides this.
     gamma chosen: median 1.31 (1.00 = uniform), range 1.26-1.43
 
+    Sign convention: the two medians above are percent IMPROVEMENT (positive = lower
+    risk), so SCC's -7.65% means the index rose (worse) and Intermittent's +21.36%
+    means it fell (better). presentation/figs/f4_two_cancer_axes.png and its build
+    script use the opposite convention -- percent change in the index itself, so
+    there SCC shows +7.65% (worse) and Intermittent shows -21.36% (better). The two
+    conventions disagree in sign on the same numbers; treat F4's (change in the
+    index itself) as canonical and do not mix the two on one slide.
+
   Mechanism. Free spacing does NOT win by lowering cumulative dose
   -- total SED is usually slightly HIGHER. It wins by lowering the
   PEAK per-session dose: bunching sessions more densely early lets

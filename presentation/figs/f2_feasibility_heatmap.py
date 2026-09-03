@@ -70,7 +70,7 @@ def draw(spacing, outname, expect_infeasible):
                 v = vals[i, j]
                 # dark text on the pale end, white on the deep-red end
                 frac = (v - vmin) / (vmax - vmin) if vmax > vmin else 0.0
-                ax.text(j, i, f"{v:.1f}", ha="center", va="center",
+                ax.text(j, i, f"{v:.0f}", ha="center", va="center",
                         fontsize=12, fontweight="bold",
                         color="white" if frac > 0.62 else TEXT_COLOR)
             else:
@@ -99,7 +99,7 @@ def draw(spacing, outname, expect_infeasible):
         ax.spines[s].set_visible(False)
 
     cbar = fig.colorbar(im, ax=ax, pad=0.02, fraction=0.046)
-    cbar.set_label("Cumulative annual UV (SED)")
+    cbar.set_label("Annual UV needed (SED)")
     cbar.outline.set_visible(False)
 
     # legend for the infeasible marker

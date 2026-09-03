@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from slidestyle import use_slide_style, FST_COLORS, FST_LABELS, TEXT_COLOR  # noqa: E402
+from slidestyle import use_slide_style, FST_COLORS, FST_LABELS, TEXT_COLOR, pct  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
@@ -29,16 +29,16 @@ def compute():
     sel = df[df["n_sessions"] == 365]
     uni = sel[sel["spacing"] == "uniform"].set_index("fst")["total_sed"]
     free = sel[sel["spacing"] == "free"].set_index("fst")["total_sed"]
-    pct = (free - uni) / uni * 100.0
-    return pct.sort_index()
+    pct_change = (free - uni) / uni * 100.0
+    return pct_change.sort_index()
 
 
 def main():
     use_slide_style()
-    pct = compute()
+    pct_change = compute()
 
     for fst, want in EXPECTED.items():
-        got = float(pct.loc[fst])
+        got = float(pct_change.loc[fst])
         assert round(got, 4) == want, (
             f"F3 assertion FAILED for FST {fst}: expected {want:.4f}%, "
             f"got {got:.10f}%"
@@ -49,18 +49,22 @@ def main():
     order = [1, 2, 3, 4, 5, 6]
     ypos = np.arange(len(order))[::-1]  # FST I at top
 
-    vals = [float(pct.loc[f]) for f in order]
+    vals = [float(pct_change.loc[f]) for f in order]
     ax.barh(ypos, vals, height=0.68,
             color=[FST_COLORS[f - 1] for f in order],
             edgecolor="#4d4d4d", linewidth=0.8, zorder=3)
 
     for y, v in zip(ypos, vals):
-        ax.text(v - 0.7, y, f"{v:.2f}%", va="center", ha="right",
+        # decimals=1: at whole-number precision, FST I/II/III all round to
+        # -30% and collapse onto the same label (-29.5604, -29.7758,
+        # -30.2468) -- one decimal is the minimum that keeps all six bars
+        # distinct, per the "collapse" clause in the rounding rule.
+        ax.text(v - 0.7, y, pct(v, decimals=1), va="center", ha="right",
                 fontsize=14, fontweight="bold", color=TEXT_COLOR, zorder=4)
 
     ax.set_yticks(ypos)
     ax.set_yticklabels([f"FST {FST_LABELS[f - 1]}" for f in order])
-    ax.set_xlabel("Reduction in cumulative annual UV to hold 50 nmol/L (%)")
+    ax.set_xlabel("Reduction in annual UV needed to stay sufficient (%)")
     ax.set_xlim(-42.0, 0.6)
     ax.set_ylim(-0.65, len(order) - 0.35)
 

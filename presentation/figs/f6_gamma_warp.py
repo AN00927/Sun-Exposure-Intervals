@@ -42,8 +42,8 @@ def main():
     ax.grid(False)
 
     rows = [
-        (1.0, uni, "uniform  (gamma = 1.0)", "#6f6f6f"),
-        (0.0, fro, "front-loaded  (gamma = 1.4)", ACCENT),
+        (1.0, uni, "Evenly spaced", "#6f6f6f"),
+        (0.0, fro, "Front-loaded", ACCENT),
     ]
     half = 0.20
     for y, days, label, color in rows:
