@@ -179,20 +179,29 @@ class TestConservationAndLimits:
         synthesis term and the state-dependent clearance k_decay_D ~ D**0.72,
         not by a ceiling constant. Under a deliberately absurd schedule
         (15 SED/day, every day, a year, 100% BSA, roughly 60x a sensible
-        dose) the model tops out at 112-156 nmol/L depending on FST, i.e. it
-        does exceed the old D_max, and it should: an unbounded input does not
-        produce an unbounded serum level here, but neither does synthesis stop.
-        For reference, 15 SED/day is ~5 MED/day; serum 25(OH)D above 250 nmol/L
-        is the usual toxicity watch level and the model stays far below it.
+        dose) the model tops out at roughly 93-137 nmol/L depending on FST,
+        i.e. it does exceed the old D_max for FST I-IV, and it should: an
+        unbounded input does not produce an unbounded serum level here, but
+        neither does synthesis stop. For reference, 15 SED/day is ~5 MED/day;
+        serum 25(OH)D above 250 nmol/L is the usual toxicity watch level and
+        the model stays far below it.
+
+        BAND REBASED 2026-09-06 (85 < peak < 200, was 100 < peak < 200): the
+        K_const/M_baseline_by_FST/BSA_EXP move (calibration_approval.yaml)
+        lowers overall synthesis at every FST -- BSA_EXP falling from 0.50 to
+        0.3281 alone lowers bsa_factor(1.0) from 1.69 to 1.41 -- so the FST VI
+        peak fell from inside the old 100-200 band to 93.2 nmol/L, just
+        below it. FST I-V remain comfortably inside 100-200; only the FST VI
+        lower edge needed rebasing.
         """
         p = ModelParams()
         sched = build_pulse_schedule(365, 15.0, 1)
         r = simulate(fst=fst, schedule=sched, duration_days=365, params=p,
                      D0=25.0, exposed_bsa_override=1.0)
         peak = float(r["D"].max())
-        assert 100.0 < peak < 200.0, (
+        assert 85.0 < peak < 200.0, (
             f"FST {fst}: extreme-dose peak {peak:.1f} nmol/L is outside the "
-            f"recorded 100-200 band")
+            f"recorded 85-200 band")
         # Graded by pigmentation, as it must be: more melanin, lower plateau.
         assert np.all(np.diff(r["D"]) > -50.0)   # no numerical blow-down
 

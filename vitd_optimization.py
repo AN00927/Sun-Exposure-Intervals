@@ -10,8 +10,10 @@ Analysis functions evaluate schedules on efficacy and safety metrics,
 producing annotated rankings.
 """
 
+import os
 import numpy as np
 import pandas as pd
+from concurrent.futures import ProcessPoolExecutor
 from typing import List, Tuple, Iterator, Optional, Sequence
 from vitd_model import (
     simulate, build_pulse_schedule, steady_state_D,
@@ -942,9 +944,55 @@ def rebuild_joint_schedule(res: dict, horizon_days: int = 365
     return days, shape * (float(res["p_level"]) * cap / peak)
 
 
+def _joint_grid_cell(task):
+    """Solve one (FST, session-budget) cell of the joint-schedule grid.
+
+    Module level, and taking a single picklable tuple, so it can be dispatched
+    to a ProcessPoolExecutor under Windows' `spawn` start method (a closure or
+    lambda would not pickle). Returns the two arms plus, when either arm is
+    infeasible, the binding-constraint string from the cheap
+    uniform-at-the-ceiling probe -- the probe is deterministic, so computing it
+    once per cell here gives the same string the serial code produced per arm.
+    """
+    fst, n_sessions, params = task
+    fixed = optimise_joint_schedule(fst, n_sessions, free_spacing=False,
+                                    params=params)
+    joint = optimise_joint_schedule(fst, n_sessions, free_spacing=True,
+                                    params=params)
+    binding = None
+    if fixed is None or joint is None:
+        at_ceiling = optimise_variable_dose(fst, n_sessions, "uniform",
+                                            params=params)
+        binding = (f"C1 erythema cap ({GAMMA_MED:.0%} MED) at this session budget"
+                   if at_ceiling is None else
+                   "no schedule in the searched dose families")
+    return fst, n_sessions, fixed, joint, binding
+
+
+def _run_joint_grid(tasks, n_workers: Optional[int] = None):
+    """Run the grid cells, in a process pool when possible, serially otherwise.
+
+    `ProcessPoolExecutor.map` yields results in submission order, so the
+    returned list is in deterministic (fst, N) order regardless of which cell
+    finishes first. Any failure to start or use the pool degrades to the serial
+    path rather than taking the pipeline down.
+    """
+    n = (os.cpu_count() or 1) if n_workers is None else int(n_workers)
+    n = max(1, min(n, len(tasks)))
+    if n > 1:
+        try:
+            with ProcessPoolExecutor(max_workers=n) as ex:
+                return list(ex.map(_joint_grid_cell, tasks))
+        except Exception as exc:                                # pragma: no cover
+            print(f"  [process pool unavailable ({type(exc).__name__}: {exc}); "
+                  f"running the grid serially]")
+    return [_joint_grid_cell(t) for t in tasks]
+
+
 def analysis_joint_schedule(params: Optional[ModelParams] = None,
                             fsts: Sequence[int] = (1, 2, 3, 4, 5, 6),
-                            session_counts: Sequence[int] = (104, 146, 183, 260)):
+                            session_counts: Sequence[int] = (104, 146, 183, 260),
+                            n_workers: Optional[int] = None):
     """Does free spacing buy anything once the dose is already free?
 
     Both arms use the SAME solver, budget and dose families; the only difference
@@ -974,64 +1022,63 @@ def analysis_joint_schedule(params: Optional[ModelParams] = None,
     print("  minimised by spreading over as many days as possible.")
 
     rows = []
-    for fst in fsts:
-        for N in session_counts:
-            fixed = optimise_joint_schedule(fst, N, free_spacing=False,
-                                            params=params)
-            joint = optimise_joint_schedule(fst, N, free_spacing=True,
-                                            params=params)
-            for arm_free, r in ((False, fixed), (True, joint)):
-                if r is None:
-                    # Infeasible cells are RESULTS. Attribute the failure with
-                    # the same constraint set the search itself used (C1 only;
-                    # this section does not impose the session-length ceiling),
-                    # probed by the cheap uniform-at-the-ceiling solve.
-                    at_ceiling = optimise_variable_dose(fst, N, "uniform",
-                                                        params=params)
-                    binding = (f"C1 erythema cap ({GAMMA_MED:.0%} MED) at this session budget"
-                               if at_ceiling is None else
-                               "no schedule in the searched dose families")
-                    rows.append({
-                        "fst": fst, "n_sessions": N,
-                        "free_spacing": arm_free,
-                        "feasible": False, "binding_constraint": binding,
-                        "family": "", "gamma": float("nan"),
-                        "combined_risk": float("nan"),
-                        "scc_index": float("nan"),
-                        "intermittent_index": float("nan"),
-                        "trough_after_ramp": float("nan"),
-                        "total_sed": float("nan"),
-                        "time_to_sufficiency": float("nan"),
-                        "risk_vs_uniform_spacing_pct": float("nan"),
-                        "scc_vs_uniform_spacing_pct": float("nan"),
-                        "intermittent_vs_uniform_spacing_pct": float("nan"),
-                    })
-                    continue
-                r["feasible"] = True
-                r["binding_constraint"] = ""
-                if fixed is not None and fixed["combined_risk"] > 0:
-                    r["risk_vs_uniform_spacing_pct"] = (
-                        100.0 * (fixed["combined_risk"] - r["combined_risk"])
-                        / fixed["combined_risk"])
-                else:
-                    r["risk_vs_uniform_spacing_pct"] = float("nan")
-                # SCC and intermittent (BCC/melanoma) tracked SEPARATELY, not
-                # just the geometric-mean combined_risk: they are the two
-                # literature-anchored axes (Moan 1989 dose power law; Elwood/
-                # Leiter intermittency), and the combination itself is not.
-                if fixed is not None and fixed.get("scc_index", 0) > 0:
-                    r["scc_vs_uniform_spacing_pct"] = (
-                        100.0 * (fixed["scc_index"] - r["scc_index"])
-                        / fixed["scc_index"])
-                else:
-                    r["scc_vs_uniform_spacing_pct"] = float("nan")
-                if fixed is not None and fixed.get("intermittent_index", 0) > 0:
-                    r["intermittent_vs_uniform_spacing_pct"] = (
-                        100.0 * (fixed["intermittent_index"] - r["intermittent_index"])
-                        / fixed["intermittent_index"])
-                else:
-                    r["intermittent_vs_uniform_spacing_pct"] = float("nan")
-                rows.append(r)
+    # PARALLELISM IS AT THE CELL LEVEL, DELIBERATELY. Do NOT "optimise" this
+    # into differential_evolution(workers=-1): scipy forces
+    # updating='deferred' whenever workers != 1, which changes the DE search
+    # trajectory and would move every seeded result and every pinned test
+    # value. The grid cells, by contrast, are independent and each DE solve
+    # inside them carries its own fixed seed, so dispatching whole cells
+    # reproduces the serial CSV byte for byte.
+    tasks = [(fst, N, params) for fst in fsts for N in session_counts]
+    for fst, N, fixed, joint, binding in _run_joint_grid(tasks, n_workers):
+        for arm_free, r in ((False, fixed), (True, joint)):
+            if r is None:
+                # Infeasible cells are RESULTS. Attribute the failure with
+                # the same constraint set the search itself used (C1 only;
+                # this section does not impose the session-length ceiling),
+                # probed by the cheap uniform-at-the-ceiling solve
+                # (computed once per cell in _joint_grid_cell).
+                rows.append({
+                    "fst": fst, "n_sessions": N,
+                    "free_spacing": arm_free,
+                    "feasible": False, "binding_constraint": binding,
+                    "family": "", "gamma": float("nan"),
+                    "combined_risk": float("nan"),
+                    "scc_index": float("nan"),
+                    "intermittent_index": float("nan"),
+                    "trough_after_ramp": float("nan"),
+                    "total_sed": float("nan"),
+                    "time_to_sufficiency": float("nan"),
+                    "risk_vs_uniform_spacing_pct": float("nan"),
+                    "scc_vs_uniform_spacing_pct": float("nan"),
+                    "intermittent_vs_uniform_spacing_pct": float("nan"),
+                })
+                continue
+            r["feasible"] = True
+            r["binding_constraint"] = ""
+            if fixed is not None and fixed["combined_risk"] > 0:
+                r["risk_vs_uniform_spacing_pct"] = (
+                    100.0 * (fixed["combined_risk"] - r["combined_risk"])
+                    / fixed["combined_risk"])
+            else:
+                r["risk_vs_uniform_spacing_pct"] = float("nan")
+            # SCC and intermittent (BCC/melanoma) tracked SEPARATELY, not
+            # just the geometric-mean combined_risk: they are the two
+            # literature-anchored axes (Moan 1989 dose power law; Elwood/
+            # Leiter intermittency), and the combination itself is not.
+            if fixed is not None and fixed.get("scc_index", 0) > 0:
+                r["scc_vs_uniform_spacing_pct"] = (
+                    100.0 * (fixed["scc_index"] - r["scc_index"])
+                    / fixed["scc_index"])
+            else:
+                r["scc_vs_uniform_spacing_pct"] = float("nan")
+            if fixed is not None and fixed.get("intermittent_index", 0) > 0:
+                r["intermittent_vs_uniform_spacing_pct"] = (
+                    100.0 * (fixed["intermittent_index"] - r["intermittent_index"])
+                    / fixed["intermittent_index"])
+            else:
+                r["intermittent_vs_uniform_spacing_pct"] = float("nan")
+            rows.append(r)
 
     if not rows:
         print("\n  No feasible schedule at any tested (FST, session budget).")

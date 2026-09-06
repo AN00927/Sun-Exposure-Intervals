@@ -106,8 +106,12 @@ PARAMETERS = [
        "(dM=0.237724) since 2026-08-25, shipped value 0.238"),
     _p("k_decay_SC", "k_decay_SC", np.log(2) / 28, np.log(2) / 21,
        "SC regression rate $k_{decay,SC}$",
-       "PRIOR: Weinstein & Van Scott 1965 transit time 26-27 d (ln(2)/T "
-       "conversion); Pearse 1987 cited for levels not rates"),
+       "PRIOR: Weinstein & Van Scott 1965 via Rothberg 1961 SC-RESIDENCE leg "
+       "alone, 13-14 d (ln(2)/T conversion) -- NOT the 26-27 d COMBINED "
+       "whole-epidermis figure (stratum malpighii + SC), which is the wrong "
+       "leg for excess-SC clearance (vitd_model.py k_decay_SC entry); "
+       "corroborated by Jansen 1974's independent dansyl-chloride 13.49 d "
+       "15-site mean. Pearse 1987 cited for levels not rates"),
     _p("k_repair_SC", "k_repair_SC", np.log(2) / 14, np.log(2) / 3,
        "barrier repair rate $k_{repair,SC}$",
        "PRIOR, not separately measured by de Boer"),

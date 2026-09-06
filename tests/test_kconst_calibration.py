@@ -31,7 +31,10 @@ def optical(K, dark, light=2):
 # ---------------------------------------------------------------------------
 
 def test_k_const_is_the_calibrated_value():
-    assert ModelParams().K_const == pytest.approx(0.98, abs=1e-9)
+    # REBASED 2026-09-06: 0.98 -> 1.15, the coupled refit against the Narea
+    # 2026 M_baseline_by_FST table (calibration_approval.yaml, K_const entry;
+    # scripts/kconst_recalibration.py run against the new table).
+    assert ModelParams().K_const == pytest.approx(1.15, abs=1e-9)
 
 
 def test_fst_v_ii_optical_factor_inside_the_approved_band():
@@ -105,41 +108,72 @@ def test_felton_ratio_moved_toward_the_observation():
 def test_felton_fst_v_over_prediction_is_recorded_not_forgotten():
     """The K_const fit matched RATIOS; both absolute arms are over-predicted.
 
-    BOUNDS REBASED 2026-08-18, and the direction is WORSE, not better. Recorded
-    here rather than hidden, because this is the clearest measured cost of the
-    approved A2 + A4 changes.
+    BOUNDS REBASED 2026-08-18, REBASED AGAIN 2026-09-06 for the
+    K_const/M_baseline_by_FST/BSA_EXP move. This time the direction is
+    BETTER on both arms, not worse -- recorded here for the same reason as
+    before: so an improvement is not silently taken for granted either.
 
-        config                          FST II err   FST V err   model II:V
-        K_const 0.33 (pre-Phase-3)        +24.3%      +178.5%      0.957
-        K_const 0.98 (Phase 3)            +18.6%       +70.6%      1.491
-        + A2 feedback form only            +0.7%       +70.6%      1.266
-        + A4 A = 2.930 only               +47.6%      +111.9%      1.494
-        + A2 and A4 together (shipped)    +31.5%      +121.7%      1.271
-                                                   observed II:V = 2.145
+        config                              FST II err   FST V err   model II:V
+        K_const 0.33 (pre-Phase-3)            +24.3%      +178.5%      0.957
+        K_const 0.98 (Phase 3)                +18.6%       +70.6%      1.491
+        A2+A4 shipped (through 2026-09-05)    +31.5%      +121.7%      1.271
+        K_const 1.15, new M_baseline, BSA_EXP  +8.8%       +84.9%      1.262
+        (2026-09-06, shipped)
+                                                       observed II:V = 2.145
 
-    Two separable effects, and they are NOT the same one:
-      A4 (A up x1.32) raises BOTH absolute gains and leaves the II:V ratio
-        untouched (1.491 -> 1.494). Absolute level is what A4 was
-        approved to change, and Felton is not the study it was anchored to.
-      A2 (biphasic feedback) is what moves the RATIO, 1.491 -> 1.271, away from
-        the observation. Mechanism: the biphasic curve is steeper than the old
-        linear one across 36-55 nmol/L, where Felton's FST II arm sits, and
-        nearly identical to it across 17-26 nmol/L, where the FST V arm sits.
-        So it damps the light-skin arm harder and closes part of the gap
-        K_const had opened. It also, for the same reason, all but eliminates
-        the FST II absolute error.
+    Both absolute errors fell (FST II +31.5% -> +8.8%, FST V +121.7% ->
+    +84.9%) while the II:V ratio barely moved (1.271 -> 1.262) -- consistent
+    with the K_const entry's own finding that Felton's implied K_const alone
+    moved further than the other three routes when refit against the Narea
+    table (1.473 -> 2.097), while M_baseline(II) and M_baseline(V) moving in
+    the SAME direction (both up) partially cancels in the ratio while still
+    shifting each arm's absolute prediction.
 
-    The sign fix that Phase 3 was for SURVIVES: the model still predicts
-    FST II gaining more than FST V, and test_felton_ratio_moved_toward_the_
-    observation still holds, but roughly a third of the Phase 3 ratio gain
-    (in log terms) is given back. Tighten these bounds if a later change
-    improves the numbers; do not widen them.
+    BOUNDS WIDENED 2026-09-06, LATER THE SAME DAY, AND THE DIRECTION IS BADLY
+    WORSE. The row above was measured with A still at its stale 3.114. When A
+    was re-anchored to 4.125 (calibration_approval.yaml,
+    A_reanchor_2026_09_06) both Felton arms deteriorated sharply:
+
+        config                                  FST II err   FST V err   model II:V
+        ... rows above measured at A = 3.114 ...
+        + A re-anchored to 4.125 (SHIPPED)        +49.1%      +159.6%      1.232
+                                                           observed II:V = 2.145
+
+    Model gains are now FST II 26.53 against an observed 17.8, and FST V
+    21.54 against an observed 8.3. THIS IS A WIDENING, WHICH THE PREVIOUS
+    VERSION OF THIS DOCSTRING FORBADE, AND IT IS DELIBERATE. The rule it
+    breaks was written to stop a bound being loosened to hide drift; here the
+    drift is the POINT and is recorded rather than hidden. This test is a
+    RECORDER (see its name), not a quality gate.
+
+    WHAT THE TRADE ACTUALLY IS. Re-anchoring A rescued Bogh 2012 (+38.8 ->
+    +50.1, band 45.8-65.8) and Farrar 2013 (+8.7 -> +13.6, band 10-35), both
+    of which the four-parameter move had knocked out, and cost Felton: the
+    reference-scenario check felton2016_fst5_matched now FAILS at +21.9
+    against +8.3 observed (band is 2.5x observed, i.e. <= 20.75). Net
+    validation 8/10 -> 9/10, with a different check failing than before.
+    A was NOT tuned into the A in [3.75, 3.87] window that would pass all
+    three, because Felton 2016 sits in the CALIBRATION set behind K_const and
+    Bogh 2012 is self-labelled TIER: CIRCULAR -- fitting A to them would
+    collapse the calibration/validation separation. See
+    calibration_approval.yaml, A_reanchor_2026_09_06, `not_covered`.
+
+    OPEN QUESTION, NOT RESOLVED HERE: whether Felton is now telling us
+    something structural (the model cannot hold Young/Bogh/Farrar and Felton
+    simultaneously, the same mutual incompatibility the A entry already
+    records for Young-vs-Bogh) or whether the 2.5x reference-scenario band is
+    simply too tight on an observed delta as small as 8.3 nmol/L.
+
+    The sign fix survives: the model still predicts FST II gaining more than
+    FST V, and test_felton_ratio_moved_toward_the_observation still holds.
+    TIGHTEN these bounds if a later change improves the numbers; widen them
+    only with the same kind of note as this one.
     """
     K = ModelParams().K_const
     err5 = _felton_gain(5, K) / FELTON_GAIN[5] - 1.0
     err2 = _felton_gain(2, K) / FELTON_GAIN[2] - 1.0
-    assert 0.25 < err2 < 0.40
-    assert 1.05 < err5 < 1.35
+    assert 0.42 < err2 < 0.56
+    assert 1.50 < err5 < 1.70
 
 
 def test_felton_ratio_regression_from_the_feedback_form_is_pinned():
@@ -166,8 +200,13 @@ def test_felton_ratio_regression_from_the_feedback_form_is_pinned():
         return float(r["D"][-1]) - FELTON_D0[fst]
 
     linear_ratio = gain(2) / gain(5)
-    assert shipped == pytest.approx(1.271, abs=0.02)
-    assert linear_ratio == pytest.approx(1.494, abs=0.02)
+    # PINS REBASED 2026-09-06 for the full pass (K_const 0.98 -> 1.15,
+    # M_baseline_by_FST -> Narea table, BSA_EXP 0.50 -> 0.3281, A re-anchored
+    # 3.114 -> 4.125, K_SC held at 1.0). Both ratios fell slightly and the
+    # ORDERING -- the actual property under test -- is unchanged:
+    # 1.271 -> 1.2316 (biphasic, shipped) and 1.494 -> 1.4389 (legacy linear).
+    assert shipped == pytest.approx(1.2316, abs=0.02)
+    assert linear_ratio == pytest.approx(1.4389, abs=0.02)
     assert linear_ratio > shipped, (
         "the feedback-form regression on Felton's II:V ratio has changed sign; "
         "re-derive it rather than editing this bound")

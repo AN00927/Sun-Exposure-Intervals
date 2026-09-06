@@ -163,20 +163,24 @@ class TestRiskConstrainedInterval:
     def test_session_length_cap_binds(self):
         """C7. Capping minutes can only lower the per-session dose.
 
-        Fixture rebased 2026-08-17. The old fixture was FST VI at a 20-minute
-        ceiling. Under K_const = 0.33 that cap sat above FST VI's requirement
-        (~16 min/day), so it never actually bound and the assertion held
-        trivially. Under K_const = 0.98 FST VI needs ~42 min/day, so a 20-min
-        ceiling makes the schedule infeasible -- see
-        TestRecalibratedFeasibility, which asserts that directly.
-
-        The property under test is the optimiser's monotonicity in the cap, so
-        it is now exercised at operating points where both arms are still
-        feasible. The cap value is not a tolerance and nothing was widened:
-        60 min for FST VI and 20 min for FST IV are both stricter than "no
-        cap", which is the direction that makes the assertion meaningful.
+        Fixture rebased 2026-08-17, REBASED AGAIN 2026-09-06 for the
+        K_const/M_baseline_by_FST/BSA_EXP move. FST IV's own natural
+        requirement under `optimal_interval_risk_constrained` (which picks a
+        SINGLE interval from a fixed grid, not the variable-dose optimiser
+        `TestRecalibratedFeasibility` uses) rose from ~16 min/day to
+        ~22.4 min/day, pushing it past the previous 20-minute fixture cap
+        into infeasibility. This optimiser's cap does not reduce
+        minutes-per-session below the interval's natural requirement -- it
+        only accepts or rejects each interval on the grid -- so a "tight" cap
+        that stays feasible must sit AT OR ABOVE that natural value; there is
+        no intermediate cap that is both stricter than the natural minutes
+        and still feasible (verified 2026-09-06 by sweeping FST IV's cap from
+        15 to 22 minutes: every value returns infeasible). FST IV's cap moves
+        20.0 -> 25.0 (natural requirement ~22.4 min); FST III and VI are
+        unaffected (~13.7 and ~54.9 min/day respectively, both still under
+        their existing caps).
         """
-        for fst, mm in ((6, 60.0), (4, 20.0), (3, 20.0)):
+        for fst, mm in ((6, 60.0), (4, 25.0), (3, 20.0)):
             loose = _recommend(fst=fst, max_minutes=None)["recommended"]
             tight = _recommend(fst=fst, max_minutes=mm)["recommended"]
             assert loose is not None and tight is not None, (fst, mm)
@@ -477,26 +481,67 @@ class TestTimeToSufficiency:
 
 
 class TestRecalibratedFeasibility:
-    """Schedules the 2026-08-17 K_const recalibration (0.33 -> 0.98) removed,
-    and the 2026-08-18 A recalibration (2.353 -> 3.114) partially restored.
+    """REBASED 2026-09-06 for the literature-evidence-pass calibration:
+    K_const 0.98 -> 1.15 (coupled refit), M_baseline_by_FST moved to the
+    Narea 2026 table, BSA_EXP 0.50 -> 0.3281 (all `calibration_approval.yaml`,
+    2026-09-06 entries). Supersedes the 2026-08-17/18 rebase this class used
+    to describe (K_const 0.33 -> 0.98, A 2.353 -> 3.114); that history is
+    preserved in git blame, not restated here.
 
     These are results, asserted so they cannot be quietly undone. Every
     constraint here is the standing one -- the 50 nmol/L floor, the 90-day
     ramp-in, GAMMA_MED, the session-length ceiling. Nothing is relaxed.
 
-    The combined effect is not K_const alone. K_const 0.33 -> 0.98 in
-    isolation pushes FST III-VI all infeasible at N = 104 (twice weekly). The
-    subsequent A recalibration (2.353 -> 3.114, raising overall synthesis
-    efficiency) pulls FST III and IV back to feasible at N = 104, but not FST
-    V or VI: the melanin penalty at K_const = 0.98 is too large for the
-    higher synthesis rate to offset within a non-burning, <=120-minute
-    session. The dark-skin conclusion (FST V-VI need more than twice-weekly
-    exposure to hold the floor) survives the combined calibration; the FST
-    III/IV conclusion the class used to assert does not, and is corrected
-    below rather than deleted.
+    SUPERSEDED AND REWRITTEN LATER THE SAME DAY (2026-09-06), AFTER THE A
+    RE-ANCHOR. An earlier version of this class recorded a dramatic tightening
+    -- FST II newly infeasible at N = 104, the FST III/IV "recovery" fully
+    undone, FST VI needing N = 365 to fit under 120 min. THAT WAS MEASURED
+    WITH A STILL AT ITS STALE 3.114 AND IS NO LONGER TRUE. When A was
+    re-anchored to 4.125 (calibration_approval.yaml, A_reanchor_2026_09_06 --
+    the Young 2021 anchor recomputed after BSA_EXP and K_const/M_baseline
+    moved its own denominator), the tightening was undone almost exactly.
+
+    THE HEADLINE, RESTATED. The four-parameter move (K_const, M_baseline_by_FST,
+    BSA_EXP, K_SC) all push synthesis DOWN; A carries the absolute level and
+    had not yet been recomputed, so the intermediate state overstated the
+    tightening. With A at its anchored value the minimum
+    feasible-and-under-120-min budgets are:
+
+        FST      I    II   III    IV     V     VI
+        N_min  104   104   104   104   146    183
+
+    which is EXACTLY the pre-2026-09-06 (2026-08-18) landscape. Measured by
+    direct `optimise_variable_dose` calls, 2026-09-06, minutes/day at UV
+    index 6 over a 365-day horizon with a 90-day ramp:
+
+        N        52      104      146      183      260      365
+        I    infeas   26.5m    17.3m    12.9m     8.6m     6.0m
+        II   infeas   33.4m    21.3m    15.7m    10.4m     7.1m
+        III  infeas   44.2m    27.3m    19.9m    12.9m     8.8m
+        IV   infeas   76.4m    43.7m    30.7m    19.2m    12.8m
+        V    infeas  135.9m!   70.5m    47.3m    28.3m    18.3m
+        VI   infeas  291.4m!  127.9m!   79.6m    44.3m    27.4m
+        (! = holds the 50 nmol/L floor but exceeds the 120-minute ceiling)
+
+    SO THE PIGMENT GRADIENT SURVIVES AND THE SCHEDULING CONCLUSION IS
+    UNCHANGED: twice-weekly (N = 104) cannot be scheduled within 120 minutes
+    for FST V or VI, while FST I-IV can. The dark-skin conclusion this class
+    exists to pin -- that FST V-VI need more than twice-weekly exposure to
+    hold the floor on sun alone -- is intact, and is now reached with a
+    LARGER melanin penalty (K_const 1.15 vs 0.98) and a LARGER synthesis
+    scalar (A 4.125 vs 3.114) that happen to offset.
+
+    WHAT THIS EPISODE SHOWS, worth keeping: feasibility here is a JOINT
+    property of the pigment penalty and the absolute synthesis level, and
+    reading either one alone produces a wrong headline. The intermediate
+    8/10-validation state was internally consistent and completely
+    misleading about the scheduling result.
 
     Full map, all six skin types x five session budgets, with the binding
-    constraint per cell: scripts/feasibility_map_kconst.py.
+    constraint per cell: scripts/feasibility_map_kconst.py (NOT re-run for
+    this rebase -- it derives K_const from its own literal, not from
+    ModelParams(), so its printed numbers are stale; the facts asserted here
+    come from direct `optimise_variable_dose` calls, reproduced above).
     """
 
     HORIZON, RAMP = 365, 90
@@ -508,72 +553,135 @@ class TestRecalibratedFeasibility:
                                       ramp_in_days=self.RAMP, params=params)
 
     @pytest.mark.parametrize("fst", [5, 6])
-    def test_twice_weekly_no_longer_holds_the_floor_for_fst_v_and_vi(self, fst):
-        """N = 104 (twice weekly) is infeasible for FST V and VI under the
-        current combined calibration (K_const = 0.98, A = 3.114).
+    def test_twice_weekly_cannot_be_scheduled_within_120_min_for_fst_v_and_vi(self, fst):
+        """N = 104 (twice weekly) cannot be scheduled inside the 120-minute
+        session ceiling for FST V and VI under the full 2026-09-06
+        calibration (K_const 1.15, Narea M_baseline_by_FST, BSA_EXP 0.3281,
+        K_SC 1.0, A re-anchored to 4.125).
 
-        It was feasible for all of III-VI at K_const = 0.33 (either A). FST
-        III and IV were also infeasible under K_const = 0.98 with the prior
-        A = 2.353, but recovered when A moved to 3.114 -- see
-        test_fst_iii_and_iv_recover_under_the_combined_calibration below. FST
-        V and VI do not recover at this budget: the higher synthesis rate is
-        not enough to offset their melanin penalty. FST I and II are
-        unaffected -- II because its M_baseline is 0.07, I because it was
-        already infeasible at this budget for an unrelated reason (its low
-        MED caps the per-session dose).
+        RENAMED AND NARROWED 2026-09-06. This test previously asserted
+        `self._uniform(fst, 104) is None` for FST II-VI, measured while A was
+        still stale at 3.114. After the A re-anchor that is false for II, III
+        and IV, which are comfortably feasible at N = 104 (33.4, 44.2 and
+        76.4 min/day). It is also false in the literal `is None` sense for V
+        and VI: the optimiser DOES return a schedule that holds the 50 nmol/L
+        floor at N = 104, but it needs 135.9 and 291.4 min/day respectively.
+        So the binding constraint at this budget is the SESSION-LENGTH
+        CEILING, not floor-infeasibility, and the assertion now says exactly
+        that instead of conflating the two.
         """
-        assert self._uniform(fst, 104) is None
+        from vitd_objectives import sed_from_minutes
+        res = self._uniform(fst, 104)
+        assert res is not None, (
+            f"FST {fst} should still hold the floor at N=104; the binding "
+            f"constraint here is session length, not infeasibility")
+        minutes = res["max_sed"] / sed_from_minutes(1.0, 6.0)
+        assert minutes > 120.0, (
+            f"FST {fst} at N=104 needs {minutes:.1f} min/day, expected >120")
 
-    def test_fst_ii_twice_weekly_still_holds(self):
-        """The contrast that shows this is a pigment effect and not a
-        general tightening: the least-pigmented feasible type is untouched."""
-        assert self._uniform(2, 104) is not None
+    @pytest.mark.parametrize("fst", [1, 2, 3, 4])
+    def test_twice_weekly_still_works_for_fst_i_through_iv(self, fst):
+        """The contrast that makes the above a PIGMENT result rather than a
+        general tightening: at the same N = 104, FST I-IV are feasible AND
+        inside the 120-minute ceiling (26.5 / 33.4 / 44.2 / 76.4 min/day).
+        Added 2026-09-06 alongside the narrowing above."""
+        from vitd_objectives import sed_from_minutes
+        res = self._uniform(fst, 104)
+        assert res is not None
+        assert res["max_sed"] / sed_from_minutes(1.0, 6.0) <= 120.0
 
-    def test_fst_iii_and_iv_recover_under_the_combined_calibration(self):
-        """FST III and IV are feasible at N = 104 under the current
-        parameters (K_const = 0.98, A = 3.114) -- the attribution the old,
-        misnamed test_the_infeasibility_is_caused_by_k_const was trying to
-        make no longer holds for these two skin types.
+    def test_fst_i_twice_weekly_still_holds(self):
+        """The one skin type this combined calibration leaves untouched at
+        N = 104: FST I's own low MED already capped its per-session dose
+        before any of K_const/M_baseline/BSA_EXP moved, and M_baseline(I)
+        barely moves (0.0 -> 0.0381)."""
+        assert self._uniform(1, 104) is not None
 
-        At K_const = 0.98 with the prior A = 2.353, both are infeasible at
-        this budget: K_const raised alone would have left all of III-VI
-        infeasible at N = 104. The A recalibration is what pulls III and IV
-        back, and does not extend to V/VI (see
-        test_fst_v_infeasibility_is_a_joint_kconst_and_a_effect below).
+    def _under_ceiling(self, fst, n, kc, a):
+        """Feasible AND inside the 120-minute ceiling, at an explicit
+        (K_const, A). Returns (bool, minutes_or_None). Added 2026-09-06:
+        after the A re-anchor, `result is None` no longer separates the
+        cases -- FST V/VI hold the floor at N=104 while needing 136-291
+        min/day -- so attribution has to test the ceiling explicitly.
         """
-        intermediate = ModelParams()
-        intermediate.K_const, intermediate.A = 0.98, 2.353
+        from vitd_objectives import sed_from_minutes
+        p = ModelParams()
+        p.K_const, p.A = kc, a
+        r = self._uniform(fst, n, params=p)
+        if r is None:
+            return False, None
+        minutes = r["max_sed"] / sed_from_minutes(1.0, 6.0)
+        return minutes <= 120.0, minutes
+
+    def test_fst_iii_and_iv_recovery_survives_the_full_calibration(self):
+        """FST III and IV remain schedulable at N = 104 under the shipped
+        2026-09-06 parameters -- but ONLY because K_const and A moved
+        together.
+
+        REWRITTEN 2026-09-06 (was
+        test_fst_iii_and_iv_recovery_is_undone_by_m_baseline_and_bsa_exp).
+        The "undone" version was measured with A stale at 3.114 and is
+        false once A is re-anchored. Measured attribution at N = 104
+        (minutes/day at UV index 6):
+
+            K_const  A        FST III        FST IV
+            0.98     3.114     66.1m ok      116.1m ok    (pre-2026-09-06)
+            1.15     3.114     infeasible    infeasible   (intermediate!)
+            1.15     4.125     44.2m ok       76.4m ok    (SHIPPED)
+
+        The middle row is the whole point: raising the pigment penalty
+        WITHOUT recomputing the synthesis scalar it invalidated made both
+        skin types infeasible. That state was never a defensible model, only
+        an incomplete edit. A = 2.353 (pre-A4) is infeasible at the shipped
+        K_const, so the recovery genuinely depends on A being large.
+        """
         for fst in (3, 4):
-            assert self._uniform(fst, 104, params=intermediate) is None, (
-                f"FST {fst} should still be infeasible at K_const=0.98, A=2.353")
-            assert self._uniform(fst, 104) is not None, (
-                f"FST {fst} should be feasible at the current K_const=0.98, A=3.114")
+            for kc, a, label, expect in [
+                (0.98, 3.114, "pre-2026-09-06 pair", True),
+                (1.15, 3.114, "new K_const, STALE A -- incomplete edit", False),
+                (1.15, 4.125, "shipped pair", True),
+                (1.15, 2.353, "new K_const, pre-A4 A", False),
+            ]:
+                got, minutes = self._under_ceiling(fst, 104, kc, a)
+                assert got == expect, (
+                    f"FST {fst} at K_const={kc}, A={a} ({label}): expected "
+                    f"{'schedulable' if expect else 'not schedulable'}, got "
+                    f"{'schedulable' if got else 'not schedulable'} "
+                    f"({'%.1f min' % minutes if minutes else 'infeasible'})")
 
-    def test_fst_v_infeasibility_is_a_joint_kconst_and_a_effect(self):
-        """2x2 attribution over (K_const, A) for FST V, the cell where the A
-        recalibration does not rescue feasibility (unlike III/IV above).
+    def test_fst_v_feasibility_is_a_joint_kconst_and_a_effect(self):
+        """Attribution over (K_const, A) for FST V at N = 104, on the shipped
+        M_baseline_by_FST and BSA_EXP.
 
-        Raising K_const alone (A held at the old 2.353) makes N = 104
-        infeasible. Raising A alone (K_const held at the old 0.33) leaves it
-        feasible -- A is not itself a tightening. Only when both move to
-        their current values does the cell stay infeasible, so pinning this
-        on "K_const" alone (the old test name) was already an
-        oversimplification even before A moved: it is the K_const penalty
-        that FST III/IV happen to escape via the A increase and FST V does
-        not, which is a joint statement, not a single-parameter one.
+        REBASED 2026-09-06 to the ceiling criterion (see _under_ceiling).
+        Measured minutes/day:
+
+            K_const  A        FST V
+            0.98     3.114    infeasible
+            1.15     3.114    infeasible
+            0.98     4.125    101.2m  -> schedulable
+            1.15     4.125    135.9m  -> NOT schedulable (SHIPPED)
+            0.33     4.125     39.7m  -> schedulable
+
+        The joint story is intact and sharper than before: the large A alone
+        WOULD bring FST V inside the ceiling at twice-weekly (101.2 min at
+        the old K_const), and it is the pigment penalty rising to 1.15 that
+        pushes it back out to 135.9. So FST V's twice-weekly exclusion is a
+        genuine pigment result at the shipped parameters, not an artefact of
+        a low synthesis scalar -- which is exactly what could NOT be said in
+        the stale-A intermediate state, where everything was infeasible.
         """
-        k033_a2353 = ModelParams()
-        k033_a2353.K_const, k033_a2353.A = 0.33, 2.353
-        k098_a2353 = ModelParams()
-        k098_a2353.K_const, k098_a2353.A = 0.98, 2.353
-        k033_a3114 = ModelParams()
-        k033_a3114.K_const, k033_a3114.A = 0.33, 3.114
-        # current default ModelParams() is K_const=0.98, A=3.114
-
-        assert self._uniform(5, 104, params=k033_a2353) is not None
-        assert self._uniform(5, 104, params=k098_a2353) is None
-        assert self._uniform(5, 104, params=k033_a3114) is not None
-        assert self._uniform(5, 104) is None
+        for kc, a, expect in [
+            (0.98, 3.114, False),
+            (1.15, 3.114, False),
+            (0.98, 4.125, True),
+            (0.33, 4.125, True),
+            (1.15, 4.125, False),          # shipped
+        ]:
+            got, minutes = self._under_ceiling(5, 104, kc, a)
+            assert got == expect, (
+                f"FST V at K_const={kc}, A={a}: expected {expect}, got {got} "
+                f"({'%.1f min' % minutes if minutes else 'infeasible'})")
 
     @pytest.mark.parametrize("fst,n_min,n_below", [
         (1, 104, 52), (2, 104, 52), (3, 104, 52), (4, 104, 52),
@@ -584,13 +692,23 @@ class TestRecalibratedFeasibility:
         type needs to hold sufficiency on sun alone, within a non-burning dose
         and a 120-minute session. Monotone in pigmentation, as it must be.
 
-        Pinned from both sides on the TRI_SESSION_BUDGETS grid: feasible
-        (holds the floor and fits the 120-minute ceiling) at n_min, and not
-        both of those at the next budget down. FST V and VI are the cases
-        where the binding constraint differs: FST VI at n=146 already holds
-        the 50 nmol/L floor, but needs ~159 min/day, over the 120-minute
-        ceiling -- its minimum is set by the session-length ceiling, not by
-        the erythema/floor constraint that sets FST I-V.
+        REBASED TWICE ON 2026-09-06, AND IT ENDED BACK WHERE IT STARTED.
+        The first rebase recorded 104/146/146/146/183/365 -- every skin type
+        except FST I needing MORE sessions after the
+        M_baseline_by_FST/BSA_EXP/K_const move. That was measured with A
+        still stale at 3.114. Re-anchoring A to 4.125
+        (calibration_approval.yaml, A_reanchor_2026_09_06) restores
+        104/104/104/104/146/183, which is the pre-2026-09-06 landscape
+        exactly.
+
+        This is not a no-op dressed up as one. The same budgets are now
+        reached with a LARGER pigment penalty (K_const 0.98 -> 1.15, and
+        every M_baseline cell raised) and a LARGER synthesis scalar
+        (A 3.114 -> 4.125). Those two offset at the level of this table
+        while the underlying parameters are better anchored than before --
+        M_baseline on n=1005 rather than n=48, A on a recomputed rather than
+        stale kernel. The scheduling conclusion is unchanged; its provenance
+        is not.
         """
         from vitd_objectives import sed_from_minutes
         res = self._uniform(fst, n_min)

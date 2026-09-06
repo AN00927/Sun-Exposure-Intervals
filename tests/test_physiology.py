@@ -503,10 +503,34 @@ class TestBackwardCompatibility:
         A2), which is the STEEPER of the two across the 40-55 nmol/L band this
         scenario occupies and gives most of that back. Net +7.6%. Neither the
         scenario nor the tolerance changed.
+
+        Pin REBASED AGAIN 2026-09-06: 53.64 -> 48.32 nmol/L. K_const
+        0.98 -> 1.15 and M_baseline(V) 0.78 -> 0.7539 both move together
+        (calibration_approval.yaml, K_const and M_baseline_by_FST entries);
+        this scenario uses default exposed_bsa (bsa_factor = 1.0), so
+        BSA_EXP's move does not touch it. Net effect on FST V constitutive
+        attenuation: exp(-1.15*0.7539) / exp(-0.98*0.78) = 0.9025, a further
+        9.75% fall on top of the 2026-08-18 pin (the 84-day endpoint falls
+        somewhat more than that, since feedback and decay compound over the
+        course rather than scaling the single multiplicative factor exactly).
+        Neither the scenario nor the tolerance changed.
+
+        Pin REBASED ONCE MORE 2026-09-06 (same day): 48.32 -> 57.77 nmol/L,
+        and this time the pin goes UP. The 48.32 above was measured with
+        A still at its stale 3.114 and K_SC briefly at 1.509. Two later
+        same-day decisions moved it: A re-anchored 3.114 -> 4.125
+        (calibration_approval.yaml, A_reanchor_2026_09_06 -- the Young 2021
+        anchor recomputed after BSA_EXP and K_const/M_baseline moved its own
+        denominator), and K_SC backed off 1.509 -> 1.0 (the 1.509 optical
+        value is an upper bound that assumes corneocyte thickening, while
+        SC_max is calibrated on de Boer's edema-attributed change). Both raise
+        the endpoint. Net across the whole 2026-09-06 pass: 53.64 -> 57.77,
+        i.e. the melanin term's fall is more than offset by the larger A.
+        Neither the scenario nor the tolerance changed.
         """
         r = simulate(fst=5, schedule=build_pulse_schedule(84, 1.0, 1),
                      duration_days=84, params=ModelParams(), D0=25.0)
-        assert r["D"][-1] == pytest.approx(53.64, abs=0.5)
+        assert r["D"][-1] == pytest.approx(57.77, abs=0.5)
 
 
 class TestTwoProcessSC:

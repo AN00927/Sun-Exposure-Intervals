@@ -29,6 +29,13 @@ allowed_calibration_parameters:
   - K_ATTEN
   - M_TAN_HEADROOM
   - SC_max_by_FST
+  # Added 2026-09-06 by the literature evidence pass (scoped approval; see the
+  # provenance banner at the top of parameter_approvals).
+  - BSA_EXP
+  - M_baseline_by_FST
+  - SC_BASELINE_THICKNESS_UM
+  - K_SC
+  - K_const   # refit is COUPLED to M_baseline_by_FST; see that entry
 calibration_set:
   - Elwood & Jopson 1997 (Int J Cancer 73:198) odds ratios
   - Moan et al. 1989 (Cancer Res 49:5207) biological amplification factors
@@ -62,6 +69,373 @@ validation_set:
 # parameter cannot inherit approval from an earlier one. The file-level flag
 # above summarises these; it does not substitute for them.
 parameter_approvals:
+  # ==========================================================================
+  # 2026-09-06 LITERATURE EVIDENCE PASS -- the four entries immediately below.
+  #
+  # PROVENANCE OF THIS APPROVAL, stated once and true of all four. These come
+  # out of the literature evidence-integration pass run 2026-09-05/06, in which
+  # 8 newly-obtained papers were read in full and written up as [EVIDENCE NOTE]
+  # blocks in vitd_model.py. The user pre-authorised, in the handoff that
+  # queued that pass, that once he confirmed the findings in a review
+  # conversation the calibration gate should be treated as satisfied FOR THIS
+  # SPECIFIC BODY OF WORK. He gave that confirmation on 2026-09-06 and chose
+  # explicitly between the competing readings recorded below. This is a
+  # SCOPED exception to the normal rule that every calibration needs its own
+  # fresh approval -- granted in advance for this workstream, NOT a standing
+  # authorisation. Anything not traceable to one of the 8 papers is outside it.
+  # ==========================================================================
+
+  BSA_EXP:
+    approved_by: User (repository owner)
+    approval_date: 2026-09-06
+    change: >-
+      0.50 -> 0.3281. Body-surface-area scaling exponent in
+      bsa_factor = (bsa / BSA_REF) ** BSA_EXP.
+      THE TARGET IS THE 25(OH)D CLUSTER AT ~0.38, DECONVOLVED FOR FEEDBACK.
+      The shipped exponent is fitted to APPARENT response ratios that already
+      contain g(D) damping, so 0.38 is the APPARENT exponent, not the
+      structural one. The value written must be the exponent that makes the
+      model, WITH g(D) active, reproduce the observed ratios -- which is
+      strictly LARGER than 0.38. Writing 0.38 directly would double-count
+      feedback. Same deconvolution logic as the K_ATTEN entry.
+    source: >-
+      TWO independent WITHIN-STUDY estimates on the serum 25(OH)D endpoint,
+      agreeing to two decimals from unrelated studies, sources, doses and BSA
+      ranges: Young et al. 2021 PNAS 85% vs 3.7% BSA contrast, 0.3790 (already
+      recorded in vitd_model.py's A entry, not acted on until now); and the
+      within-study NB-UVB triple (Vahavihu, 13 SED, 6/29/100% BSA) in Table III
+      of Jager et al. 2018 (Anticancer Res 38:1165-1171), 0.3843 by log-log OLS
+      and 0.3723 on endpoints. That triple's own shape is a genuine plateau:
+      0.6421 over 6->29% BSA, then 0.0289 over 29->100%.
+    tiebreak: >-
+      The evidence splits into two clusters straddling 0.50 and the user chose
+      between them on 2026-09-06. NOT ADOPTED: the near-linear cluster at
+      ~0.8-0.9 -- Libon et al. 2017 (JID 137:1391-1393) cholecalciferol AUC,
+      log-log 0.8892 at R^2 = 0.9862 with no plateau to 96% BSA, plus Jager's
+      matched-dose BB-UVB pair at 0.8011. Grounds for preferring the lower
+      cluster: this model predicts serum 25(OH)D, and the ~0.38 cluster is
+      measured on that endpoint, whereas Libon measures D3, a precursor.
+      Libon is also FST III only, n=15 per group, NB-UVB only, fractional-MED
+      framed. Recording the rejected arm because it is strong evidence on its
+      own terms and the choice was a judgement, not a calculation.
+    derivation: >-
+      A NEW derivation script must be written (suggested:
+      scripts/bsa_exp_recalibration.py, bucket FEW-TIME). It must NOT simply
+      set 0.38. Required: (1) reproduce the 0.3790 and 0.3843 apparent
+      exponents from the printed source numbers, showing the arithmetic;
+      (2) deconvolve g(D) by finding the BSA_EXP at which the model's own
+      predicted response ratio over each source's BSA span equals that source's
+      OBSERVED ratio, with feedback_mode at its default 'biphasic';
+      (3) report the deconvolved value per source and the adopted combination;
+      (4) report the sensitivity of the answer to feedback form, as the K_ATTEN
+      derivation does. Carry full precision throughout.
+    not_covered: >-
+      (1) DOUBLE-COUNTING OF THE PLATEAU IS THE PRIMARY RISK AND MUST BE
+      REPORTED EXPLICITLY, NOT ASSUMED AWAY. The plateau in 25(OH)D-vs-BSA may
+      be PARTLY OR WHOLLY a feedback artefact rather than a geometric one.
+      Libon's cholecalciferol data -- the same areas, no plateau at all on the
+      precursor -- is direct evidence for exactly that reading. If the
+      deconvolution returns a value at or above 0.50, that is a real result
+      meaning the apparent plateau was feedback, and it must be reported as
+      such rather than forced downward.
+      (2) JAGER 2018 IS NOT INDEPENDENT OF THIS REPO AT THE META-ANALYSIS
+      LEVEL. Its 15-study pool re-aggregates Bogh 2011 (P5), Bogh 2010 (P36),
+      Bogh 2012 (the DEBUGGING_TARGET anchor), Datta 2012, Rhodes 2010,
+      McKenzie 2012, Karppinen and Ala-Houhala. ONLY the within-study Vahavihu
+      triple from its Table III may be used, because Vahavihu is not otherwise
+      used by this repo. Its pooled meta-regression (0.05 per %BSA) must NOT be
+      used for anything: it is non-significant, printed with no SE, CI or p,
+      and no I^2, tau^2, Q or forest plot appears in the paper.
+      (3) NO DARK SKIN. Neither Young 2021 (FST I-II) nor the Vahavihu triple
+      supplies FST V-VI data. bsa_factor multiplies A directly, so this
+      COMPOUNDS the light-skin extrapolation flag already on A rather than
+      mitigating it. Must be flagged at point of use for FST IV-VI.
+      (4) NO BODY-SITE TERM. Libon shows a residual head-and-hands premium of
+      ~1.3x on the clean D3 channel (its own 8x headline is a baseline
+      artefact). Second-order against A's 2.9-5.1 spread; not modelled.
+    consequence: >-
+      DECONVOLUTION RESULT: 0.50 -> 0.3281 -- BELOW both apparent exponents
+      and the withdrawn incumbent, the OPPOSITE direction from what this
+      entry's own derivation clause anticipated. See the BSA_EXP docstring
+      entry in vitd_model.py and scripts/bsa_exp_recalibration.py for the
+      full diagnosis (this model's k_decay_D acting on the whole D state,
+      not only the increment, dominates over g(D) feedback in the tested
+      BSA ranges). Reported as the derivation's actual output, not adjusted.
+      VALIDATION REGRESSION, THE MOST IMPORTANT MEASURED CONSEQUENCE OF THIS
+      WHOLE PASS: re-run 2026-09-06 with the combined change (K_const 1.15,
+      new M_baseline_by_FST, BSA_EXP 0.3281), both of this repo's calibrated
+      anchor checks FLIP FROM PASS TO FAIL:
+        Bogh 2012 (DEBUGGING_TARGET): model delta +38.8 nmol/L vs observed
+          +55.8, acceptance band 45.8-65.8 -- FAIL (was PASS at +51.6 before
+          this pass's three changes).
+        Farrar 2013 (FST V, the only dark-skin quantitative check in the
+          suite): model delta +8.7 nmol/L vs observed ~21.7, acceptance band
+          10-35 -- FAIL (was PASS at +11.2, already the lower edge of the
+          band, before this pass).
+      Both checks were PASSING before this pass and are FAILING after it.
+      This was not resolved: A (calibration_approval.yaml,
+      approved_2026_08_17_pending_implementation item A4's successor state)
+      is explicitly OUT OF SCOPE for this pass, and no combination of
+      BSA_EXP/K_const/M_baseline within their own approved derivations can
+      restore these two checks without re-touching A. Read as: the four
+      2026-09-06 changes, individually each the best-supported reading of
+      their own evidence, are JOINTLY inconsistent with the model's two
+      pre-existing calibrated anchors at the currently-shipped A = 3.114.
+      Whether the fix is a fresh A recalibration, a different BSA_EXP/K_const
+      combination, or acceptance that A's anchor no longer holds under this
+      evidence base is a decision for the user, not resolved here.
+      NO DARK SKIN in either deconvolution source (both flagged already
+      above); Farrar 2013 flipping to FAIL is the concrete, measured
+      instance of the "COMPOUNDS the light-skin extrapolation on A" warning
+      already carried in the not_covered clause, not a new finding.
+
+  M_baseline_by_FST:
+    approved_by: User (repository owner)
+    approval_date: 2026-09-06
+    change: >-
+      {I 0.0, II 0.07, III 0.21, IV 0.44, V 0.78, VI 1.00} ->
+      {I 0.0381, II 0.1715, III 0.3231, IV 0.5241, V 0.7539, VI 1.0427->clipped
+      1.00}, from Narea-Jimenez et al. 2026 constitutive ITA means through this
+      module's own existing mapping M = 1 - (ITA_U + 30)/85. COUPLED: K_const
+      MUST be refitted in the same change -- see coupled_refit below.
+    source: >-
+      Narea-Jimenez F, Vazquez-Villa A, Arriaga-Arriaga C, Santillan-Guzman A,
+      Cho AD. Retrieving of the melanosome fraction of human epidermis in vivo
+      from skin chromatic coordinates. Biomed Phys Eng Express 2026;12:025078.
+      DOI 10.1088/2057-1976/ae6458. n = 1005 diffuse-reflectance spectra,
+      Venezuelan mestizo, inner left forearm 8 cm proximal to elbow (a site
+      chosen for minimal chronic actinic exposure, so genuinely constitutive),
+      FST CLINICIAN-ASSESSED, and spectral acquisition run by separate optical
+      specialists so the colour reading did not inform the phototype label.
+      Constitutive ITA by FST (mean +/- SD, n): I 51.76 +/- 6.40 (25);
+      II 40.42 +/- 9.77 (95); III 27.54 +/- 10.67 (369); IV 10.45 +/- 9.71
+      (400); V -9.08 +/- 9.98 (84); VI -33.63 +/- 15.91 (32).
+    rationale: >-
+      Replaces a table built from n=48 UK trial rows (per-FST n = II 13, III 15,
+      IV 12, V 4, VI 4) with one built from n=1005, and satisfies the standing
+      dark_skin_priority directive against privileging UK data. n rises 21x at
+      FST V and 8x at FST VI. Note the disagreement is NOT where the old
+      docstring expected: Narea AGREES with the two n=4 cells (V within 0.026,
+      VI within 0.043 pre-clip) and disagrees most at II/III/IV, which were
+      built on n=12-15. Read as implied ITA_U the UK cohort is 7-10 degrees
+      LIGHTER at II/III/IV at the same nominal phototype -- consistent with FST
+      being population-anchored rather than with the V/VI cells being wrong.
+    coupled_refit: >-
+      K_const IS FITTED AGAINST THESE VALUES AND MULTIPLIES THEM, so it MUST be
+      refitted in the same commit or the four within-study routes behind 0.98
+      become internally inconsistent. The fit runs on M DIFFERENCES: from
+      scripts/kconst_recalibration.py, each route implies
+      K = ln(observed ratio) / (M_dark - M_light). The FST V:II gap narrows
+      from 0.71 (0.78 - 0.07) to 0.5824 (0.7539 - 0.1715), so K_const rises by
+      approximately 0.71/0.5824 = 1.2191x, i.e. roughly 0.98 -> ~1.19. That
+      estimate is indicative ONLY -- re-run scripts/kconst_recalibration.py with
+      the new table and take its printed value at full precision. The V:II and
+      VI:I optical factors, and the feasibility map, must be re-reported.
+    not_covered: >-
+      (1) THE CLIP IS NOT FIXED BY THIS CHANGE AND IS THE LARGER FINDING.
+      M = 1.0 falls at ITA = -30, which is Del Bino's Brown/Dark boundary --
+      the MIDDLE of the observed dark-skin range, not its edge. FST VI's group
+      mean clips in BOTH cohorts independently (Young raw 1.077, Narea raw
+      1.0427). An estimated 59.02% of Narea's FST VI individuals clip, as do a
+      measured 48% of Linde 2020's Black African constitutive readings. Within
+      FST VI the mapping has essentially no resolving power: ITA_U = -66 and
+      ITA_U = -30 receive an identical penalty. The denominator (85), the
+      offset (30) and the clip are NOT independent knobs, and K_const
+      multiplies the result, so this was deliberately NOT attempted here. It
+      remains the top open structural gap on this parameter.
+      (2) INTRA-PHOTOTYPE SD EXCEEDS INTER-PHOTOTYPE SPACING throughout
+      (Narea per-FST SDs in M units: I +/-0.0753 to VI +/-0.1872, against
+      shipped steps of 0.07-0.34). FST V's +1SD and FST IV's -1SD are
+      contiguous. The [C10-PRIOR] warning against individual prediction is
+      STRENGTHENED by this change, not weakened by the larger n.
+      (3) FST IS A POOR PIGMENTATION PROXY in both non-UK cohorts, by two
+      different mechanisms -- spectral overlap in Narea (fme interval overlap
+      up to 52.05%, SSIM(IV,V) = 0.94) and self-report bias in Linde (62% of
+      Black African farmworkers self-reported FST I/III/IV while 100% measured
+      objectively as V or VI). A model reading SELF-REPORTED FST would, on
+      Linde's cohort, assign M = 0.44 where measured constitutive M is 0.977 --
+      a 1.694x error in the melanin term, larger than any route K_const was
+      fitted to. Both papers call for a category beyond FST VI.
+      (4) POPULATION. Narea is Venezuelan mestizo dermatology OUTPATIENTS; the
+      paper does not report excluding pigmentary disorders, an unaddressed
+      confound in a study of dermatology patients. 76.5% of the cohort is
+      FST III+IV, so the extremes are thin in absolute terms even at n=1005.
+      Season is not reported. There is no inter-rater reliability statistic for
+      the FST assignment. Individual-level data are not public.
+      (5) LINDE 2020 IS NOT USED FOR ANY VALUE HERE. Its only clean cell-level
+      anchor is FST II via a n=10 White group (M = 0.0774, within 0.0074 of the
+      old 0.07); its Black African group is not broken out by phototype. Every
+      Linde number in the docstring is DIGITISED FROM BOX PLOTS -- the paper has
+      no results table -- and is labelled as such. Do not promote any of them
+      into code.
+    consequence: >-
+      K_const refit (scripts/kconst_recalibration.py, new table): 0.98 ->
+      1.15. FST V:II optical factor 2.0053x -> 1.9538x; FST VI:I 2.6645x ->
+      3.0228x (both computed at the shipped K_const before/after, using each
+      table's own M_baseline values). Required minutes/day at UV index 6,
+      N=365 (uniform schedule, 90-day ramp): FST I 8.94, II 10.88, III 13.69,
+      IV 22.38, V 33.86, VI 54.88 (previously 10/10/12/19/30/42). Required
+      dose inflation relative to FST I at the same budget: I x1.00, II
+      x1.2170, III x1.5312, IV x2.5035, V x3.7885, VI x6.1400 (previously
+      x1.00/x1.06-1.08/x1.19-1.24/x1.47-1.67/x2.05-2.76/x2.60-4.09) -- every
+      skin type darker than FST I now needs MORE inflation than before,
+      because M_baseline rose at every FST II-VI (not just the darkest two)
+      while BSA_EXP falling (see that entry) simultaneously shrank the
+      synthesis credit from exposing more BSA.
+      FEASIBILITY MAP (tests/test_vitd_optimization.py::
+      TestRecalibratedFeasibility, rebased 2026-09-06, verified by direct
+      computation): minimum feasible-and-under-120-min session budget per
+      FST moved from 104/104/104/104/146/183 (I/II/III/IV/V/VI) to
+      104/146/146/146/183/365. FST II is now infeasible at N=104 -- it used
+      to be this suite's contrast for "the least-pigmented feasible type is
+      untouched"; that contrast no longer holds. The 2026-08-18 finding that
+      A=3.114 "rescues" FST III/IV from infeasibility at N=104 is FULLY
+      UNDONE: under the new M_baseline_by_FST and BSA_EXP, even K_const=0.98
+      with A=3.114 (the exact combination that used to rescue them) leaves
+      FST III/IV infeasible at N=104; only reverting K_const to its
+      pre-Phase-3 value of 0.33 (with the current A) keeps them feasible at
+      that budget. FST VI's binding constraint changed character at the
+      N=146-183 range: N=183 now HOLDS the 50 nmol/L floor but needs ~224
+      min/day (over the 120-minute ceiling), so its minimum budget under both
+      constraints jumps to N=365 (~55 min/day) -- there is no longer an
+      intermediate grid point that is both feasible and under the ceiling for
+      FST VI.
+      scripts/feasibility_map_kconst.py was NOT re-run for this change: it
+      derives K_const from its own literal rather than from ModelParams(), so
+      its printed table is now stale and should not be quoted until updated
+      or replaced by a fresh run against the live parameters.
+
+  SC_BASELINE_THICKNESS_UM:
+    approved_by: User (repository owner)
+    approval_date: 2026-09-06
+    change: >-
+      NEW PARAMETER, value 20.0 um. The model currently has NO baseline
+      stratum-corneum thickness: SC is a purely fractional state, so no
+      optical quantity can be derived from it. Committing to a value is a
+      PREREQUISITE for K_SC below, and the user directed on 2026-09-06 that
+      it be settled first rather than have K_SC pinned to one arm of an
+      unresolved conflict. CHOSEN: Bruls et al. 1984's own adopted in vivo
+      estimate (20.0 um), on measurement-method grounds -- see `derivation`
+      below and vitd_model.py (SC_BASELINE_THICKNESS_UM module constant,
+      documented near BSA_EXP). Introduced as a documented constant consumed
+      only by the K_SC derivation, per the not_covered clause: model output
+      is otherwise unchanged.
+    source: >-
+      The three candidate baselines in this repo disagree by 3.4x and are not
+      interchangeable: de Boer 2025 Supp Table S1 gives 5.8 um (the basis of
+      SC_max); Miyamura 2011 Table 1 gives 16.6 um (the SC_max out-of-sample
+      corroboration); Bruls et al. 1984 (Photochem Photobiol 40:485-494) adopt
+      20 um in vivo, from their own cryostatic 19.8 +/- 4.3 um, cross-checked
+      against 18 um for lower arm (Klaschka 1977; Hulsbergen Henning 1977).
+    derivation: >-
+      Must be settled on MEASUREMENT-METHOD grounds and documented, not picked
+      for convenience. The decisive consideration Bruls supply: histological
+      section thicknesses are systematically TOO LOW because of dehydration
+      shrinkage -- they note Holbrook & Odland's 10 um back SC sits below even
+      their own dried-sample 13.5 um. Establish, from each source, what was
+      actually measured (in vivo OCT/confocal vs cryostat vs histology), at
+      what body site, and whether the figure is hydrated or dried. Then choose,
+      state the choice as a [CHOICE], and record the discarded alternatives.
+      Because K_SC scales LINEARLY with this value, the choice IS the K_SC
+      answer and must not be buried.
+    not_covered: >-
+      This parameter must not silently change SC_max, alpha_SC, k_damage or any
+      existing behaviour. If it is introduced as a documented constant consumed
+      only by the K_SC derivation, model output is unchanged; if it is wired
+      into the state equations, that is a separate change requiring its own
+      approval. Prefer the former.
+
+  K_SC:
+    approved_by: User (repository owner)
+    approval_date: 2026-09-06
+    change: >-
+      VALUE UNCHANGED AT 1.0. REVISED 2026-09-06, same day: 1.509 was briefly
+      shipped as the operating value and has been backed off to a documented
+      UPPER BOUND at the user's direction. The derivation stands --
+      SC_BASELINE_THICKNESS_UM = 20.0 (Bruls' own adopted
+      in vivo estimate) and Bruls Table 3 convolved against
+      data/spectra/vitd_action_spectrum_young2021.csv over 284-313 nm
+      (weighted mean wavelength 296.11 nm; mu_eff = 0.075446/um, d_half_eff =
+      9.1873 um) gives K_SC = ln(2)*20.0/9.1873 = 1.509 -- but that assumes
+      every added micron of SC is CORNEOCYTE with baseline SC's absorption
+      coefficient, while the SC state it multiplies is calibrated on de Boer
+      2025, who attribute their SC change to EDEMA. Bruls themselves show UV-B
+      transmission RISES on hydration. For edema-driven thickening the correct
+      coefficient is far below 1.509 and could be ~0; if a fraction f of the
+      modelled thickening is corneocyte the effective value is ~1.509*f, and
+      NO SOURCE MEASURES f. The defensible result is therefore a BOUND of
+      [~0, 1.509], inside which the incumbent 1.0 sits at 66.3%,
+      uncontradicted. WHAT CHANGED IS PROVENANCE, NOT VALUE: K_SC moves from
+      an admittedly arbitrary number (Pearse 1987 never measured this
+      attenuation) to an empirical value with a derived upper bound. Do not
+      read 1.0 as calibrated; read it as bounded. Optical attenuation of
+      cutaneous vitamin-D synthesis by stratum-corneum thickening. First
+      evidence-anchored value this parameter has ever had; it was previously an
+      admittedly arbitrary number whose cited source (Pearse 1987) never
+      measured the attenuation.
+    source: >-
+      Bruls WA, Slaper H, van der Leun JC, Berrens L. Transmission of human
+      epidermis and stratum corneum as a function of thickness in the
+      ultraviolet and visible wavelengths. Photochem Photobiol
+      1984;40(4):485-494. DOI 10.1111/j.1751-1097.1984.tb04622.x. Their Table 3
+      gives in vivo SC half-value layer d_1/2 = 9.9 um at 297 nm (5.5 at 280,
+      7.2 at 290, 12.3 at 302, 17.1 at 313). Their Fig. 2 finds log-transmission
+      linear in thickness, i.e. Lambert-Beer holds well enough that one
+      parameter suffices -- the first direct support this repo holds for the
+      exp(-K_SC * SC) FORM.
+    derivation: >-
+      K_SC = ln(2) * d0 / d_1/2, where d0 is SC_BASELINE_THICKNESS_UM. At
+      Bruls' own d0 = 20 um and 297 nm this is 1.4003. The wavelength must be
+      chosen deliberately and documented: the spread over 290-302 nm alone is
+      1.1271 to 1.9254, and Young 2021's ~5 nm blue shift of the action
+      spectrum pushes the effective wavelength toward the HIGH end. Preferred
+      if feasible: convolve Bruls' Table 3 against the vitamin-D action
+      spectrum weighted by the source SPD rather than picking a single line;
+      Table 3's 5 nm spacing over 290-313 makes this tractable. Inputs carry
+      2-3 significant figures -- do not report more than ~4.
+    not_covered: >-
+      (1) THE EDEMA QUESTION IS UNRESOLVED AND MAY INVERT THE SIGN. This is the
+      most important caveat and must survive into the code. Bruls state water
+      does not absorb UV, and measure that hydrating SC from ~19.8 to ~31 um
+      (+56.6%, essentially all water) does NOT raise optical depth
+      proportionally -- UV-B transmission RISES on hydration (their Fig. 4b:
+      drying DECREASES UV-B transmission). de Boer 2025 attribute the SC change
+      to EDEMA, not acanthosis, with epidermal thickness flat (108.6 -> 109.4
+      um, p = 0.718). If that attribution is right, the optical value is an
+      UPPER BOUND on a quantity that could be near zero or negative. The
+      existing [PREMISE WARNING] in vitd_model.py must be strengthened, not
+      removed, by this change.
+      (2) BRULS CONTRADICTS de BOER ON EPIDERMAL THICKNESS: Bruls Table 1 has
+      the epidermis thickening +53.6%, "practically the same proportion" as the
+      SC. Dose regime is the likely reconciliation (Bruls escalating and
+      erythemally relevant; de Boer 0.8 SED suberythemal), which would make the
+      photoadaptation channel DOSE-REGIME DEPENDENT in a way neither SC_max nor
+      K_SC expresses.
+      (3) K_SC AND K_ATTEN REMAIN JOINTLY UNIDENTIFIABLE from response data
+      (vitd_sensitivity.py). Bruls in principle breaks that degeneracy because
+      it is an optical measurement owing nothing to any vitamin-D dose-response
+      fit -- but only conditional on d0.
+      (4) NO DARK SKIN. n = 8 Caucasian volunteers aged 20-30 (11 with the
+      UV-exposed arm), in vitro isolated epidermis/SC, lower back and upper leg,
+      collimated perpendicular incidence, scattering and absorption LUMPED, and
+      discrete Hg lines only with no line between 302 and 313. FST IV-VI carries
+      the LARGER SC_max (0.36), so this is a light-skin extrapolation onto
+      exactly the group it most affects.
+      (5) SC_max IS NOT CHANGED HERE, but Bruls Table 1 measures +53.85%
+      thickening (26 +/- 3 um after a rise of 14 +/- 4 um; n=6, escalating dose,
+      isolated saline-hydrated samples) -- 1.50x the SC_max default and outside
+      the 0.20-0.40 prior. Both existing sources sit low and this sits high;
+      the upper bound of that prior is less settled than two concordant studies
+      made it look. Recorded, NOT acted on.
+      (6) DIFFEY 1983 IS NOT IN THE REPO. The file named for it is a
+      mis-download (IOPscience served 0031-9155/28/1/005, Maughan & Roper,
+      neutron dosimetry, instead of 28/6/005), verified against its own cover
+      page. Diffey separates forward from backward scattering, which Bruls does
+      not, and is therefore the better source for this parameter. All that is
+      known of it here is secondhand via Bruls p.492 (d_1/2 = 8.5 um at 300 nm,
+      implying K_SC = 1.6309 at d0 = 20 um). Obtain it before treating the K_SC
+      derivation as closed.
+
   INTERMITTENT_BURN_EXPONENT:
     approved_by: User (repository owner)
     approval_date: 2026-08-08
@@ -227,6 +601,67 @@ parameter_approvals:
       conclusion Webb 2018 and Kift 2013 reach for FST V in the UK from
       MEASURED data: sun alone does not hold sufficiency. The model was not
       fitted to that conclusion.
+    superseded_note: >-
+      SUPERSEDED IN PART 2026-09-06. K_const was refitted again in the same
+      change as M_baseline_by_FST's move to the Narea 2026 table (see that
+      entry's coupled_refit clause): 0.98 -> 1.15. This entry's own "change"
+      and "consequence" fields above are left as the historical record of the
+      2026-08-17 decision and are NOT updated to the new value -- see the
+      M_baseline_by_FST entry above for the 2026-09-06 numbers (the refit
+      output, the re-reported optical factors, and the feasibility-map
+      consequence, including the finding that Bogh 2012 and Farrar 2013 both
+      flip from PASS to FAIL under the combined 2026-09-06 change).
+
+  A_reanchor_2026_09_06:
+    approved_by: User (repository owner)
+    approval_date: 2026-09-06
+    change: >-
+      3.114 -> 4.125. NOT a new calibration and NOT a new anchor: the SAME
+      Young 2021 target slope of 3.48 nmol/L per SED that the A entry below
+      already specifies, recomputed because two of its own denominator terms
+      moved in the same commit. bsa_factor(0.85) 1.558387 -> 1.337949
+      (BSA_EXP 0.50 -> 0.3281); exp(-K_const*M_II) 0.933700 -> 0.821006
+      (K_const 0.98 -> 1.15, M_baseline(II) 0.07 -> 0.1715). ln(1+E) and
+      g_biphasic(34.6) unchanged. Kernel 1.117569 -> 0.843668, so
+      A = 3.48 / 0.843668 = 4.124845215356494 -> 4.125.
+    rationale: >-
+      A had gone STALE: at 3.114 the model's own anchor function
+      (vitd_validation.young2021_A_anchor) returned a slope of 2.6272 against
+      its 3.48 target, i.e. the anchor the parameter is DEFINED by no longer
+      held. The K_const entry below anticipated exactly this -- "A is NOT yet
+      recalibrated ... the feasibility consequence is PROVISIONAL until the
+      combined K_const + A map is re-run". Leaving A alone would have silently
+      rebased the model's absolute level onto no anchor at all. The user
+      directed this re-anchor on 2026-09-06 after being shown the validation
+      regression it addresses.
+    consequence: >-
+      NOT A CLEAN WIN, AND RECORDED AS SUCH. The four-parameter move
+      (BSA_EXP, M_baseline_by_FST, K_const, K_SC) all push synthesis DOWN and
+      knocked Bogh 2012 and Farrar 2013 from PASS to FAIL: validation
+      10/10 -> 8/10. Re-anchoring restores both -- Bogh delta +38.8 -> +50.1
+      (band 45.8-65.8), Farrar +8.7 -> +13.6 (band 10-35) -- but OVERSHOOTS
+      felton2016_fst5_matched, which had been passing: it now predicts
+      +21.9 nmol/L against an observed +8.3, outside the reference-scenario
+      band of 2.5x observed (<= 20.75). NET 8/10 -> 9/10, with a DIFFERENT
+      check failing than before.
+    not_covered: >-
+      A WAS DELIBERATELY NOT TUNED TO MAKE ALL THREE PASS, though it could
+      have been. A window exists: A in roughly [3.75, 3.87] passes Bogh,
+      Farrar and Felton FST V simultaneously (measured 2026-09-06: A = 3.80 ->
+      Bogh 47.5, Felton5 20.4, all scenarios PASS; A = 3.85 -> 47.9 / 20.6,
+      PASS; A = 3.90 -> 48.3 / 20.8, FAIL). Selecting from that window was
+      REJECTED because it fits A to the validation set, collapsing the
+      calibration/validation separation this file maintains -- Felton 2016 is
+      in the CALIBRATION set behind K_const, and Bogh 2012 is self-labelled
+      DEBUGGING_TARGET / TIER: CIRCULAR. An A of 3.85 would also no longer
+      reproduce its own anchor, yielding 3.25 nmol/L per SED against Young's
+      3.48. 4.125 is what the anchor says; the failing check is reported as a
+      cost rather than engineered away. Whether the Felton FST V overshoot
+      indicates a real structural problem (as opposed to a too-tight 2.5x
+      band on a small observed delta of 8.3) is OPEN and not resolved here.
+      The LIGHT-SKIN EXTRAPOLATION flag on A is unchanged and now more
+      load-bearing: A is larger, so more of the model's absolute level rests
+      on an FST I-II anchor.
 
   A:
     approved_by: User (repository owner)

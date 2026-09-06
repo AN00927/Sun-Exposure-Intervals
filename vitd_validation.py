@@ -1126,7 +1126,7 @@ def validate_kift_2013_south_asian(verbose=True):
 
     (2) CIRCULAR. Kift 2013 is one of the four within-study/field routes --
         Felton 2016, Young 2020, Kift 2013, Darling 2013 -- that
-        `ModelParams.K_const = 0.98` was fitted to by equal-weight least
+        `ModelParams.K_const` (1.15 as of 2026-09-06, was 0.98) was fitted to by equal-weight least
         squares in log-ratio space (vitd_model.py, K_const entry: "Fitted
         to four within-study routes: Felton 2016, Young 2020, Kift 2013,
         Darling 2013"; full derivation in scripts/kconst_recalibration.py,
@@ -1184,7 +1184,7 @@ def validate_kift_2013_south_asian(verbose=True):
         print(f"  Protocol: ~1.0 SED/wk (0.333 SED 3x/wk) x 12 weeks, FST V, BSA=0.14, baseline {D0:.1f} nmol/L")
         print(f"  Model D_final = {D_final:.1f} nmol/L (delta = +{delta:.1f} nmol/L)")
         print(f"  Target bounds: D_final in [20, 40]: {'YES' if D_final_ok else 'NO'}, delta in [0, 15]: {'YES' if delta_ok else 'NO'}")
-        print(f"  CIRCULAR: Kift 2013 is one of the 4 routes K_const=0.98 was fitted to; band")
+        print(f"  CIRCULAR: Kift 2013 is one of the 4 routes K_const (1.15 as of 2026-09-06) was fitted to; band")
         print(f"  also includes zero, so a null model would pass. Demoted to warning-only,")
         print(f"  not counted toward the required pass/fail score. See docstring.")
         print(f"  [REPORTED, NOT GATED] Kift's own observed winter->summer amplitude: "
@@ -1470,7 +1470,7 @@ CHECK_REGISTRY = [
         TIER_CIRCULAR,
         "DEMOTED to warning-only 2026-08-21 (was required, band included "
         "zero). Kift 2013 is one of the four within-study/field routes "
-        "K_const=0.98 was fitted to (vitd_model.py K_const entry; "
+        "K_const (1.15 as of 2026-09-06, was 0.98) was fitted to (vitd_model.py K_const entry; "
         "scripts/kconst_recalibration.py). See function docstring for the "
         "full argument and the option-(a)-vs-(b) decision."),
     CheckSpec(

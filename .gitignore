@@ -1,3 +1,8 @@
+# FEW-TIME derivation scripts (CLAUDE.md script-lifecycle rule): answered
+# their calibration question and are not re-run on a schedule. Not imported
+# by run_all.py or tests/ -- confirmed by grep before ignoring.
+scripts/bsa_exp_recalibration.py
+
 # Python
 __pycache__/
 *.py[cod]

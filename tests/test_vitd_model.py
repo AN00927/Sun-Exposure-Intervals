@@ -158,19 +158,45 @@ class TestFeedbackFormA2:
 
     def test_interval_optimum_is_not_an_artefact_of_the_linear_form(self):
         """run_all.py section 17 attributes the interval ranking to the
-        `(1 - D/D_max)` term specifically. At fixed A the optimum is 3 d
-        under linear, saturating, and biphasic alike, so the ordering
-        comes from having a decreasing feedback factor, not from that term.
+        `(1 - D/D_max)` term specifically. The ordering in fact comes from
+        having a DECREASING feedback factor, not from that particular term:
+        every mode puts the optimum in the same place to within a day.
+
+        REBASED 2026-09-06. This test used to assert the optimum was exactly
+        3 d in every mode at A = 2.353. That equality was incidental, and the
+        2026-09-06 calibration broke it: at A = 2.353 the optimum is now
+        biphasic 3 d, linear / power / saturating 2 d. Nothing about the
+        property under test failed -- the modes still agree to within one day
+        -- so what is asserted now is the AGREEMENT itself plus the pinned
+        values, rather than a constant that was never the point. Widening a
+        hardcoded 3 into "2 or 3" would have hidden the shift; pinning both
+        operating points records it.
+
+        The optimum is also A-DEPENDENT, which the old single-A form could not
+        show: at the shipped A = 4.125 it moves to biphasic 5 d, the other
+        three 4 d. Larger A drives D higher, feedback bites sooner, and the
+        optimal spacing lengthens. Both points are pinned below.
         """
-        for mode in ("biphasic", "saturating", "linear"):
-            p = ModelParams()
-            p.feedback_mode = mode
-            p.A = 2.353                      # the pre-A4 value, held fixed
-            v = [net_final_D_change_per_SED(
-                    simulate(fst=3, schedule=build_pulse_schedule(84, 1.0, iv),
-                             duration_days=84, params=p, D0=25.0), 25.0)
-                 for iv in range(1, 16)]
-            assert int(np.argmax(v)) + 1 == 3, mode
+        expected = {
+            2.353: {"biphasic": 3, "saturating": 2, "linear": 2, "power": 2},
+            4.125: {"biphasic": 5, "saturating": 4, "linear": 4, "power": 4},
+        }
+        for A_fixed, per_mode in expected.items():
+            optima = {}
+            for mode in ("biphasic", "saturating", "linear", "power"):
+                p = ModelParams()
+                p.feedback_mode = mode
+                p.A = A_fixed                # held fixed to isolate the form
+                v = [net_final_D_change_per_SED(
+                        simulate(fst=3,
+                                 schedule=build_pulse_schedule(84, 1.0, iv),
+                                 duration_days=84, params=p, D0=25.0), 25.0)
+                     for iv in range(1, 16)]
+                optima[mode] = int(np.argmax(v)) + 1
+            assert optima == per_mode, (A_fixed, optima)
+            # THE ACTUAL PROPERTY: no mode is an outlier, so the interval
+            # ranking is not an artefact of any one feedback form.
+            assert max(optima.values()) - min(optima.values()) <= 1, optima
 
 
 class TestYoung2021AAnchor:
@@ -183,7 +209,15 @@ class TestYoung2021AAnchor:
     """
 
     def test_A_is_the_anchored_value(self):
-        assert ModelParams().A == pytest.approx(3.114, abs=1e-9)
+        # RE-ANCHORED 2026-09-06: 3.114 -> 4.125. Same Young 2021 target slope
+        # (3.48 nmol/L per SED); two denominator terms moved in the same
+        # commit -- bsa_factor(0.85) 1.558387 -> 1.337949 (BSA_EXP 0.50 ->
+        # 0.3281) and exp(-K_const*M_II) 0.933700 -> 0.821006 (K_const 0.98 ->
+        # 1.15, M_baseline(II) 0.07 -> 0.1715). See calibration_approval.yaml,
+        # A_reanchor_2026_09_06. At the old 3.114 the anchor no longer held:
+        # model_slope_at_current_A was 2.6272 against the 3.48 target, which
+        # test_A_reproduces_the_anchor_arithmetic below would now catch.
+        assert ModelParams().A == pytest.approx(4.125, abs=1e-9)
 
     def test_A_reproduces_the_anchor_arithmetic(self):
         from vitd_validation import young2021_A_anchor
@@ -307,7 +341,9 @@ def test_auc_deficit_matches_manual_calculation():
 
 
 def test_bsa_factor_bounds_and_monotonicity():
+    # REBASED 2026-09-06: BSA_EXP 0.50 -> 0.3281 (calibration_approval.yaml,
+    # BSA_EXP entry; scripts/bsa_exp_recalibration.py). (1/0.35)**0.3281.
     p = ModelParams()
     assert p.bsa_factor(0) == 0.0
-    assert p.bsa_factor(1.0) == pytest.approx(1.69, abs=0.01)
+    assert p.bsa_factor(1.0) == pytest.approx(1.4112, abs=0.001)
     assert p.bsa_factor(0.5) < p.bsa_factor(0.7)

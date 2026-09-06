@@ -929,6 +929,20 @@ def weihs2013_prose_ratio(activity: str, site: str, reference_site: str) -> floa
 # Empirical Anchor: Finland vernal UV study (Ala-Houhala et al.) shows net 25(OH)D
 # reversal at high baseline (~90 nmol/L, where low baseline D0~37 nmol/L yields +6 nmol/L
 # while high baseline D0~116 nmol/L yields -6.7 nmol/L net decrease).
+# [EVIDENCE NOTE] Heaney et al. 2008 (Am J Clin Nutr 87:1738-1742) independently
+# reports a biphasic (fast-then-slow) 25-hydroxylation relationship, aggregated
+# across 6 human studies (n=206; oral D3 doses 0-11000 IU/d and cutaneous/UVB
+# input): Y = 0.433X + 87.81[1 - exp(-0.468X)], R^2 = 0.4482 (Fig. 4, studies
+# B/C/E/F pooled; text body states 0.443 for the same fit -- inconsistency in
+# the source paper, both reported here), where X = serum vitamin D3 (nmol/L)
+# and Y = serum 25(OH)D (nmol/L). This CORROBORATES the qualitative SHAPE of a
+# biphasic feedback (rapid conversion at low precursor, much slower above a
+# threshold they place at ~15 nmol/L serum D3) but does NOT set n or
+# D_inflect quantitatively: Heaney's curve is a linear+exponential mix, not a
+# Hill function, and its X-axis is serum vitamin D3 (the precursor pool), not
+# serum 25(OH)D feeding back on its own synthesis the way g(D) does here.
+# Possible follow-up (NOT done): refit Heaney's own aggregate curve to a Hill
+# form to get a non-arbitrary n, rather than the "gentlest integer knee" below.
 HYDROXYLATION_INFLECTION_NMOL_L: float = 56.0
 HYDROXYLATION_HILL_N: float = 2.0
 

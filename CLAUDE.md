@@ -84,10 +84,17 @@ instead of retyping the numbers.
   contained the complete dataset it claimed was absent.
 - Run the pipeline with `PYTHONIOENCODING=utf-8 python3 run_all.py`. The local
   `.venv` lacks numpy; `python3` is the interpreter with the dependencies.
-  **`run_all.py` takes ~25 minutes** (last measured 23:02:17-23:27:24 EDT
-  2026-08-23, after two new sections were added; dominated by the
-  differential-evolution optimisations in sections 13b/13c). Do **not** run it
-  just to "update everything", refresh results, or check mid-task — it is
+  **`run_all.py` takes ~22 minutes** (last measured 16:03:12-16:25:07 EDT
+  2026-09-06 = 21 min 55 s, on the re-anchored A = 4.125 parameter set;
+  previously 23:02:17-23:27:24 EDT 2026-08-23 = 25 min 07 s). Dominated by the
+  differential-evolution optimisations in sections 13b/13c: the 24-cell
+  (FST x session-budget) grid in `optimise_joint_schedule_grid` alone accounted
+  for ~13 min of the 2026-09-06 run. Single-threaded on a 16-core machine — the
+  grid cells are independent and seeded per cell, so a process pool over them is
+  the available speed-up; `differential_evolution(workers=-1)` is NOT, because
+  scipy forces `updating='deferred'` when `workers != 1`, which changes the
+  search trajectory and so moves every seeded result and pinned test value. Do
+  **not** run it just to "update everything", refresh results, or check mid-task — it is
   expensive and should only be run when genuinely needed (e.g. before quoting
   final numbers, after a calibration change, or when the user explicitly asks).
 
