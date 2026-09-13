@@ -59,15 +59,15 @@ sub-erythemal sessions.
 
 We separate two distinct claims that the phrase ``front-loading''
 conflates. Concentrating a fixed \emph{weekly} budget into fewer days
-lowers steady-state 25(OH)D monotonically, by 11.0--28.8\,\% across
+lowers steady-state 25(OH)D monotonically, by 11.6--29.0\,\% across
 nine skin-type $\times$ budget cells, and does so in 9 of 9 cells.
 Redistributing a fixed \emph{horizon} budget from a flat to a
 front-loaded profile, at matched session count, does not move the
-plateau at all (mean $+0.38\,\%$ over 84 days; $-7.52\,\%$ over 365
+plateau at all (mean $+0.30\,\%$ over 84 days; $-7.63\,\%$ over 365
 days). What front-loading buys is transient, not terminal: it reduces
 accumulated deficiency below the sufficiency threshold by a mean of
-49.4\,\% at 84 days and 68.9\,\% at 365 days, and reaches sufficiency
-in a median of 3 days rather than 37.
+56.8\,\% at 84 days and 75.1\,\% at 365 days, and reaches sufficiency
+in a median of 5 days rather than 42.
 
 Mechanism ablation attributes the ordering to the concavity of the
 logarithmic dose-response term alone; disabling product-feedback
@@ -77,7 +77,8 @@ six Fitzpatrick skin types select the shortest available interval.
 
 We state the limits rather than minimise them. Four parameter pairs
 are jointly unidentifiable; the single genuinely held-out external
-benchmark \emph{fails}; and the synthesis scalar is calibrated on
+benchmark \emph{passes, narrowly}, near the upper edge of a band drawn
+from one source study; and the synthesis scalar is calibrated on
 Fitzpatrick I--II subjects only, making every absolute prediction for
 darker skin an explicit extrapolation. The interval ranking survives
 all of this because it depends on the shape of the dose-response
@@ -180,8 +181,8 @@ This paper addresses three questions:
 
 We answer them within a single frozen exposure scenario, with the
 model's uncertainty, its unidentifiable parameter combinations, and
-its one failing out-of-sample test reported alongside the results
-rather than after them. That reporting posture is deliberate. An
+its one out-of-sample test reported alongside the results rather than
+after them. That reporting posture is deliberate. An
 earlier iteration of this work published a headline optimum derived
 from an objective function that had no interior optimum; the
 safeguards described in Section~\ref{sec:objectives} exist because of
@@ -414,15 +415,15 @@ Holding the weekly \SED{} budget fixed and varying only the number of
 days across which it is delivered, steady-state 25(OH)D falls
 monotonically as exposure is concentrated. Moving from a session every
 day to a single weekly session changes steady-state 25(OH)D by
-between $-11.0\,\%$ and $-28.8\,\%$ across the nine skin-type
+between $-11.6\,\%$ and $-29.0\,\%$ across the nine skin-type
 $\times$ budget cells, and steady-state 25(OH)D rises monotonically
 with sessions per week in 9 of those 9 cells.
 
 The effect is largest at the largest budgets, which is the signature
 of a saturating dose-response rather than of an adaptive state: at
 \SI{7}{\SED\per week} the penalty for weekly concentration reaches
-$-28.7\,\%$ at FST V and $-27.98\,\%$ at FST VI, whereas at
-\SI{1.75}{\SED\per week} it is $-12.10\,\%$ and $-11.01\,\%$
+$-29.02\,\%$ at FST V and $-28.38\,\%$ at FST VI, whereas at
+\SI{1.75}{\SED\per week} it is $-12.92\,\%$ and $-11.58\,\%$
 respectively. A larger session sits further out on the concave part of
 the curve, so more of it is wasted.
 
@@ -434,23 +435,23 @@ same schedules that are dangerous.
 
 The deficiency consequences are larger than the plateau differences
 suggest. At FST V and \SI{7}{\SED\per week}, splitting across seven
-days reaches sufficiency on day 45 and accumulates
-\SI{483.7}{\nmol\per\litre\day} of deficit; the same budget in one
+days reaches sufficiency on day 36 and accumulates
+\SI{390.0}{\nmol\per\litre\day} of deficit; the same budget in one
 weekly session never reaches sufficiency at all and accumulates
-\SI{1201.4}{}. At FST VI the corresponding split schedule reaches
-sufficiency on day 60 while the concentrated one never does.
+\SI{1020.0}{}. At FST VI the corresponding split schedule reaches
+sufficiency on day 51 while the concentrated one never does.
 
 \subsection{Redistributing a fixed horizon budget does not move the plateau}
 
 Arm (b) gives a null on the terminal measure. Over 36 matched-N cells
 (2052 front-loaded arms), the best front-loaded profile differs from
-flat-and-uniform on steady-state 25(OH)D by a mean of $+0.38\,\%$ at
+flat-and-uniform on steady-state 25(OH)D by a mean of $+0.30\,\%$ at
 an 84-day horizon, with the largest positive plateau gain available
-anywhere on the front-loaded half of the grid being $+0.97\,\%$.
+anywhere on the front-loaded half of the grid being $+0.95\,\%$.
 
 Extending the horizon does not give the shape families room to work;
 it removes what little effect there was. At 365 days the same
-comparison yields a mean of $-7.52\,\%$, and the largest positive
+comparison yields a mean of $-7.63\,\%$, and the largest positive
 plateau gain available anywhere on the front-loaded half of the grid
 is $+0.00\,\%$. This forecloses the obvious objection that the
 three-parameter shape families were simply horizon-limited.
@@ -465,17 +466,17 @@ Ranked instead on accumulated deficiency below the sufficiency
 threshold, a horizon-integrated rather than terminal measure, the
 picture inverts from a null to a large effect.
 
-At the 84-day horizon, front-loading produces a mean 49.4\,\%
+At the 84-day horizon, front-loading produces a mean 56.8\,\%
 reduction in accumulated deficiency relative to flat-and-uniform at
-the same session count (maximum 98.7\,\%), or 44.8\,\% when the search
+the same session count (maximum 99.0\,\%), or 52.2\,\% when the search
 is restricted to sub-erythemal arms only. The deficit-optimal spacing
 exponent is $\gamma = 2.5$, and it reaches sufficiency in a median of
-3 days against 37 days at the spacing that maximises the terminal
+5 days against 42 days at the spacing that maximises the terminal
 plateau instead.
 
-At 365 days the reduction is a mean of 68.9\,\% (maximum 99.9\,\%),
-65.1\,\% among sub-erythemal arms, reaching sufficiency in a median of
-8 days against 239 days for the plateau-maximising spacing.
+At 365 days the reduction is a mean of 75.1\,\% (maximum 99.9\,\%),
+71.5\,\% among sub-erythemal arms, reaching sufficiency in a median of
+3 days against 230 days for the plateau-maximising spacing.
 
 The effect survives the erythema cap, so it is not purchased with a
 burn.
@@ -485,10 +486,10 @@ burn.
 No taper sign may be stated without naming the measure it was read
 from. Across the spacing exponent at 84 days, the terminal measure
 moves by approximately 6 percentage points while the horizon-integrated
-measure moves by approximately 108; the terminal argmax lies at
+measure moves by approximately 130; the terminal argmax lies at
 $\gamma \in \{0.8, 1, 1.4, 1.8\}$ and the integrated argmax at
 $\gamma = 2.5$. At 365 days the terminal measure moves by
-approximately 39 points against approximately 368 for the integrated
+approximately 40 points against approximately 433 for the integrated
 one, and the argmaxes separate completely: $\gamma = 0.4$ against
 $\gamma \in \{1.4, 1.8, 2.5\}$.
 
@@ -499,7 +500,7 @@ of the run and any schedule that piles dose into the endpoint wins it.
 The arm that maximises the terminal plateau does so by
 \emph{back}-loading at $\gamma = 0.4$: it opens with a 35-day
 no-exposure gap, stacks dose beneath the averaging window, wins the
-terminal measure by $+22.1\,\%$, and pays for it with $10.4\times$
+terminal measure by $+22.3\,\%$, and pays for it with $11.5\times$
 worse accumulated deficiency than the flat reference. It leaves the
 subject deficient for most of the year.
 
@@ -526,7 +527,7 @@ gap; neither creates it.
 The facultative-melanin attenuation coefficient was never a candidate
 cause. At its calibrated value the corresponding term is nearly inert
 --- the one-at-a-time sensitivity analysis moves steady-state 25(OH)D
-by $0.3\,\%$ across its entire prior range, against $24.8\,\%$ for the
+by $0.3\,\%$ across its entire prior range, against $21.4\,\%$ for the
 synthesis scalar $A$ --- so the term is inert by calibration, not
 merely by ablation. Sweeping it two orders of magnitude past its
 literature-implied range never produced a non-daily optimum under a
@@ -569,12 +570,12 @@ not.}
 \toprule
 FST & MED & binding & interval & \SED/session & min/session & \%MED & combined index \\
 \midrule
-I   & 2.1  & MED     & 1 d & 0.25 & 8  & 12 & 0.5285 \\
-II  & 2.6  & MED     & 1 d & 0.27 & 9  & 10 & 0.4624 \\
-III & 3.2  & MED     & 1 d & 0.32 & 10 & 10 & 0.4767 \\
-IV  & 5.6  & minutes & 1 d & 0.47 & 15 & 8  & 0.2499 \\
-V   & 7.5  & minutes & 1 d & 0.74 & 24 & 10 & 0.2682 \\
-VI  & 15.2 & minutes & 1 d & 1.02 & 32 & 7  & 0.1015 \\
+I   & 2.1  & MED     & 1 d & 0.19 & 6  & 9 & 0.2735 \\
+II  & 2.6  & MED     & 1 d & 0.23 & 7  & 9 & 0.3009 \\
+III & 3.2  & MED     & 1 d & 0.28 & 9  & 9 & 0.3420 \\
+IV  & 5.6  & minutes & 1 d & 0.40 & 13 & 7  & 0.1772 \\
+V   & 7.5  & minutes & 1 d & 0.58 & 18 & 8 & 0.1479 \\
+VI  & 15.2 & minutes & 1 d & 0.86 & 27 & 6 & 0.0684 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -591,7 +592,7 @@ rather than as a selector.
 The agreement is a property of the \emph{constrained} problem, not a
 universal one. Over the unconstrained grid the Pareto frontier still
 trades off: at FST II over a one-year horizon, the frontier runs from
-\SI{4.00}{\SED} daily (9 days below sufficiency, melanoma index
+\SI{4.00}{\SED} daily (8 days below sufficiency, melanoma index
 234.931) down to \SI{0.25}{\SED} every 28 days (365 days below
 sufficiency, melanoma index 0.002). Removing the requirement to
 actually reach sufficiency restores the trade-off immediately, because
@@ -600,14 +601,19 @@ exposure at all.
 
 The joint timing-and-dose optimisation shows the same structure from a
 third direction. Freeing the spacing exponent against a uniform
-control at matched budget reduces cumulative-axis risk by roughly
-8--11\,\% while raising intermittent-axis risk by 13--15\,\%, and the
+control at matched budget reduces cumulative-axis (SCC) risk by a
+median of $8.55\,\%$ (24 operating points, range: worst $-13.74\,\%$,
+best $+7.15\,\%$) while raising intermittent-axis (BCC/melanoma) risk
+by a median of $18.87\,\%$ (range $+6.91\,\%$ to $+65.94\,\%$), and the
 two axes must be read separately rather than through their geometric
-mean. The session budget is part of the problem statement rather than
-an add-on: without one the optimum is degenerate, since at fixed
-cumulative dose the intermittency term is minimised by spreading over
-as many days as possible, driving the solution to a daily schedule by
-construction.
+mean. Neither figure should be read too finely: the solver's own noise
+diagnostic puts the floor of a genuine gain at roughly $10\,\%$, so the
+smaller cumulative-axis median sits close to that floor while the
+larger intermittent-axis shift clears it comfortably. The session
+budget is part of the problem statement rather than an add-on: without
+one the optimum is degenerate, since at fixed cumulative dose the
+intermittency term is minimised by spreading over as many days as
+possible, driving the solution to a daily schedule by construction.
 
 \subsection{``Daily'' is conditional on being able to afford daily}
 \label{sec:budget}
@@ -621,8 +627,9 @@ the shortest one, and the reason is instructive.
 
 Fixing the dose at \SI{1.0}{\SED} per session over a 365-day horizon
 and searching the uniform gap, the best gap at FST I is 4 days at 52
-sessions per year, 2 days at 104, and 1 day at 146 and above. The same
-pattern holds at FST III, where the best gap at 52 sessions is 3 days.
+sessions per year, 2 days at 104 and at 146, and 1 day at 183 and
+above. The same pattern holds at FST III, where the best gap at 52
+sessions is 3 days.
 Only once the session budget is large enough to cover a substantial
 fraction of the horizon does the optimum collapse onto the daily
 schedule that the fixed-budget analyses select.
@@ -634,7 +641,7 @@ months are pure elimination; 25(OH)D peaks early and then falls for
 the rest of the horizon. Spreading a limited number of sessions across
 the horizon trades a lower peak for a higher mean and far fewer days
 below sufficiency. At FST I with 52 sessions the best schedule spends
-280 days below \SI{50}{\nmol}; at 365 sessions it spends 21.
+208 days below \SI{50}{\nmol}; at 365 sessions it spends 16.
 
 This qualifies the paper's headline claim in a way that matters for
 how it should be used. ``More sessions, each smaller'' is the correct
@@ -653,7 +660,7 @@ For darker skin types the model returns infeasibility under a range of
 session budgets, and we report those cells as findings rather than
 filling them by relaxing a constraint. Over the coarse dose grid at a
 one-year horizon, no schedule keeps FST V sufficient: its Pareto
-frontier runs from \SI{4.00}{\SED} daily with 24 days below
+frontier runs from \SI{4.00}{\SED} daily with 19 days below
 sufficiency down to \SI{0.25}{\SED} every 28 days with all 365 days
 below.
 
@@ -661,7 +668,7 @@ This does not contradict Table~\ref{tab:riskaware}, and the
 distinction matters. The frontier above is computed over a coarse
 grid of fixed per-session doses; the constrained optimisation searches
 per-session dose continuously and finds a feasible FST V schedule at
-\SI{0.74}{\SED} daily, holding a steady state of 60.6~\nmol{}. What
+\SI{0.58}{\SED} daily, holding a steady state of 60.6~\nmol{}. What
 the coarse frontier shows is that none of a small set of round-numbered
 doses happens to work, not that no dose works. Both statements are
 reported because a reader who sees only one of them draws the wrong
@@ -679,10 +686,10 @@ hold a budget that uniform spacing misses.
 \subsection{What the model does not pin down}
 
 Two parameters dominate the response. Across documented prior ranges,
-the synthesis scalar $A$ swings steady-state 25(OH)D by 8.61~\nmol{}
-(24.8\,\%) and the constitutive-pigment coefficient
-$K_{\mathrm{const}}$ by 8.19~\nmol{} (23.6\,\%). The stratum corneum
-attenuation strength contributes 8.2\,\%, and every remaining
+the constitutive-pigment coefficient $K_{\mathrm{const}}$ swings
+steady-state 25(OH)D by 9.53~\nmol{} (25.8\,\%) and the synthesis
+scalar $A$ by 7.93~\nmol{} (21.4\,\%). The stratum corneum
+attenuation strength contributes 8.8\,\%, and every remaining
 parameter contributes under 3\,\%. Parameters at the bottom of that
 table cannot be blamed for prediction error however uncertain their
 citation trail.
@@ -700,45 +707,63 @@ are both exponential attenuations of a saturating state driven by the
 same UV input, so they trade off along a ridge.
 
 Propagating the prior ranges through 400 Monte Carlo draws gives a
-median steady-state 25(OH)D of 36.638~\nmol{} with a 95\,\% range of
-$[30.457, 44.439]$. The best interval under a per-\SED{} gain
+median steady-state 25(OH)D of 36.850~\nmol{} with a 95\,\% range of
+$[30.621, 44.593]$. The best interval under a per-\SED{} gain
 criterion is not a single value across draws: 3 days is selected in
-33.5\,\% of draws, 2 days in 27.0\,\%, 4 days in 20.2\,\% and 5 days
-in 17.8\,\%. These are intervals, and a single headline number would
-imply precision the evidence does not support.
+33.8\,\% of draws, 2 days in 26.0\,\%, 4 days in 20.5\,\%, 5 days in
+18.8\,\%, 1 day in 0.8\,\% and 7 days in 0.2\,\%. These are intervals,
+and a single headline number would imply precision the evidence does
+not support.
 
-\subsection{The one held-out test fails}
+\subsection{The one held-out test passes}
 
 Nothing in the model is calibrated to the Webb and Kift dataset
 \citep{webbkift2018}, which makes it the only genuinely out-of-sample
 evidence available. It reports that FST V requires 2.5--3.0 times the
 dose of white Caucasians for an equivalent 25(OH)D response. The model
-returns $3.01\times$, marginally outside the upper bound: a
-\textbf{fail}, and we report it as one.
+returns $2.87\times$, inside the band and close to its upper bound: a
+\textbf{pass}, on the only comparison in this work that was not fitted
+to the data it is checked against.
 
 A diagnostic minutes ratio computed under the same conditions gives
-$5.21$ against a reported $2.78$. That figure is not a second failure
-but an algebraic restatement of the same fact, and is gated as
+$4.26$ ($63.5$ vs $270.9$ minutes) against a reported $2.78$. That
+figure is not a second, independent check but an algebraic
+restatement of the same underlying measurement, and is gated as
 diagnostic context rather than as an independent check.
 
-The direction of the miss is that the model over-predicts the
-skin-type penalty. The relevant literature disagreement is not, as an
-earlier version of this work recorded, between lamp-based and
-naturalistic exposure. The source of the 2.5--3.0 band is itself a
-matched-dose, simulated-sunlight trial at approximately 35\,\% BSA
-against a matched-dose white comparator \citep{farrar2013}, and
-the study to which the constitutive-pigment coefficient is calibrated
-reports a ratio of 1.3--1.4 under equally matched-dose lamp conditions
-\citep{young2020}. The two disagree with each other, lamp against
-lamp. The model sits at one end of a genuine and unresolved conflict
-in the source literature.
+The pass is not centred in the band: $2.87\times$ sits near its upper
+edge rather than its midpoint, and that placement is worth keeping in
+view rather than treating a single pass as closing the question. The
+relevant literature disagreement is not, as an earlier version of this
+work recorded, between lamp-based and naturalistic exposure. The
+source of the 2.5--3.0 band is itself a matched-dose, simulated-sunlight
+trial at approximately 35\,\% BSA against a matched-dose white
+comparator \citep{farrar2013}, and the study to which the
+constitutive-pigment coefficient is calibrated reports a ratio of
+1.3--1.4 under equally matched-dose lamp conditions \citep{young2020}.
+Those two source studies disagree with each other, lamp against lamp,
+by a margin the model's own pass does not resolve: the model sits
+inside the band drawn from one of them while sitting well outside the
+range reported by the other. A single passing comparison against a
+band drawn from one source study does not adjudicate that conflict,
+and should not be read as validating the constitutive-pigment
+coefficient against it.
 
 \subsection{Validation status, disaggregated}
 
-The validation suite reports 14 of 14 checks passing, and that number
-is misleading in a way worth decomposing rather than repeating. The
-suite tags each check with an evidence tier, and most of what the pass
-count counts is self-consistency rather than biology.
+The validation suite does not reduce to one pooled pass count, and
+reporting it as one is itself a source of drift: an earlier draft of
+this paper reported ``14 of 14'', and the pipeline's own report at one
+point pooled the same checks as ``13 of 14''. Both figures conflate
+two gates that must be kept apart. Required checks pass 9 of 10;
+checks demoted to warning-only (for a documented reason, such as
+circularity) pass 4 of 4.
+
+Orthogonal to that pass/fail split, and the number that actually
+bounds what the suite licenses, is an evidence-tier breakdown across
+all 14 checks: \textsc{internal} 4/4, \textsc{directional} 3/3,
+\textsc{circular} 3/3, \textsc{quantitative} 1/2, and
+\textsc{not\_evidence} 2/2.
 
 Checks tagged \textsc{internal} verify that the simulator computes its
 own documented mathematics --- that numerical integration matches the
@@ -751,10 +776,21 @@ trajectory against the data used to fit the parameters that generate
 it. Checks tagged \textsc{directional} assert only a sign, with no
 numeric target.
 
-Only two of the fourteen are quantitative external comparisons. The
-pass count is real; it is not evidence of predictive accuracy, and the
-held-out benchmark in the preceding section is the only test in this
-work that could have failed on biological grounds --- and did.
+Only the \textsc{quantitative} row is an external numeric comparison,
+and it fails on one of its two checks: the reference-scenarios
+benchmark predicts a synthesis of $+21.9$~\nmol{} for the
+\texttt{felton2016\_fst5\_matched} scenario against an observed
+$+8.3$~\nmol{}, outside the check's acceptance band. The pass count is
+real; it is not evidence of predictive accuracy. The held-out
+benchmark in the preceding section is not counted in either the
+pass/fail split or the evidence-tier breakdown above, and it is the
+only genuinely out-of-sample test in this work; it passes, narrowly.
+A separate, in-suite quantitative check fails on the same axis it
+tests. Read together rather than selectively, the two facts say the
+same thing the rest of this section argues: the model's external
+numeric support is thin, and a single passing comparison --- or a
+single failing one --- should not be read as settling the question
+either way.
 
 % ===================================================================
 \section{Discussion}
@@ -793,7 +829,7 @@ of the horizon. Any schedule-shape claim that does not name its
 outcome measure and confirm that session count was matched is
 under-specified. Our own back-loading artefact is the cautionary case:
 a schedule that leaves a subject deficient for most of a year wins the
-terminal measure by 22.1\,\% purely by exploiting the averaging
+terminal measure by 22.3\,\% purely by exploiting the averaging
 window.
 
 \subsection{Where the interval ranking is safe and the minutes are not}
@@ -801,7 +837,7 @@ window.
 The interval ranking depends on the \emph{shape} of the dose-response
 curve rather than its scale, which is why it survives the model's
 considerable parametric uncertainty: the two parameters that dominate
-steady-state 25(OH)D, $A$ and $K_{\mathrm{const}}$, are both
+steady-state 25(OH)D, $K_{\mathrm{const}}$ and $A$, are both
 multiplicative scalars in Equation~\eqref{eq:synth} and do not alter
 the concavity that produces the ordering.
 
@@ -934,23 +970,26 @@ scenario.
 covering only extreme phototypes. Interval and minutes columns do not
 depend on it.
 
-\paragraph{Single failing external test.} We have one genuinely
-held-out benchmark and it fails. A model with one out-of-sample test
-has weak external support regardless of how many internal checks pass.
+\paragraph{Single external test.} We have one genuinely held-out
+benchmark, and it passes --- narrowly, near the upper edge of the
+reported band, and on a single comparison against a band drawn from
+one source study. A model with one out-of-sample test has weak
+external support regardless of how many internal checks pass, and a
+single passing comparison should not be read as validating the model.
 
 % ===================================================================
 \section{Conclusions}
 
 For a fixed UV budget under a frozen reference exposure scenario,
 dividing exposure into more and smaller sessions raises steady-state
-25(OH)D monotonically, by 11.0--28.8\,\% across the tested grid, and
+25(OH)D monotonically, by 11.6--29.0\,\% across the tested grid, and
 the mechanism is the concavity of the logarithmic dose-response rather
 than photoadaptation or product-feedback inhibition, both of which
 modulate the magnitude of the effect without changing its sign.
 
 Redistributing a fixed horizon budget from flat to front-loaded does
 not raise the plateau at any horizon tested, but reduces accumulated
-deficiency by 49.4\,\% at 84 days and 68.9\,\% at 365 days, and
+deficiency by 56.8\,\% at 84 days and 75.1\,\% at 365 days, and
 reaches sufficiency in days rather than months. The two claims that
 ``front-loading'' can denote must therefore be stated separately, with
 the outcome measure named, because their signs differ and the
@@ -965,9 +1004,9 @@ trades off, because the least-risk unconstrained schedule is no
 exposure.
 
 These conclusions are ordinal and should be used as such. The model's
-one held-out external test fails, four of its parameter pairs are
-jointly unidentifiable, and its synthesis scalar is calibrated on
-light-skinned subjects only. The interval ranking survives that
+one held-out external test passes near the upper edge of its reported
+band, four of its parameter pairs are jointly unidentifiable, and its
+synthesis scalar is calibrated on light-skinned subjects only. The interval ranking survives that
 uncertainty because it depends on curve shape rather than curve scale.
 No absolute duration reported here is a dosing instruction.
 

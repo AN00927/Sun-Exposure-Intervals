@@ -1509,7 +1509,7 @@ def main():
             "`vitd_benchmark_webbkift.py`'s module docstring).\n"
             % ("PASS" if bench_res["webbkift_dose_ratio"] else "**FAIL**",
                bench_res["model_dose_ratio"],
-               "%g-%gx" % (vitd_benchmark_webbkift.WK_DOSE_RATIO_LOW,
+               "%.1f-%.1fx" % (vitd_benchmark_webbkift.WK_DOSE_RATIO_LOW,
                            vitd_benchmark_webbkift.WK_DOSE_RATIO_HIGH),
                ("%.2fx" % bench_res["model_minutes_ratio"]
                 if bench_res["model_minutes_ratio"] is not None
@@ -1588,6 +1588,17 @@ def main():
             % (len(_bad),
                ", ".join("`%s` (ridge %.4f, ss_D spread %.2f)" % b
                          for b in _bad)))
+
+    # G-heading: derive section 17's out-of-sample heading from the same
+    # bench_res used to headline section 15, so the two can never disagree
+    # the way a hand-typed heading once did (section 15 said PASS while this
+    # heading still asserted failure).
+    _WEBBKIFT_HEADING = (
+        "### The one out-of-sample test's current status is unavailable"
+        if bench_res is None else
+        "### The one out-of-sample test now passes"
+        if bench_res["webbkift_dose_ratio"] else
+        "### The one out-of-sample test currently fails")
 
     report.append("\n## 17. Interpretation\n")
     report.append(f"""
@@ -1669,9 +1680,9 @@ overstates what the data support -- melanin and stratum corneum are both
 `exp(-k * saturating state)` terms driven by the same UV input, so they trade
 off along a ridge.
 
-### The one out-of-sample test currently fails
+{_WEBBKIFT_HEADING}
 
-Webb/Kift 2018 report that skin type V needs 2.5-3.0x the dose of white
+Webb/Kift 2018 report that skin type V needs {vitd_benchmark_webbkift.WK_DOSE_RATIO_LOW:.1f}-{vitd_benchmark_webbkift.WK_DOSE_RATIO_HIGH:.1f}x the dose of white
 Caucasians for an equivalent 25(OH)D rise. What the model gives, and whether it
 now clears that band, is in **section 15** -- read the ratio from there rather
 than from this paragraph, which has previously carried a figure from an earlier
