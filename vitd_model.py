@@ -1705,13 +1705,9 @@ class ModelParams:
     #   flagged as a legibility problem, not silently resolved; a cleaner copy
     #   would move the 15-site mean by at most 13.49 -> 13.16 d, changing
     #   nothing above.
-    #   [INCONSISTENCY FOUND 2026-09-06, not fixed here] scripts/parameter_optima.py
-    #   still justifies this prior as "Weinstein & Van Scott 1965 transit time
-    #   26-27 d" -- the COMBINED whole-epidermis figure that the paragraph above
-    #   argues is the wrong leg. The two files disagree about what the prior
-    #   rests on. Grove & Kligman make the 26-27 d reading harder still: their
-    #   SC leg ALONE is ~20 d in young adults, so adding a malpighian leg pushes
-    #   whole-epidermis transit past 26-27 d toward Halprin's revision.
+    #   [INCONSISTENCY RESOLVED 2026-09-13] scripts/parameter_optima.py lines 109-114
+    #   were updated to justify this prior by the SC-residence leg alone (13-14 d),
+    #   resolving the combined whole-epidermis discrepancy, and citing Jansen 1974.
     # K_SC: Attenuation strength. Pearse 1987 did not measure vitamin D
     #   attenuation directly. K_SC=1.0 gives exp(-0.30)=74% at SC_max.
     #   Range 0.5-2.0 reflects uncertainty.

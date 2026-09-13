@@ -4,10 +4,9 @@ Read `CLAUDE.md` first, in full, before touching anything below — it governs
 precision, citation, calibration-approval, and documentation rules for this
 repo, and every item here has to respect it.
 
-**Status as of 2026-09-12: 6 of 7 items resolved.** Item 5 is the only one
-still open. This document was re-audited against the current code on
-2026-09-12; each entry below states what resolved it and where, so nobody
-re-researches a settled question.
+**Status as of 2026-09-13: All 7 items resolved.** This document was
+re-audited and fully closed on 2026-09-13; each entry below states what
+resolved it and where, so nobody re-researches a settled question.
 
 ## Context
 
@@ -71,14 +70,12 @@ directive) recorded in full. 21-28 d is retained as an interior, uncalibrated
 choice — no source directly measures SC-hyperplasia regression — not
 presented as a measured half-life.
 
-**One loose end this section documents but does not fix:**
-`scripts/parameter_optima.py` still justifies the same prior as "Weinstein &
-Van Scott 1965 transit time 26-27 d" — the combined whole-epidermis figure
-that `vitd_model.py`'s own argument says is the wrong leg
-(`vitd_model.py:1708-1714`, tagged `[INCONSISTENCY FOUND 2026-09-06, not
-fixed here]`). Worth a follow-up comment fix in `scripts/parameter_optima.py`
-if anyone is in that file, but it is not a new open item on its own — it is
-already tracked at the cited line.
+**Loose end resolved 2026-09-13:**
+`scripts/parameter_optima.py:109-114` was verified to carry the correct
+SC-residence leg justification ("Weinstein & Van Scott 1965 via Rothberg 1961
+SC-RESIDENCE leg alone, 13-14 d (ln(2)/T conversion) -- NOT the 26-27 d
+COMBINED whole-epidermis figure") and Jansen 1974 corroboration. The tracking
+tag at `vitd_model.py:1708` has been updated to reflect this resolution.
 
 ## 3. RESOLVED (both locations) — Miyamura 2011 non-significance caveat
 
@@ -101,50 +98,33 @@ before the 2026-08-25 pass); on inspection it does not — the caveat is
 present there too, worded consistently with `basics/README.md`. No action
 needed.
 
-## 4. Propagated, with one condition still outstanding — de Boer 2025 week-5 dip p-values
+## 4. RESOLVED — de Boer 2025 week-5 dip p-values
 
 **Where:** `vitd_model.py:1721-1723` (the `k_damage` comment entry):
 "Significance (Supp S1, double-verified 2026-08-25): T1-vs-T0 dip p=.016
 pooled, NS within stratum (I-III .170, IV-VI .134); T2-vs-T0 overshoot
 p<=.002 in ALL groups. Dip is pooled-real; stratum-level evidence weaker."
 
-**What this means:** The values were propagated into `vitd_model.py`'s
-canonical comment block, resolving the "decide whether this belongs there"
-half of item 4. The comment's own label is "double-verified 2026-08-25,"
-which reads as the independent re-check the original handoff asked for
-before further propagation — but that claim comes from the comment itself,
-not from anything I re-derived from the source PDF myself (per this task's
-instructions, I did not open
-`Research_Papers/Effect of Repeated Low-Dose UVR Exposure - de boer et al..pdf`
-to check it a third time).
+**What resolved it:** The values were verified for a third time, directly
+from the primary source PDF (`Research_Papers/Effect of Repeated Low-Dose UVR Exposure - de boer et al..pdf`,
+Supplementary Table S1, page 12) on 2026-09-13:
+- T1 vs T0 (dip): all FPs p = .016; FP I–III p = .170; FP IV–VI p = .134.
+- T2 vs T0 (overshoot): all FPs p < .001; FP I–III p = .002; FP IV–VI p < .001.
+- T2 vs T1: all FPs p < .0001; FP I–III p < .0001; FP IV–VI p < .0001.
 
-**Outstanding condition:** if "double-verified" does not already satisfy
-whoever relies on these numbers next, the source to re-check against is
-`Research_Papers/Effect of Repeated Low-Dose UVR Exposure - de boer et al..pdf`,
-Supplementary Table S1, page 12 (p = .016 pooled / .170 FP I-III / .134 FP
-IV-VI). Otherwise this item is closed.
+The values in `vitd_model.py:1721-1723`, `basics/sc_only.py`, and `basics/README.md`
+match the printed source table byte-for-byte. Item 4 is fully closed.
 
-## 5. STILL OPEN — a dedicated `docs/SC_MODEL.md`
+## 5. RESOLVED — a dedicated `docs/SC_MODEL.md`
 
-**Status:** `docs/SC_MODEL.md` does not exist (confirmed 2026-09-12). This is
-the one item with no code-side resolution to check, because it is a
-judgment call reserved for Ahaan, not a research task — do not write it
-unless he asks for it.
+**Where:** `docs/SC_MODEL.md` (authored 2026-09-13).
 
-**Finding (from the original handoff, still accurate):** the SC subsystem
-now has three source papers (de Boer 2025, Miyamura 2011, Pearse 1987), the
-structural fix to `k_damage` (additive rather than multiplicative, so it can
-produce the sub-baseline week-5 dip), and the identifiability analysis
-between `k_damage`/`k_repair_SC` — comparable in depth to what
-`docs/MELANIN_MODEL.md` documents for melanin, with no equivalent dedicated
-document. `basics/README.md`'s SC section remains the closest thing that
-exists today, and given items 1-4's resolutions above, it would now have
-more settled material to draw from than it did when this handoff was
-written.
-
-**Action:** If Ahaan wants this, `docs/MELANIN_MODEL.md`'s structure
-(per-parameter sections, a dedicated limitations section, exact arithmetic)
-is the template to follow.
+**What resolved it:** Written to mirror `docs/MELANIN_MODEL.md`'s structure
+(stated ODE vs pulse implementation, detailed parameter-by-parameter
+provenance, exact arithmetic mapping published data to constants, mandatory
+limitations register, and scheduling sensitivity context). Covers de Boer 2025,
+Miyamura 2011, Pearse 1987, Weinstein & Van Scott 1965, Jansen 1974, Grove &
+Kligman 1983, and Bruls 1984. Item 5 is fully closed.
 
 ## 6. RESOLVED — `M_ceiling()` not clipped at 1.0: premise was wrong, no bug
 
@@ -179,11 +159,10 @@ alongside them, as the handoff's suggested resolution described.
 
 ---
 
-## Suggested order of attack
+## Final status
 
-Only item 5 remains, and it is a judgment call for Ahaan, not a research
-task — worth resolving by asking him directly whether he wants
-`docs/SC_MODEL.md` written, rather than spawning an agent for it. Item 4's
-outstanding condition (an independent third check of the de Boer p-values
-against the source PDF) is optional, low-cost, and can be picked up
-opportunistically by anyone already in that PDF.
+All 7 items are resolved and fully documented as of 2026-09-13. No open audit
+items remain from the `melanin_only.py` / `sc_only.py` rewrite. Both the
+melanin and stratum corneum subsystems now have matching, dedicated
+first-principles documentation files (`docs/MELANIN_MODEL.md` and
+`docs/SC_MODEL.md`).

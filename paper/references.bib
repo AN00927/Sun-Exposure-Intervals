@@ -160,18 +160,20 @@
   doi     = {10.1111/bjd.12518}
 }
 
-% %TODO verify: local PDF filename is "Matsuoka (1).pdf" and MODEL_AND_EVIDENCE.md
-% card [21] confirms full text was retrieved and gives this citation in full.
+% Verified against publisher record.
 % This is the SUNSCREEN/BODY-REGION paper, NOT the tanning-attenuation source
 % -- do not confuse with matsuoka1990jlcm below (MODEL_AND_EVIDENCE.md, 'Known issues', #5,
-% assumption A7). No DOI recorded in the repo for this one.
+% assumption A7).
 @article{matsuoka1990jaad,
   author  = {Matsuoka, L. Y. and Wortsman, J. and Hollis, B. W.},
   title   = {Use of topical sunscreen for the evaluation of regional synthesis of vitamin {D}$_3$},
   journal = {Journal of the American Academy of Dermatology},
   year    = {1990},
   volume  = {22},
-  pages   = {772--775}
+  number  = {5 Pt 1},
+  pages   = {772--775},
+  doi     = {10.1016/0190-9622(90)70107-s},
+  pmid    = {2161421}
 }
 
 
@@ -266,55 +268,53 @@
   doi     = {10.1684/ejd.2021.4134}
 }
 
-% Repo gives only author/journal/topic ("Neville 2020 confirms the field
-% still lacks tanning-effect data"); MODEL_AND_EVIDENCE.md "[New]" card gives
-% a fuller reference. Journal name "JBMR Plus" and article id e10460 as given
-% there; volume number not independently confirmed against the publisher.
-% %TODO verify volume/issue against the publisher record.
 @article{neville2020,
-  author  = {Neville, J. J. and Palmieri, T. and Young, A. R.},
+  author  = {Neville, Jonathan J. and Palmieri, Tommaso and Young, Antony R.},
   title   = {Physical determinants of vitamin {D} photosynthesis: a review},
   journal = {JBMR Plus},
-  year    = {2020},
+  year    = {2021},
   volume  = {5},
-  pages   = {e10460}
+  number  = {1},
+  pages   = {e10460},
+  doi     = {10.1002/jbm4.10460},
+  pmid    = {33553995},
+  pmcid   = {PMC7844053}
 }
 
-% %TODO verify: page range given in MODEL_AND_EVIDENCE.md "[New]" card; not
-% independently cross-checked against the publisher.
 @article{markiewicz2020,
-  author  = {Markiewicz, E. and Idowu, O. C.},
-  title   = {Melanogenic difference consideration in ethnic skin type},
+  author  = {Markiewicz, Ewa and Idowu, Olusola C.},
+  title   = {Melanogenic difference consideration in ethnic skin type: balance approach between skin brightening applications and beneficial sun exposure},
   journal = {Clinical, Cosmetic and Investigational Dermatology},
   year    = {2020},
   volume  = {13},
-  pages   = {215--232}
+  pages   = {215--232},
+  doi     = {10.2147/CCID.S245043},
+  pmid    = {32210609},
+  pmcid   = {PMC7075355}
 }
 
-% %TODO verify: cited in the repo only as "Wilkes 2015 gives MI>750->FST VI
-% on Mexameter" plus the fuller reference in the MODEL_AND_EVIDENCE.md
-% "[New]" card. That card gives JAMA Dermatology 151(8):902-903; not
-% independently cross-checked here.
 @article{wilkes2015,
-  author  = {Wilkes, M. and Wright, C. Y. and du Plessis, J. L. and Reeder, A.},
+  author  = {Wilkes, Marcus and Wright, Caradee Y. and du Plessis, Johan L. and Reeder, Anthony},
   title   = {Fitzpatrick skin type, individual typology angle, and melanin index in an {A}frican population: steps toward universally applicable skin photosensitivity assessments},
   journal = {JAMA Dermatology},
   year    = {2015},
   volume  = {151},
   number  = {8},
-  pages   = {902--903}
+  pages   = {902--903},
+  doi     = {10.1001/jamadermatol.2015.0351},
+  pmid    = {25993213}
 }
 
-% %TODO verify: reference as recorded in the MODEL_AND_EVIDENCE.md "[New]"
-% card; not independently cross-checked against the publisher.
 @article{alaluf2001,
-  author  = {Alaluf, S. and Heath, A. and Carter, N. and others},
+  author  = {Alaluf, Simon and Heath, Alan and Carter, Nik and Atkins, Derek and Mahalingam, Harish and Barrett, Karen and Kolb, Ria and Smit, Nico},
   title   = {Variation in melanin content and composition in type {V} and {VI} photoexposed and photoprotected human skin: the dominant role of {DHI}},
   journal = {Pigment Cell Research},
   year    = {2001},
   volume  = {14},
   number  = {5},
-  pages   = {337--347}
+  pages   = {337--347},
+  doi     = {10.1034/j.1600-0749.2001.140505.x},
+  pmid    = {11699814}
 }
 
 
@@ -552,59 +552,66 @@
 % (vitd_benchmark_webbkift.py). It fails the dose-ratio check (1.40x
 % predicted vs 2.5-3.0x reported) -- see Limitations.
 @article{webbkift2018,
-  author  = {Webb, A. R. and Kift, R. and Rhodes, L. E. and others},
+  author  = {Webb, A. R. and Kazantzidis, A. and Kift, R. C. and Farrar, M. D. and Wilkinson, J. and Rhodes, L. E.},
   title   = {Colour counts: sunlight and skin type as drivers of vitamin {D} deficiency at {UK} latitudes},
   journal = {Nutrients},
   year    = {2018},
   volume  = {10},
+  number  = {4},
   pages   = {457},
-  note    = {PMC5946242}
+  doi     = {10.3390/nu10040457},
+  pmid    = {29642423},
+  pmcid   = {PMC5946242}
 }
 
-% %TODO verify: page range as given in MODEL_AND_EVIDENCE.md "[New]" card;
-% not independently cross-checked. Standardized low-dose protocol used as a
-% partial anchor for the synthesis coefficient A.
 @article{borecka2024,
   author  = {Borecka, O. and Dutton, J. and Tang, J. C. Y. and Fraser, W. D. and Webb, A. R. and Rhodes, L. E.},
-  title   = {Comparative study of healthy older and younger adults shows they have the same skin concentration of vitamin {D}3 precursor},
+  title   = {Comparative study of healthy older and younger adults shows they have the same skin concentration of vitamin {D}$_3$ precursor},
   journal = {Nutrients},
   year    = {2024},
   volume  = {16},
-  pages   = {1147}
+  number  = {8},
+  pages   = {1147},
+  doi     = {10.3390/nu16081147},
+  pmid    = {38674838},
+  pmcid   = {PMC11054366}
 }
 
 @article{chalcraft2020,
-  author  = {Chalcraft, J. R. and Cardinal, L. M. and Wechsler, P. J. and others},
+  author  = {Chalcraft, Jenna R. and Cardinal, Linda M. and Wechsler, Perry J. and Hollis, Bruce W. and Gerow, Kenneth G. and Alexander, Brenda M. and Keith, Jill F. and Larson-Meyer, D. Enette},
   title   = {Vitamin {D} synthesis following a single bout of sun exposure in older and younger men and women},
   journal = {Nutrients},
   year    = {2020},
   volume  = {12},
-  pages   = {2237}
+  number  = {8},
+  pages   = {2237},
+  doi     = {10.3390/nu12082237},
+  pmid    = {32726904},
+  pmcid   = {PMC7468894}
 }
 
-% %TODO verify: cited in the repo only as "Libon 2013 (directional: FST VI
-% no significant D rise vs FST II-III significant)" plus the fuller
-% reference in the MODEL_AND_EVIDENCE.md "[New]" card.
 @article{libon2013,
   author  = {Libon, F. and Cavalier, E. and Nikkels, A. F.},
   title   = {Skin color is relevant to vitamin {D} synthesis},
   journal = {Dermatology},
   year    = {2013},
   volume  = {227},
-  pages   = {250--254}
+  number  = {3},
+  pages   = {250--254},
+  doi     = {10.1159/000354750},
+  pmid    = {24157849}
 }
 
-% %TODO verify: cited in the repo only as "Armas 2007 (80% variation from
-% dose + skin tone)" plus the fuller reference in the MODEL_AND_EVIDENCE.md
-% "[New]" card.
 @article{armas2007,
-  author  = {Armas, L. A. and Dowell, S. and Akhter, M. and others},
+  author  = {Armas, Laura A. G. and Dowell, Susan and Akhter, Mohammed and Duthuluru, Sowjanya and Huerter, Christopher and Hollis, Bruce W. and Lund, Richard and Heaney, Robert P.},
   title   = {Ultraviolet-{B} radiation increases serum 25-hydroxyvitamin {D} levels: the effect of {UVB} dose and skin color},
   journal = {Journal of the American Academy of Dermatology},
   year    = {2007},
   volume  = {57},
   number  = {4},
-  pages   = {588--593}
+  pages   = {588--593},
+  doi     = {10.1016/j.jaad.2007.03.004},
+  pmid    = {17637484}
 }
 
 
@@ -646,22 +653,28 @@
   pmid    = {26159670}
 }
 
-% %TODO verify: cited only as "Armstrong 1988" in vitd_physiology.py. No
-% further bibliographic detail recorded in the repository.
-@misc{armstrong1988,
-  author = {Armstrong, B. K. and others},
-  title  = {{TODO} verify -- reference cited only as ``Armstrong 1988'' in the repository; exact title, journal, volume, and pages not recorded},
-  year   = {1988}
+@article{armstrong1988,
+  author  = {Armstrong, Bruce K.},
+  title   = {Epidemiology of malignant melanoma: intermittent or total accumulated exposure to the sun?},
+  journal = {The Journal of Dermatologic Surgery and Oncology},
+  year    = {1988},
+  volume  = {14},
+  number  = {8},
+  pages   = {835--849},
+  doi     = {10.1111/j.1524-4725.1988.tb03588.x},
+  pmid    = {3294982}
 }
 
-% %TODO verify: cited only as "O'Sullivan 2026 (2.4M Ontario workers) finds
-% low-intermittent HR = 1.26 vs high-continuous HR = 1.13" in
-% vitd_physiology.py. No journal, volume, or page data recorded.
-@misc{osullivan2026,
-  author = {O'Sullivan, D. E. and others},
-  title  = {{TODO} verify -- Ontario workers occupational sun-exposure cohort (n $\approx$ 2.4 million), cited only as ``O'Sullivan 2026'' in the repository},
-  year   = {2026},
-  note   = {Journal, volume, and pages not recorded in the repository}
+@article{osullivan2026,
+  author  = {O'Sullivan, D. E. and Eros, F. R. and DeBono, N. L. and Demers, P. A. and Peters, C. E. and Sritharan, J.},
+  title   = {Ultraviolet radiation exposure and melanoma risk among over 2~million {O}ntario workers},
+  journal = {Scientific Reports},
+  year    = {2026},
+  volume  = {16},
+  number  = {1},
+  pages   = {48477},
+  doi     = {10.1038/s41598-026-48477-4},
+  pmid    = {41963456}
 }
 
 % Named in MODEL_AND_EVIDENCE.md as a paper the project WANTS but does NOT have --
@@ -674,11 +687,16 @@
   year   = {2021}
 }
 
-% Named in MODEL_AND_EVIDENCE.md as a paper the project WANTS but does NOT have.
-@misc{armstrongkricker2001,
-  author = {Armstrong, B. K. and Kricker, A.},
-  title  = {{TODO} verify -- intermittent vs cumulative sun exposure and melanoma; NOT in the repository, named only as a data request in MODEL\_AND\_EVIDENCE.md},
-  year   = {2001}
+@article{armstrongkricker2001,
+  author  = {Armstrong, B. K. and Kricker, A.},
+  title   = {The epidemiology of {UV} induced skin cancer},
+  journal = {Journal of Photochemistry and Photobiology B: Biology},
+  year    = {2001},
+  volume  = {63},
+  number  = {1--3},
+  pages   = {8--18},
+  doi     = {10.1016/s1011-1344(01)00198-1},
+  pmid    = {11684447}
 }
 
 % Named in MODEL_AND_EVIDENCE.md ("PLOS ONE 2023 (intermittent vs continuous UV and
@@ -706,27 +724,41 @@
   pmid    = {22262154}
 }
 
-% %TODO verify: cited only as "Ekwaru 2014 (N=17,614)" in vitd_physiology.py.
-% Journal, volume, and pages not recorded.
-@misc{ekwaru2014,
-  author = {Ekwaru, J. P. and others},
-  title  = {{TODO} verify -- vitamin~D dose-response by body weight/BMI category, N=17{,}614, cited only as ``Ekwaru 2014'' in the repository},
-  year   = {2014}
+@article{ekwaru2014,
+  author  = {Ekwaru, John Paul and Zwicker, Jennifer D. and Holick, Michael F. and Giovannucci, Edward and Veugelers, Paul J.},
+  title   = {The importance of body weight for the dose response relationship of oral vitamin {D} supplementation and serum 25-hydroxyvitamin {D} in healthy volunteers},
+  journal = {PLOS ONE},
+  year    = {2014},
+  volume  = {9},
+  number  = {11},
+  pages   = {e111265},
+  doi     = {10.1371/journal.pone.0111265},
+  pmid    = {25375209},
+  pmcid   = {PMC4221007}
 }
 
-% %TODO verify: cited only as "Walsh 2017 review" in vitd_physiology.py.
-@misc{walsh2017,
-  author = {Walsh, J. and others},
-  title  = {{TODO} verify -- review cited only as ``Walsh 2017'' in the repository; exact title, journal, volume, and pages not recorded},
-  year   = {2017}
+@article{walsh2017,
+  author  = {Walsh, J. S. and Bowles, S. and Evans, A. L.},
+  title   = {Vitamin {D} in obesity},
+  journal = {Current Opinion in Endocrinology, Diabetes and Obesity},
+  year    = {2017},
+  volume  = {24},
+  number  = {6},
+  pages   = {389--394},
+  doi     = {10.1097/MED.0000000000000371},
+  pmid    = {28914643}
 }
 
-% %TODO verify: cited only as "Pannu 2016 meta-regression shows weight loss
-% raises 25(OH)D" in vitd_physiology.py.
-@misc{pannu2016,
-  author = {Pannu, P. K. and others},
-  title  = {{TODO} verify -- meta-regression of weight loss and serum 25(OH)D, cited only as ``Pannu 2016'' in the repository},
-  year   = {2016}
+@article{pannu2016,
+  author  = {Pannu, P. K. and Zhao, Y. and Soares, M. J.},
+  title   = {Reductions in body weight and percent fat mass increase the vitamin {D} status of obese subjects: a systematic review and metaregression analysis},
+  journal = {Nutrition Research},
+  year    = {2016},
+  volume  = {36},
+  number  = {3},
+  pages   = {201--213},
+  doi     = {10.1016/j.nutres.2015.11.013},
+  pmid    = {26923506}
 }
 
 % -----------------------------------------------------------------------------
@@ -768,10 +800,16 @@
   pmid    = {14680267}
 }
 
-@misc{thieden2000,
-  author = {Thieden, E. and others},
-  title  = {{TODO} verify -- personal UV dosimetry (wrist vs head exposure ratio), cited only as ``Thieden 2000'' in the repository},
-  year   = {2000}
+@article{thieden2000,
+  author  = {Thieden, E. and {\AA}gren, M. S. and Wulf, H. C.},
+  title   = {The wrist is a reliable body site for personal dosimetry of ultraviolet radiation},
+  journal = {Photodermatology, Photoimmunology \& Photomedicine},
+  year    = {2000},
+  volume  = {16},
+  number  = {2},
+  pages   = {57--61},
+  doi     = {10.1034/j.1600-0781.2000.d01-4.x},
+  pmid    = {10803525}
 }
 
 @article{schmalwieser2018,
@@ -792,11 +830,17 @@
 % Bogh 2010 at all, but to this unrelated obesity paper. Included here so the
 % correction has a citable target instead of leaving a dangling PMID; NOT
 % used as evidence for anything in this manuscript.
-@misc{doumatey2010,
-  author = {Doumatey, A. P. and others},
-  title  = {{TODO} verify -- unrelated obesity study previously mis-cited (under {PMID}~19798069) as the source of {D\_max}; cited here only to document the error, not as evidence},
-  journal= {Obesity},
-  year   = {2010}
+@article{doumatey2010,
+  author  = {Doumatey, A. P. and Lashley, K. S. and Huang, H. and Zhou, J. and Chen, G. and Amoah, A. and Agyenim-Boateng, K. and Oli, J. and Fasanmade, O. and Adebamowo, C. A. and Adeyemo, A. A. and Rotimi, C. N.},
+  title   = {Relationships among obesity, inflammation, and insulin resistance in {A}frican {A}mericans and {W}est {A}fricans},
+  journal = {Obesity},
+  year    = {2010},
+  volume  = {18},
+  number  = {3},
+  pages   = {598--603},
+  doi     = {10.1038/oby.2009.322},
+  pmid    = {19798069},
+  note    = {Unrelated obesity study previously mis-cited (under PMID~19798069) as the source of $D_{\max}$; cited here only to document the error, not as evidence}
 }
 
 
@@ -814,18 +858,20 @@
   doi     = {10.1111/j.1365-2133.2004.05981.x}
 }
 
-% %TODO verify: cited throughout the repo (data_provenance.yaml,
-% data/spectra/tl01_conversion_factor.md) only as "Rodriguez-Granados 2017",
-% giving a Waldmann UV7002 cabinet measurement (absolute irradiance
+% Verified against publisher record (Research_Papers/j.ad.2017.05.009.pdf).
+% TL-01 cabinet dosimetry factor (Waldmann UV7002: absolute irradiance
 % 4.73 mW/cm^2, CIE erythemal-weighted 0.26 mW/cm^2, ratio 0.055, i.e. 1
-% J/cm^2 =~ 5.5 SED). No journal, volume, pages, or full author list is
-% recorded anywhere in the repository. This factor is CABINET-SPECIFIC
-% (Lloyd 2004 shows +/-60% inter-department variation for TL-01) and is
-% used only for the Bogh 2012 dose-unit correction.
-@misc{rodriguezgranados2017,
-  author = {Rodr{\'\i}guez-Granados, M. T. and others},
-  title  = {{TODO} verify -- {TL}-01 cabinet dosimetry (absolute vs erythemal-weighted irradiance, {W}aldmann {UV}7002), cited only as ``Rodr\'iguez-Granados 2017'' in the repository},
-  year   = {2017}
+% J/cm^2 =~ 5.5 SED) used for Bogh 2012 dose-unit correction.
+@article{rodriguezgranados2017,
+  author  = {Rodr{\'\i}guez-Granados, M. T. and Estany-Gestal, A. and Pousa-Mart{\'\i}nez, M. and Labandeira, J. and Gato Otero, R. and Fern{\'a}ndez-Redondo, V.},
+  title   = {Is it useful to calculate minimal erythema dose before narrowband {UV-B} phototherapy?},
+  journal = {Actas Dermo-Sifiliogr{\'a}ficas},
+  year    = {2017},
+  volume  = {108},
+  number  = {9},
+  pages   = {852--858},
+  doi     = {10.1016/j.ad.2017.05.009},
+  pmid    = {28709594}
 }
 
 % NHANES documentation used for RIA/LC-MS/MS harmonization context.

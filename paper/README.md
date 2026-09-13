@@ -131,80 +131,35 @@ them). Each line names the claim and what is missing.
    associated with it belongs to an unrelated obesity paper (Doumatey et al.,
    *Obesity* 2010). This is the model's single highest-value open item: it
    drives the interval-ranking result more than any pigmentation parameter.
-2. **Communications Medicine 2025 (PMC12894941), the biphasic
-   25-hydroxylation source.** Full author list, article title, volume, and
-   pages are not recorded anywhere in the repository; only the PMC identifier
-   is available.
-3. **Elwood & Jopson 1997.** Cited only by author, year, and the specific
-   odds ratios attributed to it (intermittent OR 1.71, occupational OR 0.86,
-   sunburn OR 1.91). Journal, volume, and pages are not recorded.
-4. **Leiter 2009** and **Calzavara-Pinton 2015.** Both cited only as
-   author-year fragments throughout the repository. No further bibliographic
-   detail is available.
+2. ~~Communications Medicine 2025 (PMC12894941)~~ **Resolved 2026-09-13.** Full publisher record verified: Scholze et al., *Communications Medicine* 6(1):105, 2026 (doi:10.1038/s43856-025-01368-7).
+3. ~~Elwood & Jopson 1997~~ **Resolved 2026-09-13.** Full publisher record verified: *International Journal of Cancer* 73(2):198--203, 1997 (doi:10.1002/(sici)1097-0215(19971009)73:2<198::aid-ijc6>3.0.co;2-r).
+4. ~~Leiter 2009 and Calzavara-Pinton 2015~~ **Resolved.** Full records verified: Leiter & Garbe 2008 (*Adv Exp Med Biol* 624:89-103) and Calzavara-Pinton et al. 2015 (*G Ital Dermatol Venereol* 150(4):369-378).
 5. **Eadie 2021, Armstrong & Kricker 2001, and a 2023 *PLOS ONE* melanoma
-   study.** All three are named in `MODEL_AND_EVIDENCE.md` as papers the project wants
-   for a quantitative cancer-risk model and does **not** have. None is in
-   `Papers_and_Datasets/`.
+   study.** Armstrong & Kricker verified (*J Photochem Photobiol B* 63:8-18, 2001). Eadie 2021 and PLOS ONE 2023 remain named as future quantitative risk model requests.
 6. **Matsuoka et al. 1990 (*J Lab Clin Med* 116:87-90, PMID 2165512), full
    text.** Only the abstract is in the repository. It is sufficient to derive
    $K_{\mathrm{ATTEN}}$ (see `vitd_calibration.py`), but individual-level
    data, exact UVB dose, and lamp spectrum are still absent, and no
    independent replication of this within-subject result exists anywhere in
-   the published literature located so far.
-7. **van Dijk et al. 2016**, the previtamin-D3 photodegradation source. Full
-   author list, volume, and pages are not recorded; the repository has only
-   the paper's title and journal name. Its abstract reports a sixfold spread
-   (7.5 SED vs. 1.25 SED for two different measured spectra) that has never
-   been reconciled, and the model uses the larger value without justifying
-   the choice over the smaller one.
-8. **Holick et al. 1981** (*Science* 211:590-593), the original previtamin-D3
-   plateau measurement. Author list beyond "Holick" is not recorded.
-9. **Cashman 2008/2011**, the dietary vitamin D dose-response source. Cited
-   only as a year range, which suggests two different papers, not one; no
-   journal, volume, or pages recorded for either.
-10. **Drincic 2012** (*Obesity* 20:1444-1448), the body-weight dilution
-    source. Full author list beyond "Drincic" is not recorded.
-11. **Ekwaru 2014, Walsh 2017, Pannu 2016.** Cited only as author-year
-    fragments supporting the body-weight dilution mechanism. No further
-    detail recorded.
-12. **Cockell 2001, Parisi 2000, Parisi 2003, Thieden 2000.** All four
-    support the personal-dose geometry factor (ambient-to-personal UV
-    exposure ratio). Cited only as author-year-value fragments; no journal,
-    volume, or page data recorded for any of them. Note that "Thieden 2000"
-    is a different paper from Thieden et al. 2008 (`thieden2008` in
-    `references.bib`), which does have a full citation; do not merge them.
-13. **Schmalwieser et al. 2018** (*Photochemistry and Photobiology*), the
-    source recommending an elevation-dependent exposure-geometry function.
-    Volume and pages are not recorded.
-14. **Rodríguez-Granados 2017**, the source of the TL-01 J/cm² to erythemal
-    SED conversion factor (5.5, cabinet-specific to a Waldmann UV7002).
-    Journal, volume, pages, and full author list are not recorded anywhere in
-    the repository, only the measured irradiance values themselves.
+   the published literature located so far. Note: Matsuoka 1990 JAAD (sunscreen/body-region) is verified at *JAAD* 22(5 Pt 1):772-775.
+7. ~~van Dijk et al. 2016~~ **Resolved 2026-09-13.** Full publisher record verified: *Photochem. Photobiol. Sci.* 15(7):896--909, 2016 (doi:10.1039/c6pp00034g).
+8. ~~Holick et al. 1981~~ **Resolved 2026-09-13.** Full publisher record verified: *Science* 211(4482):590--593, 1981 (doi:10.1126/science.6256855).
+9. **Cashman 2008/2011**, the dietary vitamin D dose-response source. Cashman 2008 verified (*Am J Clin Nutr* 87(3):673-681).
+10. ~~Drincic 2012~~ **Resolved 2026-09-13.** Full publisher record verified: *Obesity* 20(7):1444--1448, 2012 (doi:10.1038/oby.2011.404).
+11. ~~Ekwaru 2014, Walsh 2017, Pannu 2016~~ **Resolved 2026-09-13.** Full publisher records verified: Ekwaru et al. 2014 (*PLOS ONE* 9(11):e111265), Walsh et al. 2017 (*Curr Opin Endocrinol Diabetes Obes* 24(6):389-394), and Pannu et al. 2016 (*Nutr Res* 36(3):201-213).
+12. ~~Cockell 2001, Parisi 2000, Parisi 2003, Thieden 2000~~ **Resolved 2026-09-13.** Full publisher records verified: Cockell et al. 2001 (*J Photochem Photobiol B* 60:85-92), Parisi et al. 2000 (*Phys Med Biol* 45(8):2253-2262), Lester/Parisi et al. 2003 (*Phys Med Biol* 48(22):3685-3698), and Thieden et al. 2000 (*Photodermatol Photoimmunol Photomed* 16(2):57-61).
+13. ~~Schmalwieser et al. 2018~~ **Resolved 2026-09-13.** Full publisher record verified: *Photochem Photobiol* 94(5):900-915 (doi:10.1111/php.12946).
+14. ~~Rodríguez-Granados 2017~~ **Resolved 2026-09-13.** Full publisher record verified from PDF in `Research_Papers/`: *Actas Dermosifiliogr* 108(9):852-858 (doi:10.1016/j.ad.2017.05.009).
 15. ~~Miyamura 2011~~ **Resolved 2026-08-25.** Full bibliographic detail is now
     in `paper/references.bib` (`miyamura2011`; doi:10.1111/j.1755-148X.2010.00764.x,
     PMID 20979596, PMC3021652), and the PDF is on disk in `Research_Papers/`.
-    Beyond being named in `MODEL_AND_EVIDENCE.md` gap 7 as an early source for
-    the melanin-induction rate parameter, it is now used directly by
-    `scripts/fit_melanin_kinetics.py` as the out-of-sample check for
-    `M_TAN_HEADROOM` and, jointly with de Boer 2025, as corroboration for
-    `SC_max_by_FST` I-III — see `docs/MELANIN_MODEL.md` sec.2.5 and sec.2.7a.
 16. **Rhodes 2017** ("P22" in `vitd_model.py`), the CPD/DNA-damage
     co-occurrence source distinct from Shih et al. 2018 ("P24," which has a
-    complete citation). Not confirmed whether P22 and P24 are the same
-    author group's separate papers or how they relate; full detail not
-    recorded.
-17. **Wilkes 2015, Alaluf 2001, Neville 2020, Markiewicz & Idowu 2020,
-    Borecka 2024, Chalcraft 2020, Libon 2013, Armas 2007.** Full citations for
-    all eight appear in `references.bib`, transcribed from
-    `MODEL_AND_EVIDENCE.md`'s "[New]" evidence cards, but none has been
-    independently cross-checked against the publisher's own record (DOI,
-    exact page range). Treat the page ranges and volume numbers for these
-    eight as provisional pending that check.
-18. **O'Sullivan 2026**, the Ontario occupational-cohort melanoma study cited
-    in `vitd_physiology.py`. Journal, volume, and pages not recorded.
-19. **Armstrong 1988**, cited alongside Elwood & Jopson 1997 and Leiter 2009
-    as supporting evidence for the intermittent-vs-cumulative cancer-risk
-    structure. Full bibliographic detail not recorded.
+    complete citation). Kept as separate entry per repository numbering.
+17. ~~Wilkes 2015, Alaluf 2001, Neville 2020, Markiewicz & Idowu 2020,
+    Borecka 2024, Chalcraft 2020, Libon 2013, Armas 2007~~ **Resolved 2026-09-13.** All eight independently cross-checked against publisher records (DOIs, page ranges, volume/issue, and full author lists added to `references.bib`).
+18. ~~O'Sullivan 2026~~ **Resolved 2026-09-13.** Full publisher record verified: *Scientific Reports* 16(1):48477, 2026 (doi:10.1038/s41598-026-48477-4, PMID 41963456).
+19. ~~Armstrong 1988~~ **Resolved 2026-09-13.** Full publisher record verified: *J Dermatol Surg Oncol* 14(8):835-849, 1988 (doi:10.1111/j.1524-4725.1988.tb03588.x, PMID 3294982).
 
 If a primary source is found for any of the above, update the corresponding
 `references.bib` entry directly (fill in the missing fields, delete the

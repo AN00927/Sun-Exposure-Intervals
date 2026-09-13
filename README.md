@@ -66,7 +66,7 @@ Two consequences worth stating plainly:
   - Ahaan Nigam (independent researcher) -- ahaannigam27@gmail.com, corresponding
   - Rabira Tusi (Carnegie Mellon University) -- rtusi@cmu.edu
   - Pulkit Grover (Carnegie Mellon University) -- pulkitgrover@cmu.edu
-  - [fourth author -- name, affiliation and email to be filled]
+  - Rachita Mathur (Jaipur, Rajasthan, India)
 - **Date of model development:** 2026 (ongoing)
 - **Keywords:** vitamin D, UV exposure scheduling, photoadaptation, melanin,
   stratum corneum, serum 25(OH)D, dose-response, ODE model
