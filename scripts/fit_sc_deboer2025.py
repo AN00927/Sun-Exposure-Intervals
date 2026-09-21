@@ -71,7 +71,7 @@ thickness barely moves (108.6 -> 109.4 um, p = 0.718). The model uses SC to
 attenuate UV as `exp(-K_SC * SC)`, i.e. added optical path length through a
 thicker barrier. If the change is fluid rather than added corneocyte layers,
 that interpretation is unsupported even if a fitted number reproduced the data.
-See MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 28.
+See docs/SC_MODEL.md section 2.6.
 """
 
 from __future__ import annotations

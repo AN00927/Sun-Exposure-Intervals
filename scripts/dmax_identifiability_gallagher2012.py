@@ -1,11 +1,12 @@
 """Is D_max identifiable from Gallagher 2012, and does the oral route need feedback?
 
-Reproduces the numbers quoted in MODEL_AND_EVIDENCE.md, 'Open decisions' item 3
-(2026-08-15 update). Run:
+This script is now the repository's primary record of the argument; the
+narrative write-up it used to reproduce is purged [reference purged
+2026-09-19]. Run:
 
     PYTHONIOENCODING=utf-8 python3 scripts/dmax_identifiability_gallagher2012.py
 
-Background. 'Open decisions' item 3 established (2026-08-09) that `D_max` is not
+Background. This project established (2026-08-09) that `D_max` is not
 identifiable from acute UV trial data *in principle*: a 6-week sub-erythemal
 protocol never drives 25(OH)D high enough for `max(0, 1 - D/D_max)` to engage,
 so MSE falls monotonically to whatever upper search bound is imposed. That proof

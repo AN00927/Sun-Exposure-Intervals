@@ -139,8 +139,8 @@ SCENARIO_REGISTRY: Dict[str, ExposureScenario] = {
     "felton2016_fst2_matched": ExposureScenario(
         name="felton2016_fst2_matched",
         description="Matched-dose fair skin, FST II",
-        study_citation="Felton et al. 2016, Br J Dermatol 175:1030-1040",
-        pmid_or_doi="10.1111/bjd.14832",
+        study_citation="Felton et al. 2016, Br J Dermatol 175(6):1320-1328",
+        pmid_or_doi="10.1111/bjd.14863",
         uvi=6.0,
         exposed_bsa=0.35,
         geometry_factor=0.35,
@@ -154,8 +154,8 @@ SCENARIO_REGISTRY: Dict[str, ExposureScenario] = {
     "felton2016_fst5_matched": ExposureScenario(
         name="felton2016_fst5_matched",
         description="Matched-dose dark skin, FST V",
-        study_citation="Felton et al. 2016, Br J Dermatol 175:1030-1040",
-        pmid_or_doi="10.1111/bjd.14832",
+        study_citation="Felton et al. 2016, Br J Dermatol 175(6):1320-1328",
+        pmid_or_doi="10.1111/bjd.14863",
         uvi=6.0,
         exposed_bsa=0.35,
         geometry_factor=0.35,

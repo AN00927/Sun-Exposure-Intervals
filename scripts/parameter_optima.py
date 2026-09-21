@@ -60,8 +60,8 @@ N_PARAM_VALUES = 9
 # ---------------------------------------------------------------------------
 # Parameters that limit synthesis or burden the body.
 # Ranges are the documented prior ranges where the repo states one
-# (ModelParams.SC_PRIOR_RANGES, MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 29
-# for K_ATTEN); otherwise a
+# (ModelParams.SC_PRIOR_RANGES; docs/MELANIN_MODEL.md section 2.8 for
+# K_ATTEN); otherwise a
 # plausible bracket around the default, marked as such in `note`.
 # ---------------------------------------------------------------------------
 def _p(name, attr, lo, hi, label, note, log=False):
@@ -72,7 +72,7 @@ PARAMETERS = [
     _p("K_ATTEN", "K_ATTEN", 0.0, 1.0,
        "melanin attenuation $K_{ATTEN}$",
        "0.288972-0.838389 implied by Matsuoka 1990 after deconvolving baseline feedback "
-        "(MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 29); 0 included as "
+        "(docs/MELANIN_MODEL.md section 2.8); 0 included as "
         "ablation"),
     _p("K_const", "K_const", 0.15, 0.50,
        "constitutive pigment $K_{const}$",
@@ -92,7 +92,7 @@ PARAMETERS = [
        "SC_PRIOR_RANGES; default 0.0 because NOT IDENTIFIABLE from group medians"),
     _p("D_max", "D_max", 100.0, 250.0,
        "feedback ceiling $D_{max}$",
-       "ORIGIN UNCONFIRMED (MODEL_AND_EVIDENCE.md, 'Known issues', #3); bracket "
+       "ORIGIN UNCONFIRMED [reference purged 2026-09-19]; bracket "
        "is illustrative only"),
     _p("alpha", "alpha", 0.001, 0.005,
        r"melanin induction rate $\alpha$",
@@ -163,12 +163,6 @@ def sweep_parameter(spec: dict, fst: int) -> dict:
            "mean_D_at_opt": []}
     for v in values:
         p = ModelParams()
-        # PARAMETERS may list RETIRED parameters; sweeping one here MEASURES
-        # its influence, and does not calibrate it. As of 2026-08-21 K_ATTEN
-        # is reinstated and not retired (vitd_model.RETIRED_PARAMETERS is
-        # empty), so allow_retired_parameter_sweep() below is currently a
-        # no-op guard for K_ATTEN specifically -- kept in place for whatever
-        # parameter is retired next.
         with allow_retired_parameter_sweep():
             setattr(p, spec["attr"], float(v))
         # SC_max_by_FST overrides the scalar SC_max inside simulate(), so keep

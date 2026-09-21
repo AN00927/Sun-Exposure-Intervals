@@ -1,22 +1,22 @@
 parameter,value,optimal_interval_fixed_budget,optimal_interval_per_sed,range_note
-K_ATTEN,0,1,4,0.34-1.00 implied by Matsuoka 1990 after deconvolving baseline feedback (MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 29); 0 included as ablation
-K_ATTEN,0.125,1,4,0.34-1.00 implied by Matsuoka 1990 after deconvolving baseline feedback (MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 29); 0 included as ablation
-K_ATTEN,0.25,1,4,0.34-1.00 implied by Matsuoka 1990 after deconvolving baseline feedback (MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 29); 0 included as ablation
-K_ATTEN,0.375,1,4,0.34-1.00 implied by Matsuoka 1990 after deconvolving baseline feedback (MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 29); 0 included as ablation
-K_ATTEN,0.5,1,4,0.34-1.00 implied by Matsuoka 1990 after deconvolving baseline feedback (MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 29); 0 included as ablation
-K_ATTEN,0.625,1,4,0.34-1.00 implied by Matsuoka 1990 after deconvolving baseline feedback (MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 29); 0 included as ablation
-K_ATTEN,0.75,1,4,0.34-1.00 implied by Matsuoka 1990 after deconvolving baseline feedback (MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 29); 0 included as ablation
-K_ATTEN,0.875,1,4,0.34-1.00 implied by Matsuoka 1990 after deconvolving baseline feedback (MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 29); 0 included as ablation
-K_ATTEN,1,1,4,0.34-1.00 implied by Matsuoka 1990 after deconvolving baseline feedback (MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 29); 0 included as ablation
-K_const,0.15,1,4,bracket around Young 2020-derived value; PLAUSIBLE BRACKET; not a published range
-K_const,0.19375,1,4,bracket around Young 2020-derived value; PLAUSIBLE BRACKET; not a published range
-K_const,0.2375,1,4,bracket around Young 2020-derived value; PLAUSIBLE BRACKET; not a published range
-K_const,0.28125,1,4,bracket around Young 2020-derived value; PLAUSIBLE BRACKET; not a published range
-K_const,0.325,1,4,bracket around Young 2020-derived value; PLAUSIBLE BRACKET; not a published range
-K_const,0.36875,1,4,bracket around Young 2020-derived value; PLAUSIBLE BRACKET; not a published range
-K_const,0.4125,1,4,bracket around Young 2020-derived value; PLAUSIBLE BRACKET; not a published range
-K_const,0.45625,1,4,bracket around Young 2020-derived value; PLAUSIBLE BRACKET; not a published range
-K_const,0.5,1,4,bracket around Young 2020-derived value; PLAUSIBLE BRACKET; not a published range
+K_ATTEN,0,1,4,0.288972-0.838389 implied by Matsuoka 1990 after deconvolving baseline feedback (docs/MELANIN_MODEL.md section 2.8); 0 included as ablation
+K_ATTEN,0.125,1,4,0.288972-0.838389 implied by Matsuoka 1990 after deconvolving baseline feedback (docs/MELANIN_MODEL.md section 2.8); 0 included as ablation
+K_ATTEN,0.25,1,4,0.288972-0.838389 implied by Matsuoka 1990 after deconvolving baseline feedback (docs/MELANIN_MODEL.md section 2.8); 0 included as ablation
+K_ATTEN,0.375,1,4,0.288972-0.838389 implied by Matsuoka 1990 after deconvolving baseline feedback (docs/MELANIN_MODEL.md section 2.8); 0 included as ablation
+K_ATTEN,0.5,1,4,0.288972-0.838389 implied by Matsuoka 1990 after deconvolving baseline feedback (docs/MELANIN_MODEL.md section 2.8); 0 included as ablation
+K_ATTEN,0.625,1,4,0.288972-0.838389 implied by Matsuoka 1990 after deconvolving baseline feedback (docs/MELANIN_MODEL.md section 2.8); 0 included as ablation
+K_ATTEN,0.75,1,4,0.288972-0.838389 implied by Matsuoka 1990 after deconvolving baseline feedback (docs/MELANIN_MODEL.md section 2.8); 0 included as ablation
+K_ATTEN,0.875,1,4,0.288972-0.838389 implied by Matsuoka 1990 after deconvolving baseline feedback (docs/MELANIN_MODEL.md section 2.8); 0 included as ablation
+K_ATTEN,1,1,4,0.288972-0.838389 implied by Matsuoka 1990 after deconvolving baseline feedback (docs/MELANIN_MODEL.md section 2.8); 0 included as ablation
+K_const,0.15,1,11,bracket around Young 2020-derived value; PLAUSIBLE BRACKET; not a published range
+K_const,0.19375,1,11,bracket around Young 2020-derived value; PLAUSIBLE BRACKET; not a published range
+K_const,0.2375,1,11,bracket around Young 2020-derived value; PLAUSIBLE BRACKET; not a published range
+K_const,0.28125,1,11,bracket around Young 2020-derived value; PLAUSIBLE BRACKET; not a published range
+K_const,0.325,1,11,bracket around Young 2020-derived value; PLAUSIBLE BRACKET; not a published range
+K_const,0.36875,1,11,bracket around Young 2020-derived value; PLAUSIBLE BRACKET; not a published range
+K_const,0.4125,1,7,bracket around Young 2020-derived value; PLAUSIBLE BRACKET; not a published range
+K_const,0.45625,1,7,bracket around Young 2020-derived value; PLAUSIBLE BRACKET; not a published range
+K_const,0.5,1,7,bracket around Young 2020-derived value; PLAUSIBLE BRACKET; not a published range
 K_SC,0.5,1,4,ModelParams.SC_PRIOR_RANGES
 K_SC,0.6875,1,4,ModelParams.SC_PRIOR_RANGES
 K_SC,0.875,1,4,ModelParams.SC_PRIOR_RANGES
@@ -51,17 +51,17 @@ k_damage,0.05625,1,4,SC_PRIOR_RANGES; default 0.0 because NOT IDENTIFIABLE from 
 k_damage,0.075,1,4,SC_PRIOR_RANGES; default 0.0 because NOT IDENTIFIABLE from group medians
 k_damage,0.09375,1,4,SC_PRIOR_RANGES; default 0.0 because NOT IDENTIFIABLE from group medians
 k_damage,0.1125,1,4,SC_PRIOR_RANGES; default 0.0 because NOT IDENTIFIABLE from group medians
-k_damage,0.13125,1,3,SC_PRIOR_RANGES; default 0.0 because NOT IDENTIFIABLE from group medians
-k_damage,0.15,1,3,SC_PRIOR_RANGES; default 0.0 because NOT IDENTIFIABLE from group medians
-D_max,100,1,4,ORIGIN UNCONFIRMED (MODEL_AND_EVIDENCE.md, 'Known issues', #3); bracket is illustrative only
-D_max,118.75,1,4,ORIGIN UNCONFIRMED (MODEL_AND_EVIDENCE.md, 'Known issues', #3); bracket is illustrative only
-D_max,137.5,1,4,ORIGIN UNCONFIRMED (MODEL_AND_EVIDENCE.md, 'Known issues', #3); bracket is illustrative only
-D_max,156.25,1,4,ORIGIN UNCONFIRMED (MODEL_AND_EVIDENCE.md, 'Known issues', #3); bracket is illustrative only
-D_max,175,1,4,ORIGIN UNCONFIRMED (MODEL_AND_EVIDENCE.md, 'Known issues', #3); bracket is illustrative only
-D_max,193.75,1,4,ORIGIN UNCONFIRMED (MODEL_AND_EVIDENCE.md, 'Known issues', #3); bracket is illustrative only
-D_max,212.5,1,4,ORIGIN UNCONFIRMED (MODEL_AND_EVIDENCE.md, 'Known issues', #3); bracket is illustrative only
-D_max,231.25,1,4,ORIGIN UNCONFIRMED (MODEL_AND_EVIDENCE.md, 'Known issues', #3); bracket is illustrative only
-D_max,250,1,4,ORIGIN UNCONFIRMED (MODEL_AND_EVIDENCE.md, 'Known issues', #3); bracket is illustrative only
+k_damage,0.13125,1,4,SC_PRIOR_RANGES; default 0.0 because NOT IDENTIFIABLE from group medians
+k_damage,0.15,1,4,SC_PRIOR_RANGES; default 0.0 because NOT IDENTIFIABLE from group medians
+D_max,100,1,4,ORIGIN UNCONFIRMED [reference purged 2026-09-19]; bracket is illustrative only
+D_max,118.75,1,4,ORIGIN UNCONFIRMED [reference purged 2026-09-19]; bracket is illustrative only
+D_max,137.5,1,4,ORIGIN UNCONFIRMED [reference purged 2026-09-19]; bracket is illustrative only
+D_max,156.25,1,4,ORIGIN UNCONFIRMED [reference purged 2026-09-19]; bracket is illustrative only
+D_max,175,1,4,ORIGIN UNCONFIRMED [reference purged 2026-09-19]; bracket is illustrative only
+D_max,193.75,1,4,ORIGIN UNCONFIRMED [reference purged 2026-09-19]; bracket is illustrative only
+D_max,212.5,1,4,ORIGIN UNCONFIRMED [reference purged 2026-09-19]; bracket is illustrative only
+D_max,231.25,1,4,ORIGIN UNCONFIRMED [reference purged 2026-09-19]; bracket is illustrative only
+D_max,250,1,4,ORIGIN UNCONFIRMED [reference purged 2026-09-19]; bracket is illustrative only
 alpha,0.001,1,4,bracket around Miyamura 2011-calibrated default; light-skin derived
 alpha,0.0015,1,4,bracket around Miyamura 2011-calibrated default; light-skin derived
 alpha,0.002,1,4,bracket around Miyamura 2011-calibrated default; light-skin derived
@@ -80,24 +80,24 @@ beta,0.0176381,1,4,Ravnbak 2008 measured 4-5 month fade; bracket spans 28-120 d 
 beta,0.0200105,1,4,Ravnbak 2008 measured 4-5 month fade; bracket spans 28-120 d half-life
 beta,0.0223829,1,4,Ravnbak 2008 measured 4-5 month fade; bracket spans 28-120 d half-life
 beta,0.0247553,1,4,Ravnbak 2008 measured 4-5 month fade; bracket spans 28-120 d half-life
-M_TAN_HEADROOM,0.05,1,4,PRIOR; magnitude not separately identified
-M_TAN_HEADROOM,0.09375,1,4,PRIOR; magnitude not separately identified
-M_TAN_HEADROOM,0.1375,1,4,PRIOR; magnitude not separately identified
-M_TAN_HEADROOM,0.18125,1,4,PRIOR; magnitude not separately identified
-M_TAN_HEADROOM,0.225,1,4,PRIOR; magnitude not separately identified
-M_TAN_HEADROOM,0.26875,1,4,PRIOR; magnitude not separately identified
-M_TAN_HEADROOM,0.3125,1,4,PRIOR; magnitude not separately identified
-M_TAN_HEADROOM,0.35625,1,4,PRIOR; magnitude not separately identified
-M_TAN_HEADROOM,0.4,1,4,PRIOR; magnitude not separately identified
-k_decay_SC,0.0247553,1,4,epidermal turnover 21-28 d
-k_decay_SC,0.0257867,1,4,epidermal turnover 21-28 d
-k_decay_SC,0.0268182,1,4,epidermal turnover 21-28 d
-k_decay_SC,0.0278497,1,4,epidermal turnover 21-28 d
-k_decay_SC,0.0288811,1,4,epidermal turnover 21-28 d
-k_decay_SC,0.0299126,1,4,epidermal turnover 21-28 d
-k_decay_SC,0.0309441,1,4,epidermal turnover 21-28 d
-k_decay_SC,0.0319755,1,4,epidermal turnover 21-28 d
-k_decay_SC,0.033007,1,4,epidermal turnover 21-28 d
+M_TAN_HEADROOM,0.05,1,4,PRIOR; lower-bounded by Ravnbak 2008's largest measured tan (dM=0.237724) since 2026-08-25; shipped value 0.238
+M_TAN_HEADROOM,0.09375,1,4,PRIOR; lower-bounded by Ravnbak 2008's largest measured tan (dM=0.237724) since 2026-08-25; shipped value 0.238
+M_TAN_HEADROOM,0.1375,1,4,PRIOR; lower-bounded by Ravnbak 2008's largest measured tan (dM=0.237724) since 2026-08-25; shipped value 0.238
+M_TAN_HEADROOM,0.18125,1,4,PRIOR; lower-bounded by Ravnbak 2008's largest measured tan (dM=0.237724) since 2026-08-25; shipped value 0.238
+M_TAN_HEADROOM,0.225,1,4,PRIOR; lower-bounded by Ravnbak 2008's largest measured tan (dM=0.237724) since 2026-08-25; shipped value 0.238
+M_TAN_HEADROOM,0.26875,1,4,PRIOR; lower-bounded by Ravnbak 2008's largest measured tan (dM=0.237724) since 2026-08-25; shipped value 0.238
+M_TAN_HEADROOM,0.3125,1,4,PRIOR; lower-bounded by Ravnbak 2008's largest measured tan (dM=0.237724) since 2026-08-25; shipped value 0.238
+M_TAN_HEADROOM,0.35625,1,4,PRIOR; lower-bounded by Ravnbak 2008's largest measured tan (dM=0.237724) since 2026-08-25; shipped value 0.238
+M_TAN_HEADROOM,0.4,1,4,PRIOR; lower-bounded by Ravnbak 2008's largest measured tan (dM=0.237724) since 2026-08-25; shipped value 0.238
+k_decay_SC,0.0247553,1,4,PRIOR: Weinstein & Van Scott 1965 via Rothberg 1961 SC-RESIDENCE leg alone; 13-14 d (ln(2)/T conversion) -- NOT the 26-27 d COMBINED whole-epidermis figure (stratum malpighii + SC); which is the wrong leg for excess-SC clearance (vitd_model.py k_decay_SC entry); corroborated by Jansen 1974's independent dansyl-chloride 13.49 d 15-site mean. Pearse 1987 cited for levels not rates
+k_decay_SC,0.0257867,1,4,PRIOR: Weinstein & Van Scott 1965 via Rothberg 1961 SC-RESIDENCE leg alone; 13-14 d (ln(2)/T conversion) -- NOT the 26-27 d COMBINED whole-epidermis figure (stratum malpighii + SC); which is the wrong leg for excess-SC clearance (vitd_model.py k_decay_SC entry); corroborated by Jansen 1974's independent dansyl-chloride 13.49 d 15-site mean. Pearse 1987 cited for levels not rates
+k_decay_SC,0.0268182,1,4,PRIOR: Weinstein & Van Scott 1965 via Rothberg 1961 SC-RESIDENCE leg alone; 13-14 d (ln(2)/T conversion) -- NOT the 26-27 d COMBINED whole-epidermis figure (stratum malpighii + SC); which is the wrong leg for excess-SC clearance (vitd_model.py k_decay_SC entry); corroborated by Jansen 1974's independent dansyl-chloride 13.49 d 15-site mean. Pearse 1987 cited for levels not rates
+k_decay_SC,0.0278497,1,4,PRIOR: Weinstein & Van Scott 1965 via Rothberg 1961 SC-RESIDENCE leg alone; 13-14 d (ln(2)/T conversion) -- NOT the 26-27 d COMBINED whole-epidermis figure (stratum malpighii + SC); which is the wrong leg for excess-SC clearance (vitd_model.py k_decay_SC entry); corroborated by Jansen 1974's independent dansyl-chloride 13.49 d 15-site mean. Pearse 1987 cited for levels not rates
+k_decay_SC,0.0288811,1,4,PRIOR: Weinstein & Van Scott 1965 via Rothberg 1961 SC-RESIDENCE leg alone; 13-14 d (ln(2)/T conversion) -- NOT the 26-27 d COMBINED whole-epidermis figure (stratum malpighii + SC); which is the wrong leg for excess-SC clearance (vitd_model.py k_decay_SC entry); corroborated by Jansen 1974's independent dansyl-chloride 13.49 d 15-site mean. Pearse 1987 cited for levels not rates
+k_decay_SC,0.0299126,1,4,PRIOR: Weinstein & Van Scott 1965 via Rothberg 1961 SC-RESIDENCE leg alone; 13-14 d (ln(2)/T conversion) -- NOT the 26-27 d COMBINED whole-epidermis figure (stratum malpighii + SC); which is the wrong leg for excess-SC clearance (vitd_model.py k_decay_SC entry); corroborated by Jansen 1974's independent dansyl-chloride 13.49 d 15-site mean. Pearse 1987 cited for levels not rates
+k_decay_SC,0.0309441,1,4,PRIOR: Weinstein & Van Scott 1965 via Rothberg 1961 SC-RESIDENCE leg alone; 13-14 d (ln(2)/T conversion) -- NOT the 26-27 d COMBINED whole-epidermis figure (stratum malpighii + SC); which is the wrong leg for excess-SC clearance (vitd_model.py k_decay_SC entry); corroborated by Jansen 1974's independent dansyl-chloride 13.49 d 15-site mean. Pearse 1987 cited for levels not rates
+k_decay_SC,0.0319755,1,4,PRIOR: Weinstein & Van Scott 1965 via Rothberg 1961 SC-RESIDENCE leg alone; 13-14 d (ln(2)/T conversion) -- NOT the 26-27 d COMBINED whole-epidermis figure (stratum malpighii + SC); which is the wrong leg for excess-SC clearance (vitd_model.py k_decay_SC entry); corroborated by Jansen 1974's independent dansyl-chloride 13.49 d 15-site mean. Pearse 1987 cited for levels not rates
+k_decay_SC,0.033007,1,4,PRIOR: Weinstein & Van Scott 1965 via Rothberg 1961 SC-RESIDENCE leg alone; 13-14 d (ln(2)/T conversion) -- NOT the 26-27 d COMBINED whole-epidermis figure (stratum malpighii + SC); which is the wrong leg for excess-SC clearance (vitd_model.py k_decay_SC entry); corroborated by Jansen 1974's independent dansyl-chloride 13.49 d 15-site mean. Pearse 1987 cited for levels not rates
 k_repair_SC,0.0495105,1,4,PRIOR; not separately measured by de Boer
 k_repair_SC,0.0722028,1,4,PRIOR; not separately measured by de Boer
 k_repair_SC,0.0948951,1,4,PRIOR; not separately measured by de Boer
@@ -107,21 +107,21 @@ k_repair_SC,0.162972,1,4,PRIOR; not separately measured by de Boer
 k_repair_SC,0.185664,1,4,PRIOR; not separately measured by de Boer
 k_repair_SC,0.208357,1,4,PRIOR; not separately measured by de Boer
 k_repair_SC,0.231049,1,4,PRIOR; not separately measured by de Boer
-exposed_bsa,0.1,1,2,Kimlin 2014: clothing cover is the largest naturalistic predictor
-exposed_bsa,0.2,1,3,Kimlin 2014: clothing cover is the largest naturalistic predictor
+exposed_bsa,0.1,1,3,Kimlin 2014: clothing cover is the largest naturalistic predictor
+exposed_bsa,0.2,1,4,Kimlin 2014: clothing cover is the largest naturalistic predictor
 exposed_bsa,0.3,1,4,Kimlin 2014: clothing cover is the largest naturalistic predictor
 exposed_bsa,0.4,1,4,Kimlin 2014: clothing cover is the largest naturalistic predictor
-exposed_bsa,0.5,1,7,Kimlin 2014: clothing cover is the largest naturalistic predictor
+exposed_bsa,0.5,1,5,Kimlin 2014: clothing cover is the largest naturalistic predictor
 exposed_bsa,0.6,1,7,Kimlin 2014: clothing cover is the largest naturalistic predictor
 exposed_bsa,0.7,1,7,Kimlin 2014: clothing cover is the largest naturalistic predictor
 exposed_bsa,0.8,1,7,Kimlin 2014: clothing cover is the largest naturalistic predictor
 exposed_bsa,0.9,1,7,Kimlin 2014: clothing cover is the largest naturalistic predictor
-A,1.5,1,3,Young 2021 fair-skin slopes imply 2.0-5.0 nmol/L/SED at 85% BSA
-A,1.75,1,3,Young 2021 fair-skin slopes imply 2.0-5.0 nmol/L/SED at 85% BSA
-A,2,1,4,Young 2021 fair-skin slopes imply 2.0-5.0 nmol/L/SED at 85% BSA
-A,2.25,1,4,Young 2021 fair-skin slopes imply 2.0-5.0 nmol/L/SED at 85% BSA
-A,2.5,1,4,Young 2021 fair-skin slopes imply 2.0-5.0 nmol/L/SED at 85% BSA
-A,2.75,1,4,Young 2021 fair-skin slopes imply 2.0-5.0 nmol/L/SED at 85% BSA
-A,3,1,7,Young 2021 fair-skin slopes imply 2.0-5.0 nmol/L/SED at 85% BSA
-A,3.25,1,7,Young 2021 fair-skin slopes imply 2.0-5.0 nmol/L/SED at 85% BSA
-A,3.5,1,7,Young 2021 fair-skin slopes imply 2.0-5.0 nmol/L/SED at 85% BSA
+A,1.5,1,2,Young 2021 fair-skin slopes imply 2.0-5.0 nmol/L/SED at 85% BSA
+A,1.75,1,2,Young 2021 fair-skin slopes imply 2.0-5.0 nmol/L/SED at 85% BSA
+A,2,1,2,Young 2021 fair-skin slopes imply 2.0-5.0 nmol/L/SED at 85% BSA
+A,2.25,1,2,Young 2021 fair-skin slopes imply 2.0-5.0 nmol/L/SED at 85% BSA
+A,2.5,1,3,Young 2021 fair-skin slopes imply 2.0-5.0 nmol/L/SED at 85% BSA
+A,2.75,1,3,Young 2021 fair-skin slopes imply 2.0-5.0 nmol/L/SED at 85% BSA
+A,3,1,3,Young 2021 fair-skin slopes imply 2.0-5.0 nmol/L/SED at 85% BSA
+A,3.25,1,4,Young 2021 fair-skin slopes imply 2.0-5.0 nmol/L/SED at 85% BSA
+A,3.5,1,4,Young 2021 fair-skin slopes imply 2.0-5.0 nmol/L/SED at 85% BSA

@@ -1,9 +1,0 @@
-F7 - f7_fixed_vs_coupled.png
-
-FST VI, 180 days, one session every 3 days at a fixed 4.0 SED per session (60 sessions, 240.0 SED cumulative). 4.0 SED is 26.3% of the FST VI MED of 15.2 SED used in vitd_model.compute_safety_sidecar, so every session is sub-erythemal.
-
-Both curves are vitd_model.simulate on the identical schedule from D0 = 25.0 nmol/L. They differ only in whether the adaptive skin states move: the grey curve pins them with the documented overrides alpha_override=0.0, alpha_SC_override=0.0, k_damage_override=0.0, holding melanin at M_baseline(6) = 1 and stratum corneum at 0. The brown curve is the default, in which melanin tans 1.0000 -> 1.0760 and the stratum corneum thickens 0 -> 0.3225, both attenuating later sessions.
-
-Day-180 25(OH)D: 51.0596 nmol/L coupled vs 58.0184 nmol/L pinned, a shortfall of 6.9588 nmol/L (11.99% of the pinned value). The same UV budget buys less as the skin adapts.
-
-Our estimate of how fast the outer skin layer thickens is still rough, so read the size of the gap as the mechanism, not a calibrated quantity.

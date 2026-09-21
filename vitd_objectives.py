@@ -13,7 +13,7 @@ ablation to be driven by the D-feedback term rather than by photoadaptation.
 Both failures are recomputed from the current parameters on every pipeline run
 by `vitd_optimization.gross_synth_per_SED_diagnostic`, so the demotion is
 re-earned rather than remembered. (The narrative write-up this note used to
-cite, MODEL_AND_EVIDENCE.md, was purged on 2026-08-18 and is not a live doc.)
+cite was purged on 2026-08-18 and is not a live doc.)
 
 The objectives here are posed the way a person or clinician would pose them:
 
@@ -147,7 +147,7 @@ OBJECTIVE_HIERARCHY: Tuple[ObjectiveSpec, ...] = (
         question=("Among the schedules that do work, which trades fewest "
                   "sessions against shortest gaps against least skin-cancer "
                   "risk, and how steep is that trade?"),
-        minimise=("n_sessions", "max_gap_days", "combined_risk"),
+        minimise=("n_sessions", "max_gap_days", "risk_within_fst_ratio"),
         subject_to=("C3 sufficiency floor holds for every day after ramp-in",
                     "C1 per-session dose <= GAMMA_MED * MED(FST)",
                     "C7 per-session dose deliverable in PRACTICAL_MAX_MINUTES"),

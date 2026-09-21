@@ -22,7 +22,8 @@ Why this is the right benchmark
 -------------------------------
 Every study already in `vitd_validation.py` is either a calibration target or
 an explicit debug target, so the suite's pass rate says nothing about
-out-of-sample skill (MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 22). This
+out-of-sample skill (see the per-check `tier_note` in
+`vitd_validation.CHECK_REGISTRY`). This
 is an independent group and independent cohort.
 
 CORRECTION 2026-08-17: the paragraph above used to call this a "naturalistic
@@ -32,8 +33,8 @@ Webb 2018 attributes its 2.5-3.0x figure to reference [11] = Farrar 2013,
 which is itself a SIMULATED-SUNLIGHT (lamp) cabinet trial at matched ~35% BSA
 against a matched-dose white comparator (Rhodes 2010, same group, same Arimed
 B source, same latitude) -- matched-dose, lamp-based, containing NO
-behavioural exposure term. Re-verified 2026-08-17 (MODEL_AND_EVIDENCE.md gap
-23) and independently reproduced in `scripts/fst_gap_decomposition.py` S1b.
+behavioural exposure term. Re-verified 2026-08-17 and independently
+reproduced in `scripts/fst_gap_decomposition.py` S1b.
 The genuine tension is Young 2020 (lamp, ratio 1.3-1.4x) vs Farrar/Rhodes
 2010 (lamp, ratio ~2.3x on primary cells) -- a LAMP-VS-LAMP conflict, not a
 naturalistic-vs-matched-dose one. K_const cannot be "the matched-dose answer"
@@ -203,7 +204,7 @@ def run(verbose: bool = True) -> dict:
             print("  disagree with each other despite both being matched-dose lamp studies")
             print("  (a lamp-vs-lamp conflict, not naturalistic-vs-matched-dose), and")
             print("  K_const is calibrated to Young 2020. Re-verified 2026-08-17; see")
-            print("  MODEL_AND_EVIDENCE.md gap 23 and scripts/fst_gap_decomposition.py S1b.")
+            print("  scripts/fst_gap_decomposition.py S1b, which reproduces it.")
 
     return {
         "webbkift_dose_ratio": dose_ratio_ok,

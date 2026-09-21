@@ -13,7 +13,10 @@ coefficient errata caught in `vitd_solar.py`). They are retired because the
 *claims they support* are not proportionate to the evidence behind them, and
 because the repository was carrying far more scope than it could defend.
 
-Rationale and the full audit: [`../docs/REPO_SCOPE_AUDIT.md`](../docs/REPO_SCOPE_AUDIT.md).
+Rationale: this file. The separate scope audit that carried the full
+per-module reasoning was purged 2026-09-19 with zero commits and is
+unrecoverable, so the per-module table below is now the only surviving
+record of why each module left.
 
 ## What is here and why it left
 

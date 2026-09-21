@@ -1,5 +1,20 @@
-numpy>=1.21,<2.0
-scipy>=1.7
-pandas>=1.3
-matplotlib>=3.5
-pytest>=7.0
+# Pins reflect the working environment this pipeline is actually run and
+# tested on (Python 3.12.10; verified 2026-09-19, run_all.py's core test
+# suite: 467 passed). The previous numpy>=1.21,<2.0 pin contradicted that
+# environment outright -- numpy 2.4.4 was already installed and in use.
+#
+# NOTE: pandas 3.0 changed copy-on-write (CoW is now always-on, the pre-3.0
+# opt-in `mode.copy_on_write` setting is gone) and the default string dtype
+# (object -> the new pyarrow-backed "str" dtype under `future.infer_string`
+# semantics folded into 3.0's default). The pipeline writes 30+ CSVs through
+# pandas -- any code relying on chained-assignment mutation or on string
+# columns behaving as dtype=object should be checked against pandas 3.0
+# semantics, not just against whether it currently runs.
+#
+# For an exact, fully-reproducible environment snapshot (not just this
+# project's direct dependencies), see requirements.lock.
+numpy>=2.4,<3.0
+scipy>=1.17,<2.0
+pandas>=3.0,<4.0
+matplotlib>=3.10,<4.0
+pytest>=7.0,<10.0

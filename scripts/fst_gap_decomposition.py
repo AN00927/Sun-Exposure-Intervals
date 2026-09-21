@@ -3,7 +3,8 @@ fst_gap_decomposition.py
 ========================
 DIAGNOSIS ONLY. Changes no parameter, writes no parameter.
 
-Of the 2-3x "too weak melanin penalty" in MODEL_AND_EVIDENCE.md gap 22,
+Of the 2-3x "too weak melanin penalty" against Webb/Kift 2018
+(`vitd_benchmark_webbkift.py`),
 how much is OPTICAL (melanin attenuating UV in skin, belonging in K_const /
 K_ATTEN) and how much is BEHAVIOURAL / EXPOSURE (shade, clothing, time
 outdoors, belonging in a separate exposure term)?
@@ -15,7 +16,7 @@ score well on the benchmark and wrong for exactly the user it is built for.
 
 Sections
 --------
-S1  Provenance audit of the three "independent" failures (gap 22).
+S1  Provenance audit of the three "independent" failures.
 S2  Measured behavioural exposure ratio, FST V vs white, from personal
     polysulphone dosimetry at UK latitude.
 S3  Optical factor at MATCHED physical dose, recomputed from the individual-

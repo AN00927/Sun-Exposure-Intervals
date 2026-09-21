@@ -58,8 +58,19 @@ PART_C_REPORT.md
 # Generated / local-only docs and presentation artifacts
 reports/
 
-# Canonical tracked documentation and presentation materials stay in the repo.
-# The active project docs/presentation are source-of-truth project assets, not private scratch.
+# presentation/ — gitignored per user decision 2026-09-19. 32 tracked files,
+# 14 MB, including an 8.3 MB third-party _template_slidesgo.pptx. Untracked
+# from the index (git rm --cached -r) but left on disk. The per-file entries
+# that used to carve out presentation/handoff_deck_build/* individually are
+# now redundant and have been removed (see git history at commit predating
+# this change for the old list) — this line covers the whole directory.
+presentation/
+
+# Canonical tracked documentation stays in the repo. docs/ is a source-of-truth
+# project asset, not private scratch, and must NOT be added to this file
+# (see docs/ORCHESTRATOR_PLAN.md §1a — a prior claim that docs/ was gitignored
+# was wrong and has been corrected). presentation/ (above) is the opposite:
+# gitignored working material, not a canonical tracked asset.
 
 # Extraction scratchpads and temporary outputs
 audit_outputs/extracted_text/
@@ -80,6 +91,11 @@ tmp_katten/
 .claude/
 .superpowers/
 validation_exploratory/
+# Exception: tests/test_validation_suite_integrity.py:27-28 asserts this file
+# exists. It is already tracked (added before the directory-wide ignore
+# above), so the ignore has no retroactive effect on it, but the negation
+# below makes that outcome intentional rather than accidental.
+!validation_exploratory/validate_nhanes_seasonal_INVALID.py
 
 # Unneeded dataset-side text dumps
 Papers_and_Datasets/extracted_pdfs.txt
@@ -114,12 +130,4 @@ paper/*.synctex.gz
 paper/*.fls
 paper/*.fdb_latexmk
 paper/*.pdf
-presentation/handoff_deck_build/figs_README.md
-presentation/handoff_deck_build/kit.py
-presentation/handoff_deck_build/reference_style3.py
-presentation/handoff_deck_build/REPO_FIGURE_HANDOFF.md
-presentation/handoff_deck_build/REVISION_DeckA.md
-presentation/handoff_deck_build/REVISION_DeckB.md
-presentation/handoff_deck_build/REVISION_HANDBACK.md
-presentation/handoff_deck_build/REVISION_HANDOFF.md
-presentation/handoff_deck_build/SLIDE_COPY_FINAL.md
+paper/*.spl

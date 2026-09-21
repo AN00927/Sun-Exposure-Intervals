@@ -12,6 +12,7 @@ import os
 import platform
 import subprocess
 import sys
+import time
 import traceback
 from io import StringIO
 from contextlib import redirect_stdout
@@ -457,6 +458,7 @@ def _frontload_headline(df):
                 "log and CSVs below.)*\n" % (type(exc).__name__, exc))
 
 def main():
+    _wall_start = time.time()
     parser = argparse.ArgumentParser(
         description="End-to-end run: validation + all priority analyses + summary report."
     )
@@ -534,8 +536,7 @@ def main():
     # this block was already an optional try/except, so nothing that fed
     # a headline number is lost. Population-level NHANES validation now
     # lives in scripts/nhanes_macro_validation.py (run via
-    # --run-macro-scripts). See exploratory/README.md and
-    # docs/REPO_SCOPE_AUDIT.md.
+    # --run-macro-scripts). See exploratory/README.md.
 
     # 2. Analyses
     analyses = [
@@ -671,6 +672,8 @@ def main():
         "\n```\n"
         "generated          : %s\n"
         "git commit         : %s\n"
+        "wall-clock to here : %s\n"
+        "host logical cores : %s\n"
         "python             : %s\n"
         "pandas / numpy     : %s / %s\n"
         "--baseline-source  : %s%s\n"
@@ -678,7 +681,15 @@ def main():
         "feedback_mode      : %s\n"
         "```\n"
         % (_dt.datetime.now().astimezone().isoformat(timespec="seconds"),
-           _git_desc(), platform.python_version(),
+           _git_desc(),
+           # Elapsed when this block is BUILT, not at process exit:
+           # the report is assembled before the final sections finish
+           # writing, so this is a LOWER BOUND on total runtime and is
+           # labelled as such. CLAUDE.md carries the end-to-end figure.
+           "%d min %02d s (at report assembly; see CLAUDE.md for "
+           "end-to-end)" % divmod(int(time.time() - _wall_start), 60),
+           os.cpu_count(),
+           platform.python_version(),
            pd.__version__, __import__("numpy").__version__,
            args.baseline_source,
            "" if args.baseline_source == "preset"
@@ -694,8 +705,8 @@ def main():
         "genotype presets, the behavioural multiplier and the NHANES "
         "preprocessing were **retired to `exploratory/`**. They still exist "
         "and their tests still pass; nothing they produce reaches any number "
-        "in this report. The reasoning is in "
-        "[`docs/REPO_SCOPE_AUDIT.md`](docs/REPO_SCOPE_AUDIT.md) and "
+        "in this report. What was retired, why, and the un-retirement "
+        "procedure are in "
         "[`exploratory/README.md`](exploratory/README.md).\n\n"
         "Every schedule below is evaluated under one frozen scenario, "
         "identical on every exposure day:\n"
@@ -761,7 +772,8 @@ def main():
         for t, v in _tier_counts.items()))
     report.append(
         "\nOnly the QUANTITATIVE row is an external numeric comparison; see "
-        "`docs/REPO_SCOPE_AUDIT.md` section 2 and **section 15**, which "
+        "the per-check `tier_note` in `vitd_validation.CHECK_REGISTRY` for "
+        "why each check carries the tier it does, and **section 15**, which "
         "carries the only out-of-sample test and is not counted in any of "
         "the numbers above.\n")
     report.append("\n```\n" + val_log + "\n```\n")
@@ -1355,7 +1367,7 @@ def main():
         "|---|---|---|\n"
         "| A1 | `n_sessions` per year | adherence — how often you must get outside |\n"
         "| A2 | `max_gap_days` | the longest stretch with no session, tail gap to the end of the horizon included |\n"
-        "| A3 | `combined_risk` | the skin-cancer index |\n\n"
+        "| A3 | `risk_within_fst_ratio` | the skin-cancer index, **within skin type only** |\n\n"
         "Efficacy is a **constraint**, not an axis: every point on this "
         f"frontier holds {SUFFICIENCY_NMOL_L:.0f} nmol/L for every day after "
         f"ramp-in (C3) at a dose at or below {GAMMA_MED:.0%} MED (C1) that "
@@ -1395,9 +1407,15 @@ def main():
     import vitd_sensitivity
 
     # Collapses the Q2 frontier to one actionable schedule per skin type and
-    # saves the frontier figure.
-    _ensure_scripts_on_path()
-    import risk_aware_scheduling
+    # saves the frontier figure. Routed through _import_script_module (not a
+    # bare `import risk_aware_scheduling`) so this scripts/ dependency is
+    # visible to CLAUDE.md's documented detection rule ("grep run_all.py for
+    # _import_script_module and the script's own name before ignoring
+    # anything under scripts/") and so an import-time failure (a mid-edit
+    # file, a missing optional dependency) degrades this one section instead
+    # of raising out of an un-wrapped `import` statement at module-exec time.
+    def _run_risk_aware_scheduling():
+        return _import_script_module("risk_aware_scheduling").main()
 
     obj_log = capture_log(_report_decision_problems)
     # G2: keep the return value so section 15 can headline PASS/FAIL instead
@@ -1409,7 +1427,16 @@ def main():
     # project's stated priority population, previously never covered here).
     sens_log, sens_res, sens_err = capture_log_safe(
         "16. Sensitivity / identifiability / uncertainty", vitd_sensitivity.run)
-    risk_log = capture_log(risk_aware_scheduling.main)
+    # Was `capture_log(risk_aware_scheduling.main)` -- a bare capture_log lets
+    # a failure here abort the rest of the pipeline (validation, sweeps,
+    # everything after this point in the function) instead of degrading only
+    # this section, unlike every other scripts/-backed analysis in this file.
+    risk_log, risk_res, risk_err = capture_log_safe(
+        "14b. Risk-constrained schedule recommendation",
+        _run_risk_aware_scheduling)
+    if risk_err:
+        print("WARNING: risk-aware scheduling section failed (%s) -- "
+              "pipeline continued." % risk_err)
     risk_anchor_log = "\n".join(
         capture_log(fn) for fn in (
             vitd_calibration.elwood1997_intermittency_check,

@@ -18,12 +18,12 @@
 > **Treat the interval it recommends as the useful output. Do not treat any
 > absolute-minutes number as a dosing instruction.**
 >
-> See `MODEL_AND_EVIDENCE.md` for full derivation.
+> See the `vitd_model.py` module docstring for the full derivation.
 
 ## Scope and limitations
 
 **As of 2026-08-21, this repository does not model location, date, weather, or
-posture.** An audit (`docs/REPO_SCOPE_AUDIT.md`) found the location-based
+posture.** A scope audit on that date found the location-based
 dosimetry chain — solar position -> ambient UV index -> posture/site geometry
 -> exposed BSA — stacked four independent uncertainties into one number that
 had never been validated as a product, even though its individual links were
@@ -73,16 +73,19 @@ Two consequences worth stating plainly:
 - **Language:** English
 - **Funding:** [to be filled]
 - **Related documentation:**
-  - `MODEL_AND_EVIDENCE.md` -- canonical model description, validation status,
-    evidence cards, open work, assumptions, changelog
+  - `vitd_model.py` module docstring -- canonical parameter values, citations
+    and assumptions (see `CLAUDE.md`, "Where facts live")
+  - `calibration_approval.yaml` -- the approval record for every calibration
+    decision, with its rationale
   - `RESULTS.md` -- auto-generated validation and analysis summary (regenerated
     by `run_all.py`; do not hand-edit)
   - `paper/README.md` -- manuscript status, what is drafted versus stubbed
   - `CLAUDE.md` -- repository conventions and agent guidelines
-  - `docs/REPO_SCOPE_AUDIT.md` -- the 2026-08-21 scope audit; the reasoning
-    behind the `exploratory/` retirement and the frozen reference scenario
-  - `docs/OPTIMIZATION_METHODOLOGY.md` -- in-depth account of how the schedule
-    optimisation actually works
+  - `docs/MELANIN_MODEL.md` -- the melanin sub-model: equations, per-parameter
+    provenance, limitations
+  - `docs/SC_MODEL.md` -- the stratum corneum sub-model, same treatment
+  - `docs/SC_MELANIN_OPEN_ITEMS.md` -- the open items from those two, and how
+    each was resolved
   - `exploratory/README.md` -- what was retired, why, and how to un-retire it
   - `basics/README.md` -- the two Tier-1 single-mechanism reference models
   - `spacing_study/README.md` -- the daily-vs-spaced-exposure sub-study
@@ -136,8 +139,10 @@ spectra.
 | `exploratory/` | Retired location/genetics/behaviour/NHANES modules -- still import, still tested, no longer wired into any headline number. See `exploratory/README.md` |
 | `basics/` | Two Tier-1 single-mechanism reference models (`melanin_only.py`, `sc_only.py`). See `basics/README.md` |
 | `spacing_study/` | Self-contained sub-study on exposure spacing. See `spacing_study/README.md` |
-| `docs/REPO_SCOPE_AUDIT.md` | The 2026-08-21 scope audit that motivated the retirement and the frozen scenario |
-| `docs/OPTIMIZATION_METHODOLOGY.md` | How the schedule optimisation actually works |
+| `docs/MELANIN_MODEL.md` | The melanin sub-model: equations, per-parameter provenance, limitations |
+| `docs/SC_MODEL.md` | The stratum corneum sub-model, same treatment |
+| `docs/SC_MELANIN_OPEN_ITEMS.md` | Open items from those two documents and how each was resolved |
+| `docs/INDEX.md` | Navigation root: every tracked Markdown document, what it answers, and its status |
 
 ## Methodological Information
 
@@ -183,8 +188,18 @@ Bug fixes (unit errors, state-update errors, inverted signs) do not.
 
 ### Validation status
 
-**12 / 15 checks passed** (as of last `run_all.py` run; see `RESULTS.md` for
-current count -- do not quote without regenerating).
+**9 / 10 required checks passed, plus 4 / 4 warning-only**, across a
+**14**-check registry (`vitd_validation.CHECK_REGISTRY`). Measured on the
+`run_all.py` run of 2026-09-21; see `RESULTS.md` for the current count --
+do not quote without regenerating.
+
+The required count is real but flatters the model. The same 14 checks split
+by what they are *evidence of*: INTERNAL 4/4 (self-consistency and wiring, not
+biology), DIRECTIONAL 3/3 (external data, direction or ordering only),
+QUANTITATIVE 1/2 (external data, a real numeric comparison), CIRCULAR 3/3
+(external data the model or one of its parameters was fitted to -- a pass is
+expected by construction). **One quantitative external check out of two is the
+honest headline.**
 
 Validation uses:
 - **Literature benchmarks:** Bogh 2012 (NB-UVB), Farrar 2013 (FST V),
@@ -198,8 +213,8 @@ Validation uses:
 **Known deliberate test failure:** NHANES Part B (summer steady-state) reports
 4/6, down from a prior 6/6. This is an accepted cost: the solar `E_source`
 default was raised from 1.00 to Webb et al. 2021's 1.89, and the assumed daily
-dose was deliberately not retuned. See `calibration_approval.yaml` and
-`MODEL_AND_EVIDENCE.md`. **Do not "fix" this without reading that record first.**
+dose was deliberately not retuned. See `calibration_approval.yaml`.
+**Do not "fix" this without reading that record first.**
 
 ### Quick Start
 

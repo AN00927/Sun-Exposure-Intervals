@@ -33,8 +33,9 @@ Kallioglu 2024 "held-out skin-type" table was actually its Table 3 erythemal
 MED values (Fitzpatrick I=200, ..., VI=1000 J/m^2 — erythemal progression,
 not vitamin-D) run through Hollick's rule, and the "5.00x"/"2.40x" ratios
 are literally 1000/200 and 600/250 of THAT table — purely erythemal
-arithmetic mistaken for vitamin-D-weighted results. See
-MODEL_AND_EVIDENCE.md for the full writeup. This module is structured so
+arithmetic mistaken for vitamin-D-weighted results. [The working-notes
+writeup of this error was purged 2026-09-19; the paragraph above is now the
+whole of it.] This module is structured so
 mixing up the two is hard: every value returned is named uv_index*
 (erythemal), nothing is named or described as a "vitamin D index", and no
 conversion factor is applied.
@@ -45,8 +46,9 @@ skin erythema data (McKinlay & Diffey 1987; empirical grounding is fair-skin
 sunburn data). This repo is DARK-SKIN-PRIORITY. The UV Index therefore
 inherits a light-skin measurement lineage before reaching this repo's
 darker-FST-focused dose logic downstream — the same inherited-bias caveat
-this repo documents for other imported constants (MODEL_AND_EVIDENCE.md,
-"assumptions"). Nothing here corrects for that; flagged so nothing
+this repo documents for other imported constants (see the assumption
+records in calibration_approval.yaml). Nothing here corrects for that;
+flagged so nothing
 downstream forgets.
 
 UNITS

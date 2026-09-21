@@ -116,6 +116,70 @@ def ksc_threshold_rows(KSC: pd.DataFrame, fsts=None):
 # main
 # ---------------------------------------------------------------------------
 
+def _git_head() -> str:
+    """Short SHA of HEAD, plus a dirty marker. Best-effort; never raises."""
+    try:
+        import subprocess
+        sha = subprocess.run(["git", "rev-parse", "--short", "HEAD"],
+                             cwd=REPO, capture_output=True, text=True,
+                             timeout=10).stdout.strip()
+        dirty = subprocess.run(["git", "status", "--porcelain"],
+                               cwd=REPO, capture_output=True, text=True,
+                               timeout=20).stdout.strip()
+        if not sha:
+            return "unknown"
+        return sha + ("+dirty" if dirty else "")
+    except Exception:
+        return "unknown"
+
+
+def _provenance_block() -> str:
+    """The generated staleness/provenance banner for FINDINGS.md.
+
+    Written by the generator so that it survives -- and is re-derived by --
+    every re-run. It records the K_ATTEN configuration in force at
+    generation time, the generating commit, and the timestamp, so that a
+    future reader can tell at a glance whether the report is current
+    without re-deriving the model state.
+    """
+    p = vm.ModelParams()
+    retired = sorted(vm.RETIRED_PARAMETERS)
+    stamp = time.strftime("%Y-%m-%d %H:%M:%S %Z")
+    lines = [
+        "> **GENERATED PROVENANCE — emitted by "
+        "`spacing_study/run_spacing_study.py`, not hand-added. "
+        "Re-derived on every run.**",
+        ">",
+        f"> Generated {stamp} from commit `{_git_head()}`.",
+        ">",
+    ]
+    if "K_ATTEN" in retired:
+        lines += [
+            f"> `K_ATTEN` was **RETIRED, pinned at "
+            f"{vm.K_ATTEN_STRUCTURAL:.2f}** (pinned, not calibrated) when "
+            "this was generated, so every statement here about tanning "
+            "attenuation describes a model in which that channel is dead.",
+        ]
+    else:
+        lines += [
+            "> `K_ATTEN` was **ACTIVE and calibrated** when this was "
+            "generated (reinstated 2026-08-21, user-approved). Its value is "
+            "in the `vitd_model.py` module docstring, the only canonical "
+            "source; it is deliberately not restated here.",
+        ]
+    lines += [
+        ">",
+        f"> `vitd_model.RETIRED_PARAMETERS` at generation time: "
+        f"{('`' + '`, `'.join(retired) + '`') if retired else '*(empty)*'}.",
+        ">",
+        "> If that set, or the shipped value of any parameter named above, "
+        "differs from what you find in `vitd_model.py` today, this report "
+        "is stale for every statement that depends on it and should be "
+        "re-run. Nothing in this file is hand-maintained.",
+    ]
+    return "\n".join(lines)
+
+
 def main() -> None:
     t_start = time.time()
     sections: List[str] = []
@@ -333,9 +397,9 @@ def main() -> None:
                "(see `vitd_model.RETIRED_PARAMETERS`), i.e. the shipped model "
                "has **no facultative-melanin attenuation at all**."
                if _katten_retired else
-               f"`K_ATTEN` is an ACTIVE, calibrated parameter (shipped value "
-               f"{vm.ModelParams().K_ATTEN:.2f}; see the vitd_model.py module "
-               f"docstring), so the shipped model DOES have facultative-melanin "
+               f"`K_ATTEN` is an ACTIVE, calibrated parameter (for the shipped "
+               f"value see the vitd_model.py module docstring, the only "
+               f"canonical source), so the shipped model DOES have facultative-melanin "
                f"attenuation -- this sweep still explores the surrounding range "
                f"including values far outside the calibrated one.")
               + " This sweep runs inside `allow_retired_parameter_sweep()` "
@@ -433,9 +497,12 @@ def main() -> None:
     f_sec += ["Note on FST VI and tanning headroom: `M_ceiling(fst) = "
               "M_baseline(fst) + M_TAN_HEADROOM` and is deliberately NOT "
               "capped at 1.0, so every skin type including VI has the same "
-              "facultative headroom on the melanin scale. With `K_ATTEN` "
-              "retired at zero, that headroom has no effect on synthesis "
-              "either way.", ""]
+              "facultative headroom on the melanin scale. Whether that "
+              "headroom reaches synthesis is governed entirely by "
+              "`K_ATTEN`: see the generated provenance block at the top of "
+              "this file for the configuration in force when this was "
+              "written, and the `melanin adaptation off` row of section 3 "
+              "for how much the channel is worth at that configuration.", ""]
     sections.append("\n".join(f_sec))
 
     # ---------------- G: metric sensitivity --------------------------------
@@ -680,6 +747,27 @@ def write_findings(sections, flips, bi_A, bi_B, bi_C, ASS, BSS, Eiv, Earr,
     shipped_tp_5 = float(np.exp(-p.K_SC * p.SC_max_by_FST[5]))
     shipped_tp_2 = float(np.exp(-p.K_SC * p.SC_max_by_FST[2]))
 
+    # Size of each photoadaptation channel, FST V steady state, as the shift
+    # it produces in the every-2-day / daily ss_mean_D ratio when ablated.
+    # Computed, never asserted: these are what make headline refinement 3
+    # true at whatever K_ATTEN is in force.
+    def _r21(variant, fst, framing):
+        g = Eiv[(Eiv.variant == variant) & (Eiv.fst == fst) &
+                (Eiv.framing == framing)].set_index("interval_days")
+        return float(g.loc[2, "ss_mean_D"] / g.loc[1, "ss_mean_D"])
+
+    h_full_p = _r21("full", 5, "matched_per_session_SED")
+    h_full_b = _r21("full", 5, "matched_total_SED")
+    h_mel_p = _r21("no_melanin_adapt", 5, "matched_per_session_SED")
+    h_mel_b = _r21("no_melanin_adapt", 5, "matched_total_SED")
+    h_sc_p = _r21("no_SC", 5, "matched_per_session_SED")
+    h_mel_pp_p = 100.0 * (h_full_p - h_mel_p)
+    h_mel_pp_b = 100.0 * (h_full_b - h_mel_b)
+    h_sc_pp_p = 100.0 * (h_full_p - h_sc_p)
+    h_daily_pp_p = 100.0 * (1.0 - h_full_p)
+    h_mel_dead = abs(h_mel_pp_p) < 1e-10 and abs(h_mel_pp_b) < 1e-10
+    h_signs_differ = (h_mel_pp_p * h_mel_pp_b) < 0.0
+
     ka_ps = katten_threshold(KA, "matched_per_session_SED")
     ka_bd = katten_threshold(KA, "matched_total_SED")
     if ka_ps is None:
@@ -709,26 +797,12 @@ def write_findings(sections, flips, bi_A, bi_B, bi_C, ASS, BSS, Eiv, Earr,
         "- `K_SC` never produces a non-daily optimum on the swept grid."
     )
 
-    # Auto-generated provenance line, so a stale re-read of this file is
-    # self-diagnosing without a hand-added banner (which a re-run would erase
-    # -- see docs/ABSTRACT_RECONCILIATION.md 2026-08-24 for why this line
-    # exists). Reflects vitd_model.RETIRED_PARAMETERS at GENERATION time.
-    if "K_ATTEN" in vm.RETIRED_PARAMETERS:
-        katten_status_line = (
-            f"*Generated under K_ATTEN RETIRED at "
-            f"{vm.K_ATTEN_STRUCTURAL:.2f} (pinned, not calibrated). If "
-            f"`vitd_model.RETIRED_PARAMETERS` no longer contains K_ATTEN when "
-            f"you are reading this, this report is stale for every statement "
-            f"that depends on K_ATTEN and should be re-run.*"
-        )
-    else:
-        katten_status_line = (
-            f"*Generated under K_ATTEN ACTIVE and calibrated at "
-            f"{vm.ModelParams().K_ATTEN:.2f}. If "
-            f"`vitd_model.RETIRED_PARAMETERS` contains K_ATTEN or its value "
-            f"has moved when you are reading this, this report is stale for "
-            f"every statement that depends on K_ATTEN and should be re-run.*"
-        )
+    # ---- generated provenance block ------------------------------------
+    # EMITTED BY THIS SCRIPT, not hand-added. A hand-added staleness banner
+    # lives in a generated file and is destroyed by the next run; this one
+    # is regenerated every run and therefore cannot go stale silently.
+    # Everything in it is read from the live model at GENERATION time.
+    katten_status_line = _provenance_block()
 
     header = f"""# Spacing study — FINDINGS
 
@@ -765,16 +839,10 @@ Three refinements to that headline, all of which point the same way:
    clustered one last. The effect is real and consistently signed, and it is
    also small enough to be scientifically uninteresting next to the ~30%
    penalty for simply going out less often.
-3. **Half the photoadaptation machinery the hypothesis relies on is switched
-   off in this model, and the other half is too weak to matter.** `K_ATTEN`,
-   the facultative-melanin (tanning) attenuation coefficient, is a RETIRED
-   parameter pinned at `K_ATTEN_STRUCTURAL` = 0 (see
-   `vitd_model.RETIRED_PARAMETERS`), so tanning has **no effect on synthesis
-   at all**: "melanin adaptation off" is a bit-identical no-op, and the
-   `alpha` and `beta` sweeps move the answer by literally zero. The only live
-   channel is stratum-corneum thickening, which at shipped parameters still
-   passes {shipped_tp_5:.0%} of synthesis through a fully-thickened SC at
-   FST IV-VI.
+3. **{"Half the photoadaptation machinery the hypothesis relies on is switched off in this model, and the other half is too weak to matter." if h_mel_dead else "Both photoadaptation channels are live, and both are far too weak to matter."}**
+   {"`K_ATTEN`, the facultative-melanin (tanning) attenuation coefficient, is retired and pinned at zero in the configuration this was generated under, so tanning has no effect on synthesis at all and the `alpha`/`beta` sweeps move the answer by literally zero. The only live channel is stratum-corneum thickening." if h_mel_dead else f"`K_ATTEN`, the facultative-melanin (tanning) attenuation coefficient, was retired and pinned at zero when this study was first written; it is an active, calibrated parameter in the configuration this was generated under (see the provenance block above), so ablating melanin adaptation is no longer a no-op. It is simply small. At FST V, steady state, removing melanin adaptation moves the every-2-day/daily ratio by {abs(h_mel_pp_p):.3f} percentage points under matched per-session dose and {abs(h_mel_pp_b):.3f} under a matched budget" + (", and the two framings disagree about its sign — the tanning channel helps spacing under per-session matching and hurts it under a matched budget" if h_signs_differ else "") + f". Set that against a {h_daily_pp_p:.1f}-point deficit that daily has to give up before spacing can win. The stratum-corneum channel is the larger of the two at {abs(h_sc_pp_p):.3f} points -- still {h_daily_pp_p/abs(h_sc_pp_p):.0f}x too small, with the melanin channel {h_daily_pp_p/abs(h_mel_pp_p):.0f}x too small."}
+   At shipped parameters a fully-thickened SC still passes
+   {shipped_tp_5:.0%} of synthesis at FST IV-VI.
 
    A non-daily optimum **does** appear if either coefficient is pushed far
    enough — but only far past any defensible value, and only into a regime
@@ -902,11 +970,9 @@ about two orders of magnitude too small.** Two separate measurements:
 **Verdict on the standing claim in `run_all.py`** — "the interval ordering
 these sweeps produce comes from the D-feedback term, not from
 photoadaptation; the induced-melanin coefficient `K_ATTEN` cannot be the
-cause ... that term is inert *by calibration*". **Second half confirmed
-exactly; first half refuted.** `K_ATTEN` is indeed inert — ablating melanin
-adaptation is bit-identical to the full model, and sweeping `alpha` and `beta`
-across two orders of magnitude changes the every-2-day/daily ratio by nothing
-at all to four decimal places. But the ordering does not come from D-feedback
+cause ... that term is inert *by calibration*". **Its conclusion survives;
+both of its stated reasons do not.** {"`K_ATTEN` is indeed inert at the value in force here, so the second clause holds as written." if ident else f"`K_ATTEN` is no longer inert: ablating melanin adaptation moves the every-2-day/daily ratio from {full_p:.4f} to {nomel_p:.4f} under matched per-session dose and from {full_b:.4f} to {nomel_b:.4f} under a matched budget, so the phrase *inert by calibration* describes a configuration (K_ATTEN pinned at zero) that is no longer the one shipped. The conclusion it was offered in support of nevertheless holds, for a stronger reason: K_ATTEN cannot be the cause of the ordering not because it does nothing, but because the ordering is unchanged under its complete removal -- and under the removal of every other state mechanism in the model."}
+And the ordering does not come from D-feedback
 either: disable `g(D)` and the ordering is unchanged while daily's margin
 *grows*. The mechanism `run_all.py` describes ("sparse dosing keeps mean D
 low, so each pulse meets less inhibition") is real and correctly reasoned —
@@ -917,6 +983,7 @@ ablation in this study can remove.
 
 
 def build_flip_section(flips, bi_A, bi_B, bi_C, ASS, BSS, KA, KSC) -> str:
+    _katten_retired = "K_ATTEN" in vm.RETIRED_PARAMETERS
     lines = ["## 4. Where the answer flips", ""]
     ka_ps = katten_threshold(KA, "matched_per_session_SED")
     kmap = {(f, s): v for f, s, v in ksc_threshold_rows(KSC, [2, 5])}
@@ -954,7 +1021,7 @@ def build_flip_section(flips, bi_A, bi_B, bi_C, ASS, BSS, KA, KSC) -> str:
             "only there.** Two coefficients can be pushed hard enough to make "
             "a spaced schedule win: `K_ATTEN` at "
             f"{'no value on the grid' if ka_ps is None else f'{ka_ps:g}'} "
-            "(shipped value: retired at zero) and `K_SC` at "
+            f"(shipped value: {'RETIRED, pinned at zero' if _katten_retired else 'active and calibrated; see the vitd_model.py module docstring, the only canonical source'}) and `K_SC` at "
             f"{'no value on the grid' if ps5 is None else f'{ps5[0]:g}'} at "
             "FST V (shipped value: 1.0; documented prior range 0.5-2.0), both "
             "under matched per-session dosing. Section 5 quantifies how far "
@@ -997,6 +1064,26 @@ def build_what_would_change(KSC, KA, p, S) -> str:
             inert.append(sweep)
     inert_s = ("; ".join(f"`{s}`" for s in inert) if inert else "none")
 
+    # Live magnitude of the two melanin-state sweeps, FST V, matched
+    # per-session dose: the span of the every-2-day/daily ratio across the
+    # swept levels, in percentage points. Computed so the bullet below stays
+    # true at whatever K_ATTEN is in force.
+    def _sweep_span(name_prefix):
+        sub = S[S.sweep.astype(str).str.startswith(name_prefix) &
+                (S.framing == "matched_per_session_SED") & (S.fst == 5)]
+        rows = []
+        for level, g in sub.groupby("level"):
+            gg = g.set_index("interval_days")
+            rows.append((str(level), float(gg.loc[2, "ss_mean_D"] /
+                                           gg.loc[1, "ss_mean_D"])))
+        if len(rows) < 2:
+            return 0.0, "n/a", "n/a"
+        rows.sort(key=lambda r: r[1])
+        return 100.0 * (rows[-1][1] - rows[0][1]), rows[0][0], rows[-1][0]
+
+    ab_alpha_pp, ab_alpha_lo, ab_alpha_hi = _sweep_span("alpha (")
+    ab_beta_pp, ab_beta_lo, ab_beta_hi = _sweep_span("beta (")
+
     shipped_tp_2 = float(np.exp(-p.K_SC * p.SC_max_by_FST[2]))
     shipped_tp_5 = float(np.exp(-p.K_SC * p.SC_max_by_FST[5]))
 
@@ -1034,7 +1121,7 @@ Those are exactly the parameters that would have to be
 wrong for photoadaptation to create a non-daily optimum. They were swept well
 past their documented ranges:
 
-**`K_ATTEN` — the headline sensitivity.** {"Shipped value: retired at zero, so the tanning-attenuation term is evaluated every session and contributes nothing." if _katten_retired else f"Shipped value: ACTIVE and calibrated at {vm.ModelParams().K_ATTEN:.2f} (reinstated 2026-08-21, user-approved; see the vitd_model.py module docstring), so the tanning-attenuation term now contributes at that value."}
+**`K_ATTEN` — the headline sensitivity.** {"Shipped value: retired at zero, so the tanning-attenuation term is evaluated every session and contributes nothing." if _katten_retired else "Shipped value: ACTIVE and calibrated (reinstated 2026-08-21, user-approved). The value itself is in the `vitd_model.py` module docstring, the only canonical source, and is deliberately not restated here; the tanning-attenuation term contributes at it."}
 Swept to {max(se.K_ATTEN_SWEEP):g}, roughly
 {max(se.K_ATTEN_SWEEP)/0.33:.0f}x the top of the [0.00, 0.33] interval over
 which its fitting objective was flat.
@@ -1073,13 +1160,21 @@ which its fitting objective was flat.
   wins" only in the sense that nothing works. `SC_max` behaves the same way,
   as it must: only the product `K_SC * SC_max` is identified, and no flip
   appears until it exceeds ~5.
-- **`alpha` and `beta` (melanin induction and decay) are completely inert.**
-  Swept across two-plus orders of magnitude, they change the every-2-day /
-  daily ratio by **zero to nine decimal places**, because the only route by
-  which melanin state reaches synthesis is `K_ATTEN`, which is zero. Sweeps
-  that were inert to 1e-9 at FST V: {inert_s}. Anyone reporting a melanin
-  photoadaptation effect from this model without first raising `K_ATTEN` is
-  reporting a numerical artefact.
+- **`alpha` and `beta` (melanin induction and decay).** The only route by
+  which melanin state reaches synthesis is `K_ATTEN`; while that coefficient
+  was retired and pinned at zero these two sweeps were inert to nine decimal
+  places, and any melanin photoadaptation effect read off this model was a
+  numerical artefact. At the `K_ATTEN` in force here they are **live but
+  negligible**: swept across two-plus orders of magnitude they move the
+  every-2-day/daily ratio at FST V by {ab_alpha_pp:.3f} percentage points
+  for `alpha` and {ab_beta_pp:.3f} for `beta`, under matched per-session
+  dose. (Widest-separated swept levels: `{ab_alpha_lo}` vs `{ab_alpha_hi}`,
+  and `{ab_beta_lo}` vs `{ab_beta_hi}` — note the ordering is not monotone
+  in either, so these are the extremes of the response, not of the sweep.)
+  Both are smaller than the stratum-corneum channel they are usually invoked
+  alongside, and both are far short of the daily margin they would have to
+  close — headline refinement 3 reports that margin. Sweeps still inert to
+  1e-9 at FST V: {inert_s}.
 - **`alpha_SC`, `k_decay_SC`, `k_damage`.** Swept over and beyond their
   documented ranges. None changes the winning interval under either framing at
   either focus skin type. Faster SC regression (`k_decay_SC`) does push in the
@@ -1149,17 +1244,23 @@ LIMITATIONS_TMPL = """## 6. Limitations
    treats each session as an instantaneous pulse. Intervals shorter than one
    day were not explored, so "more sessions is better" is not extrapolated
    past once per day.
-8. **This study cannot test the tanning hypothesis on its merits.** The
-   advisor's intuition — repeated exposure builds pigment, pigment blocks
-   synthesis, so rest days should restore yield — is not *refuted* here so
-   much as *unrepresented*: the coefficient that would carry it, `K_ATTEN`, is
-   retired at zero, so the model has no opinion about it. What this study can
-   say is (a) with the coefficient at zero, spacing loses everywhere, and
-   (b) the coefficient would have to be ~150x the top of the range it was
-   fitted over, and the dose framing would have to be per-session rather than
-   budget-matched, before the intuition wins. Reinstating `K_ATTEN` as a
-   calibratable parameter is a `calibration_approval.yaml` decision and was
-   deliberately not taken here.
+8. **The tanning hypothesis is now represented, and loses.** The advisor's
+   intuition — repeated exposure builds pigment, pigment blocks synthesis, so
+   rest days should restore yield — was *unrepresented* in the first version
+   of this study, because the coefficient that carries it, `K_ATTEN`, was a
+   retired parameter pinned at zero and the model had no opinion about it.
+   That is no longer the case: `K_ATTEN` was reinstated as an active,
+   calibrated parameter on 2026-08-21 (user-approved), and the numbers above
+   were computed with it live. The mechanism is present, it pushes in the
+   direction the intuition predicts under per-session matching, and it is
+   roughly two orders of magnitude too small to change the answer — see
+   headline refinement 3 and the `melanin adaptation off` row of section 3
+   for the measured size. What the study still cannot do is adjudicate the
+   *calibration*: the coefficient would have to sit far outside the range it
+   was fitted over (see section 5 for the swept threshold), and the dose
+   framing would have to be per-session rather than budget-matched, before
+   the intuition wins. Under a matched UV budget it does not win at any
+   swept value at all.
 9. **The steady-state framing is a modelling choice.** The headline numbers
    come from a 728-day run so that transient front-loading cannot masquerade
    as a photoadaptation effect. Real seasonal exposure never reaches such a

@@ -105,8 +105,9 @@ def photodegradation_factor(sed: float, d_sat: float = PREVITAMIN_D_SAT_SED) -> 
 
     This mechanism makes splitting a UV budget across sessions genuinely
     better than taking it in one hit — a real interior optimum, unlike the
-    feedback-driven artifact in MODEL_AND_EVIDENCE.md, 'Remaining gaps',
-    gap 19.
+    feedback-driven artifact that
+    `vitd_optimization.gross_synth_per_SED_diagnostic` recomputes on every
+    pipeline run.
     """
     if sed <= 0.0:
         return 1.0
@@ -201,8 +202,9 @@ def photodegradation_factor(sed: float, d_sat: float = PREVITAMIN_D_SAT_SED) -> 
 # It is not in the main PDF; it was extracted 2026-08-17 from a supplementary
 # .doc supplied separately. Vis is still never guessed by this module: callers
 # must pass a vis_percent from vis_table_s1() (sourced) or their own estimate.
-# See MODEL_AND_EVIDENCE.md gap 26 / data request 13b, and 'Open decisions'
-# item 5b for the unresolved geometry x BSA coupling this table does not fix.
+# The unresolved geometry x BSA coupling this table does not fix has no
+# surviving write-up [reference purged 2026-09-19]; see
+# vitd_scenario.LIMITATION_STATEMENT for how the pipeline freezes around it.
 
 # Vernez et al. 2015, Equation 1. ER in PERCENT.
 #   ER = -3.396*lnVis_cent + 10.714*Vis_cent - 9.199*cosSZA3_cent + 56.991

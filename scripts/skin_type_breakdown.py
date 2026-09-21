@@ -12,8 +12,8 @@ Per-skin-type answers to the two questions the model actually answers:
      25(OH)D at or above sufficiency, subject to never exceeding a
      sub-erythemal fraction of the individual's MED.
 
-Problem B is the formulation recommended in MODEL_AND_EVIDENCE.md, 'Problem
-statement' section 3.3.
+Problem B is the formulation the repository treats as PRIMARY; see
+`vitd_objectives.OBJECTIVE_HIERARCHY`.
 It has an interior answer, unlike maximising 25(OH)D under a free UV budget,
 which always returns "go out daily".
 
@@ -234,15 +234,16 @@ def min_sessions_for_sufficiency(target: float = SUFFICIENCY_NMOL_L,
               f"licenses a {_med_sed_by_fst(6)/_med_sed_by_fst(1):.1f}x larger dose")
         print("  for FST VI, which then takes hours of continuous exposure to "
               "deliver.")
-        print("  A session-length constraint (C7 in MODEL_AND_EVIDENCE.md, "
-              "'Problem statement') has to bind here.")
+        print("  A session-length constraint (C7 in "
+              "vitd_objectives.OBJECTIVE_HIERARCHY) has to bind here.")
         print("  Treat these rows as showing the constraint set is incomplete, "
               "not as advice.")
 
     print("\n  Minutes carry at least +/-40% geometric uncertainty: the")
     print("  personal-to-ambient exposure ratio is a scalar here, and")
     print("  Schmalwieser 2018 shows it varies with solar elevation.")
-    print("  See MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 26.")
+    print("  See vitd_scenario.LIMITATION_STATEMENT for the "
+          "frozen-geometry caveat this inherits.")
     print("  Minutes also assume UV index holds at "
           f"{UV_INDEX_REF:.0f} for the whole session, which fails for long ones.")
     return rows

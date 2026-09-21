@@ -8,7 +8,8 @@ trade-off, plus the frontier figure the schedule was picked from.
       least skin-cancer risk?"
      -> vitd_optimization.optimal_interval_risk_constrained(), constraints
         C1 (never burn), C3 (sufficiency floor), C7 (session length),
-        C9 (risk cap) -- MODEL_AND_EVIDENCE.md section 4.
+        C9 (risk cap). The C-numbers are defined in
+        vitd_objectives.OBJECTIVE_HIERARCHY.
 
   B. The Pareto frontier those recommendations sit on
      -> vitd_objectives.deficiency_vs_risk_frontier(), plotted per skin type

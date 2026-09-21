@@ -399,10 +399,23 @@ parameter_approvals:
       does not absorb UV, and measure that hydrating SC from ~19.8 to ~31 um
       (+56.6%, essentially all water) does NOT raise optical depth
       proportionally -- UV-B transmission RISES on hydration (their Fig. 4b:
-      drying DECREASES UV-B transmission). de Boer 2025 attribute the SC change
-      to EDEMA, not acanthosis, with epidermal thickness flat (108.6 -> 109.4
-      um, p = 0.718). If that attribution is right, the optical value is an
-      UPPER BOUND on a quantity that could be near zero or negative. The
+      drying DECREASES UV-B transmission). [CORRECTED 2026-09-20 (W-L), after
+      reading de Boer's full Discussion rather than its Introduction: this
+      entry previously said "de Boer 2025 attribute the SC change to EDEMA, not
+      acanthosis". That overstates the paper. The word "edema" appears exactly
+      once in it, in the Introduction, paraphrasing Felton et al. 2020 on ACUTE
+      exposure. de Boer's own Discussion of their chronic 9-week data instead
+      invokes keratinocyte hyperplasia becoming more prominent in a late phase,
+      after an early desquamation-driven thinning phase -- though they offer no
+      direct proliferation marker (no Ki-67 or labelling index) for it, so it
+      is their own post-hoc narrative. The flat epidermal thickness
+      (108.6 -> 109.4 um, p = 0.718) is de Boer's measurement and stands.]
+      The edema reading therefore rests on Felton 2020 (acute), which this repo
+      does NOT hold -- see the W-L data request. If it is right FOR THE CHRONIC
+      SUB-ERYTHEMAL REGIME these parameters are actually calibrated against,
+      the optical value is an UPPER BOUND on a quantity that could be near zero
+      or negative. The question remains OPEN and the sign is BOUNDED, not
+      resolved. The
       existing [PREMISE WARNING] in vitd_model.py must be strengthened, not
       removed, by this change.
       (2) BRULS CONTRADICTS de BOER ON EPIDERMAL THICKNESS: Bruls Table 1 has
@@ -443,8 +456,12 @@ parameter_approvals:
       modelling choice to OR-anchored"
     source: >-
       Elwood & Jopson 1997 melanoma odds ratios (intermittent 1.71, sunburn
-      1.91, heavy occupational 0.86). Cited values only -- the paper itself is
-      NOT in Papers_and_Datasets/ (see MODEL_AND_EVIDENCE.md gap 15).
+      1.91, heavy occupational 0.86). CORRECTED 2026-09-19: this entry
+      previously said the paper was not held. It is. Full text is at
+      Research_Papers/Elwood & Jopson.pdf (gitignored, so absent from a fresh
+      clone): Elwood JM & Jopson J, 'Melanoma and sun exposure: an overview of
+      published studies', Int J Cancer 73(2):198-203, 1997. All three odds
+      ratios above were re-verified against its abstract on 2026-09-19.
     derivation: vitd_calibration.elwood1997_intermittency_check()
     status: >-
       OR-ANCHORED TO AN INTERVAL, NOT FITTED TO A POINT. At equal cumulative SED
@@ -877,8 +894,12 @@ parameter_approvals:
       dose was deliberately NOT retuned to keep the check green -- doing so
       would be calibration through an ungated back door. Closing this properly
       requires a real ambient UV climatology so the dose becomes derived rather
-      than assumed; that is FUTURE WORK, recorded as 'Open decisions' item 12(b)
-      in MODEL_AND_EVIDENCE.md. Until then the 1.89 value is a literature read
+      than assumed; that is FUTURE WORK. (The 'Open decisions' register that
+      recorded it as item 12(b) was purged 2026-09-19 with zero commits and is
+      unrecoverable. This entry is now the only record of that decision --
+      README.md's "Known deliberate test failure" note and
+      vitd_model.E_SOURCE_SOLAR_DEFAULT's comment both point here.) Until then
+      the 1.89 value is a literature read
       applied on top of unmeasured doses, and absolute 25(OH)D predictions for
       solar scenarios should be read with that in mind.
       Also not covered: the seasonal variation of solar VDE:EE (1.22-2.01 across
@@ -1145,8 +1166,11 @@ current_validation:
         factor of eight. This is a feedback/clearance-SHAPE problem and is
         independent of K_ATTEN. Do not archive it -- it is the most informative
         feedback-shape diagnostic available, and per the D_max negative result
-        (MODEL_AND_EVIDENCE.md section 7, next-step 3) long-horizon seasonal
-        data is the ONLY kind that can identify D_max at all.
+        (now recorded in scripts/dmax_identifiability_gallagher2012.py, which
+        concludes D_max is a BOUNDED RIDGE rather than a point; the register
+        that carried it as section 7, next-step 3 was purged 2026-09-19)
+        long-horizon seasonal data is the ONLY kind that can identify D_max at
+        all.
 
 
 pending_approvals:
@@ -1154,7 +1178,7 @@ pending_approvals:
   # approval above, because they postdate it.
   - name: "Sanity 3 acceptance band 10-30% -> 0-10%"
     date: 2026-08-09
-    status: NEEDS_VERIFICATION
+    status: VERIFIED_IMPLEMENTED_2026_08_09__AWAITING_USER_APPROVAL
     what: >-
       sanity_photoadaptation_reduction in vitd_validation.py received two edits
       at once. (1) The test point moved from a hardcoded M = 0.70 to
@@ -1164,6 +1188,7 @@ pending_approvals:
       was changed from 10-30% to 0-10%. That is NOT a bug fix -- it changes what
       the model is required to satisfy -- and is what this entry gates.
     consequence: >-
+      [WRITTEN 2026-08-09, NOW STALE -- see reconciliation_2026_09_19 below.]
       With K_ATTEN = 0.00 the measured reduction is 0.0%, which sits inside the
       new band by construction. The check now crosses its 10% ceiling only at
       K_ATTEN > 0.53, so it is a one-sided guard against upward drift, not
@@ -1176,6 +1201,46 @@ pending_approvals:
       the reported score, and the value was inconsistent with the model's own
       default feedback_mode = 'linear' (whose Matsuoka deconvolution gives
       ~1.00, which FAILS even the widened band).
+    reconciliation_2026_09_19: >-
+      W-E bookkeeping pass (docs/ORCHESTRATOR_PLAN.md workstream W-E).
+      VERIFIED: the band change described above is shipped -- vitd_validation.py:449,
+      `PHOTOADAPTATION_REDUCTION_MAX = 0.10`. No code was changed by this
+      pass; the YAML record had simply never caught up to the code.
+      BEFORE/AFTER OF THE AFFECTED CHECK, at full precision, evaluated at
+      current parameters (K_ATTEN = 0.288972, M_TAN_HEADROOM = 0.238, the
+      now-fixed test point M_ceiling(FST III)):
+      measured reduction = 0.0664636114604561 (6.64636114604561%). Under the
+      OLD 10-30% band this value is OUTSIDE the band -> FAIL. Under the
+      shipped 0-10% band it is INSIDE -> PASS. The band choice is therefore
+      outcome-determining today, not a hypothetical concern.
+      CORRECTION TO THE `consequence` FIELD ABOVE: that text was written
+      2026-08-09 while K_ATTEN was RETIRED at 0.00 (approved item A6,
+      2026-08-18 to 2026-08-21), when the measured reduction was exactly 0.0%
+      and the check genuinely could not fail by construction. K_ATTEN was
+      reinstated as an ACTIVE, calibrated parameter on 2026-08-21
+      (user-approved) and re-derived to 0.288972 on 2026-08-25
+      (M_TAN_HEADROOM 0.20 -> 0.238, Ravnbak 2008; see the K_ATTEN entry in
+      the vitd_model.py module docstring and vitd_calibration.derive_K_ATTEN).
+      The check is NO LONGER pinned to 0.0% by construction: it is a live
+      measurement of reduction = 6.64636114604561%, and would fail above
+      K_ATTEN = 0.4426912422597744 -- the bracket
+      `sanity_photoadaptation_reduction`'s own docstring already derives as
+      [0.000, 0.443]. THE PASS-COUNT CONSEQUENCE THE ENTRY ORIGINALLY STATED
+      THEREFORE NO LONGER HOLDS AS WRITTEN: "one of the nine passing checks
+      cannot fail" was true only 2026-08-18 to 2026-08-21. As of 2026-09-19
+      the check is a live, genuinely-passable-or-failable guard -- though, as
+      this entry's own `note` and CLAUDE.md both already say, it remains a
+      bound derived from the SAME Matsuoka 1990 data K_ATTEN is calibrated
+      to, not independent literature support, so it still must not be read
+      as evidence that photoadaptation reduces synthesis.
+      STATUS: this pass VERIFIES and RECORDS; it does NOT approve. The 0-10%
+      band is a real change to what the model is required to satisfy
+      (CLAUDE.md's calibration gate) -- only the M=0.70 test-point fix in
+      `what` above was a bug fix; the band was not, by the entry's own words.
+      Code arriving ahead of the paperwork does not retroactively grant
+      approval. AWAITING EXPLICIT USER APPROVAL. Until given, count this
+      check's PASS as provisional bookkeeping, not a ratified acceptance
+      band.
 
   - name: "M_TAN_HEADROOM 0.20 -> 0.238 (melanin ceiling)"
     date: 2026-08-25
@@ -1370,7 +1435,7 @@ decisions_2026_08_17:
   - name: "A3 primary scheduling metric"
     date: 2026-08-17
     decided_by: User (repository owner)
-    status: APPROVED_PENDING_IMPLEMENTATION
+    status: PRIMARY_HALF_IMPLEMENTED_2026_09_19__TRI_OBJECTIVE_ROUTED_TO_W_R
     decision: >-
       Primary: minimum dose/sessions required to REACH AND HOLD sufficiency --
       i.e. how little exposure is actually needed. gross_synth_per_SED is
@@ -1381,8 +1446,10 @@ decisions_2026_08_17:
       gross_synth_per_SED has no interior optimum (gap 19) -- it rises
       monotonically as dosing approaches zero, and at its reported 21-30 d
       'optima' final D is BELOW the starting baseline, a net loss. It cannot be
-      the primary metric. MODEL_AND_EVIDENCE.md section 5.3 already recommended
-      the minimum-sessions-to-hold-sufficiency formulation.
+      the primary metric. The minimum-sessions-to-hold-sufficiency formulation
+      is the one now bound as TIER_PRIMARY in
+      vitd_objectives.OBJECTIVE_HIERARCHY; the register that first recommended
+      it (section 5.3) was purged 2026-09-19.
     not_covered: >-
       The tri-objective form (dose x spacing x cancer risk) is a NEW objective,
       not a re-weighting of an existing one. The FST susceptibility term in
@@ -1390,6 +1457,31 @@ decisions_2026_08_17:
       anchored by Elwood & Jopson, so cross-skin-type comparisons of risk index
       VALUES stay unreliable even though interval and minutes columns do not
       depend on it.
+    implementation_status_2026_09_19: >-
+      W-E bookkeeping pass (docs/ORCHESTRATOR_PLAN.md workstream W-E). PRIMARY
+      HALF IS IMPLEMENTED, not merely planned. Evidence: `vitd_objectives.py`
+      defines `OBJECTIVE_HIERARCHY`, a machine-readable ranking with
+      `TIER_PRIMARY` bound to `minimum_schedule_for_sufficiency` -- "least
+      dose and fewest sessions that reach and hold `target`"
+      (vitd_optimization.py:1403-1416) -- and `TIER_DIAGNOSTIC` bound to
+      `gross_synth_per_SED`, whose own diagnostic function asserts its tier at
+      runtime (`assert objective_tier("gross_synth_per_SED") ==
+      TIER_DIAGNOSTIC`, vitd_optimization.py:1776) rather than merely
+      documenting it. Enforcement is structural:
+      `vitd_objectives.assert_reportable_as_headline()` raises rather than
+      prints if a DIAGNOSTIC-tier metric is presented as advice.
+      `run_all.py`'s section 0 ("Which number is the answer — the objective
+      hierarchy", run_all.py:716-739) is generated FROM
+      `OBJECTIVE_HIERARCHY` rather than hand-written, and states exactly this
+      decision's ranking: PRIMARY = minimum dose/sessions to reach and hold
+      sufficiency; SECONDARY = the tri-objective frontier and fixed-budget
+      risk minimisation; DIAGNOSTIC = `gross_synth_per_SED` and
+      `net_final_D_change_per_SED`, barred from being reported as advice.
+      CLOSING the primary-metric half of this entry as done; no further
+      action needed on it. The tri-objective half (`not_covered` above,
+      dose x spacing x cancer risk as a genuinely new objective function) is
+      OUT OF SCOPE for this bookkeeping pass and is ROUTED to Wave 3
+      workstream W-R per docs/ORCHESTRATOR_PLAN.md.
 
 a1_diagnosis_result_2026_08_17:
   # OUTCOME of the "diagnose first" decision above. The diagnosis is COMPLETE.
@@ -1403,7 +1495,9 @@ a1_diagnosis_result_2026_08_17:
     Young 2020) give 1.5-2.9x; field personal-dosimetry inversion with
     behaviour removed (Kift 2013, Darling 2013) gives 1.7-2.7x. The incumbent
     K_const = 0.33 delivers 1.26x -- too weak by 1.4-2.1x, NOT by the 2-3x that
-    MODEL_AND_EVIDENCE.md gap 22 claimed. Attributing the whole observed gap to
+    the purged gap-22 record claimed (the live decomposition is
+    vitd_benchmark_webbkift.py and scripts/fst_gap_decomposition.py S1b).
+    Attributing the whole observed gap to
     pigment would require 4.3-5.7x, above every matched-dose measurement that
     exists.
   sign_error: >-
@@ -1449,8 +1543,17 @@ a1_diagnosis_result_2026_08_17:
 
 approved_2026_08_17_pending_implementation:
   # Blanket approval given 2026-08-17 ("my approvals: everything"), conditional
-  # on the grounding_requirement above. NONE of these are implemented yet; each
-  # needs its own parameter_approvals entry with a real derivation when it is.
+  # on the grounding_requirement above.
+  # STATUS AS OF 2026-09-19 (W-E bookkeeping pass, docs/ORCHESTRATOR_PLAN.md):
+  # the header comment above used to read "NONE of these are implemented yet"
+  # -- no longer accurate for three of the five. A2 deferred to Wave 2
+  # workstream W-F (the D_max source hunt). A4 superseded twice over by later,
+  # already-approved entries (see its `status` below). A5 re-scoped
+  # DEFERRED_BY_DESIGN, per its own text. A6 is factually stale and rewritten
+  # SUPERSEDED: K_ATTEN was reinstated 2026-08-21 and is not 0.00. A7's band
+  # change turns out to be ALREADY SHIPPED in vitd_validation.py -- see its
+  # `status` below and the corrected "Sanity 3 acceptance band" entry under
+  # pending_approvals, which this pass reconciled but did NOT approve.
   - id: A2
     name: "D_max = 150 -> saturating feedback form"
     why: >-
@@ -1458,12 +1561,51 @@ approved_2026_08_17_pending_implementation:
       most influential number in the model, and its origin was never found
       (not in Bogh 2010; PMID 19812604 max was 116 nmol/L). Real 25(OH)D
       regulation acts on 1,25(OH)2D via CYP24A1 induction, not a hard ceiling.
+    status: IMPLEMENTED_2026_08_18__CLOSED_2026_09_20
+    resolution: >-
+      2026-09-20 (W-F). SUPERSEDES the 2026-09-19 W-E note, which deferred this
+      item on the premise that building a saturating form "would bake in the
+      unsourced 150.0". That premise was wrong in both directions. A2 had
+      ALREADY shipped on 2026-08-18: the default feedback_mode became
+      'biphasic' (Scholze et al. 2026), and the biphasic form REMOVES D_max
+      from the default path rather than baking it in. Verified 2026-09-20 by
+      direct simulation: final D at FST VI is bit-identical
+      (49.37876085210202) for D_max = 116, 150, 250 and 1e9, delta exactly 0.0.
+      tests/test_vitd_model.py::test_D_max_override_is_inert_in_the_default_mode
+      asserts the same thing, and RESULTS.md reports D_max one-at-a-time
+      sensitivity as 0.00 / 0.0% at both FST 5 and FST 6.
+      Likely cause of the confusion: 'saturating' is ALSO a literal
+      feedback_mode name in this repo -- an exponential variant that was
+      investigated and explicitly NOT adopted. A2's prose sense and that mode
+      literal are different things.
+      CONSEQUENCE for the A~D_max ridge reported at 1.0000: it is a rank-1
+      DEGENERACY, not a confounding. D_max contributes zero sensitivity, so the
+      pair's reported ss_D spread is A's own one-at-a-time swing. The same
+      applies to alpha_SC~SC_max. Both exactly-1.0000 pairs pair a live
+      parameter with a dead one; the informative ridges are those BELOW 1.0000.
+      No parameter value changed by this entry.
   - id: A4
     name: "A = 2.353 recalibration toward Young 2021 midpoint"
     why: >-
       Model gives ~1.85 nmol/L per SED at 85% BSA against Young 2021's reported
       fair-skin 2.0-5.0. Shifts absolute D roughly 50%; scheduling rankings
       unchanged. NOTE: Young 2021 is FST I-II only -- see dark_skin_priority.
+    status: SUPERSEDED
+    resolution: >-
+      2026-09-19 (W-E bookkeeping pass). Overtaken twice over; not
+      implemented as written and no longer actionable as written. The `A`
+      entry above (approved 2026-08-17, implemented 2026-08-18) already moved
+      A past this item's starting point of 2.353, to 3.114, on the same Young
+      2021 3.48 nmol/L/SED anchor this item cites. `A_reanchor_2026_09_06`
+      then moved it again, 3.114 -> 4.125 (A = 3.48 / 0.843668 =
+      4.124845215356494, rounded to 4.125), recomputed on the identical
+      anchor because BSA_EXP and K_const changed under it in the same
+      commit. Shipped value: A = 4.125 (vitd_model.py:1378). This item's
+      dark_skin_priority caveat -- Young 2021 is FST I-II only -- is
+      preserved and, per A_reanchor_2026_09_06's own not_covered clause, is
+      now MORE load-bearing than when this item was written: A is larger, so
+      more of the model's absolute level rests on an FST I-II anchor.
+      No further action; closed.
   - id: A5
     name: "Vitamin D action spectrum: CIE-174 vs Young 2021"
     why: >-
@@ -1474,18 +1616,74 @@ approved_2026_08_17_pending_implementation:
       name as an argument) load the CSVs. This choice becomes live only when
       E_source is derived as a function of solar zenith angle. Defer to that
       point rather than deciding it in the abstract.
+    status: DEFERRED_BY_DESIGN
+    trigger: >-
+      Becomes live only when E_source is derived as a function of solar
+      zenith angle, i.e. if/when the core model starts computing spectral
+      integrals instead of reading E_source as a direct table lookup from the
+      Webb 2021 SOURCE_CALIBRATION_TABLE. Re-verified 2026-09-19 (W-E
+      bookkeeping pass): still true today -- no spectral-integral code path
+      exists in the core pipeline; scripts/bogh2012_ablation.py (retired
+      sensitivity tool) and vitd_dose_conversion.py (spectrum name as an
+      explicit argument) remain the only CSV consumers. Re-open this item at
+      the trigger point rather than deciding the spectrum question in the
+      abstract now. No change made.
   - id: A6
     name: "Retire K_ATTEN as a free parameter"
     why: >-
       It is 0.00, swings steady-state D by 0.3% across its full plausible range,
       and is jointly unidentifiable with both K_SC and K_const (gap 25).
       Reporting it as separately calibrated overstates the evidence.
+    status: SUPERSEDED
+    resolution: >-
+      2026-09-19 (W-E bookkeeping pass). Factually stale and contradicts the
+      shipped model: K_ATTEN is not 0.00. It was reinstated as an active,
+      calibrated parameter on 2026-08-21 (user-approved) and re-derived to
+      K_ATTEN_DEFAULT = 0.288972 on 2026-08-25 (vitd_model.py:1264, module
+      docstring line ~526; M_TAN_HEADROOM 0.20 -> 0.238, Ravnbak 2008).
+      RETIRED_PARAMETERS is now {} (vitd_model.py:1267) -- nothing is
+      retired. Retiring K_ATTEN is therefore not a live bookkeeping item; a
+      fresh case would have to be made against the reinstated, calibrated
+      value, which this item does not make and this pass does not attempt.
+      REPORTED, NOT REMOVED (per this wave's file ownership -- W-C owns
+      comments/strings in vitd_*.py this wave): orphaned retirement
+      machinery this reinstatement leaves behind --
+      `RETIRED_PARAMETERS: Dict[str, str] = {}` (vitd_model.py:1267), the
+      `__setattr__` retirement guard (vitd_model.py:1751, a no-op today since
+      the dict it checks is empty), `allow_retired_parameter_sweep()`
+      (vitd_model.py:1280, has nothing left to sweep), and the downstream
+      `vm.RETIRED_PARAMETERS`-conditioned branches plus several UNCONDITIONAL
+      "K_ATTEN is retired at zero" prose blocks in
+      spacing_study/run_spacing_study.py (the unconditional ones, at
+      approximately lines 769-772, 955-958 and 1155-1161, are wrong today;
+      the conditional ones near lines 712-729 and 1030-1039 self-correct off
+      `vm.RETIRED_PARAMETERS` and are currently rendering correctly). Full
+      list and exact line numbers: docs/workstreams/W-E.md.
   - id: A7
     name: "Sanity 3 acceptance band 10-30% -> 0-10%"
     why: >-
       Resolves the outstanding NEEDS_VERIFICATION entry in pending_approvals
       above. Read it together with that entry's consequence clause: the check
       cannot fail at the current parameter value.
+    status: IMPLEMENTED_IN_CODE_AWAITING_USER_APPROVAL
+    resolution: >-
+      2026-09-19 (W-E bookkeeping pass). The band change is ALREADY SHIPPED:
+      vitd_validation.py:449, `PHOTOADAPTATION_REDUCTION_MAX = 0.10` (the
+      0-10% band, not 10-30%), tagged in-file "[A7, RE-DERIVED 2026-08-18]"
+      and present at HEAD with no working-tree diff. This pass did not write
+      that code; it found the bookkeeping record had never caught up to it.
+      This item's own "cannot fail at the current parameter value" claim is
+      ALSO now stale -- true only 2026-08-18 to 2026-08-21 while K_ATTEN sat
+      RETIRED at 0.00 (see A6 above); K_ATTEN is reinstated at 0.288972, so
+      the check is a live measurement, not a construction artefact. Full
+      before/after and the corrected pass-count consequence, at full
+      precision, are recorded in the "Sanity 3 acceptance band" entry under
+      pending_approvals above (field `reconciliation_2026_09_19`). NOT
+      APPROVED by this pass: the band value is a real change to what the
+      model must satisfy (CLAUDE.md's calibration gate), the code getting
+      there ahead of the paperwork does not retroactively grant approval, and
+      the user has not signed off on the 0-10% band itself. Awaiting explicit
+      user approval.
 
 data_requests_closed_2026_08_17:
   - id: "13b"
@@ -1561,8 +1759,8 @@ notes: |
     (parameter_approvals.feedback_mode), so D_max is out of force and no longer
     drives the interval ranking. The ranking is now measured to come from
     having a DECREASING feedback factor at all, not from this particular one.
-    (The cross-reference this line used to carry pointed at MODEL_AND_EVIDENCE.md,
-    which was purged from the repo on 2026-08-18. Facts live in the
+    (The cross-reference this line used to carry pointed at a working-notes
+    register that was purged from the repo on 2026-08-18. Facts live in the
     vitd_model.py docstring and in this file.)
   - K_ATTEN is fitted to the Young 2020 per-person dataset (n=23, TL01 arm),
     NOT to Matsuoka. Two earlier statements here were wrong and are corrected:
@@ -1655,10 +1853,170 @@ phase4_results_2026_08_18:
   #   specifying source. The number traces to Weinstein & Van Scott 1965
   #   (turnover time) + ln(2)/T conversion (modeling choice).
   outstanding: >-
-    The COMBINED K_const + A feasibility map is the honest artefact and
-    supersedes the K_const-only consequence recorded under
-    parameter_approvals.K_const.consequence, which was explicitly flagged
-    PROVISIONAL there pending the A recalibration. Raising A increases
-    synthesis per SED and therefore pulls some cells back to feasible.
-    Until the combined map is recorded here, the K_const-only feasibility
-    table must NOT be presented as final.
+    RESOLVED 2026-09-21 (W-Q). See combined_feasibility_map_2026_09_21
+    below, which records the map this clause was waiting for. The
+    K_const-only feasibility table is superseded and must be read as an
+    attribution slice, not as the consequence of the calibration.
+
+# ===========================================================================
+# W-Q (2026-09-21): the COMBINED K_const + A feasibility map.
+# NO PARAMETER VALUE CHANGED. This entry records a measurement that the
+# `outstanding:` clause above made a precondition for presenting the
+# K_const-only feasibility table as final. Generated by
+#   PYTHONIOENCODING=utf-8 python3 scripts/feasibility_map_kconst.py #       --before combined
+#   PYTHONIOENCODING=utf-8 python3 scripts/feasibility_map_kconst.py --factorial
+# against live ModelParams() (K_const = 1.15, A = 4.125, feedback_mode =
+# biphasic). Memo: docs/workstreams/W-Q.md.
+# ===========================================================================
+combined_feasibility_map_2026_09_21:
+  status: RECORDED
+  parameter_changes: NONE
+  recorded_by: W-Q workstream agent
+  date: 2026-09-21
+  memo: docs/workstreams/W-Q.md
+  supersedes: parameter_approvals.K_const.consequence (the K_const-only map)
+  before_set: "K_const = 0.33, A = 2.353 (BEFORE_SETS['combined'])"
+  after_set: "live ModelParams() -- K_const = 1.15, A = 4.125, biphasic"
+  constraints_unchanged: >-
+    50 nmol/L floor held every day from day 90 to 365, uniform dosing,
+    D0 = 25.0 nmol/L, 70% MED per session (C1), 120 min per session at UV
+    index 6 (C7). Nothing was relaxed; the map measures where they bind.
+
+  why_the_combined_map_differs: >-
+    The K_const-only map reports FOUR cells lost and NONE gained, which
+    reads as a uniform tightening. The combined map reports TWO lost and
+    THREE gained, and the gains and the losses fall on opposite ends of the
+    pigmentation range. K_const and A move feasibility in opposite
+    directions and are not separable, so the single-parameter slice both
+    overstates the loss at FST IV and conceals the gain at FST I-III. That
+    is precisely the failure mode the `outstanding:` clause was guarding
+    against.
+
+  what_moved_combined:
+    lost:
+      - "FST V,  N=104 -- now blocked by C7 session length (>120 min)"
+      - "FST VI, N=146 -- now blocked by C7 session length (>120 min)"
+    gained:
+      - "FST I,   N=104 -- was C1-infeasible, now 0.84 SED / 27 min"
+      - "FST II,  N=104 -- was C1-infeasible, now 1.05 SED / 33 min"
+      - "FST III, N=104 -- was C1-infeasible, now 1.39 SED / 44 min"
+
+  minimum_feasible_and_under_120min_budget:
+    grid: "(52, 104, 146, 183, 260, 365)"
+    before_combined: "I 146 | II 146 | III 146 | IV 104 | V 104 | VI 146"
+    after:            "I 104 | II 104 | III 104 | IV 104 | V 146 | VI 183"
+    note: >-
+      The AFTER row reproduces
+      tests/test_vitd_optimization.py::TestRecalibratedFeasibility exactly
+      (104/104/104/104/146/183), and its minutes/day at N=365 reproduce that
+      class's pinned table to the rounding the script prints. The map is
+      therefore consistent with the suite, not an independent third number.
+
+  minutes_per_day_at_uvi6_n365:
+    before_combined: "I 11 | II 12 | III 13 | IV 15 | V 17 | VI 19"
+    after:            "I  6 | II  7 | III  9 | IV 13 | V 18 | VI 27"
+
+  dark_skin_priority_reading: >-
+    [FST V-VI, the priority cohort] The combined move makes sun-alone
+    sufficiency EASIER for FST I-III and HARDER for FST V-VI. FST VI's
+    daily requirement at UV index 6 rises from 19 to 27 min/day, and its
+    minimum feasible-and-under-120-min budget rises from N=146 to N=183
+    (alternate days). FST V loses N=104 (twice weekly) to the session-length
+    ceiling. Read the infeasible cells as "sun alone, at this latitude proxy
+    and this session budget, does not hold 50 nmol/L year-round without
+    exceeding a non-burning dose" -- the same conclusion Webb 2018 and
+    Kift 2013 reach for FST V in the UK from measured data.
+
+  attribution_full_factorial: >-
+    K_const x A x feedback_mode at N=104, from --factorial. The
+    non-separability is visible directly: at FST VI, N=104, the cell is
+    feasible at (0.33, 2.353, linear) at 3.499 SED / 111.1 min, C7-infeasible
+    at (0.33, 2.353, biphasic) at 4.515 SED / 143.3 min, feasible again at
+    (0.33, 4.125, biphasic) at 1.438 SED / 45.6 min, and C7-infeasible at the
+    shipped (1.15, 4.125, biphasic) at 9.179 SED / 291.4 min. No single
+    parameter's sign survives holding the others at their old values.
+
+  stale_claim_corrected: >-
+    parameter_approvals.M_baseline_by_FST.consequence (approximately lines
+    303-306) states that scripts/feasibility_map_kconst.py "derives K_const
+    from its own literal rather than from ModelParams(), so its printed
+    table is now stale". VERIFIED FALSE as of this run: only the BEFORE set
+    uses literals (OLD_K, OLD_A -- which is correct, they are history); the
+    AFTER side reads live ModelParams() and reproduces
+    TestRecalibratedFeasibility exactly. The same consequence block's
+    "104/146/146/146/183/365" landscape is the SUPERSEDED intermediate state
+    measured with A still at 3.114, as TestRecalibratedFeasibility's own
+    docstring says. Flagged for the user; not edited, because it is a record
+    of a past decision.
+
+  code_changes_made: >-
+    Two stale printed constants in scripts/feasibility_map_kconst.py were
+    corrected (bug fix, not calibration -- CLAUDE.md permits this): the
+    closing READING block hardcoded "A = 2.353 -> 3.114" and now formats
+    OLD_A and live ModelParams().A; and describe() used "%.3g", which
+    printed A as "4.12" and so discarded a digit from a calibration
+    constant. It now uses "%g".
+
+# ===========================================================================
+# W-R (2026-09-21): A3 tri-objective -- dose x spacing x cancer risk.
+# DRAFT PROPOSAL. NEEDS_APPROVAL. No parameter value was changed by this work.
+# ===========================================================================
+a3_tri_objective_2026_09_21:
+  status: NEEDS_APPROVAL
+  proposed_by: W-R workstream agent (docs/ORCHESTRATOR_PLAN.md section 5, W-R)
+  date: 2026-09-21
+  closes_half_of: "A3 primary scheduling metric -> not_covered (tri-objective half)"
+  memo: docs/workstreams/W-R.md
+  parameter_changes: NONE
+  what_is_proposed: >-
+    Adoption of the tri-objective (A1 n_sessions, A2 max_gap_days, A3
+    skin-cancer risk), all minimised over schedules that already reach and
+    hold the sufficiency floor, as the SECONDARY objective named in
+    vitd_objectives.OBJECTIVE_HIERARCHY
+    (key tri_objective_sessions_spacing_risk, implemented by
+    vitd_optimization.tri_objective_frontier). Efficacy is a CONSTRAINT here,
+    not an axis: "best SED" means the dose that constraint cost, reported as
+    total_sed. What this entry adds over the pre-existing frontier code is the
+    structural cross-skin-type guard and the explicit adherence framing of the
+    session budget, both required by the blocker recorded in the A3 entry.
+  cross_skin_type_guard: >-
+    [STRUCTURAL] The A3 axis is no longer a float. tri_objective_frontier
+    returns it as vitd_optimization.WithinFSTRisk, sealed to one Fitzpatrick
+    skin type: float(), int(), numeric __format__ specs and arithmetic all
+    raise CrossSkinTypeRiskError, and ordering against an index sealed to a
+    different skin type raises. The only number published is
+    risk_within_fst_ratio, normalised to that skin type's own lowest-risk
+    feasible cell, so it equals 1.0 at every skin type's minimum by
+    construction and carries no cross-FST magnitude. The absolute index is
+    reachable only via absolute_value_for_fst(fst), which requires the caller
+    to name the skin type it already holds. tables/tri_objective_frontier.csv
+    therefore contains no absolute risk column at all.
+  elwood_jopson_1997_finding: >-
+    Read in full from Research_Papers/Elwood & Jopson.pdf (Int J Cancer
+    73(2):198-203). It does NOT anchor the FST susceptibility term, and the
+    reason is structural rather than a matter of the paper being unavailable:
+    its Methods state that where possible the odds ratio used was one
+    "adjusted for ... baseline host characteristics, such as ethnic origin,
+    skin pigmentation and inherent tendency to burn or tan easily". Skin
+    pigmentation is treated as a CONFOUNDER to be removed, never as an
+    exposure whose effect is estimated, and no result in the paper is
+    stratified by skin type or phototype. What it does anchor is the SHAPE of
+    the intermittency axis: intermittent exposure OR 1.71 (95% CI 1.54-1.90,
+    23 studies, 6,934 cases), heavy occupational exposure OR 0.86 (95% CI
+    0.77-0.96, 20 studies, 6,517 cases), total exposure OR 1.18, and sunburn
+    at all ages/adult life OR 1.91 (95% CI 1.69-2.17). That supports a
+    super-linear penalty on per-session intensity at fixed cumulative dose;
+    it supplies no cross-skin-type contrast.
+  session_budget_status: >-
+    [ASSUMPTION, NOT PHOTOBIOLOGY] Carried in code as
+    vitd_optimization.SESSION_BUDGET_BASIS and returned on every
+    tri_objective_frontier result. Without a budget the objective is
+    degenerate: risk falls monotonically in session count to 365. No source in
+    this repo fixes a budget value, so the grid (TRI_SESSION_BUDGETS) is swept
+    and the assumption appears as an axis rather than as a default.
+  not_covered: >-
+    This entry approves no parameter value and no calibration. It does not
+    make cross-skin-type risk magnitudes usable -- it makes them unreadable.
+    Anchoring the FST susceptibility term would require a source reporting
+    per-erythemal-episode risk BY skin type, which does not exist in this repo
+    (see vitd_physiology section 4a, "HONEST LIMITS").

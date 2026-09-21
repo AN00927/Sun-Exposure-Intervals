@@ -74,7 +74,7 @@ from collections import namedtuple
 CheckResult = namedtuple('CheckResult', ['name', 'passed', 'message'])
 
 # ---------------------------------------------------------------------------
-# Evidence tiers (added 2026-08-21, docs/REPO_SCOPE_AUDIT.md section 2)
+# Evidence tiers (added 2026-08-21)
 # ---------------------------------------------------------------------------
 # `run_all()` used to report one number: "PASSED REQUIRED: 10 / 10". That
 # number is real -- every check does what its assertions say -- but it is
@@ -966,7 +966,7 @@ def validate_sc_deBoer2025(verbose=True):
         print(f"    Observed SC dips ~26% BELOW baseline at week 5. Model cannot")
         print(f"    reproduce that at k_damage=0.0, which is deliberate: the")
         print(f"    parameter is unidentifiable from 3 group medians. See")
-        print(f"    scripts/fit_sc_deboer2025.py and MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 27.")
+        print(f"    scripts/fit_sc_deboer2025.py and docs/SC_MODEL.md section 2.4.")
         print(f"  {'PASS' if passed else 'FAIL'} (warning-only)")
     return passed
 
@@ -1115,9 +1115,9 @@ def validate_kift_2013_south_asian(verbose=True):
       - D_final in range [20.0, 40.0] nmol/L
       - delta in range [0.0, 15.0] nmol/L
 
-    TIER: CIRCULAR. DEMOTED to warning-only 2026-08-21
-    (docs/REPO_SCOPE_AUDIT.md section 2). Two independent problems, either
-    one alone disqualifying this from the required/quantitative pool:
+    TIER: CIRCULAR. DEMOTED to warning-only 2026-08-21. Two independent
+    problems, either one alone disqualifying this from the
+    required/quantitative pool:
 
     (1) UNFALSIFIABLE BAND. `delta` is accepted anywhere in [0.0, 15.0]
         nmol/L -- 15 nmol/L wide, and it INCLUDES ZERO. A model predicting
@@ -1152,7 +1152,7 @@ def validate_kift_2013_south_asian(verbose=True):
     precisely because it was assembled after K_const was set. As of the
     2026-08-21 audit run it FAILS on the minutes ratio (model 4.80 vs
     reported 2.78; dose ratio 3.01x vs reported 2.5-3.0x, a near-pass) --
-    see docs/REPO_SCOPE_AUDIT.md section 2.
+    see RESULTS.md section 15 for the live re-run.
 
     REPORTED, NOT GATED: Kift 2013's own observed winter -> summer amplitude
     in this cohort is 14.5 -> 22.5 = 8.0 nmol/L (see
@@ -1367,8 +1367,10 @@ def validate_reference_scenarios(verbose=True) -> bool:
 # 3. Run |python3 vitd_validation.py| to confirm registration.
 #
 # 4. If the check introduces a new literature source, add a paper
-#    summary card in MODEL_AND_EVIDENCE.md (outside this file)
-#    and cross-reference the audit-change tag in the docstring.
+#    summary card next to the parameter it supports in the vitd_model.py
+#    module docstring (outside this file, and the canonical home for
+#    parameter provenance per CLAUDE.md) and cross-reference the
+#    audit-change tag in the docstring.
 #
 # See existing checks for examples.
 # ---------------------------------------------------------------------------
@@ -1376,8 +1378,8 @@ def validate_reference_scenarios(verbose=True) -> bool:
 # ---------------------------------------------------------------------------
 #: The 14 registered checks, each stamped with an evidence tier. This is
 #: the single source of truth for both the existing required/warning-only
-#: pass/fail tally AND the tiered honesty summary added 2026-08-21 -- see
-#: docs/REPO_SCOPE_AUDIT.md section 2. Tier assignments were made by reading
+#: pass/fail tally AND the tiered honesty summary added 2026-08-21.
+#: Tier assignments were made by reading
 #: each function's own docstring; see tier_note for the one-line reason and
 #: the function docstring itself for the full argument.
 CHECK_REGISTRY = [
@@ -1524,8 +1526,8 @@ def run_all(verbose=True):
     print("=" * 70)
     print()
     print(f"EVIDENCE TIER BREAKDOWN -- all {len(CHECK_REGISTRY)} checks, orthogonal to")
-    print("the required/warning-only split above. See docs/REPO_SCOPE_AUDIT.md")
-    print("section 2: the REQUIRED count above is real but misleading --")
+    print("the required/warning-only split above. See the per-check tier_note")
+    print("in CHECK_REGISTRY: the REQUIRED count above is real but misleading --")
     print("most of what it counts is self-consistency, not biology.")
     for tier in TIER_ORDER:
         members = [c for c in CHECK_REGISTRY if c.tier == tier]
@@ -1557,7 +1559,7 @@ def run_all(verbose=True):
     except Exception as _exc:
         print(f"    (live re-run unavailable: {type(_exc).__name__}: {_exc} "
               "-- see RESULTS.md section 15 instead)")
-    print("  See docs/REPO_SCOPE_AUDIT.md section 2 for the full re-run.")
+    print("  See RESULTS.md section 15 for the full re-run.")
     print("=" * 70)
 
     # Return combining all for run_all.py or external consumers. SAME

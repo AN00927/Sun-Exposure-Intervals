@@ -120,13 +120,13 @@ def make_params(**overrides):
 
 
 def describe(overrides):
-    """'K_const 0.33 -> 0.98, A 2.353 -> 3.114' for a header line."""
+    """'K_const 0.33 -> 0.98, A 2.353 -> 4.125' for a header line (values read live)."""
     now = ModelParams()
     bits = []
     for name, value in overrides.items():
         after = getattr(now, name)
         if isinstance(after, float):
-            bits.append(f"{name} {float(value):.3g} -> {after:.3g}")
+            bits.append(f"{name} {float(value):g} -> {after:g}")
         else:
             bits.append(f"{name} {value} -> {after}")
     return ", ".join(bits) if bits else "(no overrides -- BEFORE == AFTER)"
@@ -318,9 +318,9 @@ def main(argv=None):
   Webb 2018 and Kift 2013 reach for FST V in the UK from measured data.
 
   K_const IS NOT THE ONLY MOVER. Run with --before combined (or --factorial)
-  before quoting any cell as a K_const consequence: A = 2.353 -> 3.114 pushes
+  before quoting any cell as a K_const consequence: A = %.6g -> %.6g pushes
   feasibility the other way and is large enough to reverse some cells that the
-  2026-08-17 single-parameter map reported as lost.""")
+  2026-08-17 single-parameter map reported as lost.""" % (OLD_A, ModelParams().A))
 
 
 if __name__ == "__main__":

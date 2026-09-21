@@ -68,7 +68,6 @@ PROTOCOL_DAYS = 84   # 12 weeks
 # --- Analysis C (two-framing comparison) held-fixed quantities -------------
 # Module-level so run_all.py can read them at report time and state the
 # assumptions in the generated RESULTS.md without retyping the numbers.
-# Values unchanged from when they were function locals.
 TWO_FRAMING_FSTS = [5, 6]
 TWO_FRAMING_TOTAL_SED = 42.0        # Framing 1: cumulative SED budget
 TWO_FRAMING_PER_SESSION_SED = 1.0   # Framing 2: SED delivered per session
@@ -448,11 +447,9 @@ def analysis_beta_sweep():
     df = pd.DataFrame(rows)
     df.to_csv(f"{TAB_DIR}/beta_sweep.csv", index=False)
 
-    # This used to be a 2x2 grid (top row: efficiency heatmap of the retired
-    # per-SED efficiency metric, bottom row: steady-state D heatmap), matching
-    # Analysis B. The top row was removed 2026-07-31 along with the metric --
-    # swapping it to steady_state_D would have made it an exact duplicate of
-    # the bottom row, so the grid collapses to 1x2.
+    # 1x2, not 2x2, for the same reason as Analysis B above: the retired
+    # per-SED efficiency row (removed 2026-07-31) would have duplicated the
+    # steady-state D row.
     fig, axes = plt.subplots(1, 2, figsize=(13, 5))
     for col, fst in enumerate([5, 6]):
         sub = df[df["FST"] == fst]
@@ -608,8 +605,8 @@ def analysis_scipy_optimize():
     the rounding bug. `interval_float` was never fed to the simulator
     directly, so there was no continuous objective to optimize.
 
-    Fixed (2026-08-21, methodology review R4 / OPTIMIZATION_METHODOLOGY.md
-    section 9-10): replaced with the exhaustive integer sweep over the same
+    Fixed (2026-08-21, methodology review R4): replaced with the exhaustive
+    integer sweep over the same
     (1, 60) bounds the continuous solver was given. This is honest instead of
     approximating a discontinuous function with a continuous method, cheaper
     (60 forward evaluations vs. an iterative line search) and exact rather
@@ -618,11 +615,11 @@ def analysis_scipy_optimize():
     exhaustive search over a narrower range and additionally the *correct*
     method for this domain — dropping this section entirely was the other
     option, but keeping it as a direct, wider-range replication of section 6
-    is more informative than deleting it). See
-    `docs/OPTIMIZATION_METHODOLOGY.md` sections 8 ("7 scipy continuous") and
-    10 (R4) for the full argument; option (a) of the three offered there
-    ("drop the continuous optimiser and report the exhaustive integer
-    sweep") is the one implemented.
+    is more informative than deleting it). The methodology review that
+    framed this as a choice between options is purged [reference purged
+    2026-09-19]; the option implemented was "drop the continuous optimiser
+    and report the exhaustive integer sweep", and the argument for it is
+    the paragraph above.
 
     Optimizes two objectives:
     1. net_final_D_change_per_SED — per-SED framing with interior optimum
@@ -805,8 +802,18 @@ def analysis_loading_dose():
                     sched.append((day, MAINT_SED))
                 sched.sort(key=lambda x: x[0])
                 r = simulate(fst=fst, schedule=sched, duration_days=PROTOCOL_DAYS)
-                # D at day 14: index 28 at 0.5-day steps
-                d14_idx = min(28, len(r["D"]) - 1)
+                # D at day 14: select by simulated TIME, not array index.
+                # simulate() appends an extra same-t sample at every dose
+                # event, so a fixed index 28 does not land on t=14.0 once the
+                # loading pulses are counted -- it landed at t=13.5 for the
+                # 1-session arm but t=9.0 for the 14-session arm, which
+                # systematically disadvantaged multi-session loading in this
+                # very comparison. searchsorted(side="left") takes the FIRST
+                # sample at t=14.0, i.e. the end of the loading window before
+                # the day-14 maintenance dose is credited -- the same state
+                # for every arm.
+                d14_idx = min(int(np.searchsorted(r["t"], LOADING_DAYS, side="left")),
+                              len(r["D"]) - 1)
                 d14 = r["D"][d14_idx]
                 auc_50 = auc_above_sufficiency_per_SED(r) * r["cumulative_SED"]
                 rows.append({

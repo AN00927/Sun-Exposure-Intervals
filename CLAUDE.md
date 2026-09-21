@@ -84,19 +84,33 @@ instead of retyping the numbers.
   contained the complete dataset it claimed was absent.
 - Run the pipeline with `PYTHONIOENCODING=utf-8 python3 run_all.py`. The local
   `.venv` lacks numpy; `python3` is the interpreter with the dependencies.
-  **`run_all.py` takes ~22 minutes** (last measured 16:03:12-16:25:07 EDT
-  2026-09-06 = 21 min 55 s, on the re-anchored A = 4.125 parameter set;
-  previously 23:02:17-23:27:24 EDT 2026-08-23 = 25 min 07 s). Dominated by the
-  differential-evolution optimisations in sections 13b/13c: the 24-cell
-  (FST x session-budget) grid in `optimise_joint_schedule_grid` alone accounted
-  for ~13 min of the 2026-09-06 run. Single-threaded on a 16-core machine — the
-  grid cells are independent and seeded per cell, so a process pool over them is
-  the available speed-up; `differential_evolution(workers=-1)` is NOT, because
-  scipy forces `updating='deferred'` when `workers != 1`, which changes the
-  search trajectory and so moves every seeded result and pinned test value. Do
-  **not** run it just to "update everything", refresh results, or check mid-task — it is
-  expensive and should only be run when genuinely needed (e.g. before quoting
-  final numbers, after a calibration change, or when the user explicitly asks).
+  **`run_all.py` takes 11 min 29 s** (measured 10:07:50-10:19:19 EDT
+  2026-09-21 on a **16-logical-core** machine, at HEAD `6a1585f` + working
+  tree, `--baseline-source preset`, `--run-macro-scripts`. Historical, both
+  **pre-parallelisation** and not to be quoted as current: 21 min 55 s
+  (16:03:12-16:25:07 EDT 2026-09-06, on the re-anchored A = 4.125 parameter
+  set) and 25 min 07 s (23:02:17-23:27:24 EDT 2026-08-23).)
+  **There is no longer a single bottleneck.** The 24-cell (FST x
+  session-budget) grid -- `analysis_joint_schedule` / `_run_joint_grid` /
+  `_joint_grid_cell`, `vitd_optimization.py:947-1033` (there is no function
+  named `optimise_joint_schedule_grid`; that name does not appear anywhere
+  else in the repo) -- **is already parallelised** via a
+  `ProcessPoolExecutor` over the independent, per-cell-seeded grid cells,
+  landed in commit `37f9a94` (2026-09-06 18:09). That took it from ~13 min
+  of the 2026-09-06 run to **2 min 04 s**, and the remaining time is now
+  spread across five comparable serial blocks rather than concentrated in
+  one. Measured from artifact write times on the 2026-09-21 run:
+  365-day front-load taper 2 min 12 s; `analysis_variable_dose` 2 min 07 s;
+  the joint grid 2 min 04 s; `analysis_tri_objective` 1 min 54 s;
+  risk-aware scheduling 1 min 41 s -- together ~92% of wall-clock, with no
+  one of them above 20%. Parallelising any single one of them now buys at
+  most ~2 min. `differential_evolution(workers=-1)` is a SEPARATE thing
+  and is still NOT the speed-up, because scipy forces `updating='deferred'`
+  when `workers != 1`, which changes the search trajectory and so moves every
+  seeded result and pinned test value. Do **not** run it just to "update
+  everything", refresh results, or check mid-task — it is expensive and should
+  only be run when genuinely needed (e.g. before quoting final numbers, after a
+  calibration change, or when the user explicitly asks).
 
 ## Script lifecycle — four buckets, decide by evidence
 
@@ -106,9 +120,14 @@ never by filename or gut feel:
 - **PIPELINE** — imported by `run_all.py`, a module it imports, or `tests/`.
   Never gitignore, never delete. Cautionary example: `.gitignore` once
   gitignored two scripts `run_all.py` imports via `_import_script_module` — a
-  fresh clone could not run the pipeline. Grep `run_all.py` for
-  `_import_script_module` and the script's own name before ignoring anything
-  under `scripts/`.
+  fresh clone could not run the pipeline. Grep for a real `import` statement
+  (`_import_script_module("name")`, `import name`, or `from scripts.name
+  import ...`) before ignoring anything under `scripts/` — not for the
+  script's own name as a bare string. A 2026-09-20 audit found the name-grep
+  unreliable: five scripts turned up in `tests/` only inside comments, with
+  `fit_sc_deboer2025` the sole genuine test import at the time.
+  `tests/test_structural_invariants.py` enforces this by parsing real imports
+  with `ast` rather than grepping for names.
 - **RECURRING** — a sensitivity/diagnostic tool meant to be re-run
   occasionally (archetype: `scripts/bogh2012_ablation.py`, "retained as a
   sensitivity tool"). Keep tracked, not gitignored.
@@ -131,9 +150,10 @@ moved to `exploratory/`: `vitd_genetics.py`, `vitd_ambient.py`,
 `vitd_behaviour.py`, `nhanes_preprocessing.py`, `vitd_solar.py`,
 `vitd_exposure.py`. They still import and their own tests
 (`tests/exploratory/`) still pass. What changed is that **nothing they produce
-reaches any headline number** — `run_all.py` no longer imports them. Rationale:
-`docs/REPO_SCOPE_AUDIT.md`. What was retired, why, and the un-retirement
-procedure: `exploratory/README.md`.
+reaches any headline number** — `run_all.py` no longer imports them. What was
+retired, why, and the un-retirement procedure: `exploratory/README.md`, which
+is now the only record of the rationale (the separate scope audit was purged
+2026-09-19 with zero commits and is unrecoverable).
 
 **Rule: nothing in the core pipeline may import from `exploratory/`.** The core
 pipeline's frozen replacement for the location chain is `vitd_scenario.py` (see

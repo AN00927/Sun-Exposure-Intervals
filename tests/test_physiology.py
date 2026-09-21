@@ -99,8 +99,9 @@ class TestPhotodegradation:
     def test_splitting_a_budget_beats_one_session(self):
         """With photodegradation on, N small sessions must beat 1 large one
         at IDENTICAL cumulative dose. This is a real interior optimum, unlike
-        the feedback artifact in MODEL_AND_EVIDENCE.md, 'Remaining gaps',
-        gap 19."""
+        the feedback artifact that
+        vitd_optimization.gross_synth_per_SED_diagnostic recomputes on
+        every pipeline run."""
         p = ModelParams(use_photodegradation=True)
         total = 24.0
         one = simulate(fst=3, schedule=[(0.0, total)], duration_days=84,

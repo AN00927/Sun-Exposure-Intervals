@@ -119,7 +119,54 @@ def identifiability_pairs(fst: int = 5, n_grid: int = 9,
     data will pin them down separately, and reporting either as a calibrated
     value is misleading. Measured as the correlation between the two
     parameters' contours of equal steady-state D.
+
+    DEGENERATE vs UNIDENTIFIABLE (fixed 2026-09-20, reporting defect, not a
+    calibration change -- see docs/workstreams/W-O.md).
+    -------------------------------------------------------------------------
+    A ridge_fraction near 1.0 (the 2-D response surface collapses onto a
+    single line) has TWO possible causes that this function used to conflate
+    under one "UNIDENTIFIABLE" verdict:
+
+      1. Genuine confounding: both parameters move steady-state D, but only
+         some combination of them is constrained by the data (the informative
+         case -- e.g. K_const~K_ATTEN ~0.9997, K_ATTEN~K_SC ~0.9986).
+      2. Rank-1 degeneracy: ONE of the two parameters is inert (D_max, SC_max
+         -- see vitd_model's D_max override being bit-identical across
+         116/150/250/1e9, tests/test_vitd_model.py:121, and this module's own
+         `one_at_a_time_sensitivity`, which reports steady_state_D_range =
+         0.0 for both). A 2-D grid over one live and one dead axis is
+         mechanically a perfect rank-1 surface (ridge_fraction = 1.0000
+         exactly) regardless of any relationship between the two parameters
+         -- there is no tradeoff, because the inert one never moves the
+         output. The reported "ss_D spread" in this case is entirely the
+         live parameter's own one-at-a-time swing, misattributed to a pair.
+
+    Case 2 is not a milder version of case 1; it is a different claim
+    ("this parameter cannot be estimated from D at all" vs "these two
+    parameters can only be estimated jointly"), and it must not be printed
+    under the same "UNIDENTIFIABLE" verdict a reader would use to decide which
+    ridges reflect a genuine, data-driven tradeoff.
+
+    Detection reuses `one_at_a_time_sensitivity`'s own steady_state_D_range
+    for each parameter at this fst (not a fresh marginal sweep here): if
+    either member of the pair has a range at/below INERT_TOL, the pair is
+    labelled DEGENERATE and the inert parameter is named, independent of how
+    close ridge_fraction is to 1. Sort order also changes: DEGENERATE pairs
+    sort after every UNIDENTIFIABLE/separable pair (their ridge_fraction
+    number is not a meaningful "how confounded" measure), so the genuinely
+    informative ridges below 1.0000 stay visible at the top instead of being
+    buried under two exact-1.0000 degeneracies.
     """
+    # INERT_TOL: D_max/SC_max's one-at-a-time steady_state_D_range is exactly
+    # 0.0 (bit-identical simulate() output across their documented range --
+    # see docstring above). 1e-9 is a float-noise guard, not a calibrated
+    # threshold: it is far below the smallest genuine effect this project has
+    # measured (K_ATTEN's OAT range is order 0.1, three orders of magnitude
+    # above this tolerance).
+    INERT_TOL = 1e-9
+    oat_rows = one_at_a_time_sensitivity(fst=fst, verbose=False)
+    oat_range = {row["parameter"]: row["steady_state_D_range"] for row in oat_rows}
+
     pairs = [("K_ATTEN", "K_SC"), ("A", "D_max"), ("A", "K_const"),
              ("alpha_SC", "SC_max"), ("K_const", "K_ATTEN")]
     out = {}
@@ -139,22 +186,48 @@ def identifiability_pairs(fst: int = 5, n_grid: int = 9,
         # Ridge strength: how much of the output variation is explained by a
         # single linear combination of the two parameters. A near-perfect
         # 1-D structure (first singular value dominating) means the pair is
-        # jointly unidentifiable -- only their combination is determined.
+        # jointly unidentifiable -- only their combination is determined --
+        # UNLESS it is caused by one parameter being inert (see docstring).
         Zc = Z - Z.mean()
         sv = np.linalg.svd(Zc, compute_uv=False)
         ridge = float(sv[0] ** 2 / np.sum(sv ** 2))
+
+        inert = [name for name in (a, b)
+                 if oat_range.get(name, float("nan")) <= INERT_TOL]
+        degenerate = len(inert) > 0
+        if degenerate:
+            verdict = ("DEGENERATE: %s inert (zero standalone sensitivity) -- "
+                       "ridge is a rank-1 artefact of that inertness, not a "
+                       "data-driven tradeoff" % " and ".join(inert))
+        elif ridge > 0.99:
+            verdict = "UNIDENTIFIABLE (only the combination is constrained)"
+        else:
+            verdict = "separable"
+
         out[f"{a}~{b}"] = {"ridge_fraction": ridge,
-                           "output_spread": float(Z.max() - Z.min())}
+                           "output_spread": float(Z.max() - Z.min()),
+                           "degenerate": degenerate,
+                           "inert_parameters": inert,
+                           "verdict": verdict}
     if verbose:
         print("\n" + "=" * 74)
         print("PAIRWISE IDENTIFIABILITY (steady-state D response surface)")
         print("=" * 74)
         print(f"  {'pair':24} {'1-D ridge':>11} {'ss_D spread':>12}  verdict")
-        for k, v in sorted(out.items(), key=lambda kv: -kv[1]["ridge_fraction"]):
-            verdict = ("UNIDENTIFIABLE (only the combination is constrained)"
-                       if v["ridge_fraction"] > 0.99 else "separable")
+        # Non-degenerate pairs first (genuinely informative -- sorted by
+        # ridge_fraction descending within that group), degenerate pairs last
+        # regardless of their ridge_fraction, since 1.0000 there is a rank-1
+        # artefact, not a stronger tradeoff signal. See docstring.
+        for k, v in sorted(out.items(),
+                           key=lambda kv: (kv[1]["degenerate"], -kv[1]["ridge_fraction"])):
             print(f"  {k:24} {v['ridge_fraction']:10.4f} "
-                  f"{v['output_spread']:12.2f}  {verdict}")
+                  f"{v['output_spread']:12.2f}  {v['verdict']}")
+        if any(v["degenerate"] for v in out.values()):
+            print("\n  DEGENERATE pairs above involve a parameter with zero "
+                  "one-at-a-time sensitivity (see one_at_a_time_sensitivity);")
+            print("  their ridge_fraction = 1.0000 is mechanical, not evidence "
+                  "of confounding, and their 'ss_D spread' is the OTHER")
+            print("  parameter's own one-at-a-time swing, not a joint effect.")
     return out
 
 

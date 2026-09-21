@@ -282,8 +282,8 @@ def evaluate_schedule(
 #
 # Constraints. The C-numbers are the repository's standing constraint
 # labels; they are declared alongside the objectives they bind in
-# vitd_objectives.OBJECTIVE_HIERARCHY (the narrative write-up that used
-# to number them, MODEL_AND_EVIDENCE.md, was purged on 2026-08-18):
+# vitd_objectives.OBJECTIVE_HIERARCHY (the narrative write-up that used to
+# number them was purged on 2026-08-18):
 #   C1  per-session dose <= GAMMA_MED * MED(F)          (never burns)
 #   C3  D(t) >= target for all t >= ramp_in_days        (sufficiency floor)
 #   C7  per-session dose <= what max_minutes can deliver at this UV index
@@ -787,7 +787,7 @@ def optimise_joint_schedule(fst: int,
         `maxiter` every time rather than on `tol` (measured: `nit == maxiter`
         in every run checked), and direct replication at FST III / N=146 spans
         6.3% in `combined_risk` across 5 seeds with the winning dose family
-        itself changing by seed (`docs/OPTIMIZATION_METHODOLOGY.md` 8.6a) --
+        itself changing by seed [reference purged 2026-09-19] --
         so a single seed-0 run is a draw from a distribution several percent
         wide, not a repeatable point estimate. When `n_seeds > 1` the returned
         dict gains `risk_min`, `risk_max`, `risk_spread_frac` (the range as a
@@ -1172,7 +1172,7 @@ def analysis_joint_schedule(params: Optional[ModelParams] = None,
         # magnitude is a free calibration of the solver's run-to-run spread --
         # which is worth more than hiding it would be.
         #
-        # CAVEAT (docs/OPTIMIZATION_METHODOLOGY.md 8.6c): this estimator only
+        # CAVEAT [reference purged 2026-09-19]: this estimator only
         # lower-bounds solver noise. It takes the single most negative gain
         # across ~22 (FST, N) cells at seed=0, which is one draw per cell, not
         # a replication. Direct 5-seed replication at one cell (FST III,
@@ -1661,17 +1661,174 @@ def _min_risk_on_fixed_days(fst: int, days: np.ndarray, cap: float,
     return best
 
 
+# ---------------------------------------------------------------------------
+# A3 axis: the cross-skin-type guard.
+# ---------------------------------------------------------------------------
+# WHY THIS TYPE EXISTS. `calibration_approval.yaml` (entry "A3 primary
+# scheduling metric", field `not_covered`) records the blocker this workstream
+# had to carry into the output: the FST susceptibility factor inside
+# `vitd_physiology.cancer_risk` is a derived constitutive prior, and
+# cross-skin-type comparisons of risk index VALUES are not anchored by any
+# epidemiological source -- see W-R's reading of Elwood & Jopson 1997 in
+# docs/workstreams/W-R.md, whose odds ratios are ADJUSTED FOR skin
+# pigmentation and so structurally cannot supply the missing contrast.
+#
+# Documenting that in a docstring is not enough: a float in a dict gets copied
+# into a DataFrame, a CSV and then a sentence comparing FST II with FST VI.
+# So on this objective the risk axis is not a float. It is `WithinFSTRisk`,
+# which refuses `float()`, refuses numeric formatting, refuses arithmetic, and
+# refuses ordering against an instance carrying a different skin type. Every
+# within-FST use the frontier actually needs -- Pareto domination, ranking,
+# "is this cell better than that one for the same person" -- still works,
+# because all of those compare cells inside one skin type. The number that
+# reaches the CSV is `risk_within_fst_ratio`, normalised to that skin type's
+# own best feasible cell, so it is 1.0 at the minimum FOR EVERY SKIN TYPE and
+# therefore carries no cross-FST magnitude to misread in the first place.
+class CrossSkinTypeRiskError(TypeError):
+    """Raised when a sealed risk index is used in a cross-skin-type way."""
+
+
+class WithinFSTRisk:
+    """A skin-cancer risk index sealed to one Fitzpatrick skin type.
+
+    Comparable and rankable against other indices for the SAME skin type.
+    Not convertible to a number, not formattable as one, and not comparable
+    across skin types. The escape hatch is `absolute_value_for_fst(fst)`,
+    which requires the caller to name the skin type it already believes it is
+    holding, so a cross-FST read cannot happen by accident.
+    """
+
+    __slots__ = ("_fst", "_raw", "_reference")
+
+    def __init__(self, fst: int, raw: float, reference: float):
+        self._fst = int(fst)
+        self._raw = float(raw)
+        self._reference = float(reference)
+
+    # -- the safe, self-normalised view -------------------------------------
+    @property
+    def fst(self) -> int:
+        return self._fst
+
+    @property
+    def within_fst_ratio(self) -> float:
+        """This cell's risk divided by the best feasible cell for this FST.
+
+        1.0 at that skin type's own minimum, by construction, for every skin
+        type. Comparing this number across skin types is meaningless rather
+        than misleading -- there is no magnitude in it to misread.
+        """
+        if not np.isfinite(self._raw):
+            return float("nan")
+        if not np.isfinite(self._reference) or self._reference <= 0:
+            return float("nan")
+        return self._raw / self._reference
+
+    def absolute_value_for_fst(self, fst: int) -> float:
+        """Unsealed absolute index. UNANCHORED ACROSS SKIN TYPES.
+
+        Provided for within-FST diagnostics and tests. `fst` must match the
+        skin type this index was sealed with.
+        """
+        if int(fst) != self._fst:
+            raise CrossSkinTypeRiskError(
+                f"risk index is sealed to FST {self._fst}; asked for FST "
+                f"{int(fst)}. Cross-skin-type risk VALUES are not anchored "
+                f"(see docs/workstreams/W-R.md).")
+        return self._raw
+
+    # -- refusals ------------------------------------------------------------
+    def _peer(self, other, op: str) -> float:
+        if not isinstance(other, WithinFSTRisk):
+            raise CrossSkinTypeRiskError(
+                f"cannot {op} a sealed risk index against "
+                f"{type(other).__name__}; use .within_fst_ratio for a plain "
+                f"number, which is normalised within one skin type.")
+        if other._fst != self._fst:
+            raise CrossSkinTypeRiskError(
+                f"cannot {op} risk across skin types (FST {self._fst} vs FST "
+                f"{other._fst}). The FST susceptibility factor is a "
+                f"constitutive prior and cross-skin-type risk VALUES are "
+                f"unanchored; only within-skin-type comparisons are usable.")
+        return other._raw
+
+    def __lt__(self, other): return self._raw < self._peer(other, "order")
+    def __le__(self, other): return self._raw <= self._peer(other, "order")
+    def __gt__(self, other): return self._raw > self._peer(other, "order")
+    def __ge__(self, other): return self._raw >= self._peer(other, "order")
+
+    def __eq__(self, other):
+        if not isinstance(other, WithinFSTRisk):
+            return NotImplemented
+        return self._raw == self._peer(other, "compare")
+
+    __hash__ = object.__hash__
+
+    def __float__(self):
+        raise CrossSkinTypeRiskError(
+            "refusing to hand out a bare float for a skin-cancer risk index: "
+            "a loose float is exactly how a cross-skin-type value gets into a "
+            "table. Use .within_fst_ratio (normalised inside one skin type) "
+            "or .absolute_value_for_fst(fst).")
+
+    __int__ = __float__
+    __index__ = __float__
+
+    def _no_arith(self, *_a, **_k):
+        raise CrossSkinTypeRiskError(
+            "arithmetic on a sealed risk index is refused; it would produce a "
+            "number with no skin type attached.")
+
+    __add__ = __radd__ = __sub__ = __rsub__ = _no_arith
+    __mul__ = __rmul__ = __truediv__ = __rtruediv__ = _no_arith
+
+    def __format__(self, spec: str) -> str:
+        if spec in ("", "s"):
+            return repr(self)
+        raise CrossSkinTypeRiskError(
+            f"numeric format spec {spec!r} refused on a sealed risk index; "
+            f"format .within_fst_ratio instead.")
+
+    def __repr__(self) -> str:
+        r = self.within_fst_ratio
+        shown = "nan" if not np.isfinite(r) else f"{r:.4f}"
+        return f"<risk FST {self._fst}: {shown}x that FST's own minimum>"
+
+
+# WHY A SESSION BUDGET IS AN ASSUMPTION AND NOT A FINDING. Without a budget the
+# tri-objective is degenerate: the SCC term depends only on cumulative dose and
+# the intermittency term is cubic in per-session dose, so at fixed cumulative
+# dose risk falls monotonically in session count all the way to 365 (the same
+# degeneracy documented at vitd_optimization.py section 13c and reproduced by
+# optimal_interval_risk_constrained, which lands every skin type on the 1-day
+# interval). The budget that makes the problem well-posed is therefore a
+# statement about how often a person will actually go outside. It is not
+# photobiology and no measurement in this repo supports any particular value.
+SESSION_BUDGET_BASIS: str = (
+    "[ASSUMPTION, NOT PHOTOBIOLOGY] The session budget is an ADHERENCE "
+    "constraint. Without it this objective is degenerate: risk falls "
+    "monotonically in session count to 365 (dose every day). No source in "
+    "this repo fixes a budget; the grid is swept so the assumption is visible "
+    "as an axis rather than buried as a default."
+)
+
+
 def pareto_front_nd(points: Sequence[dict], keys: Sequence[str]) -> List[dict]:
-    """Nondominated set over any number of MINIMISED objectives."""
+    """Nondominated set over any number of MINIMISED objectives.
+
+    Objective values need only be mutually orderable, not numeric, so that the
+    sealed `WithinFSTRisk` axis can be a Pareto objective without ever being
+    coerced to a float.
+    """
     keys = tuple(keys)
     front = []
     for p in points:
-        pv = tuple(float(p[k]) for k in keys)
+        pv = tuple(p[k] for k in keys)
         dominated = False
         for q in points:
             if q is p:
                 continue
-            qv = tuple(float(q[k]) for k in keys)
+            qv = tuple(q[k] for k in keys)
             if all(a <= b for a, b in zip(qv, pv)) and any(a < b for a, b in zip(qv, pv)):
                 dominated = True
                 break
@@ -1715,7 +1872,7 @@ def tri_objective_frontier(
                     "max_gap_days": max_gap_days(days, horizon_days)}
             if res is None:
                 rows.append({**base, "feasible": False,
-                             "family": "", "combined_risk": float("nan"),
+                             "family": "", "_raw_risk": float("nan"),
                              "total_sed": float("nan"),
                              "peak_sed": float("nan"),
                              "minutes_per_session": float("nan"),
@@ -1725,7 +1882,7 @@ def tri_objective_frontier(
                 continue
             rows.append({**base, "feasible": True,
                          "family": res["family"],
-                         "combined_risk": res["combined_risk"],
+                         "_raw_risk": res["combined_risk"],
                          "total_sed": res["total_sed"],
                          "peak_sed": res["peak_sed"],
                          "minutes_per_session": (res["peak_sed"] / sed_per_min
@@ -1735,13 +1892,31 @@ def tri_objective_frontier(
                          "on_frontier": False})
 
     feas = [r for r in rows if r["feasible"]]
+
+    # Seal the risk axis to this skin type before anything can read it. The
+    # normalising reference is THIS skin type's own best feasible cell, so the
+    # only number that leaves here on the risk axis is 1.0-at-the-minimum for
+    # every FST -- see WithinFSTRisk above and docs/workstreams/W-R.md.
+    raw = [r["_raw_risk"] for r in feas
+           if np.isfinite(r["_raw_risk"])]
+    reference = min(raw) if raw else float("nan")
+    order = sorted(range(len(feas)), key=lambda i: feas[i]["_raw_risk"])
+    rank_of = {id(feas[i]): k + 1 for k, i in enumerate(order)}
+    for r in rows:
+        sealed = WithinFSTRisk(fst, r.pop("_raw_risk"), reference)
+        r["combined_risk"] = sealed
+        r["risk_within_fst_ratio"] = sealed.within_fst_ratio
+        r["risk_rank_within_fst"] = rank_of.get(id(r), 0)
+
     front = pareto_front_nd(feas, ("n_sessions", "max_gap_days", "combined_risk"))
     for r in front:
         r["on_frontier"] = True
     front = sorted(front, key=lambda r: (r["n_sessions"], r["max_gap_days"]))
     return {"fst": fst, "rows": rows, "frontier": front,
             "feasible": bool(feas), "sed_cap": cap, "target": target,
-            "axes": ("n_sessions", "max_gap_days", "combined_risk")}
+            "axes": ("n_sessions", "max_gap_days", "combined_risk"),
+            "risk_axis_is_within_fst_only": True,
+            "session_budget_basis": SESSION_BUDGET_BASIS}
 
 
 # ===========================================================================
@@ -2029,8 +2204,19 @@ def analysis_tri_objective(params: Optional[ModelParams] = None,
     print("    A1  n_sessions     how often you must get outside")
     print("    A2  max_gap_days   longest stretch with no session (tail gap")
     print("                       to the end of the horizon included)")
-    print("    A3  combined_risk  the skin-cancer index")
+    print("    A3  risk          the skin-cancer index, WITHIN skin type only")
     print("\n  Subject to: " + "; ".join(spec.subject_to))
+    print("\n  A3 is reported as a ratio to THIS skin type's own lowest-risk")
+    print("  feasible cell, so it reads 1.0000 at every skin type's minimum by")
+    print("  construction. That is deliberate: the FST susceptibility factor is")
+    print("  a constitutive prior, and cross-skin-type comparisons of risk")
+    print("  VALUES are not anchored by any source in this repo (Elwood &")
+    print("  Jopson 1997 adjusts its odds ratios FOR pigmentation, so it cannot")
+    print("  supply the contrast -- see docs/workstreams/W-R.md). The axis is")
+    print("  carried as a sealed vitd_optimization.WithinFSTRisk object that")
+    print("  refuses float(), arithmetic and cross-FST ordering, so no absolute")
+    print("  risk value can reach this table or its CSV at all.")
+    print("\n  " + SESSION_BUDGET_BASIS)
     print(f"\n  Spacing is the same one-parameter monotone warp as section 13c")
     print(f"  (gamma = 1 is uniform); grid {TRI_GAMMA_GRID}.")
 
@@ -2040,7 +2226,7 @@ def analysis_tri_objective(params: Optional[ModelParams] = None,
         all_rows.extend(res["rows"])
 
         print(f"\n  FST {ROMAN_FST[fst]}")
-        print(f"  {'N/yr':>5} {'gamma':>6} {'maxgap':>7} {'risk':>9} "
+        print(f"  {'N/yr':>5} {'gamma':>6} {'maxgap':>7} {'risk/min':>9} "
               f"{'totSED':>8} {'peakSED':>8} {'min/sesh':>9} {'t->suff':>8}  front")
         print("  " + "-" * 78)
         for r in res["rows"]:
@@ -2052,7 +2238,8 @@ def analysis_tri_objective(params: Optional[ModelParams] = None,
             ttf = ("n/a" if not np.isfinite(r["time_to_sufficiency"])
                    else f"{r['time_to_sufficiency']:.0f}d")
             print(f"  {r['n_sessions']:>5} {r['gamma']:>6.2f} "
-                  f"{r['max_gap_days']:>7.1f} {r['combined_risk']:>9.4f} "
+                  f"{r['max_gap_days']:>7.1f} "
+                  f"{r['risk_within_fst_ratio']:>9.4f} "
                   f"{r['total_sed']:>8.1f} {r['peak_sed']:>8.3f} "
                   f"{r['minutes_per_session']:>9.1f} {ttf:>8}  "
                   f"{'YES' if r['on_frontier'] else ''}")
@@ -2064,7 +2251,14 @@ def analysis_tri_objective(params: Optional[ModelParams] = None,
         print(f"    Nondominated: {len(res['frontier'])} of "
               f"{sum(1 for r in res['rows'] if r['feasible'])} feasible cells.")
 
-    df = pd.DataFrame(all_rows)
+    # The sealed A3 axis never reaches the DataFrame. Dropping it here is
+    # belt-and-braces -- WithinFSTRisk refuses float() and numeric formatting,
+    # so pandas could not have written an absolute risk value as a number
+    # anyway -- but it keeps the CSV's columns honest about what they are.
+    df = pd.DataFrame([{k: v for k, v in r.items() if k != "combined_risk"}
+                       for r in all_rows])
+    df["risk_axis"] = "within_fst_ratio_only"
+    df["session_budget_basis"] = "adherence_assumption"
     df.to_csv("tables/tri_objective_frontier.csv", index=False)
 
     feas = df[df["feasible"]]
@@ -2142,11 +2336,9 @@ def analysis_constant_sessions(params: Optional[ModelParams] = None):
 
     df = pd.DataFrame(rows)
 
-    # Save
     df.to_csv("tables/constant_sessions_analysis.csv", index=False)
     print(f"\n  Saved tables/constant_sessions_analysis.csv")
 
-    # Find optimal (lowest AUC deficit at 50)
     best = df.loc[df["auc_deficit_50"].idxmin()]
     print(f"\n  Optimal schedule: {int(best['N_sessions'])} sessions")
     print(f"    SED/session:     {best['sed_per_session']:.3f}")
@@ -2155,7 +2347,6 @@ def analysis_constant_sessions(params: Optional[ModelParams] = None):
     print(f"    AUC deficit @50: {best['auc_deficit_50']:.1f} nmol/L·days")
     print(f"    Net ΔD/SED:      {best['net_final_D_change_per_SED']:.3f} nmol/L/SED")
 
-    # Print table
     print(f"\n  {'N':>3s} {'SED/sesh':>9s} {'Interval':>9s} {'Max D':>7s} "
           f"{'Deficit@50':>11s} {'NetΔD/SED':>10s} "
           f"{'Roll7d':>7s} {'Flag':>20s}")
@@ -2229,7 +2420,6 @@ def analysis_spacing_fixed_dose(params: Optional[ModelParams] = None,
     df.to_csv("tables/spacing_fixed_dose.csv", index=False)
     print(f"  Saved tables/spacing_fixed_dose.csv")
 
-    # Print table
     print(f"\n  {'FST':>4} {'N/yr':>5} {'gap':>5} {'meanD':>7} {'finalD':>7} "
           f"{'minD':>7} {'<50d':>5} {'SCC':>7} {'INT':>7} {'burn':>7}")
     print("  " + "-" * 67)

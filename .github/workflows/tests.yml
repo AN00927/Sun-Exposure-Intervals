@@ -1,0 +1,76 @@
+name: Core test suite
+
+# Runs the core pytest suite documented in CLAUDE.md on every push and PR.
+#
+# Scope: tests/ with tests/exploratory excluded, exactly as CLAUDE.md
+# specifies. This job intentionally does NOT run run_all.py -- the full
+# pipeline (dominated by the section 13b/13c differential-evolution grid
+# searches) takes on the order of 20+ minutes and is meant to be run
+# deliberately, not on every push. See CLAUDE.md's "Where facts live" /
+# pipeline section and docs/ORCHESTRATOR_PLAN.md Sec.0 rule 7.
+"on":
+  push:
+  pull_request:
+
+# Cancel superseded runs on the same branch/PR so pushes don't queue behind
+# each other.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    name: pytest (core suite)
+    runs-on: ubuntu-latest
+    env:
+      PYTHONIOENCODING: utf-8
+      # Defensive only: no test in tests/ imports matplotlib directly today,
+      # but several pipeline modules a test could transitively pull in do
+      # (some already call matplotlib.use("Agg") themselves, some don't).
+      # Forcing a non-interactive backend here removes that whole class of
+      # "works locally, hangs/fails on a headless runner" failure without
+      # touching any file this workstream doesn't own.
+      MPLBACKEND: Agg
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        # Git LFS is deliberately left off (default). The core suite (see
+        # tests/, excluding tests/exploratory) does not read any LFS-tracked
+        # path -- Papers_and_Datasets/*.csv|xlsx|xls, audit_outputs/*.csv,
+        # output_data/*.csv per .gitattributes. The one core-pipeline
+        # function that does read an LFS-tracked audit_outputs CSV
+        # (validate_katten_seasonal_amplitude in vitd_validation.py) is not
+        # called by anything under tests/; it guards its own read with
+        # os.path.exists and is exercised only via run_all.py, which this
+        # workflow does not run. Fetching LFS objects here would only slow
+        # the checkout down for no benefit to this job.
+
+      # Pin to the exact interpreter version CLAUDE.md and requirements.txt
+      # document the pipeline as tested against (Python 3.12.10).
+      - name: Set up Python 3.12.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.10"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      # Install from requirements.txt, not requirements.lock. requirements.lock
+      # is a full `pip freeze` of a shared interpreter carrying ~140 packages
+      # this repo does not import (tensorflow, torch, chromadb, pymupdf,
+      # python-pptx, and similar) -- see the file's own header. Installing it
+      # wholesale would make CI slow and brittle against packages unrelated to
+      # this pipeline. requirements.txt is the curated, bounded, direct
+      # dependency list the same header calls out as "the actual...list of
+      # this project's direct dependencies -- read that first," and it already
+      # includes pytest.
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r requirements.txt
+
+      # Exactly the invocation CLAUDE.md documents as the cheap check, with
+      # tests/exploratory excluded so the retired location-based dosimetry
+      # chain's sys.path addition (tests/exploratory/conftest.py) never leaks
+      # into this run.
+      - name: Run core test suite
+        run: python3 -m pytest tests/ -q --ignore=tests/exploratory

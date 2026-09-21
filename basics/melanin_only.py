@@ -18,8 +18,8 @@ reproduced here standalone and cross-checked against the production function
 itself (Part 2, section 4).
 
 It is a REFERENCE model, not a replacement. It makes no absolute 25(OH)D
-prediction and is not fitted to anything here. See
-`docs/REPO_SCOPE_AUDIT.md` section 6.
+prediction and is not fitted to anything here. See `basics/README.md` for
+the role of the two Tier-1 reference models.
 
 PART 1 -- THE STATIC (CONSTITUTIVE) MODEL
 ------------------------------------------

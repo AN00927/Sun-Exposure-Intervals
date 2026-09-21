@@ -191,7 +191,7 @@ Parameters & Sources
     more headroom under (1 - D/D_max) than the melanin term took away. That
     inversion is gone at 0.98 (model 1.49), on every matched-dose contrast.
     NOT COVERED: behaviour. Shade, clothing and time outdoors are a SEPARATE
-    2.1-2.4x factor and live in `vitd_behaviour.py`, defaulting to 1.0.
+    2.1-2.4x factor and live in `exploratory/vitd_behaviour.py`, defaulting to 1.0.
     Folding them in here would need 4.3-5.7x, above every matched-dose
     measurement in existence.
     DARK-SKIN PROVENANCE: every FST V datapoint behind this number is Indian-
@@ -368,7 +368,7 @@ Parameters & Sources
     choices only fix the MAGNITUDE conditional on the mechanism being right.
     Treat SC as an EMPIRICAL photoadaptation channel, not a validated optical
     mechanism -- and note K_ATTEN ~ K_SC is jointly unidentifiable anyway
-    (vitd_sensitivity.py). See MODEL_AND_EVIDENCE.md, 'Remaining gaps', gap 28.
+    (vitd_sensitivity.py). See docs/SC_MODEL.md section 2.6.
     [EVIDENCE NOTE 2026-09-06] Bruls et al. 1984 (Photochem Photobiol
     40:485-494, DOI 10.1111/j.1751-1097.1984.tb04622.x) is the first DIRECT
     optical measurement this repo holds for the SC term. Not previously cited
@@ -1129,8 +1129,8 @@ SOURCE_CALIBRATION_TABLE: Dict[str, Tuple[float, float, float]] = {
 
 # Default sun-facing E_source, used unless overridden.
 # [CALIBRATION 2026-08-16, user-approved] Changed from implicit 1.00 to
-# Webb's Manchester summer measurement. See calibration_approval.yaml and
-# MODEL_AND_EVIDENCE.md 'Open decisions' item 12(a) for the cost: NHANES
+# Webb's Manchester summer measurement. See calibration_approval.yaml for
+# the approval record and for the cost: NHANES
 # Part B drops 6/6 -> 4/6 because those checks feed an ASSUMED daily SED
 # nobody measured, making solar E_source unidentifiable from them. That
 # assumed dose was deliberately NOT retuned to keep the check green.
@@ -1149,8 +1149,8 @@ E_SOURCE_SOLAR_DEFAULT: str = "solar_summer"
 # pathway nobody exercises is a liability, not a feature.
 #
 # What was NOT lost. The oral route was the experimental probe behind the only
-# evidence that gives `D_max` an interior optimum (Gallagher 2012;
-# MODEL_AND_EVIDENCE.md 'Open decisions' item 3). That evidence SURVIVES: the
+# evidence that gives `D_max` an interior optimum (Gallagher 2012). That
+# evidence SURVIVES: the
 # saturating step it constrains is hepatic -- downstream of both cutaneous and
 # oral routes -- so it bounds systemic feedback ceiling `D_max` regardless of
 # route. The argument is preserved, self-contained and runnable, in
@@ -1483,8 +1483,9 @@ class ModelParams:
     body_weight_kg: Optional[float] = None
     # Previtamin-D3 photodegradation plateau (Holick 1981, van Dijk 2016).
     # This is the mechanism that makes dose-splitting genuinely better, as
-    # opposed to the feedback artifact in MODEL_AND_EVIDENCE.md, 'Remaining
-    # gaps', gap 19.
+    # opposed to the feedback artifact that
+    # vitd_optimization.gross_synth_per_SED_diagnostic recomputes on every
+    # pipeline run (see the vitd_objectives.py module docstring).
     use_photodegradation: bool = False
     # Cutaneous D3 -> serum 25(OH)D transit delay. Without this, UV synthesis
     # appears in serum 25(OH)D instantaneously, which is wrong on exactly the
@@ -1901,7 +1902,6 @@ def compute_safety_sidecar(sed: float, fst: int, accumulated_sed_7d: float = 0.0
     This function returns qualitative risk flags and recommendations based on
     session SED, FST, and recent 7-day cumulative UV dose.
     """
-    # 1. Estimate individual MED in SED
     # FST MED values from Shih/Farrar/Rhodes 2018 (P24): FST I-II ~2-3 SED, FST V ~10 SED, FST VI ~15 SED
     med_by_fst = {1: 2.1, 2: 2.6, 3: 3.2, 4: 5.6, 5: 7.5, 6: 15.2}
     med = med_by_fst.get(fst, 3.5)

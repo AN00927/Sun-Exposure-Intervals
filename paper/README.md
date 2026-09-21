@@ -60,15 +60,18 @@ Fully drafted, from the repository's own documentation and code:
   **2026-07-31**. Re-transcribe from the code, not from this table, if the
   parameters change; do not hand-edit values here.
 - **Limitations and assumptions** (`\section{Limitations and assumptions}`):
-  the full register of provisional results, cross-referenced to
-  `MODEL_AND_EVIDENCE.md` in the repository root.
+  the full register of provisional results. The evidence register it was
+  cross-referenced to was purged [reference purged 2026-09-19]; the live
+  provenance now lives in the `vitd_model.py` module docstring,
+  `calibration_approval.yaml`, `docs/MELANIN_MODEL.md` and
+  `docs/SC_MODEL.md`.
 
 ### Objective-choice correction (read this before quoting an "optimal interval")
 
 A first draft of this manuscript repeated this project's own earlier claim
 that `net_final_D_change_per_SED` gives a genuine interior optimum near three
-days. Three new diagnostic scripts in `scripts/` (not present when
-`MODEL_AND_EVIDENCE.md` was last written) show that claim needs correcting, and the
+days. Three diagnostic scripts in `scripts/`, added after that draft, show
+that claim needs correcting, and the
 manuscript now reflects the correction in the abstract, Introduction,
 Section 3.2 (Objectives), and Section 7 (Limitations):
 
@@ -171,8 +174,9 @@ one that looks complete.
 ## Bibliography entries not currently cited in the text
 
 `references.bib` holds 71 entries; 64 are cited somewhere in `manuscript.tex`.
-Seven are verified from the same evidence cards in `MODEL_AND_EVIDENCE.md` as
-everything else here, but ended up not woven into this drafted subset of
+Seven are verified from the same evidence cards as everything else here
+(that register has since been purged [reference purged 2026-09-19]), but
+ended up not woven into this drafted subset of
 sections: `alahouhala2014`, `assi2022`, `keurentjes2021`, `lehoang2016`,
 `rhodes2017`, `thieden2000`, and `vahavihu2010b`. None is fabricated; all seven
 were left out only because Section 4 (Results) and Section 6 (Discussion) are
@@ -182,7 +186,7 @@ next revision, or delete the entries if they turn out not to be needed.
 ## A note on the parameter table
 
 Every value in Table 1 was read out of `vitd_model.py` on 2026-07-31, not
-retyped from `MODEL_AND_EVIDENCE.md` or this README. If those
+retyped from any document, including this README. If those
 values drift apart in the future, `vitd_model.py` is correct by the
 repository's own rule (see `CLAUDE.md`): parameter values live in exactly one
 place in the source code, and every document that quotes one is a copy, not a

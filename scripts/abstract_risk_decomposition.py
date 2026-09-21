@@ -2,8 +2,8 @@
 two components, and test whether facultative melanin accumulation mediates it.
 
 Not wired into run_all.py. Written to answer a specific question raised while
-reconciling paper/abstract.tex against the model (see
-docs/ABSTRACT_RECONCILIATION.md): the abstract says front-loaded schedules cut
+reconciling paper/abstract.tex against the model [reference purged
+2026-09-19]: the abstract says front-loaded schedules cut
 the intermittent-exposure (BCC/melanoma) risk index by a median of ~22% while
 raising the cumulative-dose (SCC) index by a median of ~8%, at a matched
 sufficiency floor. Does that two-component trade-off actually hold in the
