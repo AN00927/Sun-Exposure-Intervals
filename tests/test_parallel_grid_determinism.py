@@ -9,7 +9,7 @@ line) claims:
 
 Before this test, nothing checked that claim: a grep for `_run_joint_grid`,
 `_joint_grid_cell`, `n_workers`, or `ProcessPool` across `tests/` returned
-zero hits (2026-09-20 audit; see docs/ORCHESTRATOR_PLAN.md W-M item 2). This
+zero hits (2026-09-20 audit). This
 test runs the SAME two grid cells through `_run_joint_grid` once serially
 (`n_workers=1`) and once through the process pool (`n_workers=2`), and
 asserts the two result sets are identical field-for-field -- the closest
@@ -40,8 +40,8 @@ machine's core count happens to push `n_workers`.
 Non-vacuousness was checked by running the SAME comparison against two
 DIFFERENT task lists (e.g. session_counts (104,) vs (146,) at fixed FST) and
 confirming the equality assertion actually fails -- i.e. the comparison
-logic distinguishes real differences rather than trivially matching (see
-docs/workstreams/W-M.md for the transcript). That check is not re-run here
+logic distinguishes real differences rather than trivially matching (a
+one-time authoring-time check, not reproduced here). That check is not re-run here
 on every test session (it would double the already-substantial cost); it
 was a one-time verification during test authoring.
 """

@@ -410,23 +410,93 @@ class TestJointTimingAndDose:
             res["combined_risk"], rel=1e-6)
         assert r["cumulative_SED"] == pytest.approx(res["total_sed"], rel=1e-6)
 
-    def test_free_spacing_gets_no_larger_search_budget(self):
+    def test_free_spacing_gets_no_larger_search_budget(self, monkeypatch):
         """Both arms must optimise the same number of parameters. Otherwise
         differential_evolution (population = popsize * n_params) hands the free
-        arm more evaluations, and any gain is confounded with search effort."""
-        import inspect
+        arm more evaluations, and any gain is confounded with search effort.
+
+        REWRITTEN (was an `inspect.getsource` substring match on a single
+        literal indentation, which any reformat of `optimise_joint_schedule`
+        would silently defeat (mutation-tested 2026-09-22; introducing the
+        bug this test guards against was confirmed to fail it)). This version
+        patches `scipy.optimize.differential_evolution` (imported locally
+        inside `optimise_joint_schedule` on every call) and records the
+        actual `bounds` length the solver is invoked with for each arm, so
+        it tests the real runtime search-space size rather than the source
+        text that produces it.
+        """
+        import scipy.optimize
         from vitd_optimization import optimise_joint_schedule
-        src = inspect.getsource(optimise_joint_schedule)
-        assert "if free_spacing:\n            bounds = bounds + " not in src, (
-            "spacing dimension must be present in both arms")
+
+        class _StopAfterFirstCall(Exception):
+            pass
+
+        captured = {}
+
+        def fake_differential_evolution(func, bounds, **kwargs):
+            captured["n_bounds"] = len(bounds)
+            raise _StopAfterFirstCall()
+
+        monkeypatch.setattr(scipy.optimize, "differential_evolution",
+                            fake_differential_evolution)
+
+        n_bounds_by_arm = {}
+        for free in (False, True):
+            captured.clear()
+            with pytest.raises(_StopAfterFirstCall):
+                optimise_joint_schedule(
+                    fst=3, n_sessions=self.N, horizon_days=self.HORIZON,
+                    ramp_in_days=self.RAMP, free_spacing=free, seed=0,
+                    maxiter=8, popsize=6)
+            assert "n_bounds" in captured, (
+                "differential_evolution was never called for "
+                f"free_spacing={free}")
+            n_bounds_by_arm[free] = captured["n_bounds"]
+
+        assert n_bounds_by_arm[True] == n_bounds_by_arm[False], (
+            f"free_spacing=True searches {n_bounds_by_arm[True]} parameters "
+            f"vs {n_bounds_by_arm[False]} for free_spacing=False; both arms "
+            "must search the same number of parameters so a risk gain "
+            "cannot be confounded with a larger search budget "
+            "(differential_evolution sizes its population as "
+            "popsize * n_params)")
 
     def test_free_spacing_is_never_worse_than_uniform(self):
         """gamma = 1 is inside the bounds, so the free arm can express the
-        control exactly and should not lose beyond solver noise."""
+        control exactly and should not lose beyond solver noise.
+
+        Tolerance: `optimise_joint_schedule`'s own docstring (and the
+        duplicate note in `vitd_optimization_reports.py`, ~line 281)
+        documents a directly-measured, single-cell (FST III, N=146),
+        5-seed spread of **6.3%** in `combined_risk` -- "[reference purged
+        2026-09-19]" but the figure itself was retained inline. This test
+        runs a single seed per arm (matching production's default
+        `n_seeds=1`), so its observed ratio is one draw from that ~6.3%-wide
+        distribution, not a repeatable point estimate. The previous 10%
+        slack was only ~1.5x that documented spread (decision E3
+        calls this "~1.5sigma", i.e. flaky-prone under the repo's own
+        stated convention of treating the documented spread as one sigma
+        unit). Widened here to 3x the documented 6.3% figure (18.9% slack,
+        `1.0 + 3 * 0.063 = 1.189`), a conservative multiple chosen because:
+        (a) it uses the OLDER, LARGER of the two measurements on record --
+        `RESULTS.md` (~line 2146)'s most recent regenerated run measured a
+        tighter 2.3% spread at the same cell, but that figure is a
+        single re-run, not a second controlled replication, so the more
+        conservative 6.3% is kept as the basis; (b) this test's solver
+        settings (maxiter=8, popsize=6) are smaller than production's
+        (maxiter=18, popsize=10), which plausibly widens rather than
+        narrows true noise, so erring conservative is the safer direction.
+        Seed-averaging (`n_seeds>1`, supported directly by
+        `optimise_joint_schedule`) was considered instead of/alongside
+        widening, but measured at ~39s per single-seed call of this test
+        (2026-09-22, this machine); n_seeds=3 would roughly triple that for
+        one test, which was judged not worth the wall-clock for a test that
+        already has headroom via the tolerance widening alone.
+        """
         fixed = self._opt(free_spacing=False)
         free = self._opt(free_spacing=True)
         assert fixed is not None and free is not None
-        assert free["combined_risk"] <= fixed["combined_risk"] * 1.10
+        assert free["combined_risk"] <= fixed["combined_risk"] * 1.189
 
     def test_infeasible_budget_returns_none(self):
         assert self._opt(free_spacing=True, n=1) is None
@@ -542,9 +612,52 @@ class TestRecalibratedFeasibility:
     this rebase -- it derives K_const from its own literal, not from
     ModelParams(), so its printed numbers are stale; the facts asserted here
     come from direct `optimise_variable_dose` calls, reproduced above).
+
+    REBASED AGAIN 2026-09-23, AND THIS TIME THE DARK-SKIN HEADLINE MOVED.
+    The 2026-09-22 parameter pass (K_const 1.17 -> 2.096070737357932 under
+    random-effects pooling of the LIVE-re-inverted field routes, the A3
+    ITA -> M clip release, SC_max IV-VI 0.36 -> 0.24, A re-anchored to
+    4.359560972608079 at the joint fixed point, and the body-weight dilution
+    term made live) tightens FST VI and leaves FST V where it was. Measured
+    by direct `optimise_variable_dose` calls at UV index 6 over a 365-day
+    horizon with a 90-day ramp, minutes per session (! = over the
+    120-minute ceiling):
+
+        N        52      104      146      183      260      365
+        I    infeas    26.8m    17.4m    13.0m     8.7m     6.0m
+        II   infeas    35.8m    22.6m    16.7m    11.0m     7.5m
+        III  infeas    51.8m    31.4m    22.6m    14.6m     9.9m
+        IV   infeas    87.6m    49.4m    34.4m    21.4m    14.1m
+        V    infeas   infeas    93.2m    60.8m    35.4m    22.4m
+        VI   infeas   infeas   269.4m!  148.4m!   74.1m    43.1m
+
+        FST      I    II   III    IV     V     VI
+        N_min  104   104   104   104   146    260      (was 183 for FST VI)
+
+    TWO CHANGES A READER WOULD NOTICE. (1) FST VI's minimum feasible budget
+    moves 183 -> 260 sessions a year, i.e. from roughly every other day to
+    roughly five days a week. (2) At N = 104 FST V and VI are now
+    FLOOR-INFEASIBLE rather than feasible-but-over-the-ceiling, so the
+    twice-weekly exclusion is stronger than the version this class used to
+    record. Both follow from the K_const move, which is itself dominated by
+    a BUG FIX (the field routes were a stale 2026-08-17 cache) rather than
+    by new evidence -- see vitd_model.py's K_const docstring entry.
+
+    AND THE UNCERTAINTY THAT TRAVELS WITH THEM. The leave-one-out envelope
+    on K_const is 1.588440 to 3.183999, and with A re-anchored at each end
+    FST V's N_min runs 104 (low end) to 260 (high end) and FST VI's 183 to
+    "no feasible budget up to daily". No number in this class may be quoted
+    as a bare fact; see calibration_approval.yaml,
+    K_const_leave_one_out_envelope_2026_09_22.
     """
 
     HORIZON, RAMP = 365, 90
+
+    # Read from the code rather than restated, so an attribution row can
+    # never silently describe a parameter set that is no longer shipped --
+    # which is exactly how the stale-A rows below came to be written.
+    K_SHIPPED = ModelParams().K_const
+    A_SHIPPED = ModelParams().A
 
     def _uniform(self, fst, n, params=None):
         from vitd_optimization import optimise_variable_dose
@@ -554,30 +667,37 @@ class TestRecalibratedFeasibility:
 
     @pytest.mark.parametrize("fst", [5, 6])
     def test_twice_weekly_cannot_be_scheduled_within_120_min_for_fst_v_and_vi(self, fst):
-        """N = 104 (twice weekly) cannot be scheduled inside the 120-minute
-        session ceiling for FST V and VI under the full 2026-09-06
-        calibration (K_const 1.15, Narea M_baseline_by_FST, BSA_EXP 0.3281,
-        K_SC 1.0, A re-anchored to 4.125).
+        """N = 104 (twice weekly) cannot be scheduled for FST V or VI.
 
-        RENAMED AND NARROWED 2026-09-06. This test previously asserted
-        `self._uniform(fst, 104) is None` for FST II-VI, measured while A was
-        still stale at 3.114. After the A re-anchor that is false for II, III
-        and IV, which are comfortably feasible at N = 104 (33.4, 44.2 and
-        76.4 min/day). It is also false in the literal `is None` sense for V
-        and VI: the optimiser DOES return a schedule that holds the 50 nmol/L
-        floor at N = 104, but it needs 135.9 and 291.4 min/day respectively.
-        So the binding constraint at this budget is the SESSION-LENGTH
-        CEILING, not floor-infeasibility, and the assertion now says exactly
-        that instead of conflating the two.
+        THE BINDING CONSTRAINT CHANGED ON 2026-09-22, AND IT IS A HARDER
+        EXCLUSION THAN BEFORE, NOT A SOFTER ONE. History, because this test
+        has now said three different things and each was measured, not
+        argued:
+          * pre-2026-09-06 and again after the A re-anchor: `is None`, i.e.
+            floor-infeasible;
+          * 2026-09-06 to 2026-09-21: FEASIBLE but over the ceiling -- the
+            optimiser returned a schedule holding the 50 nmol/L floor at
+            N = 104 needing 135.9 (V) and 291.4 (VI) min/day, so the binding
+            constraint was session LENGTH;
+          * from the 2026-09-22 parameter pass (K_const 1.17 ->
+            2.096070737357932 under random-effects pooling of the
+            live-re-inverted field routes; ITA -> M clip released; SC_max
+            IV-VI 0.36 -> 0.24; body-weight dilution now live): back to
+            FLOOR-INFEASIBLE. At N = 104 no dose profile inside the erythema
+            ceiling holds 50 nmol/L for FST V or VI at all, at any session
+            length.
+        Both halves are asserted, so a future change that restores
+        feasibility-but-over-the-ceiling fails here and has to say so rather
+        than passing quietly on the weaker of the two claims.
         """
-        from vitd_objectives import sed_from_minutes
         res = self._uniform(fst, 104)
-        assert res is not None, (
-            f"FST {fst} should still hold the floor at N=104; the binding "
-            f"constraint here is session length, not infeasibility")
-        minutes = res["max_sed"] / sed_from_minutes(1.0, 6.0)
-        assert minutes > 120.0, (
-            f"FST {fst} at N=104 needs {minutes:.1f} min/day, expected >120")
+        assert res is None, (
+            f"FST {fst} at N=104 is now expected to be FLOOR-INFEASIBLE "
+            f"inside the erythema ceiling, not merely over the 120-minute "
+            f"session ceiling; re-derive this test rather than relaxing it")
+        # ... and the contrast that makes it a pigment result: the same
+        # budget at the same parameters is comfortably feasible for FST I-IV
+        # (test_twice_weekly_still_works_for_fst_i_through_iv).
 
     @pytest.mark.parametrize("fst", [1, 2, 3, 4])
     def test_twice_weekly_still_works_for_fst_i_through_iv(self, fst):
@@ -621,26 +741,31 @@ class TestRecalibratedFeasibility:
         REWRITTEN 2026-09-06 (was
         test_fst_iii_and_iv_recovery_is_undone_by_m_baseline_and_bsa_exp).
         The "undone" version was measured with A stale at 3.114 and is
-        false once A is re-anchored. Measured attribution at N = 104
-        (minutes/day at UV index 6):
+        false once A is re-anchored.
 
-            K_const  A        FST III        FST IV
-            0.98     3.114     66.1m ok      116.1m ok    (pre-2026-09-06)
-            1.15     3.114     infeasible    infeasible   (intermediate!)
-            1.15     4.125     44.2m ok       76.4m ok    (SHIPPED)
+        REBASED 2026-09-23 onto the shipped (K_const, A) pair, which is now
+        READ FROM ModelParams() rather than written out -- the rows below
+        that named a literal 1.15 were describing a K_const that had not
+        been shipped for two days by the time they failed. Measured
+        attribution at N = 104 (minutes/session at UV index 6):
 
-        The middle row is the whole point: raising the pigment penalty
-        WITHOUT recomputing the synthesis scalar it invalidated made both
+            K_const     A        FST III        FST IV
+            1.17      4.139      39.7m ok       51.1m ok   (2026-09-21 pair)
+            2.0961    3.114      infeasible     infeasible (incomplete edit!)
+            2.0961    4.3596     51.8m ok       87.6m ok   (SHIPPED)
+            2.0961    2.353      infeasible     infeasible (pre-A4 A)
+
+        The middle row is still the whole point: raising the pigment penalty
+        WITHOUT recomputing the synthesis scalar it invalidated makes both
         skin types infeasible. That state was never a defensible model, only
-        an incomplete edit. A = 2.353 (pre-A4) is infeasible at the shipped
-        K_const, so the recovery genuinely depends on A being large.
+        an incomplete edit. The recovery genuinely depends on A being large.
         """
         for fst in (3, 4):
             for kc, a, label, expect in [
-                (0.98, 3.114, "pre-2026-09-06 pair", True),
-                (1.15, 3.114, "new K_const, STALE A -- incomplete edit", False),
-                (1.15, 4.125, "shipped pair", True),
-                (1.15, 2.353, "new K_const, pre-A4 A", False),
+                (1.17, 4.139, "the 2026-09-21 shipped pair", True),
+                (self.K_SHIPPED, 3.114, "new K_const, STALE A -- incomplete edit", False),
+                (self.K_SHIPPED, self.A_SHIPPED, "shipped pair", True),
+                (self.K_SHIPPED, 2.353, "new K_const, pre-A4 A", False),
             ]:
                 got, minutes = self._under_ceiling(fst, 104, kc, a)
                 assert got == expect, (
@@ -654,29 +779,39 @@ class TestRecalibratedFeasibility:
         M_baseline_by_FST and BSA_EXP.
 
         REBASED 2026-09-06 to the ceiling criterion (see _under_ceiling).
-        Measured minutes/day:
+        REBASED 2026-09-23 onto the shipped pair, read from ModelParams().
+        Measured minutes/session at N = 104, UV index 6:
 
-            K_const  A        FST V
-            0.98     3.114    infeasible
-            1.15     3.114    infeasible
-            0.98     4.125    101.2m  -> schedulable
-            1.15     4.125    135.9m  -> NOT schedulable (SHIPPED)
-            0.33     4.125     39.7m  -> schedulable
+            K_const     A        FST V
+            2.0961    3.114     infeasible
+            1.17      4.139      72.7m  -> schedulable (2026-09-21 pair)
+            1.0       4.3596     56.1m  -> schedulable
+            1.5       4.3596     92.6m  -> schedulable
+            2.0961    5.3       119.6m  -> schedulable, just inside
+            2.0961    5.2       124.8m  -> NOT schedulable, just outside
+            2.0961    4.3596    floor-infeasible (SHIPPED)
 
-        The joint story is intact and sharper than before: the large A alone
-        WOULD bring FST V inside the ceiling at twice-weekly (101.2 min at
-        the old K_const), and it is the pigment penalty rising to 1.15 that
-        pushes it back out to 135.9. So FST V's twice-weekly exclusion is a
-        genuine pigment result at the shipped parameters, not an artefact of
-        a low synthesis scalar -- which is exactly what could NOT be said in
-        the stale-A intermediate state, where everything was infeasible.
+        The joint story is intact and is now sharper still. Holding the
+        shipped K_const, twice-weekly FST V becomes schedulable only once A
+        reaches 5.292416573008921 -- the 5.3/5.2 pair above brackets that
+        threshold -- against a shipped A of 4.359560972608079, i.e. the
+        exclusion holds with 1.213979253017023x headroom in A. And holding
+        the shipped A, it becomes schedulable again at a K_const somewhere
+        below 1.5, which the leave-one-out envelope's low end (1.588440)
+        does not quite reach but the 2026-09-21 value (1.17) comfortably
+        did. So FST V's twice-weekly exclusion is a genuine pigment result
+        at the shipped parameters, and it is one that the pigment penalty's
+        own uncertainty can overturn -- which is why the envelope travels
+        with it.
         """
         for kc, a, expect in [
-            (0.98, 3.114, False),
-            (1.15, 3.114, False),
-            (0.98, 4.125, True),
-            (0.33, 4.125, True),
-            (1.15, 4.125, False),          # shipped
+            (self.K_SHIPPED, 3.114, False),
+            (1.17, 4.139, True),                  # the 2026-09-21 pair
+            (1.0, self.A_SHIPPED, True),
+            (1.5, self.A_SHIPPED, True),
+            (self.K_SHIPPED, 5.3, True),               # just above the threshold
+            (self.K_SHIPPED, 5.2, False),              # just below it
+            (self.K_SHIPPED, self.A_SHIPPED, False),        # shipped
         ]:
             got, minutes = self._under_ceiling(5, 104, kc, a)
             assert got == expect, (
@@ -685,12 +820,21 @@ class TestRecalibratedFeasibility:
 
     @pytest.mark.parametrize("fst,n_min,n_below", [
         (1, 104, 52), (2, 104, 52), (3, 104, 52), (4, 104, 52),
-        (5, 146, 104), (6, 183, 146),
+        (5, 146, 104), (6, 260, 183),
     ])
     def test_minimum_feasible_session_budget_by_skin_type(self, fst, n_min, n_below):
         """The headline scheduling result: how many sessions a year each skin
         type needs to hold sufficiency on sun alone, within a non-burning dose
         and a 120-minute session. Monotone in pigmentation, as it must be.
+
+        REBASED 2026-09-23: FST VI's minimum moves 183 -> 260 sessions a
+        year (and 183 is now over the ceiling at 148.4 min, not under it),
+        while FST I-V are unchanged at 104/104/104/104/146. This is the one
+        headline budget the 2026-09-22 parameter pass actually moved, and it
+        moves in the burdensome direction for the darkest skin type: about
+        five days a week rather than every other day. The full minutes
+        table, and the leave-one-out envelope it must be quoted with, are in
+        this class's own docstring.
 
         REBASED TWICE ON 2026-09-06, AND IT ENDED BACK WHERE IT STARTED.
         The first rebase recorded 104/146/146/146/183/365 -- every skin type

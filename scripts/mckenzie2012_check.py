@@ -248,6 +248,7 @@ from __future__ import annotations
 
 import os
 import sys
+import textwrap
 
 import numpy as np
 
@@ -607,11 +608,47 @@ def main():
             writer.writerow(["a_log_form", "-", unit, "-", f"{form}_r2", res["r2"]])
     print(f"\nWrote {out_path}")
 
+    # -------------------------------------------------------------------
+    # Live values for the docstring-update text below (C7, 2026-09-21):
+    # computed from this run's own b_rows / c_rows, not typed in, so the
+    # printed block stays accurate across future recalibrations.
+    # -------------------------------------------------------------------
+    current_A = ModelParams().A
+    implied_A_ok = [r["implied_A"] for r in b_rows if r["status"] == "ok"]
+    if implied_A_ok:
+        implied_A_range_str = f"{min(implied_A_ok):.3f}-{max(implied_A_ok):.3f}"
+    else:
+        implied_A_range_str = "no booth/FST combination solved (all out of bracket [0.05, 200])"
+
+    ratio_lines = []
+    for booth in ("A", "B"):
+        booth_rows = [r for r in c_rows if r["booth"] == booth]
+        obs_ratio = booth_rows[0]["obs_ratio_2nd_to_1st"]
+        model_ratios = [r["model_ratio_2nd_to_1st"] for r in booth_rows]
+        ratio_lines.append(
+            f"booth {booth} observed {obs_ratio:.3f} vs. model "
+            f"{min(model_ratios):.3f}-{max(model_ratios):.3f} (FST 2/4/5/6)"
+        )
+    ratio_str = "; ".join(ratio_lines)
+    over_under = [
+        "OVER-predicts" if r["model_ratio_2nd_to_1st"] > r["obs_ratio_2nd_to_1st"]
+        else "UNDER-predicts"
+        for r in c_rows
+    ]
+    attenuation_verdict = (
+        "the model OVER-predicts persistence (attenuates less than observed)"
+        if all(v == "OVER-predicts" for v in over_under) else
+        "the model UNDER-predicts persistence (attenuates more than observed)"
+        if all(v == "UNDER-predicts" for v in over_under) else
+        "the model's direction relative to observed is MIXED across booth/FST"
+        " (see per-row verdicts printed in section (c) above)"
+    )
+
     print("\n" + "=" * 78)
     print("PROPOSED vitd_model.py DOCSTRING UPDATE (text only -- not applied;")
     print("vitd_model.py is off-limits to this script per task instructions)")
     print("=" * 78)
-    print("""
+    print(f"""
   See this run's stdout / tables/mckenzie2012_check.csv for numbers. Suggested
   replacement for the Gap-3 McKenzie note (2026-08-20 -> superseding date):
 
@@ -631,12 +668,15 @@ def main():
   Appendix-A2 fit's consequences in prose only, never prints m or F(X)'s
   coefficients numerically). Simulating each booth's reconstructed 24-session
   protocol through vitd_model.simulate() at representative FST 2/4/5/6 and
-  solving for the A that reproduces observed 12-week delta-D gives
-  [INSERT the printed implied_A range from this run] against the current
-  A=3.114 -- reported, not adopted (see calibration_approval.yaml gate).
-  Second-6-week:first-6-week attenuation ratio is [INSERT obs vs model ratio
-  from this run] -- a genuine out-of-sample check against the model's
-  biphasic feedback term, whose only other anchor is Karppinen.
+  solving for the A that reproduces observed 12-week delta-D gives implied A
+  in {implied_A_range_str} (this run) against the current model A={current_A}
+  -- reported, not adopted (see calibration_approval.yaml gate).
+{textwrap.fill(
+      f"Second-6-week:first-6-week attenuation ratio, this run: {ratio_str}. "
+      f"Net verdict: {attenuation_verdict} -- a genuine out-of-sample check "
+      "against the model's biphasic feedback term, whose only other anchor "
+      "is Karppinen.",
+      width=78, initial_indent="  ", subsequent_indent="  ")}
 """)
 
 

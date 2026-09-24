@@ -176,10 +176,24 @@ class TestFeedbackFormA2:
         show: at the shipped A = 4.125 it moves to biphasic 5 d, the other
         three 4 d. Larger A drives D higher, feedback bites sooner, and the
         optimal spacing lengthens. Both points are pinned below.
+
+        RE-PINNED 2026-09-23 for the 2026-09-22 parameter pass. Both
+        operating points moved DOWN by one mode-day, and a third is added at
+        the shipped A so the pins cannot all be off the shipped point:
+            A = 2.353: biphasic 3 -> 2, the rest unchanged at 2
+            A = 4.125: biphasic 5 -> 4, saturating 4 -> 3, linear/power 4
+            A = ModelParams().A (4.359560972608079): biphasic 5, rest 4
+        The optimum is driven by how soon feedback bites, so a smaller
+        per-session yield at fixed A (the larger K_const) shortens it, and
+        the larger shipped A lengthens it again. The PROPERTY under test --
+        no mode is an outlier, spread <= 1 day -- holds at all three points,
+        which is the whole point of the test.
         """
         expected = {
-            2.353: {"biphasic": 3, "saturating": 2, "linear": 2, "power": 2},
-            4.125: {"biphasic": 5, "saturating": 4, "linear": 4, "power": 4},
+            2.353: {"biphasic": 2, "saturating": 2, "linear": 2, "power": 2},
+            4.125: {"biphasic": 4, "saturating": 3, "linear": 4, "power": 4},
+            ModelParams().A: {"biphasic": 5, "saturating": 4, "linear": 4,
+                              "power": 4},
         }
         for A_fixed, per_mode in expected.items():
             optima = {}
@@ -217,7 +231,16 @@ class TestYoung2021AAnchor:
         # A_reanchor_2026_09_06. At the old 3.114 the anchor no longer held:
         # model_slope_at_current_A was 2.6272 against the 3.48 target, which
         # test_A_reproduces_the_anchor_arithmetic below would now catch.
-        assert ModelParams().A == pytest.approx(4.125, abs=1e-9)
+        # RE-ANCHORED AGAIN 2026-09-22/23: 4.139 -> 4.359560972608079. Same
+        # 3.48 target slope; the kernel moved because K_const and
+        # M_baseline(II) both moved. A and K_const are coupled (each enters
+        # the other's derivation), so they are shipped at the JOINT fixed
+        # point, at full precision -- the 2026-09-22 pair (2.10, 4.362) was
+        # A anchored against a ROUNDED K_const and so was not the fixed
+        # point. Anchor arithmetic is re-derived, not pinned, by
+        # test_A_reproduces_the_anchor_arithmetic below; the tolerance there
+        # is now met exactly rather than within 3.7e-4.
+        assert ModelParams().A == pytest.approx(4.359560972608079, abs=1e-9)
 
     def test_A_reproduces_the_anchor_arithmetic(self):
         from vitd_validation import young2021_A_anchor

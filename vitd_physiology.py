@@ -54,19 +54,124 @@ import numpy as np
 # overweight 1.5x the dose of normal-weight subjects for the same 25(OH)D.
 # Weight ratio 100/70 = 1.43x dilution here; BMI 35 vs 22 at fixed height
 # implies ~1.6x. Same order, slightly conservative.
+#
+# [GENERALIZED 2026-09-22, exponent added -- see calibration_approval.yaml
+# BODY_WEIGHT_DILUTION_EXPONENT and vitd_model.py's module docstring, entry
+# "BODY_WEIGHT_DILUTION_EXPONENT", for the full derivation and citation.]
+#
+# [DESIGN-TRAP FIX 2026-09-22, decision A5 wire-in] This function's `exponent`
+# default was 1.0 while vitd_model.py's one call site passed the calibrated
+# value explicitly -- so the same function returned two different answers
+# depending on who called it, and the literature value was the one a new
+# caller got by accident. The calibrated exponent is now THIS function's
+# default and the constant lives here, next to the function that consumes it,
+# with vitd_model.py re-exporting the name so both import paths keep working.
+# Callers wanting the literal Drincic/Ekwaru hyperbolic form must now ask for
+# it explicitly with `exponent=1.0`, which is the right way round: the
+# non-default is the one that needs a reason.
 BODY_WEIGHT_REF_KG: float = 70.0
+
+#: Exponent on (BODY_WEIGHT_REF_KG / weight_kg). CALIBRATED 2026-09-22
+#: (user-approved, decision A5) from NHANES; was IMPLICIT 1.0. The full
+#: derivation, the provenance and the unresolved tension with Drincic 2012 /
+#: Ekwaru 2014 are in vitd_model.py's module docstring, entry
+#: BODY_WEIGHT_DILUTION_EXPONENT -- the canonical parameter source per
+#: CLAUDE.md. Not restated here.
+BODY_WEIGHT_DILUTION_EXPONENT: float = 0.24226563069970553
+
+# ---------------------------------------------------------------------------
+# Population default body weight by Fitzpatrick skin type
+# ---------------------------------------------------------------------------
+# [CALIBRATION 2026-09-22, decision A5 wire-in] Before this change the
+# dilution term was INERT: ModelParams.body_weight_kg defaulted to None,
+# nothing in run_all.py or scripts/ set it, and the factor was therefore
+# exactly 1.0 everywhere. The term is now LIVE, with a per-FST population
+# default, and a caller-supplied weight overrides it.
+#
+# SOURCE. NHANES 2007-2023 (the cycles carrying dietary_source_flag),
+# survey-weighted (WTMEC2YR) mean measured body weight, adults 18+, restricted
+# to the UNSUPPLEMENTED analytic sample ('UV-only' + 'food-only') -- the same
+# primary sample BODY_WEIGHT_DILUTION_EXPONENT itself was fitted on, so the
+# exponent and the weights it is applied to describe the same population.
+# Regenerate with:
+#     PYTHONIOENCODING=utf-8 python3 scripts/nhanes_weight_dilution_check.py
+# which writes tables/nhanes_fst_body_weight.csv and prints this table.
+#
+# FST ASSIGNMENT is the repository's own NHANES FST proxy, not a new mapping:
+# the DEQ self-reported sun-reaction item (DED031) where present, with a
+# race/ethnicity fallback, exactly as scripts/generate_nhanes_priors_table.py
+# assigns it for tables/nhanes_baseline_priors.csv. Using the same proxy for
+# weight as for baseline 25(OH)D keeps the two population defaults describing
+# the same strata; a bespoke race-only map would not.
+#
+# PRECISION. Values are carried at full precision because code reads them
+# back, but the MEASUREMENT is not that sharp: the design-based (Taylor-
+# linearized, PSU within SDMVSTRA) standard errors are, in kg,
+#   FST I 2.347999 (n=264), II 0.373251 (n=8237), III 0.521662 (n=3058),
+#   IV 0.654339 (n=8273), V 0.456100 (n=6844), VI 0.599754 (n=2065).
+# So roughly four significant figures are meaningful; do not read more.
+#
+# CAVEATS, flagged rather than absorbed:
+#  (1) US population means applied to a model otherwise calibrated on UK and
+#      Northern-European trial cohorts. A calibration anchor whose own paper
+#      publishes a cohort weight must use THAT weight, not this table -- see
+#      the BODY_WEIGHT_BY_FST entry in vitd_model.py's docstring for which
+#      anchors do what.
+#  (2) The FST proxy is self-reported sun reaction plus a race fallback, and
+#      Linde 2020 measured that self-reported phototype is badly biased in a
+#      dark-skinned cohort (62% of objectively FST V/VI farmworkers
+#      self-reported I/III/IV). The FST V and VI rows inherit that bias.
+#  (3) FST I rests on n=264 with an SE of 2.35 kg -- the widest cell by far.
+BODY_WEIGHT_BY_FST: Dict[int, float] = {
+    1: 86.32540945298986,
+    2: 84.02037297816919,
+    3: 83.91282903377481,
+    4: 80.6792110654613,
+    5: 83.337561944132,
+    6: 89.09334002648683,
+}
 
 
 def body_weight_dilution_factor(weight_kg: float | None,
-                                ref_kg: float = BODY_WEIGHT_REF_KG) -> float:
+                                ref_kg: float = BODY_WEIGHT_REF_KG,
+                                exponent: float = BODY_WEIGHT_DILUTION_EXPONENT
+                                ) -> float:
     """Multiplicative factor on 25(OH)D gain per unit of vitamin D input.
 
-    Hyperbolic in total body weight (Drincic 2012). Returns 1.0 when weight
-    is unknown or equals the reference, so existing scenarios are unchanged.
+    factor = (ref_kg / weight_kg) ** exponent. Returns 1.0 when weight is
+    unknown, non-positive, or equals the reference.
+
+    `exponent` defaults to the NHANES-calibrated
+    BODY_WEIGHT_DILUTION_EXPONENT (decision A5, 2026-09-22). Pass
+    `exponent=1.0` to get the literal hyperbolic-in-weight form Drincic 2012
+    and the Ekwaru 2014 oral-dosing cross-check motivate; that form is still
+    what the module comment above describes, and the tension between the two
+    is recorded in vitd_model.py's docstring, not resolved.
     """
     if weight_kg is None or weight_kg <= 0:
         return 1.0
-    return ref_kg / float(weight_kg)
+    return (ref_kg / float(weight_kg)) ** exponent
+
+
+def resolve_body_weight_kg(fst: int | None,
+                           weight_kg: float | None = None) -> float | None:
+    """Resolve the body weight a simulation should use.
+
+    `weight_kg` wins when the caller supplies one. Otherwise the FST
+    population default from BODY_WEIGHT_BY_FST is used. Returns None only
+    when neither is available (unknown FST and no weight), which
+    `body_weight_dilution_factor` turns into a neutral factor of 1.0.
+
+    A caller that wants the 70 kg reference body -- for example a
+    calibration anchored to a trial cohort whose paper publishes no weight,
+    where a US population mean would be an invention -- must say so by
+    passing `weight_kg=BODY_WEIGHT_REF_KG`, not by passing None.
+    """
+    if weight_kg is not None and weight_kg > 0:
+        return float(weight_kg)
+    if fst is None:
+        return None
+    return BODY_WEIGHT_BY_FST.get(int(fst))
 
 
 # ---------------------------------------------------------------------------

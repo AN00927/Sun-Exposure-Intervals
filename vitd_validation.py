@@ -706,7 +706,8 @@ def validate_bogh_2012(verbose=True):
 def validate_farrar_2013(verbose=True):
     """
     Farrar 2013: FST V South Asian adults in Manchester winter, 6 weeks of
-    3x/week UVB at 0.65-3.9 SED to 35% BSA. Subjects receiving >=1.95 SED
+    3x/week simulated summer sunlight (Arimed B + Cleo Natural cabinet,
+    NOT NB-UVB) at 0.65-3.9 SED to 35% BSA. Subjects receiving >=1.95 SED
     reached mean 15.7 +/- 5 ng/mL with a mean rise of 8.7 +/- 5.7 ng/mL
     (all completers were <20 ng/mL at baseline; only 6/51 reached >=20 ng/mL).
 
@@ -714,9 +715,40 @@ def validate_farrar_2013(verbose=True):
     Unit conversion: 15.7 ng/mL * 2.496 = ~39.2 nmol/L final;
                      8.7 ng/mL * 2.496 = ~21.7 nmol/L rise.
     We simulate the >=1.95 SED group with 1.95 SED/session.
-    D0=30 nmol/L is a proxy within Farrar's reported baseline constraint
-    (all completers <20 ng/mL, i.e. <~50 nmol/L). Exact group baseline is not
-    extractable from the local summary alone, so this check asserts D0 < 50.
+
+    [W-Y 2026-09-22 BUG FIX] D0 was previously a crude D0=30 nmol/L "proxy"
+    documented as unresolved ("exact group baseline is not extractable from
+    the local summary alone"). It IS extractable: Farrar 2013's own abstract
+    prints both the pooled >=1.95-SED-subgroup final (15.7 ng/mL) and rise
+    (8.7 ng/mL) for the same n=33 subjects, so the implied baseline is
+    15.7 - 8.7 = 7.0 ng/mL exactly, i.e. 7.0 * 2.496 = 17.472 nmol/L (full
+    precision). Content-verified against Research_Papers/"Efficacy of a dose
+    range of simulated sunlight exposures ... South Asian adults ...pdf"
+    (DOI 10.3945/ajcn.112.052639). D0=17.472 replaces the D0=30 proxy below;
+    the wide acceptance windows are UNCHANGED (they bound the paper's own
+    observed D_final/delta, not D0, so nothing about fixing D0 requires
+    retuning them).
+
+    [W-Y 2026-09-22 DEDUPLICATION, DATA FIX KEPT] This function duplicated
+    vitd_scenario.py's farrar2013_fst5_uk scenario -- both encoded the same
+    real-world fact (this same >=1.95-SED-subgroup finding), inconsistently,
+    until the D0 fix above and the parallel fix to that scenario record
+    (decision E5, user instruction "deduplicate", 2026-09-22)
+    made them compute the identical simulation. That data fix (D0=17.472,
+    dose 1.95 SED, corrected citation) is CORRECT and UNCHANGED here.
+
+    [REVERTED 2026-09-22] W-Y additionally demoted this function's
+    CHECK_REGISTRY entry to warning_only=True, reasoning that the same fact
+    is now covered by the required "Reference Scenarios Benchmark" check
+    via farrar2013_fst5_uk, so keeping both required double-counts one
+    real-world finding. Ahaan refused to sign off on that demotion: this is
+    "the only dark-skin quantitative check" per calibration_approval.yaml,
+    and downgrading required dark-skin coverage is his call. The CheckSpec
+    in CHECK_REGISTRY below is back to warning_only=False (required). The
+    double-counting W-Y flagged is real and not fixed by this revert --
+    two required checks now run the identical simulation through two
+    differently-shaped acceptance bands -- but that is the accepted
+    tradeoff for keeping this check required, not an oversight.
     Acceptance windows (broadband model approximation of Manchester winter
     31% BSA protocol; exact BSA/dose conversion not resolved locally):
       D_final in [25, 55] nmol/L   (observed ~39.2, wide band for broadband approx)
@@ -725,26 +757,24 @@ def validate_farrar_2013(verbose=True):
     """
     p = ModelParams()
     fst = 5
-    D0_PROXY = 30.0
+    D0 = 17.472
     # Simulate the >=1.95 SED dose group: use 1.95 SED/session
     sched = []
     week_days = [0, 2, 4]
     for w in range(6):
         for d in week_days:
             sched.append((w * 7 + d, 1.95))
-    result = simulate(fst=fst, schedule=sched, duration_days=42, params=p, D0=D0_PROXY)
+    result = simulate(fst=fst, schedule=sched, duration_days=42, params=p, D0=D0)
     D_final = result["D"][-1]
-    delta = D_final - D0_PROXY
+    delta = D_final - D0
     # [C2] Quantitative targets from Farrar 2013 (unit-converted)
     OBSERVED_FINAL_NM = 39.2   # nmol/L (15.7 ng/mL * 2.496)
     OBSERVED_DELTA_NM = 21.7   # nmol/L (8.7 ng/mL * 2.496)
     D_final_ok = 25.0 <= D_final <= 55.0
     delta_ok   = 10.0 <= delta  <= 35.0
-    baseline_ok = D0_PROXY < 50.0
-    passed = baseline_ok and D_final_ok and delta_ok
+    passed = D_final_ok and delta_ok
     if verbose:
-        print(f"[Lit 3] Farrar 2013 - FST V, 1.95 SED 3x/week x 6 weeks, baseline {D0_PROXY:.1f}  [C2]")
-        print(f"  Baseline proxy <50 nmol/L constraint: {'YES' if baseline_ok else 'NO'}")
+        print(f"[Lit 3] Farrar 2013 - FST V, 1.95 SED 3x/week x 6 weeks, baseline {D0:.3f}  [C2]")
         print(f"  D_final = {D_final:.1f} nmol/L  (observed ~{OBSERVED_FINAL_NM} nmol/L; target 25-55)")
         print(f"  delta   = {delta:.1f} nmol/L  (observed ~{OBSERVED_DELTA_NM} nmol/L; target 10-35)")
         print(f"  D_final in [25,55]: {'YES' if D_final_ok else 'NO'}   delta in [10,35]: {'YES' if delta_ok else 'NO'}")
@@ -1399,14 +1429,21 @@ CHECK_REGISTRY = [
         "model's own live parameters."),
     CheckSpec(
         "photoadaptation reduction", sanity_photoadaptation_reduction, False,
-        TIER_INTERNAL,
-        "Docstring proves the measured quantity is an algebraic identity "
-        "independent of K_const/A/D_max/feedback form. K_ATTEN is active and "
-        "calibrated (reinstated 2026-08-21, re-derived 2026-08-25 to track "
-        "M_TAN_HEADROOM), not pinned at 0, so this check measures the live "
-        "value rather than being "
-        "pinned to pass by construction. Docstring: \"NOT evidence ... a "
-        "drift guard sharing its evidence with the calibration.\""),
+        TIER_CIRCULAR,
+        "RETAGGED 2026-09-22 (decision A6; "
+        "retroactive approval calibration_approval.yaml entry A7). K_ATTEN "
+        "(the parameter this check's 0-10% band guards) and the band's own "
+        "acceptance cutoff are both read off the SAME Matsuoka 1990 (n=7, "
+        "within-subject) deconvolution, under different feedback-form "
+        "assumptions -- near-total circularity on the discriminating "
+        "evidence, the same structural relationship as the \"SC de Boer "
+        "2025\" check below, which is why this entry now matches its tier. "
+        "Not vacuous, so not TIER_CIRCULAR's strongest form either: a "
+        "different, equally defensible feedback-form reading of the "
+        "identical Matsuoka data measures 18.088974442653605% and FAILS "
+        "the 10% ceiling (verified by direct perturbation, W-Z sec 0). "
+        "Docstring: \"NOT evidence ... a drift guard sharing its evidence "
+        "with the calibration.\""),
     CheckSpec(
         "de Boer 2025 photoadaptation [C6 replaced]",
         validate_photoadaptation_deBoer2025, True,
@@ -1436,8 +1473,23 @@ CHECK_REGISTRY = [
         "target, but vitd_model.py's A entry records this check's pass/"
         "fail as a \"MEASURED CONSEQUENCE\" of the 2026-08-18 A "
         "recalibration (FAIL -> PASS) -- partly informed, not fully "
-        "independent. The strongest tier this suite has; read with that "
-        "caveat."),
+        "independent. W-Y (2026-09-22, decision E5, \"deduplicate\") "
+        "demoted this to warning-only on the grounds that its D0 proxy "
+        "fix (17.472, extracted from the source rather than guessed at "
+        "30) makes its simulated protocol identical to vitd_scenario.py's "
+        "farrar2013_fst5_uk, so keeping both REQUIRED double-counts one "
+        "real-world finding. REVERTED to required 2026-09-22 (this "
+        "workstream): Ahaan refused sign-off on the demotion -- "
+        "calibration_approval.yaml describes this check in multiple "
+        "places as \"the only dark-skin quantitative check in the "
+        "suite,\" and downgrading the suite's only dark-skin-specific "
+        "required check is a decision for him, not an agent, regardless "
+        "of the double-counting argument's technical merit. The D0 "
+        "dedup FIX ITSELF IS KEPT (see validate_farrar_2013 docstring) -- "
+        "only the warning_only flip is reverted. Two required checks now "
+        "exercise the identical Farrar simulation via different "
+        "acceptance-band shapes; that duplication is a known, flagged "
+        "fact, not an oversight."),
     CheckSpec(
         "Bogh baseline+BSA [C4]", validate_bogh_baseline_bsa, False,
         TIER_DIRECTIONAL,

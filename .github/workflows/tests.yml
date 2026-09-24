@@ -7,7 +7,7 @@ name: Core test suite
 # pipeline (dominated by the section 13b/13c differential-evolution grid
 # searches) takes on the order of 20+ minutes and is meant to be run
 # deliberately, not on every push. See CLAUDE.md's "Where facts live" /
-# pipeline section and docs/ORCHESTRATOR_PLAN.md Sec.0 rule 7.
+# pipeline section (11 min 29 s; do not run on every push).
 "on":
   push:
   pull_request:

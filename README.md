@@ -3,12 +3,36 @@
 > **Health-safety notice.** This model answers two questions with very
 > different reliability:
 >
-> - **"How often should I go outside?"** (the interval) -- reliable.
->   Interval rankings depend on the *shape* of the dose-response curve, not
->   its scale, and survive roughly a 7x error in the absolute dose.
-> - **"How many minutes?"** -- not reliable yet. A single absolute-minutes
->   figure carries an **unexplained ~7.57x band**, driven by season and
->   exposed skin area, two variables the model does not currently ask for.
+> - **"How often should I go outside?"** (the interval) -- reliable at
+>   moderate-to-typical daily doses. Interval rankings depend on the *shape*
+>   of the dose-response curve (absolute SED, not fractional MED), not its
+>   scale, and survive roughly a 7x error in the absolute dose -- **at
+>   budgets of roughly 0.5 SED/day or more.** At budgets at or below
+>   0.25 SED/day the ranking is *not* protected by the same evidence: the
+>   published per-session dose-response curvature straddles linearity rather
+>   than confirming it, and the flip point falls at or below the cleanest
+>   single measured exponent (Shih 2018). See `tests/test_concavity_assumption.py`
+>   and `run_all.py`'s "## 17. Interpretation" section for the current margins.
+> - **"How many minutes?"** -- not reliable yet. **Corrected 2026-09-23
+>   (decision B5):** the previous "**unexplained ~7.57x band**, driven by
+>   season and exposed skin area" could not be reproduced from any file
+>   currently on disk (the document it cited no longer exists in this
+>   repository's history) and predates `vitd_scenario.py`, the current
+>   canonical source for these constants. `vitd_scenario.SCENARIO_REGISTRY`
+>   itself fixes ambient UV index and geometry factor to a single value in
+>   *every* entry -- it carries no season-driven or geometry-driven range at
+>   all -- and its only genuine in-file range is exposed body-surface area
+>   (10%-85%), which alone induces roughly a **2.34x** minutes ratio at FST
+>   III (computed 2026-09-23 at the settled `K_const`/`A` fixed point,
+>   `calibration_approval.yaml`'s `K_const_A_full_precision_2026_09_23`;
+>   regenerated on every `run_all.py` run in `RESULTS.md`'s "Scope and
+>   reference conditions" section -- read the band from there, not from this
+>   line, once the pipeline has been rerun end to end). Geometry has its own, separately-sourced
+>   literature range (see `vitd_objectives.py`'s geometry-factor comments and
+>   `calibration_approval.yaml`) that is larger than the BSA term above but
+>   is held fixed by `vitd_scenario.py`, contributing zero to the band above.
+>   **The number above is a floor, not a ceiling** -- it uses only what
+>   `vitd_scenario.py` itself varies.
 >
 > **Every validation check against real, unsimulated sunlight either fails
 > outright or passes on a band wide enough that it could hardly fail.** Every
@@ -205,16 +229,20 @@ Validation uses:
 - **Literature benchmarks:** Bogh 2012 (NB-UVB), Farrar 2013 (FST V),
   Bogh 2010 (baseline feedback), Karppinen 2017 (calibration target),
   Kift 2013 (UK South Asian naturalistic)
-- **NHANES population data:** Seasonal direction, summer steady-state,
-  dietary source stratification
 - **Held-out benchmarks:** Kallioglu 2024 (skin-type gradient, warning-only),
   Gallagher 2012 (oral plateau, warning-only)
 
-**Known deliberate test failure:** NHANES Part B (summer steady-state) reports
-4/6, down from a prior 6/6. This is an accepted cost: the solar `E_source`
-default was raised from 1.00 to Webb et al. 2021's 1.89, and the assumed daily
-dose was deliberately not retuned. See `calibration_approval.yaml`.
-**Do not "fix" this without reading that record first.**
+**NHANES is not in `vitd_validation.CHECK_REGISTRY`.** The population-level
+NHANES checks that used to run there (including a "Part B" summer
+steady-state check) were retired; there is no NHANES entry in the 14-check
+registry above at all. Population-level NHANES plausibility is instead
+covered by the `RECURRING`/`PIPELINE` macro diagnostic suite in `scripts/`
+(`nhanes_macro_validation.py`, `nhanes_dietary_partitioning.py`,
+`nhanes_weight_dilution_check.py` -- see `CLAUDE.md` "Agent guidelines" and
+`docs/SCRIPTS.md`), which is separate from the required/warning-only tally
+above and is not itself pass/fail against a fixed band. Do not quote a
+specific pass count for the old "Part B" check; it no longer exists to be
+counted.
 
 ### Quick Start
 

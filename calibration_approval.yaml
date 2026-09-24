@@ -304,6 +304,13 @@ parameter_approvals:
       derives K_const from its own literal rather than from ModelParams(), so
       its printed table is now stale and should not be quoted until updated
       or replaced by a fresh run against the live parameters.
+      [CORRECTED 2026-09-23, decision C5(i): the sentence above is false for
+      the AFTER side. scripts/feasibility_map_kconst.py reads the live
+      ModelParams() for the current parameter set (lines ~109, ~124, ~206-210,
+      ~249); only the BEFORE baseline (K_const 0.33, A 2.353) is a literal,
+      by design. Its output is stale only in the ordinary sense that it must
+      be re-run after a calibration change, not because it hardcodes the
+      current value.]
 
   SC_BASELINE_THICKNESS_UM:
     approved_by: User (repository owner)
@@ -410,14 +417,30 @@ parameter_approvals:
       direct proliferation marker (no Ki-67 or labelling index) for it, so it
       is their own post-hoc narrative. The flat epidermal thickness
       (108.6 -> 109.4 um, p = 0.718) is de Boer's measurement and stands.]
-      The edema reading therefore rests on Felton 2020 (acute), which this repo
-      does NOT hold -- see the W-L data request. If it is right FOR THE CHRONIC
-      SUB-ERYTHEMAL REGIME these parameters are actually calibrated against,
-      the optical value is an UPPER BOUND on a quantity that could be near zero
-      or negative. The question remains OPEN and the sign is BOUNDED, not
-      resolved. The
-      existing [PREMISE WARNING] in vitd_model.py must be strengthened, not
-      removed, by this change.
+      [CORRECTED 2026-09-23: Felton et al. 2020 (Photochem Photobiol Sci
+      19:810-818, DOI 10.1039/c9pp00452a; obtained and read in full
+      2026-09-21) confirms this directly: n=10, FST II. Its edema/spongiosis
+      finding applies to the VIABLE EPIDERMIS under an ACUTE 2xMED UVB
+      challenge -- stratum corneum thickness showed NO measurable change at
+      all under that acute challenge (p > 0.05). The CHRONIC SC thickening
+      Felton actually measured (+41.6%, 29.3 -> 41.5 um over a 6-week, 1.3
+      SED x 18-session course -- the regime SC_max/alpha_SC/K_SC are
+      calibrated against) is attributed in their Discussion to keratinocyte
+      turnover/proliferation (PCNA), not edema -- though cited to a mouse
+      study, not a marker measured in their own human tissue. This is
+      corroborated by Lavker et al. 1995's solar-simulated-radiation arm
+      (FST I-III, n=23: SC +22.2%, viable epidermis -2.1% n.s., within one
+      point of de Boer's own +23.2%) and by de Boer's own Discussion above.
+      THE WARNING IS THEREFORE SOFTENED, NOT RETRACTED: the residual
+      uncertainty is now specifically "no source co-measures a
+      proliferation marker with optical transmission on the same chronic
+      sub-erythemal exposure" -- not "de Boer's and Felton's own findings
+      actively disagree with the model's assumed mechanism." Still FST
+      II/I-III only; zero FST IV-VI evidence either way (dark-skin-priority
+      flag unchanged). See docs/SOURCES.md for the acquisition record.]
+      Prior to that correction, the question was OPEN and the sign was
+      BOUNDED, not resolved; the existing [PREMISE WARNING] in vitd_model.py
+      reflects the softened, not the retracted, state.
       (2) BRULS CONTRADICTS de BOER ON EPIDERMAL THICKNESS: Bruls Table 1 has
       the epidermis thickening +53.6%, "practically the same proportion" as the
       SC. Dose regime is the likely reconciliation (Bruls escalating and
@@ -603,6 +626,13 @@ parameter_approvals:
       synthesis per SED and will make some cells feasible again, so the
       feasibility consequence below is PROVISIONAL until the combined
       K_const + A map is re-run.
+    not_covered_correction_2026_09_23: >-
+      CORRECTION to item (2) above, decision C5(ii), original left in place.
+      "No field dosimetry exists in FST VI or in African-ancestry
+      populations" should read "in this repository". Such studies exist in
+      the literature and are now in paper/references.bib as read-but-not-cited;
+      see the cannot_be_resolved_correction_2026_09_23 field of the top-level
+      a1_diagnosis_result_2026_08_17 entry for the sources.
     consequence: >-
       SEVEN (skin type, session budget) cells moved from feasible to
       INFEASIBLE under the standing constraints; NONE moved the other way.
@@ -679,6 +709,190 @@ parameter_approvals:
       The LIGHT-SKIN EXTRAPOLATION flag on A is unchanged and now more
       load-bearing: A is larger, so more of the model's absolute level rests
       on an FST I-II anchor.
+
+  K_const_recalibration_2026_09_21:
+    superseded_2026_09_22: >-
+      SUPERSEDED 2026-09-22 by K_const_random_effects_2026_09_22. The value 1.17 it approved rested on two things now known to be wrong: the two FIELD routes were a stale 2026-08-17 cache carried on the false claim that they are independent of M_baseline_by_FST (they are not -- the inversion calls simulate()), and the estimator was an equal-weight mean over four mutually inconsistent routes. NOT DELETED: every figure published under 1.17 traces to this entry.
+    approved_by: User (repository owner)
+    approval_date: 2026-09-21
+    change: >-
+      1.15 -> 1.17. Constitutive (baseline) melanin inhibition coefficient.
+      Updated per scripts/kconst_recalibration.py fit against the Narea 2026
+      melanin table (which yields 1.168, rounded to 1.17). Resolves the C6/A4
+      calibration discrepancy between the docstring/script and ModelParams default.
+    source: >-
+      Four within-study estimates: Felton et al. 2016, Young et al. 2020 both arms,
+      Kift et al. 2013, Darling et al. 2013.
+    derivation: >-
+      scripts/kconst_recalibration.py -- equal-weight least squares in LOG RATIO space
+      across the four within-study routes against Narea 2026 M_baseline_by_FST.
+    status: >-
+      User explicitly approved K_const = 1.17 on 2026-09-21.
+    consequence: >-
+      Coupled to A: re-anchoring of A to 4.139 is required to preserve the Young 2021
+      target slope of 3.48 nmol/L per SED.
+
+  A_reanchor_2026_09_21:
+    superseded_2026_09_22: >-
+      SUPERSEDED 2026-09-22 by A_reanchor_2026_09_22. Its arithmetic is still correct AT ITS OWN K_const (1.17) and M_baseline(II) (0.1715); both of those moved on 2026-09-22, so the kernel and therefore A moved with them. NOT DELETED.
+    approved_by: User (repository owner)
+    approval_date: 2026-09-21
+    change: >-
+      4.125 -> 4.139. Whole-model synthesis scale. NOT a new calibration: recomputed
+      because K_const moved from 1.15 to 1.17 in the same approval.
+      bsa_factor(0.85) = 1.337949 (BSA_EXP = 0.3281);
+      exp(-K_const * M_II) moved from exp(-1.15 * 0.1715) = 0.821006 to exp(-1.17 * 0.1715) = 0.818195;
+      ln(1+E) = ln(1+1.89) and g_biphasic(34.6) unchanged.
+      Kernel moved from 0.843668 to 0.840779, requiring
+      A = 3.48 / 0.840779 = 4.139018 -> 4.139.
+    rationale: >-
+      Maintains the exact Young 2021 Fig. 4B target slope of 3.48 nmol/L per SED in
+      vitd_validation.young2021_A_anchor. User explicitly approved on 2026-09-21.
+
+  K_const_weighting_2026_09_22:
+    superseded_2026_09_22: >-
+      SUPERSEDED THE SAME DAY by K_const_random_effects_2026_09_22, which replaces fixed-effect inverse-variance with random effects as the default. The reason is in this entry's own evidence: the routes are not noisy reads of one number (I^2 = 83.255346%), so a fixed-effect pool reports a precision the evidence does not have. The four schemes this entry added remain selectable and computable. NOT DELETED.
+    approved_by: User (repository owner)
+    approval_date: 2026-09-21
+    implemented_date: 2026-09-22
+    memo: (workstream W-W, retired 2026-09-23 -- see this entry's own fields, which restate the finding in full)
+    supersedes_proposal: >-
+      K_const_weighting_2026_09_20 (workstream W-J section 6), which
+      was PROPOSED and NOT APPROVED. This entry is that proposal's approved,
+      implemented successor. W-J declined to compute the estimate because it
+      believed routes 2-4 had no published variance; W-W establishes that
+      Young 2020's variance IS measurable from individual-level data already
+      in this repository, so the estimate is now computable.
+    scope: METHODOLOGY ONLY -- NO PARAMETER VALUE CHANGED
+    parameter: K_const (estimator weighting; the VALUE is untouched)
+    change: >-
+      scripts/kconst_recalibration.py's DEFAULT weighting scheme moved from
+      one-vote-per-study to 'inverse_variance'. Four schemes are now named,
+      selectable (--scheme) and computed in a single run:
+      one_vote_per_study (the incumbent, RETAINED so every previously
+      published figure stays reproducible); inverse_variance (new default);
+      inverse_variance_complete_case; inverse_variance_within_study.
+      New sections S3c (variance-availability audit) and S3d (all schemes
+      side by side) print the evidence the weighting rests on.
+    approval_basis: >-
+      User's answer to decision A4 (K_const envelope, 2026-09-21):
+      "both can be done. carry the envelope, but do that after and ONLY IF
+      still needed after doing the inverse variance waiting [weighting]
+      movement throughout the repo." The weighting movement is the approved,
+      unconditional half of that answer and is what this entry records.
+    what_inverse_variance_means_here: >-
+      Routes are inverse-variance weighted WHERE A MEASURED VARIANCE EXISTS
+      and equally weighted where none does, INSIDE the lab/field method tiers
+      the incumbent estimator already implied. The 50/50 lab:field tier split
+      is INHERITED, not invented: under one-vote-per-study two lab studies
+      and two field studies already carried 50% each. The only weight that
+      moves is the split WITHIN the lab tier, which is the one place a
+      variance is published. Effective weights: Felton 25.0% -> 1.4%,
+      Young 25.0% -> 48.6%, Kift 25.0% -> 25.0%, Darling 25.0% -> 25.0%.
+    variance_provenance: >-
+      Felton 2016 (BJD 175:1320, Results, "Serum 25-hydroxyvitamin D gain"):
+      PUBLISHED SDs on the gain, +17.8 +/- 4.8 (n=10, phototype II) and
+      +8.3 +/- 10.5 (n=6, phototype V). Delta-method SE on the log gain ratio
+      0.523451409390530; dK/d(ln r) 1.631199252058861; SE(K) 0.853853547486989.
+      Young 2020 (JID 140:1418): MEASURED from the individual-level workbook
+      in Papers_and_Datasets/. Per-subject slope SDs by FST by arm give
+      SE(ln r) 0.133448531297507 (Arimed B) and 0.198696425983737 (TL-01),
+      SE(K) 0.167885925788282 and 0.241318438203153, study-level SE(K)
+      0.146986625832589. Applied to Young's ANCOVA-ADJUSTED point estimate
+      while the SD is on RAW slopes, which makes it CONSERVATIVE -- Young is
+      handed LESS precision than it has, not more.
+      Kift 2013 and Darling 2013: NO VARIANCE ON THE INVERTED QUANTITY, and
+      none was imputed. See no_variance_handling below.
+    no_variance_handling: >-
+      STATED RULE, APPLIED CONSISTENTLY: a route with no usable variance is
+      never assigned an invented one. It keeps a plain vote inside its method
+      tier, and the gap is PRINTED by the estimator (S3c) rather than
+      smoothed over. Excluding such routes was considered and REJECTED as the
+      default: complete-case inverse-variance weighting drops Kift AND
+      Darling, i.e. both field routes, which are the only sun-exposure
+      evidence in the estimator and the only routes measured outside a
+      cabinet. CLAUDE.md prefers sun exposure for clinical conclusions;
+      discarding it to satisfy an estimator would be the tail wagging the
+      dog. The complete-case value is reported as the strict-IV bound
+      (K_const 0.409244, FST V:II 1.2691x) rather than adopted.
+    correction_to_the_repo_record: >-
+      W-J section 6 recorded that "routes 2-4 have no published variance on
+      the inverted quantity". Verified against the PDFs 2026-09-22, that is
+      TOO STRONG in one place. Kift 2013 (BJD 169:1272) DOES publish
+      dispersion: IQRs on 25(OH)D by month and cohort, and a 95% CI of 37-53%
+      on the diet-adjusted South Asian:white serum ratio (point 45%, i.e.
+      white:SA = 2.2222222222222222, CI 1.886792452830188-2.702702702702703,
+      SE(ln) = 0.091678725666031). It is still NOT USABLE here, for a
+      different and better reason than "absent": that CI is on the RAW serum
+      contrast, while the route inverts the contrast AFTER the measured
+      behavioural dose difference has been removed, and the behaviour-removal
+      step carries no quantified uncertainty anywhere in this repo. A partial
+      variance used as a full one would UNDERSTATE the route's uncertainty
+      and OVER-weight it -- worse than none, because it is confidently wrong.
+      Darling 2013 remains a true absence: the paper is not held in this
+      repository and no dispersion of any kind reaches us for it.
+    movement:
+      K_const_one_vote_per_study: 1.167794276773869
+      K_const_inverse_variance: 0.748371880484260
+      delta: -0.419422396289609
+      FST_V_II_optical_one_vote: 1.974121297699874
+      FST_V_II_optical_inverse_variance: 1.546279593141604
+      FST_V_II_optical_delta: -0.427841704558269
+      K_const_inverse_variance_complete_case: 0.409243760968520
+      K_const_inverse_variance_within_study: 1.161932509994152
+      shipped_ModelParams_K_const: 1.17   # UNCHANGED by this entry
+    consequence: >-
+      NOT A CLEAN WIN, AND RECORDED AS SUCH -- and it is WORSE than W-J
+      predicted. W-J expected inverse-variance weighting to pull the estimate
+      "toward the field pair" (1.0875) and flagged that only the
+      leave-Felton-out VARIANT (0.844) would fall outside the approved
+      1.7-2.7x band. In fact the PRIMARY inverse-variance estimate itself
+      falls outside it, at FST V:II = 1.546280x, because down-weighting Felton
+      collapses the lab tier onto Young (0.358), which sits BELOW the field
+      pair rather than beside it. Adopting the value would therefore require
+      re-opening a1_diagnosis_result_2026_08_17's approved band -- the same
+      discipline applied at the Bogh/Farrar PASS->FAIL precedent, where
+      checks were allowed to fail rather than be engineered green.
+      THAT VALUE CHANGE IS NOT TAKEN BY THIS ENTRY.
+    not_covered: >-
+      (1) THE VALUE. ModelParams.K_const stays at the user-approved 2026-09-21
+      figure under the RETAINED one-vote scheme. Adopting the
+      inverse-variance estimate is a SECOND, separate approval, because it
+      re-opens the approved 1.7-2.7x optical band; the user asked to see the
+      numbers before that band is re-opened and this entry exists so they
+      can. A ready-to-merge diff and YAML for that step were prepared in the
+      now-retired workstream W-W memo and deliberately NOT applied; if this
+      second approval is ever sought, the `movement:` block above already
+      carries the numbers needed to redo it from scratch.
+      (2) BSA_EXP. The repo's only other cross-study equal-weight pool
+      (scripts/bsa_exp_recalibration.py, Young 2021 + Vahavihu/Jager 2018)
+      was audited and inverse-variance weighting is NOT COMPUTABLE there:
+      Young 2021 Table 1 publishes SDs (All FB 36.1 +/- 19.8, n=40; All PB
+      11.0 +/- 7.8, n=35; SE(ln ratio) 0.147941401107289) but Jager 2018
+      Table III publishes no SD, SE, CI or per-row n for the Vahavihu triple.
+      A two-route pool with one variance is undefined. BSA_EXP is UNCHANGED
+      and the audit is recorded in that script's new STEP 2d.
+      (3) SOURCE_CALIBRATION_TABLE. Its lamp midpoints (tl01_nb_uvb, and
+      inertly tl12_bb_uvb / uv6_broadband) are an equal-weight two-source
+      pool, audited and found NOT APPLICABLE: these are deterministic
+      spectral-integral unit conversions with no sample statistic behind
+      them, and the low/high entries are a range across sources, not a
+      dispersion. UNCHANGED; note added in vitd_model.py.
+      (4) No validation check, pinned test value, or headline count moves,
+      because no parameter value moved. run_all.py was NOT re-run.
+    dark_skin_flag: >-
+      UNCHANGED AND MORE LOAD-BEARING. Both variance-bearing routes are LAB
+      routes; NEITHER field route has one, and the field pair is the only
+      sun-exposure evidence in this estimator. Inverse-variance weighting
+      therefore systematically shifts weight from field to lab, i.e. away
+      from real sun and toward cabinets, purely because cabinets report
+      better statistics. The scheme's tier structure is what stops that from
+      running to completion. Young 2020's TL-01 arm -- the only all-African
+      n=11 FST VI cell in this repository -- still has NO objective pigment
+      measurement for any of its 23 subjects, and now carries substantially
+      MORE weight than before. There is still no field dosimetry in FST VI
+      anywhere in this repo, and every VI:* ratio remains an extrapolation
+      onto M_baseline(VI) = 1.00.
 
   A:
     approved_by: User (repository owner)
@@ -1133,6 +1347,926 @@ parameter_approvals:
       block in vitd_physiology section 2b was updated to say exactly this and
       must not be upgraded to "closed" on the strength of one activity.
 
+  BODY_WEIGHT_DILUTION_EXPONENT:
+    approved_by: User (repository owner)
+    approval_date: 2026-09-22
+    approval_basis: >-
+      User's answer to decision A5 (body-weight dilution exponent), "i approve the change",
+      given during the round answered 2026-09-21/22. Read as approving the
+      EXPONENT change only, which is what A5 is named for and the change W-Q
+      routed to the user. The companion finding in the SAME diagnostic --
+      BMI outperforming weight as the covariate -- is a structural change to
+      which covariate the term uses, not to this exponent's value, and is
+      NOT covered by this approval. See BMI_predictor_proposal_2026_09_22
+      below.
+    change: >-
+      Body-weight dilution scaling exponent in
+      vitd_physiology.body_weight_dilution_factor, as called from
+      vitd_model.py's synthesis function (vitd_model.BODY_WEIGHT_DILUTION_
+      EXPONENT). Was IMPLICIT 1.0 (exact hyperbolic factor = 70/weight_kg).
+      Now 0.24226563069970553 (factor = (ref_kg/weight_kg)**
+      0.24226563069970553), i.e. the model's own dilution term moved from
+      d(ln D)/d(ln weight_kg) = -1 to -0.24226563069970553.
+    source: >-
+      scripts/nhanes_weight_dilution_check.py (RECURRING diagnostic).
+      Survey-weighted log-log regression, ln(25(OH)D) ~ gamma*ln(weight_kg)
+      + age + female, Taylor-linearized design SEs (PSU within stratum),
+      NHANES cycles 2001-2023 pooled, LC-MS/MS-harmonized 25(OH)D. Found by
+      the NHANES weight-dilution diagnostic (2026-09-21, formerly tracked as
+      workstream W-Q step 8); implemented 2026-09-22 (formerly tracked as
+      workstream W-X).
+    measurement: >-
+      Primary row "Adults, unsupplemented (UV+food)" (excludes the
+      supplemented dietary_source_flag, to isolate endogenous/dietary
+      dynamics, per the script's own stated design): n_unweighted = 29,505,
+      design_df = 109. gamma_ln_weight_kg = -0.24226563069970553,
+      se = 0.015492158419161762, 95% CI
+      [-0.27297058503233146, -0.2115606763670796]. Full precision from
+      tables/nhanes_weight_dilution_check.csv. The all-adults row (incl.
+      supplemented, n=52,456) gives a close but not identical
+      -0.25326055019047544, 95% CI [-0.27575413829351, -0.23076696208744094]
+      -- not used, because the script's own docstring designates the
+      unsupplemented row as primary.
+    recovery_method: >-
+      Full-precision value read directly from the existing artifact
+      tables/nhanes_weight_dilution_check.csv (written 2026-09-21 10:23,
+      confirmed unmodified since via `git status` before use) -- the
+      diagnostic was NOT re-run to obtain this value. It WAS re-run
+      afterward, unchanged, to confirm reproducibility and to refresh
+      nhanes_macro_validation.py per CLAUDE.md's post-calibration-change
+      guidance.
+    tension_with_prior_evidence: >-
+      The replaced exponent (1.0) was never itself a fitted measurement; it
+      was a design choice consistent with the FORM Drincic 2012 (Obesity
+      20:1444-8, N=686) found -- hyperbolic in total body weight beats
+      linear and BMI models -- cross-checked in vitd_physiology.py's own
+      comment against Ekwaru 2014's oral-dosing finding (obese need 2-3x,
+      overweight ~1.5x the D3 dose; 70/100 = 0.70x there implies exponent
+      1). The NHANES check is a DIFFERENT kind of evidence: a cross-sectional
+      population association adjusted only for age and sex (not weight
+      history, supplementation, sun-seeking behaviour, or any interventional
+      design), and it measures a materially smaller exponent than either
+      prior source implies. This entry implements the user-approved value;
+      it does not adjudicate which evidence is more relevant to this
+      model's cutaneous-synthesis dilution mechanism. Recorded, not
+      resolved.
+    implementation: >-
+      vitd_model.BODY_WEIGHT_DILUTION_EXPONENT = 0.24226563069970553, passed
+      explicitly as `exponent=` at vitd_model.py's one call site of
+      vitd_physiology.body_weight_dilution_factor. That function's own
+      default exponent (1.0) is UNCHANGED, so every other caller --
+      including tests/test_physiology.py's TestBodyWeightDilution suite,
+      which validates the function against the Drincic/Ekwaru literature --
+      keeps its previous behaviour untouched. New tests
+      (TestBodyWeightDilutionExponentCalibration) validate the new
+      `exponent=` parameter and the calibrated constant directly.
+    consequence: >-
+      ModelParams.body_weight_kg defaults to None and is not set anywhere in
+      run_all.py or scripts/ -- only in tests/test_physiology.py.
+      body_weight_dilution_factor(None, ...) returns 1.0 regardless of
+      exponent. THIS CHANGE THEREFORE HAS ZERO EFFECT ON ANY CURRENT
+      HEADLINE OUTPUT, RESULTS.md figure, or NHANES macro-validation result.
+      It only changes behaviour for a caller that explicitly sets
+      body_weight_kg, which nothing shipped does today. Recorded so a
+      future workstream that wires body_weight_kg into a scenario inherits
+      the approved exponent rather than the old implicit one.
+    dark_skin_direction: >-
+      NOT APPLICABLE at present -- see consequence above: the term is inert
+      in every current scenario, including every FST V-VI one, so there is
+      no FST V-VI burden to move in either direction today. If
+      body_weight_kg is wired into a scenario later, the direction depends
+      entirely on the weight assumed for that scenario relative to
+      BODY_WEIGHT_REF_KG = 70.0, not on skin type -- the mechanism carries
+      no FST term.
+    not_covered: >-
+      BMI as the preferred predictor (9 of 9 strata; see
+      BMI_predictor_proposal_2026_09_22 below) is NOT approved by this entry.
+
+  BMI_predictor_proposal_2026_09_22:
+    status: NEEDS_APPROVAL
+    proposed_by: W-X workstream agent
+    date: 2026-09-22
+    memo: (workstream W-X, retired 2026-09-23 -- see this entry's own fields, which restate the finding in full)
+    parameter_changes: NONE -- prepared, not applied
+    what_the_diagnostic_found: >-
+      scripts/nhanes_weight_dilution_check.py's model-comparison table: BMI
+      beats weight (lower AIC) in 9 of 9 strata (overall unsupplemented, all
+      adults, 5 NHANES race/ethnicity groups, 2 exam seasons). dAIC
+      (BMI minus weight): overall unsupplemented -453.956948001578; all
+      adults -844.2327872032911; Mexican American -68.58163071659419; Other
+      Hispanic -32.01988171756693; NH White -93.67261543757195; NH Black
+      -0.07256675582902972 (~indistinguishable, |dAIC|<2); NH Asian
+      -4.456487488822859; winter/spring -184.35870070183955; summer/autumn
+      -234.4598627607411. R^2 rises from the weight model to the BMI model
+      in every stratum (e.g. overall unsupplemented 0.048796769119527905 ->
+      0.06331974689861275).
+    what_is_proposed: >-
+      Replace body_weight_kg/body_weight_dilution_factor's covariate with
+      BMI: a new ModelParams.bmi field (or a body_weight_kg -> bmi
+      conversion requiring height_cm), a body_bmi_dilution_factor() in
+      vitd_physiology.py of the same (ref/x)**gamma form, and a BMI-fitted
+      exponent from the same NHANES row (gamma_ln_bmi =
+      -0.3492674232363697, unsupplemented adults row) in place of
+      gamma_ln_weight_kg.
+    dark_skin_direction: >-
+      NH Black -- the stratum closest to this project's FST V-VI priority
+      cohort -- is the ONE stratum where BMI does NOT clearly beat weight
+      (dAIC -0.07, ~indistinguishable), unlike every other group. Adopting
+      BMI as a universal covariate would therefore be adopting a predictor
+      whose advantage is weakest, not strongest, in the priority cohort's
+      nearest available NHANES proxy. This does not by itself argue against
+      BMI (R^2 still rises slightly, 0.07756741241362886 ->
+      0.07757867566984333, and NH Black's own weight-model gamma,
+      -0.23562811755138569, is close to the pooled estimate), but it means
+      the case for switching is NOT uniformly stronger for the priority
+      cohort, and should not be presented as if it were.
+    cost: >-
+      Requires either collecting/estimating BMI (weight + height) in every
+      scenario that would set this term, versus weight alone today; a new
+      ModelParams field and a second dilution-factor function; and its own
+      calibration_approval.yaml entry once a value is chosen, since this is
+      a covariate change, not merely an exponent refit. Because the term is
+      currently inert in every shipped scenario (see
+      BODY_WEIGHT_DILUTION_EXPONENT.consequence above), there is no headline
+      number this would move today -- the cost is entirely in future
+      scenario-authoring effort, not in reopening any current result.
+    not_covered: >-
+      This entry approves nothing. It exists so the proposal is ready to
+      merge if the user separately approves it, and so it is not re-derived
+      from scratch later. This entry's own fields above (what_the_diagnostic_
+      found, what_is_proposed, dark_skin_direction, cost) are the full
+      writeup.
+
+  K_const_random_effects_2026_09_22:
+    approved_by: user delegation 2026-09-22
+    delegation_quote: >-
+      "i trust you so everything logical, anything you would actually
+      recommend to make this model more accurate, i give u permissions to
+      approve in the yaml"
+    approval_date: 2026-09-22
+    supersedes:
+      - K_const_recalibration_2026_09_21
+      - K_const_weighting_2026_09_22
+    parameter: ModelParams.K_const
+    old_value: 1.17
+    new_value: 2.10
+    estimator_output_full_precision: 2.095887850
+    superseded_2026_09_23: >-
+      THE ROUNDING ONLY, by K_const_A_full_precision_2026_09_23. The
+      estimator, the evidence and the routes are unchanged and everything
+      else in this entry stands. The shipped value is now
+      2.096070737357932, which is this same pooled estimate re-evaluated at
+      the joint (K_const, A) fixed point instead of at the rounded pair, and
+      it is carried at full precision. The `rounding` field below records
+      the decision that was taken on 2026-09-22 and then withdrawn; it is
+      kept, not deleted, because it is why every 2026-09-22 pin reads 2.10.
+    rounding: >-
+      [WITHDRAWN 2026-09-23, see superseded_2026_09_23 above.]
+      2 decimal places, the derivation script's own long-standing
+      convention. The rounding is a decision, so it is recorded as one: the
+      unrounded pooled estimate is 2.095887850 and the SD across the four
+      routes is 1.267, so a third decimal would imply a precision the
+      evidence does not carry.
+    reproduce_with: >-
+      PYTHONIOENCODING=utf-8 python3 scripts/kconst_recalibration.py
+      (sections S3b through S4). The joint (A, K_const) fixed-point
+      iteration is described in A_reanchor_2026_09_22.
+    change: >-
+      THREE separate changes compound in this one move and must not be read
+      as one recalibration.
+      (1) BUG FIX, needing no approval under CLAUDE.md's bug-fix clause: the
+      two FIELD routes were a CACHE taken 2026-08-17 (Kift 0.788, Darling
+      1.387) and carried through two refits on the stated belief -- written
+      into vitd_model.py's own K_const entry until today -- that they are
+      "computed independently of M_baseline_by_FST". That belief is FALSE;
+      fst_gap_decomposition._invert_cohort_pair calls simulate(). Re-inverted
+      live the routes are Kift 2.000652839 and Darling 3.177220715.
+      (2) The ITA -> M re-scaling of decision A3 (see
+      ita_to_M_clip_release_2026_09_22). It compresses the FST V:II M-gap
+      0.582400 -> 0.409091, which raises K_const by 1.4237x for an EXACTLY
+      UNCHANGED optical factor -- a reparameterisation, not new evidence.
+      (3) The pooling scheme moves from fixed-effect inverse-variance to
+      RANDOM EFFECTS (DerSimonian-Laird).
+    why_random_effects: >-
+      A fixed-effect pool asserts the four routes estimate one common
+      K_const and differ only by sampling error. Section S3 of the
+      derivation script measures that assertion and rejects it: the two lab
+      routes miss in opposite directions by about 40% each, and Young 2020's
+      published FST II:VI ratio (1.29-1.43) is SMALLER than Felton 2016's
+      FST II:V (2.14) in the same class of cabinet, which is impossible
+      under any monotone pigment penalty. Heterogeneity at the shipped
+      point: Q = 11.944110 on 2 df, I^2 = 83.255346%. Reporting that under
+      fixed effects states a precision the evidence does not have.
+    routes_at_the_shipped_point:
+      Felton2016: {K_const: 3.194593257, se: 1.213467450, in_pool: true}
+      Young2020: {K_const: 0.517394258, se: 0.199219911, in_pool: true}
+      Kift2013: {K_const: 2.000652839, se: null, in_pool: false}
+      Darling2013: {K_const: 3.177220715, se: 0.944538516, in_pool: true}
+    tau2_estimators:
+      DL: {tau2: 2.910733275, tau: 1.706087124, pooled_K: 2.095887850,
+           se: 1.097619676, ci95: [-0.055407, 4.247183], shipped: true}
+      PM: {tau2: 1.960645580, tau: 1.400230545, pooled_K: 2.017021696,
+           se: 0.935877092, ci95: [0.182736, 3.851307]}
+      REML: {tau2: 2.260287503, tau: 1.503425257, pooled_K: 2.047887634,
+             se: 0.990197171, ci95: [0.107137, 3.988638]}
+    tau2_estimator_range_on_pooled_K: [2.017021696, 2.095887850]
+    hksj_interval_not_adopted: >-
+      [-1.8938, 6.0856] at k = 3, t(2) multiplier 4.302653. Computed and
+      printed for completeness and deliberately NOT adopted: at k = 3 it
+      spans more than the whole physically admissible range of K_const and
+      carries no information. Do not quote it.
+    kift_exclusion: >-
+      Kift 2013 is EXCLUDED from the random-effects pool because it
+      publishes no variance ON THE QUANTITY THIS ROUTE INVERTS. It does
+      publish a 95% CI on the RAW diet-adjusted serum ratio, but this route
+      inverts the contrast AFTER behaviour removal, whose uncertainty is
+      unquantified anywhere in this repository; a partial variance used as a
+      full one would over-weight the route. NO VARIANCE IS IMPUTED. The
+      max-admissible-weight probe re-admits Kift at assumed SEs from 8x down
+      to 1x the most precise route's SE: the largest movement in the pooled
+      value across the whole sweep is 0.184995537 in K_const (about 8.8% of
+      the pooled value), well inside the tau^2-driven interval. NOTE this
+      supersedes an earlier unpublished estimate of "<0.01" for the same
+      quantity; that figure was computed on the stale field routes and does
+      not reproduce.
+    darling_now_has_a_variance: >-
+      Darling 2013 could not enter any variance-weighted pool before today,
+      because this repository's own VARIANCE_PROVENANCE register said the
+      paper was "NOT HELD IN THIS REPOSITORY". It is held -- the University
+      of Surrey author's accepted manuscript,
+      Research_Papers/Vitamin_D_deficiency_Osteoporosis_International_2012.pdf
+      -- and its Table 3 prints mean, SD and a per-season n for every one of
+      the six cells the field inversion consumes. SE(K) = 0.944538516 by
+      delta method (numerical Jacobian through the inversion), cells treated
+      as INDEPENDENT, which is the wider and therefore conservative choice
+      given Darling's own Table 4 puts a positive between-individual
+      variance share on repeated measures.
+    darling_n_inconsistency: >-
+      The n in Darling is internally inconsistent and the repository had
+      been carrying one figure without saying which: abstract 105 Caucasian
+      / 35 South Asian; Methods and Table 1, 135 / 46 recruited; Study Power
+      section, "39 Asian premenopausal women were recruited"; four-visit
+      completers 90 / 35 (the pair Webb 2021 Table 5 labels the route with).
+      NONE of those is the right n for this route's variance. Table 3 prints
+      its own per-season cell n -- white 113 / 128 / 80, South Asian
+      18 / 43 / 26 -- and those are what the SE is built from.
+    darling_veiling_flag_dark_skin_priority: >-
+      Darling's Discussion states that 75% of the South Asian arm "were of
+      Pakistani origin and were partly veiled (showing hands and face
+      only)". Darling publishes no exposed-BSA figure, so the inversion
+      equates its cohorts' exposed BSA to Kift 2013's diary percentages; for
+      a veiled arm that is too high, the badge dose is spread over more skin
+      than was exposed, and the shortfall is charged to PIGMENT. This route's
+      K_const is therefore BIASED UPWARD. Darling is KEPT in the pool -- it
+      is one of only two field routes and the only one outside Manchester --
+      with the flag carried at every point of use and a sensitivity variant
+      reported beside the headline.
+    darling_veiling_sensitivity:
+      headline: {exposed_bsa: 0.14, K_const: 3.177220715,
+                 fst_V_II_optical: 3.668460570}
+      veiling_variant: {exposed_bsa: 0.1025, K_const: 2.906476277,
+                        fst_V_II_optical: 3.283838533}
+      how_0_1025_was_chosen: >-
+        "Hands and face only" converted by the Wallace rule of nines --
+        anterior head about 4% BSA plus two hands about 5% (2 x 2.5%,
+        palmar and dorsal) = 0.09 -- applied to the 75% who were partly
+        veiled, with the remaining 25% left at Kift's 0.14:
+        0.75 * 0.09 + 0.25 * 0.14 = 0.1025. THE RULE-OF-NINES CONVERSION IS
+        THIS REPOSITORY'S GEOMETRIC ASSUMPTION, NOT DARLING'S; the paper
+        prints no BSA at all, so the variant BOUNDS the veiling bias rather
+        than measuring it.
+    darling_never_uses_fitzpatrick: >-
+      The words "Fitzpatrick", "phototype" and "skin type" do not appear
+      anywhere in Darling 2012 (verified by full-text search of the accepted
+      manuscript). Its groups are "Caucasian" and "Asian". The FST II and
+      FST V labels this repository attaches to them are INFERRED FROM
+      ETHNICITY here, and that inference is what lets an ethnicity contrast
+      be read as a pigment contrast. Recorded because it is load-bearing for
+      two of the four routes this parameter rests on.
+    six_route_values_verified: >-
+      All six Darling cells the inversion reads were checked against the
+      primary source and match what the repository carried via Webb 2021
+      Table 5 exactly: white 6.39 SED/week summer, 72.1 summer 25(OH)D,
+      44.5 winter; South Asian 2.00, 26.2, 19.7 (all nmol/L for serum).
+      What is NEW from the primary source is the SD and the per-cell n.
+      Darling's Fig. 1 (participant flow) is LOW-RESOLUTION; nothing in this
+      entry relies on it.
+    approved_band_check: >-
+      FST V:II optical factor at the shipped value is 2.3610133420192643x,
+      INSIDE the approved 1.7-2.7x band from a1_diagnosis_result_2026_08_17.
+      The band was NOT re-opened. Across the leave-one-out envelope the
+      factor runs 1.9152x to 3.6783x, so the envelope's high end sits
+      outside the band; reported, not absorbed.
+    consequence: >-
+      Moves the absolute synthesis level of every skin type, not only the
+      between-type ratios, so A was re-anchored in the same change (see
+      A_reanchor_2026_09_22). Pinned test values move -- see C6 in that
+      entry. Absolute FST V/VI predictions still carry the uncalibrated-SC
+      and light-skin-extrapolation flags CLAUDE.md requires; nothing here
+      changes that.
+    not_covered: >-
+      Behaviour (shade, clothing, time outdoors) is a SEPARATE factor living
+      in exploratory/vitd_behaviour.py and defaulting to 1.0; the
+      behaviour-blind field inversions need FST V:II of 4.28x and 5.71x,
+      above every matched-dose measurement in existence. Every FST VI figure
+      remains an extrapolation of one coefficient onto an FST VI M_baseline
+      that no African-ancestry field dosimetry constrains.
+
+  K_const_A_full_precision_2026_09_23:
+    approved_by: user delegation 2026-09-22
+    delegation_quote: >-
+      "i trust you so everything logical, anything you would actually
+      recommend to make this model more accurate, i give u permissions to
+      approve in the yaml"
+    approval_date: 2026-09-23
+    supersedes_the_rounding_in:
+      - K_const_random_effects_2026_09_22
+      - A_reanchor_2026_09_22
+    scope: >-
+      NO NEW EVIDENCE, NO NEW ESTIMATOR, NO NEW ANCHOR. Only the digits that
+      had been discarded are restored, and the (K_const, A) pair is moved
+      onto its joint fixed point instead of near it.
+    parameters: [ModelParams.K_const, ModelParams.A]
+    old_value: {K_const: 2.10, A: 4.362}
+    new_value: {K_const: 2.096070737357932, A: 4.359560972608079}
+    change: >-
+      The 2026-09-22 pair was built by rounding the pooled K_const to 2 dp
+      (2.095887850 -> 2.10) and THEN anchoring A against that rounded value
+      (4.361625538667488 -> 4.362). That makes the shipped pair not the
+      fixed point of its own defining equations: A is anchored against a
+      K_const that is not shipped, and K_const is pooled at an A that is not
+      shipped. Both are now carried at full precision at the fixed point,
+      where young2021_A_anchor(ModelParams())["A_implied"] returns the
+      shipped A exactly and the DerSimonian-Laird pool at that A returns the
+      shipped K_const exactly.
+    why: >-
+      CLAUDE.md, precision: a value another calculation reads back carries
+      its full value, and rounding is a decision recorded against its
+      origin. Here the rounding was neither load-bearing nor free -- it
+      moved the pair off its fixed point -- and the derivation script's
+      "2 dp" convention was itself justified by an SD ACROSS ROUTES of
+      1.267, which is an argument for carrying the tau^2 range and the
+      leave-one-out envelope (both of which ARE carried), not for deleting
+      digits from the point estimate.
+    independent_verification_2026_09_23: >-
+      The DL, PM and REML pooled values, tau^2, Q and I^2 were recomputed
+      from the route values and SEs by a separate ~30-line implementation
+      (REML by direct maximisation of the restricted log-likelihood rather
+      than by the fixed-point iteration the script uses) and agree with
+      scripts/kconst_recalibration.py to every printed digit. The Darling
+      delta-method SE was recomputed from Table 3's cells read independently
+      from the PDF. The fixed point was re-derived from
+      vitd_validation.young2021_A_anchor rather than from the derivation
+      script's own copy of the anchor arithmetic, converging in 6 iterations
+      to |dK| < 1e-10.
+    verified_at_the_fixed_point:
+      routes: {Felton2016: 3.1945434824918686, Young2020: 0.5174685949233523,
+               Kift2013: 2.0009453682405365, Darling2013: 3.1776093028993273}
+      route_ses: {Felton2016: 1.2133703683670638, Young2020: 0.19919684644330657,
+                  Kift2013: null, Darling2013: 0.9445251347765502}
+      Q: 11.9465
+      I2_percent: 83.26
+      tau2: {DL: 2.911181, PM: 1.960891, REML: 2.260534}
+      pooled_K: {DL: 2.096070737357932, PM: 2.017210, REML: 2.048069}
+      fst_V_II_optical: 2.3572212372489663
+      leave_one_out_envelope: [1.588440, 3.183999]
+    reproduce_with: >-
+      python3 -c "from vitd_model import ModelParams;
+      from vitd_validation import young2021_A_anchor;
+      p = ModelParams();
+      print(repr(p.K_const), repr(p.A),
+      repr(young2021_A_anchor(p)['A_implied']))"
+      for the A half, and PYTHONIOENCODING=utf-8 python3
+      scripts/kconst_recalibration.py (S3d/S3e) for the K_const half.
+    consequence: >-
+      Every pinned test value moves in the last few digits; the re-pins are
+      dated 2026-09-23 in tests/. No headline conclusion moves BETWEEN the
+      rounded and unrounded pair -- the headline moves recorded on
+      2026-09-22 (FST VI N_min 183 -> 260, FST V/VI floor-infeasible at
+      N = 104, and the Webb/Kift 2018 held-out dose-ratio gate flipping to
+      FAIL at 4.123825123532095 against a reported 2.5-3.0x) are properties
+      of the 2026-09-22 parameter pass itself, not of this precision fix.
+
+  K_const_leave_one_out_envelope_2026_09_22:
+    approved_by: user delegation 2026-09-22
+    delegation_quote: >-
+      "i trust you so everything logical, anything you would actually
+      recommend to make this model more accurate, i give u permissions to
+      approve in the yaml"
+    approval_date: 2026-09-22
+    reproduce_with: >-
+      PYTHONIOENCODING=utf-8 python3 scripts/kconst_recalibration.py,
+      section S4 ("SENSITIVITY: leave-one-out and method split"), which
+      prints the envelope under both the random-effects default and the
+      retained one-vote-per-study scheme.
+    closes: decision A4 (K_const envelope, 2026-09-21)
+    scope: NO VALUE CHANGE. This records an uncertainty statement that must
+      travel with every FST V/VI feasibility claim.
+    decision: >-
+      CARRY THE ENVELOPE. The user's instruction was to carry it only if it
+      is still needed once the weighting question is settled. Random effects
+      produces an interval of its own -- the tau^2-estimator range, width
+      0.078866 -- so the test applied was whether the leave-one-out envelope
+      is materially wider than that. It is 20.2289x wider, so WHICH routes
+      are in the pool moves the answer far more than HOW tau^2 is estimated
+      does, and the envelope is not redundant.
+    envelope_under_random_effects_dl: [1.588398, 3.183775]
+    envelope_width: 1.595377
+    tau2_estimator_range_width: 0.078866
+    ratio: 20.2289
+    feasibility_flips_across_it: >-
+      YES, decisively and in both directions. RE-MEASURED 2026-09-23 at the
+      full-precision fixed point and on a budget grid that includes N = 260.
+      With A re-anchored at each end (A and K_const are coupled, so moving K
+      alone would mis-state the level), at UV index 6, 365-day horizon,
+      90-day ramp, uniform family, SC_max IV-VI at the shipped 0.24:
+        K_const 1.5884400707455726 (A 4.100889741363239):
+          FST V N_min 104 (116.40 min/session), FST VI N_min 183
+        K_const 2.096070737357932 (A 4.359560972608079, SHIPPED):
+          FST V N_min 146, FST VI N_min 260
+        K_const 3.1839988650360818 (A 4.9702105418146125):
+          FST V N_min 260, FST VI no feasible budget up to daily
+      At the low end FST V's twice-weekly exclusion is FALSE. At the high
+      end FST VI cannot be scheduled at any session budget up to daily. No
+      FST V/VI feasibility claim may be stated as a bare fact.
+      The envelope's own endpoints are the leave-one-out subsets: the low
+      end is "lab routes only" (equivalently, drop Darling) and the high end
+      is "drop Young", i.e. the answer is dominated by WHICH of two mutually
+      incompatible route families is in the pool, not by sampling noise.
+
+  ita_to_M_clip_release_2026_09_22:
+    approved_by: user delegation 2026-09-22
+    delegation_quote: >-
+      "i trust you so everything logical, anything you would actually
+      recommend to make this model more accurate, i give u permissions to
+      approve in the yaml"
+    approval_date: 2026-09-22
+    decision: A3, option 1C ("release clip")
+    reproduce_with: >-
+      python3 -c "print([(55 - ita) / 121 for ita in
+      (51.76, 40.42, 27.54, 10.45, -9.08, -33.63)])" -- the six
+      Narea-Jimenez 2026 constitutive ITA means through the new mapping.
+      The coupled K_const refit and A re-anchor are reproduced by
+      PYTHONIOENCODING=utf-8 python3 scripts/kconst_recalibration.py and by
+      vitd_validation.young2021_A_anchor() respectively; the joint fixed
+      point is described in A_reanchor_2026_09_22.
+    parameter: ModelParams.M_baseline_by_FST, and the ITA -> M mapping behind it
+    change: >-
+      STRUCTURAL. The mapping is re-scaled from M = 1 - (ITA_U + 30) / 85 to
+      M = (55 - ITA_U) / 121, so its lower anchor sits at ITA -66 -- Linde,
+      Wright & du Plessis 2020's printed constitutive minimum -- instead of
+      at ITA -30, which is Del Bino's Brown/Dark boundary and therefore the
+      MIDDLE of the observed dark-skin range. All six cells are recomputed
+      from the SAME Narea-Jimenez 2026 constitutive ITA means through the new
+      mapping. NO CELL CLIPS.
+    old_value: {I: 0.0381, II: 0.1715, III: 0.3231, IV: 0.5241, V: 0.7539,
+                VI: 1.00}
+    new_value: {I: 0.026776859504132246, II: 0.12049586776859503,
+                III: 0.2269421487603306, IV: 0.36818181818181817,
+                V: 0.5295867768595042, VI: 0.7324793388429751}
+    rationale: >-
+      Under the old mapping FST VI's GROUP MEAN clipped in both available
+      cohorts independently (Young 2020 raw 1.077, Narea raw 1.0427), an
+      estimated 59.02% of Narea's FST VI individuals clipped, and 48% of
+      Linde's Black African constitutive readings clipped. Within FST VI the
+      mapping therefore had NO RESOLVING POWER AT ALL: an individual at
+      ITA -66 and one at ITA -30 received an identical melanin penalty. That
+      is a mapping-shape defect, not a sampling one, and no amount of extra
+      n would have fixed it. Under standing_directives.dark_skin_priority a
+      parameter that cannot distinguish between two very different dark
+      skins is the worst kind of defect this model can carry.
+    direction_warning: >-
+      COUNTER-INTUITIVE, AND IT MUST NOT BE MIS-SOLD AS DARK-SKIN RELIEF.
+      Releasing the clip makes the FST VI burden LARGER, not smaller. The
+      FST V:II M-gap narrows 0.582400 -> 0.409091, so holding the MEASURED
+      optical factor fixed forces K_const UP by 1.4237x faster than M_VI
+      comes down.
+    coupled_changes: >-
+      K_const was refitted and A re-anchored in the SAME change, iterated to
+      a joint fixed point. See K_const_random_effects_2026_09_22 and
+      A_reanchor_2026_09_22. The W-I estimate of a "~1.637191" K_const refit
+      target for this option is VOID: it was computed by preserving the V:II
+      optical factor under the then-current (and stale) field routes, and
+      W-I labelled that method indicative only.
+    not_covered: >-
+      The upper anchor (+55) and the denominator (121) are still not
+      independently sourced; only the lower anchor is now tied to a
+      measurement. Linde's ITA values are DIGITISED FROM BOX PLOTS (the
+      paper contains no results table) with residual error about +/-0.5 deg
+      ITA, which propagates to +/-0.0041 in M on the new scale. The offset,
+      denominator and clip remain non-independent knobs. Both Narea and
+      Linde independently call for a pigmentation category beyond FST VI;
+      this change does not create one.
+    consequence: >-
+      Moves every skin type's melanin term and therefore every absolute
+      prediction. Measured FST V/VI scheduling consequences are in
+      SC_max_by_FST_IV_VI_2026_09_22 and in
+      K_const_leave_one_out_envelope_2026_09_22.
+
+  A_reanchor_2026_09_22:
+    approved_by: user delegation 2026-09-22
+    delegation_quote: >-
+      "i trust you so everything logical, anything you would actually
+      recommend to make this model more accurate, i give u permissions to
+      approve in the yaml"
+    approval_date: 2026-09-22
+    supersedes: A_reanchor_2026_09_21
+    reproduce_with: >-
+      python3 -c "from vitd_model import ModelParams;
+      from vitd_validation import young2021_A_anchor;
+      print(repr(young2021_A_anchor(ModelParams())['A_implied']))"
+      -- at the shipped K_const this returns the shipped A exactly, because
+      the pair ships at the joint fixed point (see
+      K_const_A_full_precision_2026_09_23).
+    parameter: ModelParams.A
+    old_value: 4.139
+    new_value: 4.362
+    full_precision: 4.361625538667488
+    superseded_2026_09_23: >-
+      THE ROUNDING AND THE ANCHOR POINT, by
+      K_const_A_full_precision_2026_09_23. 4.361625538667488 is A anchored
+      against a K_const ROUNDED to 2.10, so it is not the joint fixed point
+      it is described as being below. The shipped value is now
+      4.359560972608079 -- the same Young 2021 anchor evaluated at the
+      unrounded K_const -- and both members of the pair ship at full
+      precision. Everything else in this entry stands.
+    change: >-
+      NOT a new calibration and NOT a new anchor: the SAME Young 2021
+      Fig. 4B target slope of 3.48 nmol/L per SED, recomputed because two of
+      its own kernel terms moved in the same change -- K_const 1.17 -> 2.10
+      and M_baseline(II) 0.1715 -> 0.12049586776859503. Kernel
+      ln(1+1.89) * bsa_factor(0.85) * exp(-K_const*M_II) * g_biphasic(34.6)
+      = 1.061257 * 1.337931 * 0.776436 * 0.723721 = 0.797868, so
+      A = 3.48 / 0.797868 = 4.361625538667488 -> 4.362.
+    joint_fixed_point: >-
+      A and K_const are COUPLED -- A enters every one of K_const's four
+      routes (each calls simulate()) and K_const enters A's kernel -- so the
+      pair was iterated to a joint fixed point rather than moved one at a
+      time. 5 iterations from the starting pair (1.17, 4.139), converging to
+      K_const = 2.096006256960011, A = 4.359526885711822; A was then
+      re-anchored at the ROUNDED K_const = 2.10, giving 4.361625538667488.
+      The coupling is weak: A moved 0.05% between iterations 3 and 5.
+      Iteration trace (A -> pooled K_const):
+        1: A 3.899247793 -> K 2.121088553
+        2: A 4.372722887 -> K 2.095376268
+        3: A 4.359196177 -> K 2.096022102
+        4: A 4.359535424 -> K 2.096005848
+        5: A 4.359526886 -> K 2.096006257  (converged, |dK| < 1e-6)
+    anchor_body_weight: >-
+      The anchor is stated at BODY_WEIGHT_REF_KG, i.e. dilution factor
+      exactly 1.0. Young 2021 publishes no body weight or BMI, so putting
+      the anchor on the NHANES FST II population mean would substitute a US
+      survey figure for a Manchester trial cohort. CONSEQUENCE, stated
+      because it is real: the model's DEFAULT FST II output now sits
+      4.33% BELOW this anchor slope, because an unspecified FST II user is
+      given the population body rather than the reference one. The anchor
+      describes the study's conditions; the default describes a
+      population-average body.
+    a2_threshold_reported_not_adopted: >-
+      Decision A2 stands: the POINT anchor is kept, A_by_FST is NOT adopted,
+      and the twice-weekly exclusion is reported WITH its A-threshold
+      attached. Recomputed under the settled K_const, at UV index 6,
+      365-day horizon, 90-day ramp, uniform family, and RE-MEASURED
+      2026-09-23 at the full-precision fixed point: FST V's twice-weekly
+      schedule (N = 104) would need A >= 5.292416573008921 at the shipped
+      SC_max IV-VI of 0.24, and A >= 5.782801253067731 at the range's other
+      end 0.36. The shipped A of 4.359560972608079 is 17.6300% below the
+      first, i.e. the exclusion holds with 1.213979253017023x headroom.
+      FST VI at N = 104 would need A >= 8.213348917076786 (0.24) or
+      8.974488763192568 (0.36), i.e. 1.883985329872151x and
+      2.0585762693952274x the shipped A.
+    verification: >-
+      vitd_validation.young2021_A_anchor returns A_implied EXACTLY equal to
+      the shipped A as of 2026-09-23 (the pair now ships at the joint fixed
+      point rather than rounded; before that the difference was 3.745e-4,
+      inside the 5e-4 tolerance) and model_slope_at_current_A = 3.48 against
+      the 3.48 target. The two source-matched cross-checks bracket
+      the adopted value: Arimed B 4.066003433588089, UV6 7.0917517036417.
+    dark_skin_flag: >-
+      Young 2021 is FST I-II ONLY and its authors write "The results from
+      this study only apply to FST I/II". A is applied at every FST, so this
+      anchor remains a LIGHT-SKIN EXTRAPOLATION for FST III-VI. Unchanged by
+      this re-anchoring.
+
+  SC_max_by_FST_IV_VI_2026_09_22:
+    approved_by: user delegation 2026-09-22
+    delegation_quote: >-
+      "i trust you so everything logical, anything you would actually
+      recommend to make this model more accurate, i give u permissions to
+      approve in the yaml"
+    approval_date: 2026-09-22
+    reproduce_with: >-
+      The cell value is a direct adoption of the corroborated FST I-III
+      value, so there is nothing to re-run for the number itself. The
+      measured scheduling consequence below is reproduced by
+      optimise_variable_dose(fst=..., n_sessions=..., family="uniform",
+      horizon_days=365, ramp_in_days=90) with SC_max_by_FST set to the
+      chosen end of SC_MAX_IV_VI_RANGE, minutes = max_sed /
+      vitd_objectives.sed_from_minutes(1.0, 6.0).
+    decision: decision A1 (SC_max FST IV-VI cell), options 2B AND 2C together
+      ("2b but also carry range")
+    parameter: ModelParams.SC_max_by_FST, the FST IV-VI cell
+    old_value: 0.36
+    new_value: 0.24
+    range_carried: [0.24, 0.36]
+    range_constant: vitd_model.SC_MAX_IV_VI_RANGE
+    change: >-
+      The FST IV-VI cell moves to the corroborated FST I-III value -- i.e.
+      assume NO phototype dependence of the stratum-corneum thickening
+      ceiling pending evidence in FST IV-VI -- AND the cell is carried as an
+      explicit range, with the shipped point value at the low (least
+      burdensome) end and de Boer's own FP IV-VI measurement at the high end.
+    source: >-
+      de Boer et al. 2025 Supplementary Table S1 for both cells; Miyamura
+      2011 (PMID 20979596) Table 1 corroborating the FST I-III magnitude
+      only (+24.6988%). Miyamura enrolled FST II-III only.
+    rationale: >-
+      Under standing_directives.dark_skin_priority this was the only cell in
+      the melanin/SC cluster whose SOLE source is a study that did not enrol
+      the skin types the cell is applied to, and the error is ONE-SIDED: no
+      source in this repository argues the cell should be HIGHER than 0.36.
+      The shipped value therefore sat at the conservative, most-burdensome
+      extreme of its own evidence, and two headline dark-skin exclusions
+      rested on that choice.
+    consequence_measured: >-
+      RE-MEASURED 2026-09-23 at the full-precision fixed point
+      (K_const 2.096070737357932, A 4.359560972608079; see
+      K_const_A_full_precision_2026_09_23), by direct optimise_variable_dose
+      calls at UV index 6, 365-day horizon, 90-day ramp, uniform family,
+      minutes per session (! marks over the 120-minute practical ceiling).
+      The budget grid now includes N = 260, which the 2026-09-22 measurement
+      did not -- that omission, not the parameters, is why FST VI's N_min
+      was recorded as 365 that day:
+        FST IV  0.24: N=104 87.63, N=146 49.36, N=183 34.42, N=260 21.39, N=365 14.14; N_min 104
+        FST IV  0.36: N=104 104.93, N=146 56.85, N=183 38.93, N=260 23.78, N=365 15.57; N_min 104
+        FST V   0.24: N=104 infeasible, N=146 93.22, N=183 60.78, N=260 35.37, N=365 22.45; N_min 146
+        FST V   0.36: N=104 infeasible, N=146 113.92, N=183 71.91, N=260 40.62, N=365 25.34; N_min 146
+        FST VI  0.24: N=104 infeasible, N=146 269.42!, N=183 148.45!, N=260 74.08, N=365 43.09; N_min 260
+        FST VI  0.36: N=104 infeasible, N=146 infeasible, N=183 192.94!, N=260 90.16, N=365 50.67; N_min 260
+      NOTE THE HEADLINE THIS CHANGE DID NOT MOVE. W-I measured, under the
+      pre-2026-09-22 parameter set, that this cell alone flipped FST V's
+      N_min from 146 to 104 and FST VI's from 183 to 146. Under the settled
+      K_const it does NOT: N_min is 146 for FST V and 260 for FST VI at BOTH
+      ends of the range. The cell's leverage was real but it has been
+      swamped by the K_const move, which went the other way. The range is
+      still carried, because the minutes differ by 17-22% across it even
+      where N_min does not.
+      WHAT DID MOVE, and it is not this entry's doing: FST VI's N_min goes
+      183 -> 260 against the PRE-2026-09-22 shipped parameters, and FST V
+      and VI at N = 104 are now floor-infeasible rather than
+      feasible-but-over-the-ceiling. Both are consequences of the K_const
+      move (K_const_random_effects_2026_09_22).
+    not_covered: >-
+      (1) This DISCARDS de Boer's own measured phototype difference rather
+      than disputing it. If de Boer's FP IV-VI arm is confirmed to have
+      enrolled FST V-VI subjects, this entry should be withdrawn.
+      (2) It does NOT resolve the edema-vs-corneocyte sign question (see the
+      K_SC and SC_BASELINE_THICKNESS_UM entries). If the thickening is
+      edema, the lower end of the range is not 0.24 but 0.00.
+      (3) Liu et al. 2010, Skin Pharmacol Physiol 23:313-319 (n=258, Chinese
+      cohort, on disk) measures SC FUNCTION, not THICKNESS, and does not
+      corroborate this cell. Recorded so it is not re-opened.
+      (4) SC_max remains an UNCALIBRATED PRIOR and stays flagged as such
+      wherever absolute D is presented.
+
+  SC_max_prior_ceiling_2026_09_22:
+    approved_by: user delegation 2026-09-22
+    delegation_quote: >-
+      "i trust you so everything logical, anything you would actually
+      recommend to make this model more accurate, i give u permissions to
+      approve in the yaml"
+    approval_date: 2026-09-22
+    reproduce_with: >-
+      python3 -c "print(14 / 26)" for Bruls 1984's rise/final
+      0.5384615384615384, which is the measurement the ceiling is rounded
+      up to contain. No model run is involved: SC_PRIOR_RANGES is read by
+      sensitivity sweeps and tests, not by the state equations.
+    gated_item: >-
+      the widened SC_max prior ceiling proposal (Bruls 1984 +53.8%, Felton
+      2020 +41.6%, both above the old 0.40 ceiling)
+    parameter: ModelParams.SC_PRIOR_RANGES["SC_max"]
+    old_value: [0.20, 0.40]
+    new_value: [0.20, 0.54]
+    change: >-
+      The evidence-based prior interval's CEILING widens 0.40 -> 0.54. The
+      floor is unchanged.
+    rationale: >-
+      TWO measured thickenings now sit above the old ceiling, not one.
+      Bruls 1984 Table 1 gives +53.8% and has been flagged in vitd_model.py
+      as an ex vivo outlier for some time; Felton et al. 2020 (FST II,
+      n = 10) gives +41.6% and is IN VIVO HUMAN, which is what makes the old
+      ceiling untenable. A prior interval that excludes two of its own
+      measurements is a constraint, not a prior.
+    rounding: >-
+      0.54 is a ROUNDING DECISION and is recorded as one. The largest
+      measurement unrounded is Bruls' 0.5384615384615384, and 0.54 is the
+      smallest two-decimal bound that contains it.
+    flagged_not_acted_on: >-
+      Bruls' +53.8% is rise/FINAL (14/26), whereas de Boer's +23% and
+      Miyamura's +24.6988% are rise/BASELINE, which is how SC_max is
+      defined. On Bruls' own numbers rise/baseline is 1.1666666666666667. If
+      that is the correct reading this ceiling is still far too low. NOT
+      adopted here, because Bruls is the outlier on four other grounds --
+      ex vivo, saline-hydrated, escalating rather than fixed suberythemal
+      dose, n = 6, no FST recorded -- and adopting a 1.17 ceiling on that
+      basis would be worse than the problem it fixes. Recorded in
+      docs/SC_MODEL.md as an open item.
+    consequence: >-
+      NO SHIPPED VALUE MOVES. SC_PRIOR_RANGES is read by sensitivity sweeps
+      and by tests/test_structural_invariants.py, not by the state
+      equations. SC_max stays flagged as an UNCALIBRATED PRIOR wherever
+      absolute D is presented, widened or not.
+
+  BODY_WEIGHT_BY_FST_2026_09_22:
+    approved_by: user delegation 2026-09-22
+    delegation_quote: >-
+      "i trust you so everything logical, anything you would actually
+      recommend to make this model more accurate, i give u permissions to
+      approve in the yaml"
+    approval_date: 2026-09-22
+    decision: decision A5 (body weight by FST), the wire-in half
+    parameter: vitd_physiology.BODY_WEIGHT_BY_FST (NEW)
+    old_value: >-
+      none -- the volumetric-dilution term was INERT. ModelParams.body_weight_kg
+      defaulted to None, nothing in run_all.py or scripts/ set it, and
+      body_weight_dilution_factor(None) returned exactly 1.0 everywhere.
+    new_value:
+      1: 86.32540945298986
+      2: 84.02037297816919
+      3: 83.91282903377481
+      4: 80.6792110654613
+      5: 83.337561944132
+      6: 89.09334002648683
+    units: kg
+    standard_errors_kg: {1: 2.347999, 2: 0.373251, 3: 0.521662, 4: 0.654339,
+                         5: 0.456100, 6: 0.599754}
+    n_unweighted: {1: 264, 2: 8237, 3: 3058, 4: 8273, 5: 6844, 6: 2065}
+    source: >-
+      NHANES 2007-2023 (the cycles carrying dietary_source_flag),
+      survey-weighted (WTMEC2YR) mean measured body weight, adults 18+,
+      restricted to the UNSUPPLEMENTED analytic sample ("UV-only" +
+      "food-only") -- the SAME primary sample BODY_WEIGHT_DILUTION_EXPONENT
+      itself was fitted on, so the exponent and the weights it multiplies
+      describe the same population. Design-based (Taylor-linearized, PSU
+      within SDMVSTRA) standard errors.
+    fst_assignment: >-
+      The repository's own NHANES FST proxy, not a new mapping: the DEQ
+      self-reported sun-reaction item where present, with a race/ethnicity
+      fallback, exactly as scripts/generate_nhanes_priors_table.py assigns
+      it for tables/nhanes_baseline_priors.csv. Using the same proxy for
+      weight as for baseline 25(OH)D keeps the two population defaults
+      describing the same strata; a bespoke race-only map would not. For
+      reference, the race-stratum figure the handoff quoted was verified:
+      NH Black, unsupplemented, is 87.928038476465204 kg.
+    reproduce_with: >-
+      PYTHONIOENCODING=utf-8 python3 scripts/nhanes_weight_dilution_check.py
+      -- writes tables/nhanes_fst_body_weight.csv and prints the table.
+    change: >-
+      The dilution term is now LIVE. simulate() resolves a body weight as
+      caller argument -> ModelParams.body_weight_kg -> BODY_WEIGHT_BY_FST[fst],
+      and a caller-supplied weight is exposed through simulate(),
+      ExposureScenario.body_weight_kg and simulate_scenario(weight_kg=...).
+      Passing BODY_WEIGHT_REF_KG switches the term off. Two design traps were
+      fixed in the same change: body_weight_dilution_factor's own default
+      exponent was still the superseded 1.0 while vitd_model's one call site
+      passed the calibrated value (so the function returned different answers
+      depending on the caller, with the superseded value as the accidental
+      default), and the constant now lives next to the function that consumes
+      it rather than in the module that overrode it.
+    consequence: >-
+      MOVES ABSOLUTE D FOR EVERY SKIN TYPE. Dilution factors at the
+      population weights: I 0.9504822040364421, II 0.9567348421853142,
+      III 0.9570317558773092, IV 0.9661866409630092, V 0.9586280547046516,
+      VI 0.9432424841851874 -- synthesis falls between 3.4% (FST IV) and
+      5.7% (FST VI) against the reference body. THE DIFFERENTIAL IS THE PART
+      THAT CARRIES INFORMATION, and it runs AGAINST dark skin: FST VI's
+      population weight is the heaviest of the six, so FST VI loses a
+      further 1.42% relative to FST II. That is a measured population
+      difference, not a modelling choice.
+    calibration_anchors_do_not_use_this_table: >-
+      A calibration anchor or trial-reproduction scenario must use the
+      weight ITS OWN PAPER publishes, and the reference body where the paper
+      publishes none -- a US survey mean is not a measurement of a UK trial
+      cohort. Audited paper by paper: Darling 2012 Table 1 is the ONLY one
+      that publishes cohort weights (Caucasian 69.20 +/- 12.43 kg n=135,
+      Asian 65.80 +/- 11.33 kg n=46) and its field inversion now uses them.
+      Felton 2016, Young 2020, Young 2021, Farrar 2013 (BMI only), Kift 2013
+      (BMI medians only, no height) and de Boer 2025 publish none and sit at
+      BODY_WEIGHT_REF_KG, where the factor is exactly 1.0 and cancels from
+      any within-study contrast.
+    not_covered: >-
+      (1) These are US population means used as the default for a model
+      otherwise calibrated on UK and Northern-European cohorts.
+      (2) The FST proxy rests partly on SELF-REPORTED sun reaction, which
+      Linde 2020 measured to be badly biased in a dark-skinned cohort (62%
+      of objectively FST V/VI farmworkers self-reported I, III or IV); the
+      FST V and VI rows inherit that bias.
+      (3) FST I rests on n = 264 with an SE of 2.35 kg, by far the widest
+      cell.
+      (4) This wires in a WEIGHT. The separate BMI-as-predictor proposal
+      (BMI_predictor_proposal_2026_09_22) remains NOT applied.
+
+  felton2016_source_estimate_resolved_2026_09_22:
+    approved_by: user delegation 2026-09-22
+    delegation_quote: >-
+      "i trust you so everything logical, anything you would actually
+      recommend to make this model more accurate, i give u permissions to
+      approve in the yaml"
+    approval_date: 2026-09-22
+    gated_item: >-
+      the Felton 2016 cabinet-naming correction (paper directly names
+      "Arimed B ... and Cleo Natural" tubes, Br J Dermatol 175:1321-1322)
+    scope: NO VALUE CHANGES. Epistemic status only.
+    change: >-
+      scripts/kconst_recalibration.py's FELTON_SOURCE tag moves from
+      [ESTIMATE] to [CONFIRMED]. The old tag said Felton 2016 "does not name
+      the cabinet", which is factually wrong: the paper names it directly --
+      "A Philips HB588 Sunstudio irradiation cabinet ... after fitting with
+      alternating Arimed B (Cosmedico GmbH, Stuttgart, Germany) and Cleo
+      Natural (Philips) fluorescent tubes" (Br J Dermatol 175:1320,
+      p.1321-1322).
+    sensitivity: >-
+      EXACTLY ZERO, and that is why this was worth resolving rather than
+      leaving alone. E_source cancels from a between-skin-type ratio and the
+      estimator fits ratios only, so no number moves either way. What moves
+      is whether the file tells the truth about its own inputs: a tag that
+      marks a printed fact as an estimate devalues every other tag in the
+      file.
+
+  fajuyigbe2018_erythema_ratio_2026_09_22:
+    approved_by: user delegation 2026-09-22
+    delegation_quote: >-
+      "i trust you so everything logical, anything you would actually
+      recommend to make this model more accurate, i give u permissions to
+      approve in the yaml"
+    approval_date: 2026-09-22
+    scope: RECORD ONLY. This value does NOT enter K_const or any other
+      calibration.
+    values: {paper_stated: 8.4, recomputed_from_printed_slopes: 7.59}
+    change: >-
+      BOTH figures are recorded, with the discrepancy flagged rather than
+      resolved. Fajuyigbe et al. 2018 states an erythema-slope ratio of 8.4x
+      between extreme skin colours; recomputing that ratio from the paper's
+      own printed slopes gives 7.59x. The repository does not know which is
+      right -- the difference could be rounding in the printed slopes, a
+      different pair of slopes than the recomputation assumes, or an error
+      in the text -- so both are carried with their provenance and neither
+      is presented as "the" value.
+    why_it_must_not_enter_K_const: >-
+      It is an ERYTHEMA ratio, not a vitamin D ratio. This repository already
+      holds a cautionary case: Felton 2016's MEASURED erythema MED ratio of
+      3.95x sits far above every matched-dose vitamin D estimate, and
+      Kallioglu 2024's "V:II = 2.40" was WITHDRAWN from the held-out scoring
+      set precisely because it turned out to be an erythema MED table. An
+      erythema ratio scores a vitamin D calibration at best; it never sets
+      one.
+    recorded_in: docs/MELANIN_MODEL.md
+
+  bsa_exp_derivation_drift_2026_09_22:
+    approved_by: user delegation 2026-09-22
+    delegation_quote: >-
+      "i trust you so everything logical, anything you would actually
+      recommend to make this model more accurate, i give u permissions to
+      approve in the yaml"
+    approval_date: 2026-09-22
+    reproduce_with: >-
+      PYTHONIOENCODING=utf-8 python3 scripts/bsa_exp_recalibration.py. Its
+      output is tree-state dependent BY CONSTRUCTION (see `finding`), so a
+      re-run today will NOT print 0.3281; that is the point of this entry.
+    scope: NO VALUE CHANGE. Annotation of an existing approval.
+    parameter: vitd_model.BSA_EXP
+    finding: >-
+      scripts/bsa_exp_recalibration.py does not reproduce the value recorded
+      in this file's BSA_EXP entry, and W-W section 7 logged that as a
+      defect. INVESTIGATED: it is not a defect and there is nothing to fix
+      in the script. The derivation is a DECONVOLUTION AGAINST THE MODEL --
+      it asks what BSA_EXP makes THIS MODEL, at ITS CURRENT PARAMETER SET,
+      reproduce each source's observed response ratio -- so its output is a
+      function of A, K_const, the feedback form, k_decay_D,
+      M_baseline_by_FST and, since today, the body-weight term. All of those
+      have moved since 2026-09-06.
+    measured_trajectory_of_the_same_method:
+      "2026-09-06 (the approval)": 0.3281
+      "2026-09-22, before the A3 / K_const change": 0.3577
+      "2026-09-22, after it": 0.3537
+    resolution: >-
+      The approved value is relabelled as "this derivation's output AT THE
+      2026-09-06 TREE STATE" rather than presented as a tree-independent
+      constant, in this file, in vitd_model.py's BSA_EXP entry and in the
+      script's own header. No script that inverts a model can reproduce an
+      output frozen against a superseded tree state.
+    not_re_adopted_and_why: >-
+      A deliberate conservative choice, not an oversight. Adopting 0.3537
+      would require a THIRD parameter in the already-coupled (A, K_const)
+      fixed-point iteration, and bsa_factor(0.85) is a term in A's own
+      anchor kernel, so A would absorb most of the change at 85% BSA and the
+      residual would land on every OTHER exposed-BSA value in the model --
+      moving every validation check for a 7.8% shift in an exponent whose
+      own sensitivity sweep over two unsourced protocol assumptions (the
+      script's Step 2c) spans 0.3046 to 0.3895, WIDER than the drift being
+      chased. Recommended as a follow-up only if the (A, K_const, BSA_EXP)
+      triple is ever re-fitted jointly in one pass.
+
 # Live status. Regenerate with: PYTHONIOENCODING=utf-8 python3 run_all.py
 current_validation:
   required: "9 / 10"
@@ -1202,7 +2336,7 @@ pending_approvals:
       default feedback_mode = 'linear' (whose Matsuoka deconvolution gives
       ~1.00, which FAILS even the widened band).
     reconciliation_2026_09_19: >-
-      W-E bookkeeping pass (docs/ORCHESTRATOR_PLAN.md workstream W-E).
+      W-E bookkeeping pass (status as of 2026-09-19).
       VERIFIED: the band change described above is shipped -- vitd_validation.py:449,
       `PHOTOADAPTATION_REDUCTION_MAX = 0.10`. No code was changed by this
       pass; the YAML record had simply never caught up to the code.
@@ -1241,6 +2375,26 @@ pending_approvals:
       approval. AWAITING EXPLICIT USER APPROVAL. Until given, count this
       check's PASS as provisional bookkeeping, not a ratified acceptance
       band.
+    w_z_verdict_2026_09_22: >-
+      Decision A6 (2026-09-22). CIRCULARITY: near-total on the discriminating
+      evidence -- K_ATTEN and the band's cutoff are both read off the same
+      Matsuoka 1990 n=7 deconvolution; Young 2020 is explicitly disclaimed
+      elsewhere in this file as non-corroborating for K_ATTEN either way.
+      PINNED-AT-ZERO RATIONALE: void, not partially valid -- true only
+      2026-08-18 to 2026-08-21. VERDICT: KEEP, redesign the tier label only
+      (TIER_INTERNAL -> TIER_CIRCULAR); no independent-evidence redesign is
+      possible with sources currently in the repo. Approved on this basis.
+      SUPERSEDES the "AWAITING EXPLICIT USER APPROVAL" line in
+      `reconciliation_2026_09_19` immediately above: the user's A6 answer
+      ("revisit the check along with revisiting the numbers; number changes
+      are approved by me as long as the check is worth keeping at all") is
+      the approval, applied 2026-09-22 -- see entry A7 above (`status:
+      APPROVED_2026_09_22_STRUCTURAL_KEEP_WITH_REDESIGN`) for the full
+      resolution text. RETROACTIVE: the band's code has been live since
+      2026-08-18; this is the paperwork catching up, not a new decision
+      changing model behaviour. Applied to code: vitd_validation.py
+      CHECK_REGISTRY entry "photoadaptation reduction", tier field only --
+      no computed value, no pass/fail outcome, no parameter changed.
 
   - name: "M_TAN_HEADROOM 0.20 -> 0.238 (melanin ceiling)"
     date: 2026-08-25
@@ -1458,7 +2612,7 @@ decisions_2026_08_17:
       VALUES stay unreliable even though interval and minutes columns do not
       depend on it.
     implementation_status_2026_09_19: >-
-      W-E bookkeeping pass (docs/ORCHESTRATOR_PLAN.md workstream W-E). PRIMARY
+      W-E bookkeeping pass (status as of 2026-09-19). PRIMARY
       HALF IS IMPLEMENTED, not merely planned. Evidence: `vitd_objectives.py`
       defines `OBJECTIVE_HIERARCHY`, a machine-readable ranking with
       `TIER_PRIMARY` bound to `minimum_schedule_for_sufficiency` -- "least
@@ -1480,8 +2634,9 @@ decisions_2026_08_17:
       CLOSING the primary-metric half of this entry as done; no further
       action needed on it. The tri-objective half (`not_covered` above,
       dose x spacing x cancer risk as a genuinely new objective function) is
-      OUT OF SCOPE for this bookkeeping pass and is ROUTED to Wave 3
-      workstream W-R per docs/ORCHESTRATOR_PLAN.md.
+      OUT OF SCOPE for this bookkeeping pass and is ROUTED to the A3
+      tri-objective workstream (approved 2026-09-22, entry
+      a3_tri_objective_2026_09_21 below).
 
 a1_diagnosis_result_2026_08_17:
   # OUTCOME of the "diagnose first" decision above. The diagnosis is COMPLETE.
@@ -1540,11 +2695,44 @@ a1_diagnosis_result_2026_08_17:
     overlap carries the result. (3) Rhodes 2010's pre-course 25(OH)D is still
     unobtained; it is no longer load-bearing but would narrow the cross-trial
     estimate more than any other single acquisition.
+  cannot_be_resolved_correction_2026_09_22: >-
+    CORRECTION to clause (3) above, left in place per this file's own
+    "record of past decisions" convention (do not overwrite history here).
+    Verified FALSE by a full-text read (2026-09-21) of
+    Research_Papers/PMID 20072137.pdf, confirmed Rhodes et al. 2010, J Invest
+    Dermatol 130(5):1411-1418). Two things in clause (3) do not hold: (a)
+    "still unobtained" is stale -- the paper is in the repo and has now been
+    read in full; (b) "would narrow the cross-trial estimate more than any
+    other single acquisition" is not just unconfirmed, it is impossible as
+    stated. Rhodes 2010 enrolled 120 white Caucasians, FST I-IV only (Table
+    1: I 7.3%, II 55.0%, III 36.7%, IV 0.9%) -- ZERO FST V or VI subjects --
+    and its own multiple regression on post-course 25(OH)D (Table 2) does not
+    include skin type as a covariate at all; it reports one pooled
+    cohort-level delta, not a per-FST breakdown. The K_const cross-trial
+    estimate is built entirely from within-study FST CONTRASTS (W-J sec 1);
+    Rhodes 2010 contains no between-phototype contrast of any kind, so there
+    is no ratio for it to narrow. It cannot enter as a fifth route. (Rhodes
+    2010 remains useful for other things -- a large light-skin absolute
+    dose-response record and circumstantial corroboration of Felton 2016's
+    cabinet (see docs/SOURCES.md); just not this.)
+  cannot_be_resolved_correction_2026_09_23: >-
+    CORRECTION to clause (1) above, decision C5(ii), left in place per this
+    file's "record of past decisions" convention. "No field dosimetry exists
+    in FST VI or in African-ancestry populations" is true of THIS REPOSITORY,
+    not of the literature. Personal electronic-dosimeter studies of deeply
+    pigmented South African outdoor workers exist (Nkogatse et al. 2018,
+    Photochem Photobiol 95(1):439-445, PMID 30183090: personal daily dose 24%
+    of ambient, behaviour-inclusive; Blesic et al. 2016, PMID 27553989;
+    Blesic et al. 2019, PMID 31830694), plus Fajuyigbe et al. 2018 Photochem
+    Photobiol (PMID 29869793) for erythema in black West African skin. All
+    four are in paper/references.bib as read-but-not-cited; none is obtained
+    in full text and none feeds a parameter. Every other statement in clause
+    (1) stands: every FST VI datapoint IN THE REPO is lamp-based.
 
 approved_2026_08_17_pending_implementation:
   # Blanket approval given 2026-08-17 ("my approvals: everything"), conditional
   # on the grounding_requirement above.
-  # STATUS AS OF 2026-09-19 (W-E bookkeeping pass, docs/ORCHESTRATOR_PLAN.md):
+  # STATUS AS OF 2026-09-19 (W-E bookkeeping pass):
   # the header comment above used to read "NONE of these are implemented yet"
   # -- no longer accurate for three of the five. A2 deferred to Wave 2
   # workstream W-F (the D_max source hunt). A4 superseded twice over by later,
@@ -1652,38 +2840,62 @@ approved_2026_08_17_pending_implementation:
       `__setattr__` retirement guard (vitd_model.py:1751, a no-op today since
       the dict it checks is empty), `allow_retired_parameter_sweep()`
       (vitd_model.py:1280, has nothing left to sweep), and the downstream
-      `vm.RETIRED_PARAMETERS`-conditioned branches plus several UNCONDITIONAL
-      "K_ATTEN is retired at zero" prose blocks in
-      spacing_study/run_spacing_study.py (the unconditional ones, at
-      approximately lines 769-772, 955-958 and 1155-1161, are wrong today;
-      the conditional ones near lines 712-729 and 1030-1039 self-correct off
-      `vm.RETIRED_PARAMETERS` and are currently rendering correctly). Full
-      list and exact line numbers: docs/workstreams/W-E.md.
+      `vm.RETIRED_PARAMETERS`-conditioned branches in
+      spacing_study/run_spacing_study.py. [RE-VERIFIED 2026-09-23: the
+      formerly-flagged unconditional "K_ATTEN is retired at zero" prose
+      blocks no longer exist as unconditional text -- every live mention
+      found by grepping the current file for "retired at zero"/"pinned at
+      zero"/"is retired" (lines 843, 974, 1024, 1119, 1124, 1165, 1251) is
+      now either gated on a runtime flag (`_katten_retired`, `h_mel_dead`,
+      `ident`) or phrased in the past tense describing the 2026-08-18 to
+      2026-08-21 retired-at-zero window accurately. The frozen 2026-09-19
+      line-number list this entry used to cite is therefore stale by
+      construction and has been dropped rather than repeated; re-grep the
+      live file if this needs checking again, per W-S's own finding that
+      frozen line numbers rot.]
   - id: A7
     name: "Sanity 3 acceptance band 10-30% -> 0-10%"
     why: >-
       Resolves the outstanding NEEDS_VERIFICATION entry in pending_approvals
-      above. Read it together with that entry's consequence clause: the check
-      cannot fail at the current parameter value.
-    status: IMPLEMENTED_IN_CODE_AWAITING_USER_APPROVAL
+      above. Read it together with the circularity finding above
+      (w_z_verdict_2026_09_22): the band and the K_ATTEN parameter it
+      guards are anchored to the SAME Matsuoka 1990 (n=7) deconvolution,
+      read under different feedback-form assumptions. Not independent
+      evidence; a real, non-vacuous structural bound.
+    status: APPROVED_2026_09_22_STRUCTURAL_KEEP_WITH_REDESIGN
     resolution: >-
-      2026-09-19 (W-E bookkeeping pass). The band change is ALREADY SHIPPED:
-      vitd_validation.py:449, `PHOTOADAPTATION_REDUCTION_MAX = 0.10` (the
-      0-10% band, not 10-30%), tagged in-file "[A7, RE-DERIVED 2026-08-18]"
-      and present at HEAD with no working-tree diff. This pass did not write
-      that code; it found the bookkeeping record had never caught up to it.
-      This item's own "cannot fail at the current parameter value" claim is
-      ALSO now stale -- true only 2026-08-18 to 2026-08-21 while K_ATTEN sat
-      RETIRED at 0.00 (see A6 above); K_ATTEN is reinstated at 0.288972, so
-      the check is a live measurement, not a construction artefact. Full
-      before/after and the corrected pass-count consequence, at full
-      precision, are recorded in the "Sanity 3 acceptance band" entry under
-      pending_approvals above (field `reconciliation_2026_09_19`). NOT
-      APPROVED by this pass: the band value is a real change to what the
-      model must satisfy (CLAUDE.md's calibration gate), the code getting
-      there ahead of the paperwork does not retroactively grant approval, and
-      the user has not signed off on the 0-10% band itself. Awaiting explicit
-      user approval.
+      2026-09-22 (decision A6). RETROACTIVE APPROVAL. Authority: the
+      user's A6 answer, 2026-09-21 -- "revisit the check
+      along with revisiting the numbers; number changes are approved by me
+      as long as the check is worth keeping at all." W-Z's structural
+      analysis (the numbers half was out of scope for that memo) found the
+      check IS worth keeping, which activates that conditional approval; W-Z
+      further established by direct perturbation that no number change is
+      needed (see below), so the "number changes are approved" clause is
+      satisfied vacuously here, not exercised. KEEP the check; REDESIGN its
+      tier label only (TIER_INTERNAL -> TIER_CIRCULAR, applied
+      vitd_validation.py CHECK_REGISTRY entry "photoadaptation reduction" --
+      see W-Z sec 3). The original 2026-08-09 justification ("cannot fail,
+      one-sided drift guard") is VOID -- it held only while K_ATTEN was
+      pinned at 0.00 (2026-08-18 to 2026-08-21). The check is approved
+      instead on its CURRENT, circular-but-real rationale: the 10% ceiling
+      admits the low end of Matsuoka 1990's own feedback-form bracket
+      [0.288972, 0.838389] (reductions 6.6-18.1%) and rejects its high end
+      -- verified directly, not vacuous (18.088974442653605% at the
+      bracket's top, K_ATTEN=0.838389, FAILS). Measured today: reduction =
+      0.0664636114604561, PASS, headroom 1.5320x
+      (K_ATTEN <= 0.4426912422597744). VERIFIED INVARIANT (W-Z sec 0, by
+      direct perturbation) to K_const, A, D_max, SC_max/alpha_SC/K_SC and
+      M_baseline_by_FST -- i.e. to every quantity A1/A3/A4/A5 could move.
+      No re-derivation is owed when those land; see W-Z sec 4 for the exact
+      (narrow) trigger conditions under which this DOES need re-measuring.
+      NOT literature validation -- retained in the required tally per the
+      Bogh-2012 TIER_CIRCULAR precedent (circular checks stay required here
+      provided the tier breakdown discloses it), not as an independent pass.
+      This supersedes the 2026-09-19 W-E bookkeeping status
+      (IMPLEMENTED_IN_CODE_AWAITING_USER_APPROVAL) recorded below on the
+      "Sanity 3 acceptance band" pending_approvals entry, which remains as
+      the historical record of how the approval gap was found.
 
 data_requests_closed_2026_08_17:
   - id: "13b"
@@ -1866,14 +3078,14 @@ phase4_results_2026_08_18:
 #   PYTHONIOENCODING=utf-8 python3 scripts/feasibility_map_kconst.py #       --before combined
 #   PYTHONIOENCODING=utf-8 python3 scripts/feasibility_map_kconst.py --factorial
 # against live ModelParams() (K_const = 1.15, A = 4.125, feedback_mode =
-# biphasic). Memo: docs/workstreams/W-Q.md.
+# biphasic). Workstream W-Q (retired 2026-09-23); this entry's own fields
+# below are the full record.
 # ===========================================================================
 combined_feasibility_map_2026_09_21:
   status: RECORDED
   parameter_changes: NONE
   recorded_by: W-Q workstream agent
   date: 2026-09-21
-  memo: docs/workstreams/W-Q.md
   supersedes: parameter_approvals.K_const.consequence (the K_const-only map)
   before_set: "K_const = 0.33, A = 2.353 (BEFORE_SETS['combined'])"
   after_set: "live ModelParams() -- K_const = 1.15, A = 4.125, biphasic"
@@ -1962,11 +3174,20 @@ combined_feasibility_map_2026_09_21:
 # DRAFT PROPOSAL. NEEDS_APPROVAL. No parameter value was changed by this work.
 # ===========================================================================
 a3_tri_objective_2026_09_21:
-  status: NEEDS_APPROVAL
-  proposed_by: W-R workstream agent (docs/ORCHESTRATOR_PLAN.md section 5, W-R)
+  status: APPROVED_2026_09_22
+  approved_by: >-
+    User answer to decision A7 (2026-09-22).
+    The user asked what approving it would achieve, was told that it approves no
+    parameter value, that it closes the tri-objective half of the A3 primary
+    scheduling metric entry, and that it freezes the cross-skin-type guard as an
+    approved structural invariant rather than removable code -- and approved on
+    that basis. Parameter changes: still NONE.
+  proposed_by: W-R workstream agent (2026-09-21)
   date: 2026-09-21
   closes_half_of: "A3 primary scheduling metric -> not_covered (tri-objective half)"
-  memo: docs/workstreams/W-R.md
+  memo: >-
+    (workstream W-R, retired 2026-09-23 -- already-approved, no parameter
+    value; this entry's own what_is_proposed field below is the full record)
   parameter_changes: NONE
   what_is_proposed: >-
     Adoption of the tri-objective (A1 n_sessions, A2 max_gap_days, A3

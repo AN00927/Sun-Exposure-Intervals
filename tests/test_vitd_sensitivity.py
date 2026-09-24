@@ -3,7 +3,7 @@ tests/test_vitd_sensitivity.py
 ================================
 Coverage for vitd_sensitivity.py (previously zero tests), and the primary
 regression test for the 2026-09-20 `identifiability_pairs` reporting fix
-(see docs/workstreams/W-O.md and the "DEGENERATE vs UNIDENTIFIABLE" section
+(see the "DEGENERATE vs UNIDENTIFIABLE" section
 of `identifiability_pairs`'s own docstring in vitd_sensitivity.py).
 
 Background this file protects against recurring: Wave 2 (W-F) established,
@@ -44,10 +44,27 @@ expensive entry point in this module and is exercised here only once, with
 
 from __future__ import annotations
 
+import os
+import sys
+
 import numpy as np
 import pytest
 
 import vitd_sensitivity as vs
+from vitd_model import ModelParams
+
+
+def _import_parameter_optima():
+    """Import scripts/parameter_optima.py the way run_all.py does (defensive
+    sys.path insert; scripts/ is not a package). Import-only -- this never
+    calls its `main()`, so nothing under figs/ or tables/ is touched.
+    """
+    scripts_dir = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "scripts")
+    if scripts_dir not in sys.path:
+        sys.path.insert(0, scripts_dir)
+    import parameter_optima
+    return parameter_optima
 
 
 # ---------------------------------------------------------------------------
@@ -58,6 +75,37 @@ def test_validation_param_ranges_low_below_high():
     for name, (lo, hi, note) in vs.PARAM_RANGES.items():
         assert lo < hi, f"{name}: low {lo} is not < high {hi}"
         assert isinstance(note, str) and len(note) > 0
+
+
+def test_validation_shipped_defaults_lie_inside_sweep_range_vitd_sensitivity():
+    """Regression test for the 2026-09-23 SWEEP-RANGES bug fix: A's and
+    K_const's hardcoded ranges here ((1.6, 3.8) and (0.20, 0.90)) excluded
+    the shipped, recalibrated defaults (A = 4.359560972608079,
+    K_const = 2.096070737357932) after the 2026-09-22 parameter pass, so a
+    "vary each parameter around its calibrated value" sweep was silently
+    measuring a swing around a stale value instead. Every PARAM_RANGES entry
+    must bracket (inclusive) the value ModelParams() actually ships with.
+    """
+    p = ModelParams()
+    for name, (lo, hi, note) in vs.PARAM_RANGES.items():
+        default = getattr(p, name)
+        assert lo <= default <= hi, (
+            f"{name}: shipped default {default!r} is outside sweep range "
+            f"[{lo!r}, {hi!r}]")
+
+
+def test_validation_shipped_defaults_lie_inside_sweep_range_parameter_optima():
+    """Same regression, same cause, in scripts/parameter_optima.py's
+    PARAMETERS list: K_const was (0.15, 0.50) and A was (1.5, 3.5), both
+    excluding the shipped defaults after the 2026-09-22 parameter pass.
+    """
+    parameter_optima = _import_parameter_optima()
+    p = ModelParams()
+    for spec in parameter_optima.PARAMETERS:
+        default = getattr(p, spec["attr"])
+        assert spec["lo"] <= default <= spec["hi"], (
+            f"{spec['name']}: shipped default {default!r} is outside sweep "
+            f"range [{spec['lo']!r}, {spec['hi']!r}]")
 
 
 # ---------------------------------------------------------------------------
@@ -93,11 +141,24 @@ def test_characterisation_one_at_a_time_top_parameter_pinned():
     """PINNED CURRENT VALUE (FST 5): the top-ranked parameter by relative
     steady-state-D swing and its numeric range. Not independently verified;
     only proves determinism.
+
+    RE-PINNED 2026-09-23 for the SWEEP-RANGES bug fix (see the comment
+    above `PARAM_RANGES` in vitd_sensitivity.py). The PREVIOUS pin of
+    7.468854649469776 (itself a 2026-09-23 re-pin "for the 2026-09-22
+    parameter pass") was the swing of a hardcoded K_const range
+    (0.20, 0.90) that EXCLUDED the shipped K_const = 2.096070737357932 --
+    a bug, not a calibration change: the sweep was not measuring "vary
+    K_const around its calibrated value" at all. K_const's range is now the
+    calibration leave-one-out envelope (1.5884400707455726,
+    3.1839988650360818), which DOES bracket the shipped value, and the
+    swing over that corrected range is 9.55394246902243 -> 8.975769062450752
+    nmol/L. K_const stays the top-ranked parameter (the ordering this test
+    exists to pin) both before and after the fix.
     """
     rows = vs.one_at_a_time_sensitivity(fst=5, verbose=False)
     top = rows[0]
     assert top["parameter"] == "K_const"
-    assert top["steady_state_D_range"] == pytest.approx(9.534915652060903, abs=1e-9)
+    assert top["steady_state_D_range"] == pytest.approx(8.975769062450752, abs=1e-9)
 
 
 # ---------------------------------------------------------------------------
@@ -175,10 +236,19 @@ def test_characterisation_ridge_fraction_pinned_values():
     model or calibration changes.
     """
     out = vs.identifiability_pairs(fst=5, verbose=False)
+    # RE-PINNED 2026-09-23 for the SWEEP-RANGES bug fix (K_const's sweep
+    # range moved from a hardcoded (0.20, 0.90), which excluded the shipped
+    # K_const, to the calibration leave-one-out envelope (1.5884400707455726,
+    # 3.1839988650360818), which does not). K_const~K_ATTEN's grid is built
+    # over PARAM_RANGES["K_const"] x PARAM_RANGES["K_ATTEN"], so it moves:
+    # 0.9993128192805887 -> 0.999871349336661. K_ATTEN~K_SC's grid uses only
+    # K_ATTEN and K_SC ranges, neither of which this fix touched, so it is
+    # UNCHANGED at 0.9967387580224814 (still asserted below as a check that
+    # the fix did not have a spillover effect on an unrelated pair).
     assert out["K_const~K_ATTEN"]["ridge_fraction"] == pytest.approx(
-        0.99966957901959, abs=1e-9)
+        0.999871349336661, abs=1e-9)
     assert out["K_ATTEN~K_SC"]["ridge_fraction"] == pytest.approx(
-        0.9985529218046425, abs=1e-9)
+        0.9967387580224814, abs=1e-9)
     # The two degenerate pairs are EXACTLY 1.0 (not merely close), because a
     # grid over one dead axis is mechanically rank-1 -- this exactness is
     # itself part of what distinguishes "degenerate" from "informative ridge"

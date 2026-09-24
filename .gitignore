@@ -68,8 +68,9 @@ presentation/
 
 # Canonical tracked documentation stays in the repo. docs/ is a source-of-truth
 # project asset, not private scratch, and must NOT be added to this file
-# (see docs/ORCHESTRATOR_PLAN.md §1a — a prior claim that docs/ was gitignored
-# was wrong and has been corrected). presentation/ (above) is the opposite:
+# (a prior claim that docs/ was gitignored was wrong and has been corrected:
+# `git ls-files docs/` returns tracked files and `git check-ignore` matches
+# none of them). presentation/ (above) is the opposite:
 # gitignored working material, not a canonical tracked asset.
 
 # Extraction scratchpads and temporary outputs
@@ -131,3 +132,6 @@ paper/*.fls
 paper/*.fdb_latexmk
 paper/*.pdf
 paper/*.spl
+
+# FEW-TIME script (docs/SCRIPTS.md): kept on disk, untracked 2026-09-22
+scripts/skin_type_breakdown.py

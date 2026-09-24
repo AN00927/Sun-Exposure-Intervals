@@ -581,8 +581,10 @@ def test_low_budget_flip_is_reachable_by_measured_exponents():
     NOT protected by the data at those budgets.
 
     This test asserts that the exposure is real. If a future change makes it
-    fail, that means the exposure has closed and the wording in
-    ``docs/workstreams/W-H.md`` and in the spacing study should be revisited.
+    fail, that means the exposure has closed. As of the check that pinned
+    this test, the low-budget (<=0.25 SED/day) regime has a negative ranking
+    flip margin (-0.1460 at gamma=1.2512) and should be revisited if spacing
+    schedules below 0.5 SED/day are ever recommended.
     """
     shih = empirical_exponents()["shih2018"]
     point = max(shih["loglog"], shih["secant"])

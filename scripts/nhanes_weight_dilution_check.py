@@ -46,6 +46,7 @@ from scipy import stats as sps
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 INPUT_CSV = os.path.join(BASE_DIR, "audit_outputs", "nhanes_standardized_processed.csv")
 OUTPUT_CSV = os.path.join(BASE_DIR, "tables", "nhanes_weight_dilution_check.csv")
+FST_WEIGHT_CSV = os.path.join(BASE_DIR, "tables", "nhanes_fst_body_weight.csv")
 
 RACE_ETHNICITY_MAP = {
     1: "Mexican American",
@@ -335,6 +336,110 @@ def print_model_comparison(results):
         )
 
 
+
+# ---------------------------------------------------------------------------
+# Per-FST population body weight -- the source of vitd_physiology.BODY_WEIGHT_BY_FST
+# ---------------------------------------------------------------------------
+# [ADDED 2026-09-22, decision A5 wire-in] The exponent this script fits is
+# applied to a body weight, and until today nothing supplied one: the
+# dilution term was inert because no caller set a weight. This section emits
+# the per-FST survey-weighted mean body weight that is now the model's
+# population default, so the exponent and the weights it multiplies come from
+# ONE script, ONE analytic sample and ONE FST definition.
+#
+# FST ASSIGNMENT is the repository's own NHANES FST proxy, reproduced from
+# scripts/generate_nhanes_priors_table.py rather than re-invented: the DEQ
+# self-reported sun-reaction item where present, with a race/ethnicity
+# fallback. Using the same proxy for weight as for baseline 25(OH)D keeps the
+# two population defaults describing the same strata.
+#
+# SAMPLE is the UNSUPPLEMENTED analytic sample, matching this script's own
+# primary regression row -- so the exponent and the weights describe the same
+# people. The all-adults figures are emitted alongside for comparison.
+
+
+def _fst_proxy(row):
+    """Repository NHANES FST proxy (see generate_nhanes_priors_table.py)."""
+    skin_rx = row.get("deq_skin_reaction")
+    race = row.get("race_ethnicity")
+    if pd.notna(skin_rx) and skin_rx in (1, 2, 3, 4, 5):
+        if skin_rx == 5 and race == 4:
+            return 6
+        return int(skin_rx)
+    if race == 4:
+        return 5
+    if race == 3:
+        return 2
+    if race in (1, 2, 6):
+        return 4
+    return np.nan
+
+
+def _taylor_se_of_weighted_mean(sub, col="weight_kg"):
+    """Design-based SE of a survey-weighted mean.
+
+    Taylor linearization over SDMVPSU within SDMVSTRA, the same design basis
+    the regressions above use. Returns (mean, se, design_df).
+    """
+    w = sub["wtmec2yr"].to_numpy(dtype=float)
+    y = sub[col].to_numpy(dtype=float)
+    W = w.sum()
+    mu = float((w * y).sum() / W)
+    z = w * (y - mu) / W
+    strata = sub["sdmvstra"].to_numpy()
+    psus = sub["sdmvpsu"].to_numpy()
+    var, n_psu, n_str = 0.0, 0, 0
+    for st in np.unique(strata):
+        m = strata == st
+        ps = np.unique(psus[m])
+        if len(ps) < 2:
+            continue
+        tot = np.array([z[m & (psus == p)].sum() for p in ps])
+        nh = len(ps)
+        n_psu += nh
+        n_str += 1
+        var += nh / (nh - 1) * ((tot - tot.mean()) ** 2).sum()
+    return mu, float(np.sqrt(var)), int(n_psu - n_str)
+
+
+def fst_body_weight_table(valid, unsupp):
+    """Survey-weighted mean body weight by FST proxy, both samples."""
+    rows = []
+    for sample_label, frame in (("unsupplemented (primary)", unsupp),
+                                ("all adults", valid)):
+        f = frame.copy()
+        f["fst_proxy"] = f.apply(_fst_proxy, axis=1)
+        for fst in range(1, 7):
+            g = f.loc[f["fst_proxy"] == fst]
+            if len(g) < MIN_N_FIT:
+                continue
+            mu, se, ddf = _taylor_se_of_weighted_mean(g)
+            w = g["wtmec2yr"].to_numpy(dtype=float)
+            y = g["weight_kg"].to_numpy(dtype=float)
+            sd_w = float(np.sqrt((w * (y - mu) ** 2).sum() / w.sum()))
+            rows.append({"sample": sample_label, "fst": fst,
+                         "n_unweighted": int(len(g)),
+                         "mean_weight_kg": mu, "se_mean_weight_kg": se,
+                         "weighted_sd_kg": sd_w, "design_df": ddf})
+    return pd.DataFrame(rows)
+
+
+def print_fst_body_weight(df):
+    print("\nPer-FST population body weight (the source of "
+          "vitd_physiology.BODY_WEIGHT_BY_FST)")
+    print(f"  {'sample':24s} {'FST':>4} {'n':>7} {'mean kg':>12} "
+          f"{'SE':>9} {'wtd SD':>9} {'df':>5}")
+    for _, r in df.iterrows():
+        print(f"  {r['sample']:24s} {int(r['fst']):>4d} "
+              f"{int(r['n_unweighted']):>7,d} {r['mean_weight_kg']:>12.6f} "
+              f"{r['se_mean_weight_kg']:>9.6f} {r['weighted_sd_kg']:>9.4f} "
+              f"{int(r['design_df']):>5d}")
+    print("  Design-based SEs are 0.37-2.35 kg, so about four significant")
+    print("  figures are meaningful. Full precision is in the CSV and in")
+    print("  vitd_physiology.BODY_WEIGHT_BY_FST, which code reads back.")
+
+
+
 def main():
     valid, unsupp, steps, cycles = load_valid_adults()
     n_cycles = len(cycles)
@@ -364,6 +469,11 @@ def main():
 
     print_main_table(results)
     print_model_comparison(results)
+
+    fst_wt = fst_body_weight_table(valid, unsupp)
+    fst_wt.to_csv(FST_WEIGHT_CSV, index=False)
+    print_fst_body_weight(fst_wt)
+    print(f"  written to: {os.path.relpath(FST_WEIGHT_CSV, BASE_DIR)}")
 
     print(f"\nNotes: '*' marks groups whose 95% CI contains multiple candidate")
     print(f"exponents (-1/-0.5/0); see CSV conclusion_long for detail. Weight model")

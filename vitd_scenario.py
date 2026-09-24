@@ -22,7 +22,7 @@ import pandas as pd
 
 from vitd_model import BSA_REF, build_pulse_schedule, get_E_source
 from vitd_model import ModelParams, simulate
-from vitd_physiology import cancer_risk
+from vitd_physiology import cancer_risk, BODY_WEIGHT_REF_KG
 from vitd_objectives import PERSONAL_DOSE_GEOMETRY_FACTOR, SED_PER_MIN_PER_UVI
 
 
@@ -50,6 +50,15 @@ class ExposureScenario:
     protocol_duration_days: int = 84
     protocol_schedule: Tuple[Tuple[float, float], ...] = field(default_factory=tuple)
     observed_delta_D: Optional[Union[float, Tuple[float, float, float]]] = None
+    # [A5, 2026-09-22] Cohort body weight in kg for the volumetric-dilution
+    # term. None means "use the FST population default"
+    # (vitd_physiology.BODY_WEIGHT_BY_FST), which is what an unspecified
+    # user should get. A scenario reproducing a PUBLISHED TRIAL should set
+    # this to the weight that trial reports, and to
+    # vitd_physiology.BODY_WEIGHT_REF_KG when the trial reports none -- a US
+    # population mean is not a measurement of a UK trial cohort. Which
+    # trial-backed scenarios below publish a weight is recorded on each.
+    body_weight_kg: Optional[float] = None
 
     @property
     def sed_per_minute(self) -> float:
@@ -105,19 +114,58 @@ SCENARIO_REGISTRY: Dict[str, ExposureScenario] = {
         observed_delta_D=None,
     ),
     "farrar2013_fst5_uk": ExposureScenario(
+        # [W-Y 2026-09-22 BUG FIX] This record was previously bit-identical
+        # to felton2016_fst5_matched below (same baseline_D0=17.2, same
+        # 1.3-SED dose, same schedule) -- almost certainly an accidental
+        # copy of that record's numeric fields, since 17.2/1.3 are FELTON
+        # 2016's own Table 1 values (confirmed against
+        # Research_Papers/"Concurrent beneficial ... summer sunlight
+        # exposures.pdf", content-verified DOI 10.1111/bjd.14863), not
+        # Farrar's. Citation/DOI were also wrong (98:E526 /
+        # 10.1210/jc.2012-3864 match no paper in this repo's corpus or in
+        # paper/references.bib). Corrected against Research_Papers/
+        # "Efficacy of a dose range of simulated sunlight exposures ...
+        # South Asian adults ...pdf" (content-verified DOI
+        # 10.3945/ajcn.112.052639, Am J Clin Nutr 97:1210-1216 -- matches
+        # references.bib's farrar2013 entry). Farrar 2013 ran 6 dose
+        # groups (0.65-3.9 SED); observed_delta_D=21.7 is the paper's own
+        # pooled statistic for the ">=1.95 SED" subgroup (n=33; abstract:
+        # final 15.7, rise 8.7 ng/mL), so the dose here must be 1.95 SED
+        # (the qualifying threshold), not 1.3 SED (a different, lower dose
+        # group Farrar's own Table 2 shows responding less). baseline_D0
+        # is that same subgroup's implied baseline, derived from the
+        # paper's own printed pooled figures: 15.7 - 8.7 = 7.0 ng/mL x
+        # 2.496 nmol/L per ng/mL = 17.472 nmol/L (full precision; the
+        # 2.496 factor is the one already used for this study elsewhere
+        # in this repo, vitd_validation.validate_farrar_2013).
+        # e_source_name="solar_summer" is UNCHANGED and correct: the
+        # cabinet (Philips HB598, Arimed B + Cleo Natural tubes) is
+        # explicitly stated by the authors to be "the same in terms of
+        # vitamin D production" as real sunlight -- the description's old
+        # "NB-UVB" was the actual error (Farrar's course lamp was a
+        # solar-simulating cabinet; NB-UVB/TL-01 was used only for the
+        # separate precourse MED assay, not the dosing intervention).
         name="farrar2013_fst5_uk",
-        description="South Asian UK trial, FST V, 3x/wk NB-UVB",
-        study_citation="Farrar et al. 2013, J Clin Endocrinol Metab 98:E526",
-        pmid_or_doi="10.1210/jc.2012-3864",
+        description="South Asian UK trial, FST V, 3x/wk solar-simulated "
+                     "summer sunlight (>=1.95 SED subgroup)",
+        study_citation="Farrar et al. 2013, Am J Clin Nutr 97:1210-1216",
+        pmid_or_doi="10.3945/ajcn.112.052639",
         uvi=6.0,
         exposed_bsa=0.35,
         geometry_factor=0.35,
         e_source_name="solar_summer",
         target_fst=5,
-        baseline_D0=17.2,
+        baseline_D0=17.472,
         protocol_duration_days=42,
-        protocol_schedule=_build_weekly_protocol(42, 1.3),
+        protocol_schedule=_build_weekly_protocol(42, 1.95),
         observed_delta_D=21.7,
+        # Farrar 2013 Table 1 reports BMI by dose group but no body weight
+        # and no height, so no cohort weight is recoverable. Pinned to the
+        # reference body rather than to the NHANES FST V population mean:
+        # this is a Manchester South Asian trial cohort, and substituting a
+        # US survey mean into a check against its printed outcome would be
+        # an invention, not a measurement.
+        body_weight_kg=BODY_WEIGHT_REF_KG,
     ),
     "young2021_fst2_solar": ExposureScenario(
         name="young2021_fst2_solar",
@@ -135,6 +183,11 @@ SCENARIO_REGISTRY: Dict[str, ExposureScenario] = {
             (0.0, 2.0), (2.0, 2.0), (4.0, 2.0), (6.0, 2.0), (8.0, 2.0),
         ),
         observed_delta_D=36.1,
+        # Young 2021 publishes no body weight or BMI for the FB arm. This is
+        # also the cohort ModelParams.A is anchored to, so the anchor and
+        # this scenario must use the same body: the reference weight, i.e.
+        # dilution factor exactly 1.0. See vitd_model.py's A entry.
+        body_weight_kg=BODY_WEIGHT_REF_KG,
     ),
     "felton2016_fst2_matched": ExposureScenario(
         name="felton2016_fst2_matched",
@@ -150,6 +203,9 @@ SCENARIO_REGISTRY: Dict[str, ExposureScenario] = {
         protocol_duration_days=42,
         protocol_schedule=_build_weekly_protocol(42, 1.3),
         observed_delta_D=17.8,
+        # Felton 2016 publishes no body weight or BMI. Reference body, as
+        # for every other trial-reproduction scenario here.
+        body_weight_kg=BODY_WEIGHT_REF_KG,
     ),
     "felton2016_fst5_matched": ExposureScenario(
         name="felton2016_fst5_matched",
@@ -165,6 +221,8 @@ SCENARIO_REGISTRY: Dict[str, ExposureScenario] = {
         protocol_duration_days=42,
         protocol_schedule=_build_weekly_protocol(42, 1.3),
         observed_delta_D=8.3,
+        # Felton 2016 publishes no body weight or BMI. Reference body.
+        body_weight_kg=BODY_WEIGHT_REF_KG,
     ),
     "deboer2025_barrier": ExposureScenario(
         name="deboer2025_barrier",
@@ -180,6 +238,8 @@ SCENARIO_REGISTRY: Dict[str, ExposureScenario] = {
         protocol_duration_days=63,
         protocol_schedule=_build_weekly_protocol(63, 0.8),
         observed_delta_D=None,
+        # de Boer 2025 publishes no body weight. Reference body.
+        body_weight_kg=BODY_WEIGHT_REF_KG,
     ),
     "webb2018_uk_guidance": ExposureScenario(
         name="webb2018_uk_guidance",
@@ -367,8 +427,15 @@ def list_scenarios() -> List[str]:
     return sorted(SCENARIO_REGISTRY.keys())
 
 
-def simulate_scenario(name: str) -> dict:
+def simulate_scenario(name: str, weight_kg: Optional[float] = None) -> dict:
     """Run vitd_model.simulate with the scenario\'s parameters.
+
+    `weight_kg` overrides the scenario's own body weight for the
+    volumetric-dilution term ([A5], 2026-09-22). Leave it None to use the
+    scenario's own value: that is the reference body for the
+    trial-reproduction scenarios (none of which publishes a cohort weight)
+    and None -- i.e. the FST population default from
+    vitd_physiology.BODY_WEIGHT_BY_FST -- for the reference scenarios.
 
     Returns the full simulate() dict enriched with:
       - scenario_name: str
@@ -379,6 +446,10 @@ def simulate_scenario(name: str) -> dict:
     params = ModelParams(
         exposed_bsa=scenario.exposed_bsa,
         E_source=get_E_source(scenario.e_source_name),
+        # [A5] None here means simulate() applies the FST population default
+        # from vitd_physiology.BODY_WEIGHT_BY_FST.
+        body_weight_kg=(weight_kg if weight_kg is not None
+                        else scenario.body_weight_kg),
     )
     schedule = list(scenario.protocol_schedule)
     result = simulate(

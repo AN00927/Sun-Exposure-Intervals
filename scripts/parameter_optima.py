@@ -45,6 +45,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from vitd_model import (ModelParams, simulate, net_final_D_change_per_SED,
                         allow_retired_parameter_sweep)
+from vitd_validation import young2021_A_anchor
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIGS_DIR = os.path.join(ROOT, "figs")
@@ -68,28 +69,45 @@ def _p(name, attr, lo, hi, label, note, log=False):
     return dict(name=name, attr=attr, lo=lo, hi=hi, label=label, note=note, log=log)
 
 
+# BUG FIX 2026-09-23 (SWEEP-RANGES workstream): K_const and A were
+# recalibrated 2026-09-22 (K_const 2.096070737357932, A 4.359560972608079,
+# vitd_model.py) but this module's (0.15, 0.50) and (1.5, 3.5) brackets were
+# never updated, so both swept ranges excluded the value actually shipped.
+# Fixed the same way as vitd_sensitivity.PARAM_RANGES (see its module
+# docstring-adjacent comment for the full rationale): K_const from the
+# calibration leave-one-out envelope, A from the live Young 2021
+# source-matched cross-check bracket.
+from vitd_model import K_CONST_LOO_ENVELOPE as _K_CONST_LOO_ENVELOPE  # single source (decision A4)
+_A_CROSS_CHECKS = young2021_A_anchor()["cross_checks"]
+_A_YOUNG2021_BRACKET = (min(_A_CROSS_CHECKS.values()), max(_A_CROSS_CHECKS.values()))
+
 PARAMETERS = [
     _p("K_ATTEN", "K_ATTEN", 0.0, 1.0,
        "melanin attenuation $K_{ATTEN}$",
        "0.288972-0.838389 implied by Matsuoka 1990 after deconvolving baseline feedback "
         "(docs/MELANIN_MODEL.md section 2.8); 0 included as "
         "ablation"),
-    _p("K_const", "K_const", 0.15, 0.50,
+    _p("K_const", "K_const", *_K_CONST_LOO_ENVELOPE,
        "constitutive pigment $K_{const}$",
-       "bracket around Young 2020-derived value; PLAUSIBLE BRACKET, not a "
-       "published range"),
-    _p("K_SC", "K_SC", 0.5, 2.0,
+       "leave-one-out envelope over calibration source studies, "
+       "calibration_approval.yaml K_const_leave_one_out_envelope_2026_09_22; "
+       "replaces a hardcoded (0.15, 0.50) that excluded the shipped "
+       "K_const = 2.096070737357932 (2026-09-23 bug fix)"),
+    _p("K_SC", "K_SC", *ModelParams.SC_PRIOR_RANGES["K_SC"],
        "stratum-corneum attenuation $K_{SC}$",
-       "ModelParams.SC_PRIOR_RANGES"),
-    _p("SC_max", "SC_max", 0.20, 0.40,
+       "ModelParams.SC_PRIOR_RANGES (single source)"),
+    _p("SC_max", "SC_max", *ModelParams.SC_PRIOR_RANGES["SC_max"],
        "SC thickening ceiling $SC_{max}$",
-       "de Boer 2025: +23% (FP I-III) to +36% (FP IV-VI)"),
-    _p("alpha_SC", "alpha_SC", 0.08, 0.20,
+       "ModelParams.SC_PRIOR_RANGES (single source); de Boer 2025 +23% "
+       "(FP I-III) to +36% (FP IV-VI), ceiling widened to 0.54 2026-09-22"),
+    _p("alpha_SC", "alpha_SC", *ModelParams.SC_PRIOR_RANGES["alpha_SC"],
        r"SC thickening rate $\alpha_{SC}$",
-       "fitted to de Boer 2025, 3 timepoints"),
-    _p("k_damage", "k_damage", 0.0, 0.15,
+       "ModelParams.SC_PRIOR_RANGES (single source); fitted to de Boer "
+       "2025, 3 timepoints"),
+    _p("k_damage", "k_damage", *ModelParams.SC_PRIOR_RANGES["k_damage"],
        "UV barrier damage $k_{damage}$",
-       "SC_PRIOR_RANGES; default 0.0 because NOT IDENTIFIABLE from group medians"),
+       "ModelParams.SC_PRIOR_RANGES (single source); default 0.0 because "
+       "NOT IDENTIFIABLE from group medians"),
     _p("D_max", "D_max", 100.0, 250.0,
        "feedback ceiling $D_{max}$",
        "ORIGIN UNCONFIRMED [reference purged 2026-09-19]; bracket "
@@ -118,9 +136,13 @@ PARAMETERS = [
     _p("exposed_bsa", "exposed_bsa", 0.10, 0.90,
        "exposed body surface area",
        "Kimlin 2014: clothing cover is the largest naturalistic predictor"),
-    _p("A", "A", 1.5, 3.5,
+    _p("A", "A", *_A_YOUNG2021_BRACKET,
        "synthesis coefficient $A$",
-       "Young 2021 fair-skin slopes imply 2.0-5.0 nmol/L/SED at 85% BSA"),
+       "Young 2021 source-matched cross-check bracket (Arimed B .. UV6 "
+       "E_source), read live from "
+       "vitd_validation.young2021_A_anchor()['cross_checks']; replaces a "
+       "hardcoded (1.5, 3.5) that excluded the shipped "
+       "A = 4.359560972608079 (2026-09-23 bug fix)"),
 ]
 
 

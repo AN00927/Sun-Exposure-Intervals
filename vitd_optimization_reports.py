@@ -16,7 +16,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from vitd_model import ModelParams, simulate, steady_state_D, get_E_source
+import dataclasses
+
+from vitd_model import (ModelParams, simulate, steady_state_D, get_E_source,
+                        SC_MAX_IV_VI_RANGE)
 from vitd_objectives import (
     GAMMA_MED,
     RAMP_IN_DAYS,
@@ -194,6 +197,9 @@ def analysis_joint_schedule(params: Optional[ModelParams] = None,
     print("  Elwood/Leiter intermittency) and are reported SEPARATELY below.")
     print("  'combined' (geometric mean) is a ranking-only convenience, not")
     print("  itself literature-anchored -- see vitd_physiology.cancer_risk.")
+    if 6 in fsts:
+        print()
+        print(FST_VI_RESOLUTION_NOTE)
     print(f"\n  {'FST':>4} {'N':>4} {'spacing':>9} {'family':>12} {'gamma':>6} "
           f"{'SCC%':>7} {'interm%':>8} {'combined%':>10} {'totSED':>8} {'t->suff':>8}")
     print("  " + "-" * 96)
@@ -476,6 +482,157 @@ def _plot_variable_dose(df: pd.DataFrame, params: Optional[ModelParams] = None,
 
 ROMAN_FST = {1: "I", 2: "II", 3: "III", 4: "IV", 5: "V", 6: "VI"}
 
+# [decision B2, 2026-09-23] Point-of-use label for every FST VI output below.
+# Superseded wording: decision A3 (2026-09-22) released the ITA -> M mapping's
+# clip (see vitd_model.py's M_baseline_by_FST entry), so the pre-A3 label --
+# "the melanin index is a saturated boundary with no within-FST-VI resolving
+# power" -- is no longer true: FST VI's cell moved off the 1.00 ceiling and the
+# mapping now DOES vary within FST VI. What replaces it is the honest
+# post-release description: that resolving power rests on a single,
+# digitised-from-a-box-plot lower anchor (Linde 2020; +/-0.5 deg ITA residual
+# error) whose upper anchor and denominator remain unsourced, and that the
+# calibration set behind every synthesis parameter still contains no
+# non-lamp FST VI vitamin-D datapoint (vitd_model.py's own docstring: "every
+# FST VI datapoint is lamp-based"). Read from vitd_model.py rather than
+# restated here in numbers, per CLAUDE.md's "do not duplicate parameter
+# values" rule -- this label states what the gap IS, not its numeric size.
+FST_VI_RESOLUTION_NOTE = (
+    "  [FST VI, point-of-use note] Since decision A3 (2026-09-22) this cell "
+    "no longer sits on the saturated boundary of the ITA -> melanin-index "
+    "mapping -- the clip was released, so the mapping now varies within "
+    "FST VI rather than assigning every dark reading an identical penalty. "
+    "What that resolving power rests on: a single, digitised-from-a-box-plot "
+    "source for the mapping's new lower anchor (Linde 2020), with its upper "
+    "anchor and denominator still unsourced, and a calibration set that "
+    "still contains no non-lamp (real-sunlight) FST VI vitamin-D datapoint "
+    "-- see vitd_model.py's M_baseline_by_FST and K_const docstring entries. "
+    "Treat FST VI absolute numbers as resting on an extrapolated, "
+    "sparsely-evidenced anchor, not as a model limitation that has closed."
+)
+
+
+# =============================================================================
+# [decisions B1, A1, A2 -- 2026-09-23, "Phase 2b"] Band/threshold helpers.
+#
+# Every number these produce is computed against the LIVE ModelParams() at
+# report time -- none of the K_const/A/SC_max/M_baseline values below are
+# copied from a prior run. Only two things are held as data rather than
+# computed: the Narea-Jimenez et al. 2026 ITA mean/SD-by-FST pair (a
+# published SOURCE STATISTIC, not a model parameter -- see vitd_model.py
+# docstring ~line 807-809), and the range endpoint read live from
+# vitd_model.SC_MAX_IV_VI_RANGE (imported, not retyped).
+# =============================================================================
+
+# Narea-Jimenez et al. 2026, Biomed Phys Eng Express 12:025078: constitutive
+# ITA mean +/- SD by FST (vitd_model.py docstring ~line 807-809).
+NAREA_ITA_MEAN_BY_FST = {1: 51.76, 2: 40.42, 3: 27.54, 4: 10.45, 5: -9.08, 6: -33.63}
+NAREA_ITA_SD_BY_FST = {1: 6.40, 2: 9.77, 3: 10.67, 4: 9.71, 5: 9.98, 6: 15.91}
+
+
+def m_baseline_sd_band(params: Optional[ModelParams] = None):
+    """+/-1 SD band on M_baseline_by_FST, from Narea's own ITA dispersion.
+
+    The ITA -> M mapping's slope is fitted LIVE by linear regression against
+    the CURRENT `params.M_baseline_by_FST` (never against a hardcoded
+    formula or denominator), so this tracks vitd_model.py automatically if
+    the mapping is ever revised again. Returns (band, r2) where band is
+    {fst: {"mean", "lighter", "darker", "shift"}} and r2 is the linear fit's
+    R^2 -- expected close to 1.0 since the mapping is affine by construction;
+    printed so a future reader can see if that stops being true.
+    """
+    p = params or ModelParams()
+    m0 = p.M_baseline_by_FST
+    fsts_sorted = sorted(m0)
+    itas = np.array([NAREA_ITA_MEAN_BY_FST[f] for f in fsts_sorted])
+    ms = np.array([m0[f] for f in fsts_sorted])
+    slope, intercept = np.polyfit(itas, ms, 1)
+    fit = slope * itas + intercept
+    ss_res = float(np.sum((ms - fit) ** 2))
+    ss_tot = float(np.sum((ms - ms.mean()) ** 2))
+    r2 = 1.0 - ss_res / ss_tot if ss_tot > 0 else float("nan")
+    band = {}
+    for f in fsts_sorted:
+        shift = abs(float(slope)) * NAREA_ITA_SD_BY_FST[f]
+        band[f] = {"mean": m0[f], "lighter": m0[f] - shift,
+                   "darker": m0[f] + shift, "shift": shift}
+    return band, r2
+
+
+def _minutes_row(fst, session_budgets, params, m_override=None, sc_override=None):
+    """One `minimum_schedule_for_sufficiency` call, optionally overriding one
+    FST's M_baseline or SC_max cell via `dataclasses.replace` (never mutating
+    the live ModelParams default)."""
+    trial = params
+    if m_override is not None:
+        overridden = dict(trial.M_baseline_by_FST)
+        overridden[fst] = m_override
+        trial = dataclasses.replace(trial, M_baseline_by_FST=overridden)
+    if sc_override is not None:
+        overridden = dict(trial.SC_max_by_FST)
+        overridden[fst] = sc_override
+        trial = dataclasses.replace(trial, SC_max_by_FST=overridden)
+    return minimum_schedule_for_sufficiency(
+        fst=fst, session_budgets=session_budgets, params=trial)
+
+
+def sc_max_iv_vi_band(fsts=(4, 5, 6), session_budgets=TRI_SESSION_BUDGETS,
+                      params: Optional[ModelParams] = None):
+    """N_min / minutes at both ends of the carried SC_max_by_FST IV-VI range.
+
+    Reads the range from `vitd_model.SC_MAX_IV_VI_RANGE` (live import, not
+    retyped) rather than assuming which end is currently shipped, so this
+    stays correct even if the shipped value moves inside that range.
+    """
+    p = params or ModelParams()
+    lo, hi = SC_MAX_IV_VI_RANGE
+    out = {}
+    for fst in fsts:
+        shipped = p.SC_max_by_FST[fst]
+        row_lo = _minutes_row(fst, session_budgets, p, sc_override=lo)
+        row_hi = _minutes_row(fst, session_budgets, p, sc_override=hi)
+        out[fst] = {"shipped": shipped, "lo": lo, "hi": hi,
+                   "row_lo": row_lo, "row_hi": row_hi}
+    return out
+
+
+def a_threshold_for_fst(fst, n_sessions, params: Optional[ModelParams] = None,
+                        tol=1e-6, max_iter=80):
+    """Smallest `A` at which `fst` clears the session-length ceiling at
+    `n_sessions`/yr, every other shipped parameter held fixed.
+
+    Bisects on the model's own `feasible` flag (monotone increasing in A
+    over the relevant range -- verified directly, not assumed: see the
+    Phase-2b report). Returns None if no bracket up to a generous multiple
+    of the shipped A is found (i.e. even a large A does not rescue it).
+    """
+    p = params or ModelParams()
+
+    def feasible_at(a_val):
+        trial = dataclasses.replace(p, A=a_val)
+        r = minimum_schedule_for_sufficiency(
+            fst=fst, session_budgets=(n_sessions,), params=trial)
+        return bool(r["rows"][0]["feasible"])
+
+    lo = p.A
+    if feasible_at(lo):
+        return lo
+    hi = lo * 1.5
+    tries = 0
+    while not feasible_at(hi) and tries < 30:
+        hi *= 1.3
+        tries += 1
+    if not feasible_at(hi):
+        return None
+    for _ in range(max_iter):
+        mid = 0.5 * (lo + hi)
+        if feasible_at(mid):
+            hi = mid
+        else:
+            lo = mid
+        if hi - lo < tol:
+            break
+    return hi
+
 
 def analysis_objective_hierarchy(params: Optional[ModelParams] = None,
                                  fsts: Sequence[int] = (1, 2, 3, 4, 5, 6),
@@ -504,6 +661,9 @@ def analysis_objective_hierarchy(params: Optional[ModelParams] = None,
           f"{PRACTICAL_MAX_MINUTES:.0f} min ceiling,")
     print(f"  geometry factor {PERSONAL_DOSE_GEOMETRY_FACTOR} "
           f"(vitd_objectives.PERSONAL_DOSE_GEOMETRY_FACTOR).")
+    if 6 in fsts:
+        print()
+        print(FST_VI_RESOLUTION_NOTE)
 
     # Two spacing regimes, reported side by side. Uniform is the plain
     # "every N days" schedule and the condition under which
@@ -611,6 +771,78 @@ def analysis_objective_hierarchy(params: Optional[ModelParams] = None,
     print("  binding cost is getting outside or the UV itself.")
     print("\n  Saved tables/primary_minimum_schedule.csv")
 
+    # ---- B1/A1/A2 (Phase 2b, 2026-09-23): FST V/VI as a BAND, not a point,
+    # plus the carried SC_max_by_FST IV-VI range and the A-threshold for FST
+    # V's twice-weekly exclusion. Everything below is computed live against
+    # `params` (or ModelParams() if None) at report time -- nothing here is
+    # copied from a prior run or a scratchpad script. Only FST V/VI are
+    # affected (M_baseline_by_FST's dispersion, SC_max_by_FST's IV-VI cell),
+    # so this is skipped entirely if neither is in the requested `fsts`.
+    band_fsts = tuple(f for f in (5, 6) if f in fsts)
+    if band_fsts:
+        base_params = params or ModelParams()
+        m_band, m_r2 = m_baseline_sd_band(base_params)
+        sc_band = sc_max_iv_vi_band(fsts=band_fsts, session_budgets=session_budgets,
+                                    params=base_params)
+        print("\n" + "=" * 74)
+        print("FST V / VI reported as a BAND, not a point (decisions B1, A1)")
+        print("=" * 74)
+        print("\n  B1: +/-1 SD on M_baseline_by_FST, from Narea-Jimenez et al.")
+        print(f"  2026's own ITA dispersion, mapped through a LIVE linear fit "
+              f"to the current mapping (R^2 = {m_r2:.6f} -- the mapping is "
+              f"affine by construction, so this should stay ~1.0). "
+              f"'lighter'/'darker' bracket the shipped mean:")
+        for fst in band_fsts:
+            b = m_band[fst]
+            mean_rows = [r for r in summary["uniform"] if r["fst"] == fst][0]["rows"]
+            row_lo = _minutes_row(fst, session_budgets, base_params,
+                                  m_override=b["lighter"])["rows"]
+            row_hi = _minutes_row(fst, session_budgets, base_params,
+                                  m_override=b["darker"])["rows"]
+            print(f"\n  FST {ROMAN_FST[fst]}   M = {b['lighter']:.6f} (lighter) / "
+                  f"{b['mean']:.6f} (shipped) / {b['darker']:.6f} (darker)")
+            print(f"  {'N/yr':>5} {'min@lighter':>12} {'min@shipped':>12} "
+                  f"{'min@darker':>11}")
+
+            def _fmt_min(r):
+                return (f"{r['minutes_per_session']:.1f}" if r["feasible"]
+                        else "infeasible")
+
+            for rl, rm, rh in zip(row_lo, mean_rows, row_hi):
+                print(f"  {rl['n_sessions']:>5} {_fmt_min(rl):>12} "
+                      f"{_fmt_min(rm):>12} {_fmt_min(rh):>11}")
+            n_min_lo = next((r["n_sessions"] for r in row_lo if r["feasible"]), None)
+            n_min_mean = next((r["n_sessions"] for r in mean_rows if r["feasible"]), None)
+            n_min_hi = next((r["n_sessions"] for r in row_hi if r["feasible"]), None)
+            print(f"  N_min: {n_min_lo} (lighter) .. {n_min_mean} (shipped) .. "
+                  f"{n_min_hi} (darker)")
+        print(f"\n  A1: carried SC_max_by_FST IV-VI range "
+              f"[{SC_MAX_IV_VI_RANGE[0]:g}, {SC_MAX_IV_VI_RANGE[1]:g}] "
+              f"(vitd_model.SC_MAX_IV_VI_RANGE, read live; the shipped value "
+              f"is the low end):")
+        for fst in band_fsts:
+            d = sc_band[fst]
+            n_min_lo = next((r["n_sessions"] for r in d["row_lo"]["rows"]
+                             if r["feasible"]), None)
+            n_min_hi = next((r["n_sessions"] for r in d["row_hi"]["rows"]
+                             if r["feasible"]), None)
+            print(f"    FST {ROMAN_FST[fst]}   N_min at SC={d['lo']:g} (shipped): "
+                  f"{n_min_lo}    N_min at SC={d['hi']:g}: {n_min_hi}")
+        if 5 in band_fsts:
+            n104 = 104 if 104 in session_budgets else session_budgets[0]
+            thr = a_threshold_for_fst(5, n104, base_params)
+            print(f"\n  A2: FST V's N={n104}/yr exclusion, A-threshold "
+                  f"(point anchor kept; A_by_FST rejected as unidentifiable):")
+            if thr is None:
+                print(f"    no A up to a wide bracket rescues N={n104} for FST V "
+                      f"at this session ceiling")
+            else:
+                headroom = thr / base_params.A
+                print(f"    A >= {thr:.6f} clears the {PRACTICAL_MAX_MINUTES:.0f}-min "
+                      f"ceiling (shipped A = {base_params.A:.6f}); shipped A is "
+                      f"{100 * (1 - base_params.A / thr):.4f}% below that threshold, "
+                      f"i.e. the threshold is {headroom:.6f}x shipped.")
+
     # ---- the diagnostic tier, stated as such --------------------------------
     diag = gross_synth_per_SED_diagnostic(fst=3, params=params)
     print("\n" + "=" * 74)
@@ -668,7 +900,7 @@ def analysis_tri_objective(params: Optional[ModelParams] = None,
     print("  a constitutive prior, and cross-skin-type comparisons of risk")
     print("  VALUES are not anchored by any source in this repo (Elwood &")
     print("  Jopson 1997 adjusts its odds ratios FOR pigmentation, so it cannot")
-    print("  supply the contrast -- see docs/workstreams/W-R.md). The axis is")
+    print("  supply the contrast). The axis is")
     print("  carried as a sealed vitd_optimization.WithinFSTRisk object that")
     print("  refuses float(), arithmetic and cross-FST ordering, so no absolute")
     print("  risk value can reach this table or its CSV at all.")
@@ -682,6 +914,8 @@ def analysis_tri_objective(params: Optional[ModelParams] = None,
         all_rows.extend(res["rows"])
 
         print(f"\n  FST {ROMAN_FST[fst]}")
+        if fst == 6:
+            print(FST_VI_RESOLUTION_NOTE)
         print(f"  {'N/yr':>5} {'gamma':>6} {'maxgap':>7} {'risk/min':>9} "
               f"{'totSED':>8} {'peakSED':>8} {'min/sesh':>9} {'t->suff':>8}  front")
         print("  " + "-" * 78)
@@ -839,6 +1073,9 @@ def analysis_spacing_fixed_dose(params: Optional[ModelParams] = None,
     print(f"\n  Fixed dose: {sed_per_session:.2f} SED/session, "
           f"horizon {horizon_days}d, objective: {objective}")
     print("  Sweeping gap days for each (skin type, session budget) cell.\n")
+    if 6 in fsts:
+        print(FST_VI_RESOLUTION_NOTE)
+        print()
 
     os.makedirs("tables", exist_ok=True)
 

@@ -4,7 +4,7 @@ Four unrelated invariants live in this one file because each is small,
 static (AST/text based, no model computation), and fast -- none belongs next
 to the parallel-grid determinism test (`test_parallel_grid_determinism.py`),
 which is slow for the opposite reason. See
-`docs/ORCHESTRATOR_PLAN.md` W-M items 1, 3, 4 for the audit that found each
+a 2026-09-20 audit that found each
 gap.
 
 Deliberately does NOT modify any existing test file (W-O is concurrently
@@ -439,20 +439,34 @@ def test_stratum_corneum_parameter_invariants():
 
     params = ModelParams()
     assert params.SC_max == 0.30
+    # [REBASED 2026-09-23 for decision A1, 2026-09-22] The FST IV-VI cell
+    # moved 0.36 -> 0.24, i.e. to the corroborated FST I-III value, and is
+    # carried as a RANGE, SC_MAX_IV_VI_RANGE. The old 0.36 rested solely on
+    # de Boer 2025's FP IV-VI arm, which was never checked for FST V-VI
+    # enrolment; the error is one-sided (no source argues for HIGHER), so
+    # 0.36 sat at the most-burdensome extreme of its own evidence. The
+    # RANGE, not the point, is what an FST IV-VI result must be reported
+    # across -- so the range constant is asserted here too.
+    from vitd_model import SC_MAX_IV_VI_RANGE
     assert params.SC_max_by_FST == {
         1: 0.24, 2: 0.24, 3: 0.24,
-        4: 0.36, 5: 0.36, 6: 0.36,
+        4: 0.24, 5: 0.24, 6: 0.24,
     }
-    for fst in (1, 2, 3):
+    for fst in range(1, 7):
         assert params.SC_max_by_FST[fst] == 0.24
-    for fst in (4, 5, 6):
-        assert params.SC_max_by_FST[fst] == 0.36
+    assert SC_MAX_IV_VI_RANGE == (0.24, 0.36)
     assert params.alpha_SC == 0.12
     assert np.isclose(params.k_decay_SC, np.log(2) / 28.0)
     assert np.isclose(params.k_repair_SC, np.log(2) / 7.0)
     assert params.k_damage == 0.0
 
-    assert ModelParams.SC_PRIOR_RANGES["SC_max"] == (0.20, 0.40)
+    # [REBASED 2026-09-23] Prior ceiling widened 0.40 -> 0.54 on 2026-09-22:
+    # two measured thickenings sit above the old ceiling (Bruls 1984
+    # 0.5384615384615384 ex vivo, and Felton 2020 FST II n=10 +41.6% in
+    # vivo), and a prior interval that excludes its own measurements is a
+    # constraint, not a prior. 0.54 is a recorded rounding decision: the
+    # smallest two-decimal bound containing 0.5384615384615384.
+    assert ModelParams.SC_PRIOR_RANGES["SC_max"] == (0.20, 0.54)
     assert ModelParams.SC_PRIOR_RANGES["alpha_SC"] == (0.08, 0.20)
     assert ModelParams.SC_PRIOR_RANGES["K_SC"] == (0.5, 2.0)
 
@@ -467,11 +481,25 @@ def test_melanin_parameter_invariants():
         1: 0.0025, 2: 0.0025, 3: 0.0025,
         4: 0.002, 5: 0.002, 6: 0.002,
     }
-    assert params.K_const == 1.15
+    # [REBASED 2026-09-23] K_const 1.17 -> 2.096070737357932 and the whole
+    # M_baseline_by_FST table recomputed through the re-scaled ITA -> M
+    # mapping M = (55 - ITA_U) / 121 (decision A3, 2026-09-22), whose lower
+    # anchor is Linde 2020's printed constitutive minimum ITA -66 instead of
+    # Del Bino's -30. NO CELL CLIPS now; the old table's FST VI cell was a
+    # clip at 1.00 with no resolving power inside FST VI. K_const and the
+    # table moved TOGETHER and must be read together: the re-scale alone
+    # raises K_const 1.4237x for an exactly unchanged optical factor.
+    assert params.K_const == 2.096070737357932
     assert params.M_baseline_by_FST == {
-        1: 0.0381, 2: 0.1715, 3: 0.3231,
-        4: 0.5241, 5: 0.7539, 6: 1.00,
+        1: 0.026776859504132246,
+        2: 0.12049586776859503,
+        3: 0.2269421487603306,
+        4: 0.36818181818181817,
+        5: 0.5295867768595042,
+        6: 0.7324793388429751,
     }
+    assert max(params.M_baseline_by_FST.values()) < 1.0, (
+        "no cell may clip at 1.0 under the 2026-09-22 mapping")
     assert params.M_TAN_HEADROOM == 0.238
 
 
@@ -482,10 +510,21 @@ def test_m_ceiling_logic_and_m_max_dead():
 
     params = ModelParams()
     ceiling_6 = params.M_ceiling(6)
-    assert ceiling_6 > 1.0, f"FST VI ceiling {ceiling_6} must exceed 1.0 (not capped at 1.0)"
+    # [REBASED 2026-09-23] The invariant under test is that the ceiling is
+    # M_baseline(F) + M_TAN_HEADROOM with NO cap -- it was written as
+    # "> 1.0" only because M_baseline(VI) was itself a clip at exactly 1.0.
+    # After the 2026-09-22 ITA -> M re-scale M_baseline(VI) is
+    # 0.7324793388429751, so the FST VI ceiling is 0.9704793388429751 and a
+    # literal "> 1.0" would now assert the clip this repo just removed. What
+    # must hold, and is asserted instead, is that the ceiling is strictly
+    # above the baseline by the full headroom and is not truncated anywhere.
     expected_ceiling = params.M_baseline(6) + params.M_TAN_HEADROOM
     assert np.isclose(ceiling_6, expected_ceiling)
-    assert np.isclose(ceiling_6, 1.238)
+    assert np.isclose(ceiling_6, 0.9704793388429751)
+    assert ceiling_6 > params.M_baseline(6)
+    for fst in range(1, 7):
+        assert np.isclose(params.M_ceiling(fst),
+                          params.M_baseline(fst) + params.M_TAN_HEADROOM), fst
 
     # AST check: in vitd_model.py, M_max must NOT be read or used in simulate() or M_ceiling()
     vitd_path = os.path.join(REPO_ROOT, "vitd_model.py")
@@ -612,4 +651,124 @@ def test_doc_citation_line_pointers_valid():
         assert any(item[0] == req_sym for item in load_bearing_checked), (
             f"Expected {req_sym} to be verified among load-bearing citations, checked: {load_bearing_checked}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Item 6: pointer-integrity guard against the retired post-manuscript
+# workstream programme -- proposed but never built during that programme
+# (see docs/SOURCES.md for what it tracked and calibration_approval.yaml's
+# pointer-repair history for why this exists: a frozen file:line or
+# docs/workstreams/W-*.md citation rots the moment the cited file moves,
+# is rewritten, or -- for these four docs plus docs/workstreams/ -- is
+# deleted outright). Two independent checks:
+#   1. no tracked file may still name the four doomed top-level docs or the
+#      docs/workstreams/ directory by path;
+#   2. every docs/*.md path named anywhere in a tracked file must exist.
+# Neither check is scoped to files this fold pass owns -- a failure here
+# from a file owned by a different in-flight agent is left failing on
+# purpose (not xfailed) so it stays visible until that agent fixes it.
+# ---------------------------------------------------------------------------
+
+DOOMED_DOC_PATTERNS = (
+    "docs/workstreams/",
+    "DECISIONS_PENDING",
+    "HANDOFF_2026",
+    "ORCHESTRATOR_",
+)
+
+DOOMED_DOC_PATHS = {
+    "docs/HANDOFF_2026-09-22.md",
+    "docs/ORCHESTRATOR_HANDOFF.md",
+    "docs/ORCHESTRATOR_PLAN.md",
+    "docs/DECISIONS_PENDING.md",
+}
+
+
+def _tracked_text_files(*globs):
+    """(rel_path, text) for every git-tracked file matching `globs`.
+
+    Excludes .venv/ (defensive -- normally gitignored already, so this is
+    a no-op today) and the doomed docs themselves (defensive -- they are
+    currently untracked, so `git ls-files` would not list them anyway,
+    but this keeps the exclusion correct if that ever changes before they
+    are deleted).
+    """
+    result = _git("ls-files", *globs)
+    if result.returncode != 0:
+        pytest.skip("not inside a git work tree; cannot enumerate tracked files")
+    files = []
+    for rel in result.stdout.splitlines():
+        rel = rel.strip()
+        if not rel:
+            continue
+        if rel in DOOMED_DOC_PATHS or rel.startswith("docs/workstreams/"):
+            continue
+        if rel.startswith(".venv/") or "/.venv/" in rel:
+            continue
+        if rel == "tests/test_structural_invariants.py":
+            # This file itself: it necessarily names the doomed patterns
+            # and paths as literal string constants in order to check for
+            # them, which would otherwise make it self-matching.
+            continue
+        abs_path = os.path.join(REPO_ROOT, rel)
+        try:
+            with open(abs_path, encoding="utf-8") as f:
+                text = f.read()
+        except (FileNotFoundError, UnicodeDecodeError, IsADirectoryError):
+            continue
+        files.append((rel, text))
+    return files
+
+
+def test_no_tracked_file_references_the_doomed_docs():
+    """No tracked .py/.md/.yaml file may reference the retired programme.
+
+    `docs/HANDOFF_2026-09-22.md`, `docs/ORCHESTRATOR_HANDOFF.md`,
+    `docs/ORCHESTRATOR_PLAN.md`, `docs/DECISIONS_PENDING.md` and
+    `docs/workstreams/*.md` are slated for deletion. A tracked file that
+    still names one of them is a dangling reference that will silently
+    stop resolving to anything the moment the deletion happens -- exactly
+    the failure mode the fold-and-delete pass this test comes from exists
+    to prevent. If this fails on a file this pass does not own, that is
+    intentional: it stays failing, with the file and line named below,
+    until that file's owner fixes it -- it is not xfailed away.
+    """
+    problems = []
+    for rel, text in _tracked_text_files("*.py", "*.md", "*.yaml", "*.yml"):
+        for lineno, line in enumerate(text.splitlines(), 1):
+            if any(pat in line for pat in DOOMED_DOC_PATTERNS):
+                problems.append(f"{rel}:{lineno}: {line.strip()[:160]}")
+
+    assert not problems, (
+        "The following tracked files still reference a doomed "
+        "docs/workstreams/, DECISIONS_PENDING, HANDOFF_2026, or "
+        "ORCHESTRATOR_ path:\n" + "\n".join(f"  {p}" for p in problems)
+    )
+
+
+def test_every_referenced_docs_md_path_exists():
+    """Every `docs/*.md` path named in a tracked file must exist on disk.
+
+    The general case of the check above: any live file citing a
+    docs/ Markdown path that is not actually present is pointing a reader
+    at nothing, doomed-programme or not.
+    """
+    import re
+
+    pattern = re.compile(r"docs/[A-Za-z0-9_./-]+\.md")
+    problems = []
+    for rel, text in _tracked_text_files("*.py", "*.md", "*.yaml", "*.yml"):
+        for lineno, line in enumerate(text.splitlines(), 1):
+            for m in pattern.finditer(line):
+                doc_path = m.group(0).rstrip("'\"`).,:;")
+                if not os.path.exists(os.path.join(REPO_ROOT, doc_path)):
+                    problems.append(
+                        f"{rel}:{lineno}: cites {doc_path!r}, which does "
+                        f"not exist ({line.strip()[:120]})"
+                    )
+
+    assert not problems, (
+        "The following docs/*.md paths are cited but do not exist on "
+        "disk:\n" + "\n".join(f"  {p}" for p in problems)
+    )
 

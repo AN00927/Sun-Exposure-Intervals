@@ -1243,9 +1243,8 @@ def _min_risk_on_fixed_days(fst: int, days: np.ndarray, cap: float,
 # had to carry into the output: the FST susceptibility factor inside
 # `vitd_physiology.cancer_risk` is a derived constitutive prior, and
 # cross-skin-type comparisons of risk index VALUES are not anchored by any
-# epidemiological source -- see W-R's reading of Elwood & Jopson 1997 in
-# docs/workstreams/W-R.md, whose odds ratios are ADJUSTED FOR skin
-# pigmentation and so structurally cannot supply the missing contrast.
+# epidemiological source -- Elwood & Jopson 1997's odds ratios are ADJUSTED FOR
+# skin pigmentation and so structurally cannot supply the missing contrast.
 #
 # Documenting that in a docstring is not enough: a float in a dict gets copied
 # into a DataFrame, a CSV and then a sentence comparing FST II with FST VI.
@@ -1308,7 +1307,8 @@ class WithinFSTRisk:
             raise CrossSkinTypeRiskError(
                 f"risk index is sealed to FST {self._fst}; asked for FST "
                 f"{int(fst)}. Cross-skin-type risk VALUES are not anchored "
-                f"(see docs/workstreams/W-R.md).")
+                f"(Elwood & Jopson 1997's ORs are pigmentation-adjusted; no "
+                f"cross-FST comparison is licensed).")
         return self._raw
 
     # -- refusals ------------------------------------------------------------
@@ -1470,7 +1470,7 @@ def tri_objective_frontier(
     # Seal the risk axis to this skin type before anything can read it. The
     # normalising reference is THIS skin type's own best feasible cell, so the
     # only number that leaves here on the risk axis is 1.0-at-the-minimum for
-    # every FST -- see WithinFSTRisk above and docs/workstreams/W-R.md.
+    # every FST -- see WithinFSTRisk above.
     raw = [r["_raw_risk"] for r in feas
            if np.isfinite(r["_raw_risk"])]
     reference = min(raw) if raw else float("nan")

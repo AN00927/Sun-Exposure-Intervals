@@ -24,21 +24,68 @@ import numpy as np
 
 from vitd_model import (ModelParams, simulate, build_pulse_schedule,
                         steady_state_D, net_final_D_change_per_SED,
-                        allow_retired_parameter_sweep)
+                        allow_retired_parameter_sweep, K_CONST_LOO_ENVELOPE)
+from vitd_validation import young2021_A_anchor
+
+# BUG FIX 2026-09-23 (SWEEP-RANGES workstream): A and K_const were
+# recalibrated 2026-09-22 (K_const 2.096070737357932, A 4.359560972608079,
+# vitd_model.py) but this module's ranges were never updated, so the
+# one-at-a-time swing for both was being measured over a bracket that
+# EXCLUDES the value actually shipped -- not "vary the parameter around its
+# calibrated value" but "vary it around a stale one". Fixed by deriving both
+# ranges from the same calibration evidence the shipped values themselves
+# come from, instead of a second, independently-hardcoded literal.
+
+# K_const range = the leave-one-out envelope over calibration source studies,
+# imported from vitd_model.K_CONST_LOO_ENVELOPE (single source).
+
+# A range = the Young 2021 source-matched cross-check bracket (Arimed B vs.
+# UV6 E_source), read LIVE from vitd_validation.young2021_A_anchor() rather
+# than pinned, because the call is cheap (closed-form arithmetic, no
+# simulate()) and this way the range tracks the anchor automatically if
+# K_const (which the anchor is computed against) changes again.
+_A_CROSS_CHECKS = young2021_A_anchor()["cross_checks"]
+A_YOUNG2021_BRACKET = (min(_A_CROSS_CHECKS.values()), max(_A_CROSS_CHECKS.values()))
 
 # Documented plausible ranges. Sources are in the vitd_model.py docstring and
 # ModelParams.SC_PRIOR_RANGES; ranges here are deliberately WIDE where the
 # evidence is thin, so the propagated interval reflects real ignorance.
+# SC_max, alpha_SC, K_SC, k_damage are read from ModelParams.SC_PRIOR_RANGES
+# -- the single canonical source (CLAUDE.md) -- instead of being retyped
+# here, so they cannot drift out of sync with it the way A/K_const did.
 PARAM_RANGES = {
     # (low, high, evidence note)
-    "A":          (1.6, 3.8, "Young 2021 fair-skin slopes 2.0-5.0 nmol/L/SED imply A up to ~3.8"),
-    "K_const":    (0.20, 0.90, "Young 2020 FST II:VI 1.3-1.4; Webb/Kift naturalistic 2.5-3.0x implies higher"),
+    "A":          (*A_YOUNG2021_BRACKET,
+                   "Young 2021 source-matched cross-check bracket (Arimed B "
+                   ".. UV6 E_source), read live from "
+                   "vitd_validation.young2021_A_anchor()['cross_checks']; "
+                   "replaces a hardcoded (1.6, 3.8) that excluded the "
+                   "shipped A = 4.359560972608079 (2026-09-23 bug fix)"),
+    "K_const":    (*K_CONST_LOO_ENVELOPE,
+                   "leave-one-out envelope over calibration source studies, "
+                   "calibration_approval.yaml "
+                   "K_const_leave_one_out_envelope_2026_09_22; replaces a "
+                   "hardcoded (0.20, 0.90) that excluded the shipped "
+                   "K_const = 2.096070737357932 (2026-09-23 bug fix)"),
     "K_ATTEN":    (0.0, 2.0, "Matsuoka 1990 abstract (in repo) implies 0.288972-0.838389 once its baseline-25(OH)D confound is deconvolved; 0 = no tanning penalty"),
-    "K_SC":       (0.5, 2.0, "no direct vitamin-D attenuation measurement exists"),
-    "SC_max":     (0.20, 0.40, "de Boer 2025 +23% (FP I-III) to +36% (FP IV-VI)"),
-    "alpha_SC":   (0.08, 0.20, "fitted to 3 group-mean timepoints only"),
+    "K_SC":       (*ModelParams.SC_PRIOR_RANGES["K_SC"],
+                   "ModelParams.SC_PRIOR_RANGES (single source); no direct "
+                   "vitamin-D attenuation measurement exists"),
+    "SC_max":     (*ModelParams.SC_PRIOR_RANGES["SC_max"],
+                   "ModelParams.SC_PRIOR_RANGES (single source); de Boer 2025 "
+                   "+23% (FP I-III) to +36% (FP IV-VI), ceiling widened to "
+                   "0.54 2026-09-22"),
+    "alpha_SC":   (*ModelParams.SC_PRIOR_RANGES["alpha_SC"],
+                   "ModelParams.SC_PRIOR_RANGES (single source); fitted to "
+                   "3 group-mean timepoints only"),
     "D_max":      (116.0, 250.0, "ORIGIN UNCONFIRMED; 116 = Bogh 2010 observed max"),
     "beta":       (np.log(2) / 120, np.log(2) / 21, "Ravnbak 2008 4-5 month fade"),
+    "k_damage":   (*ModelParams.SC_PRIOR_RANGES["k_damage"],
+                   "ModelParams.SC_PRIOR_RANGES (single source); NOT "
+                   "identifiable from group medians per SC_PRIOR_RANGES "
+                   "docstring, default 0.0 sits at this range's lower bound "
+                   "-- added to PARAM_RANGES 2026-09-23, was previously "
+                   "swept in scripts/parameter_optima.py only"),
 }
 
 
@@ -121,7 +168,7 @@ def identifiability_pairs(fst: int = 5, n_grid: int = 9,
     parameters' contours of equal steady-state D.
 
     DEGENERATE vs UNIDENTIFIABLE (fixed 2026-09-20, reporting defect, not a
-    calibration change -- see docs/workstreams/W-O.md).
+    calibration change -- see the DEGENERATE-verdict code below).
     -------------------------------------------------------------------------
     A ridge_fraction near 1.0 (the 2-D response surface collapses onto a
     single line) has TWO possible causes that this function used to conflate

@@ -1,2 +1,2 @@
 git_hash,parameter_hash,model_version,timestamp,study_id,metric,predicted_value,target_low,target_high,source_status,result,notes
-6a1585f,NA,debug_rev1,2026-09-21T14:20:28.742703+00:00,Young2020,FST_II_VI_ratio,2.9288,1.29,1.5,PARTIAL,UNVERIFIED,Calibration check only - not independent validation
+b98cd02,NA,debug_rev1,2026-09-23T19:13:36.412990+00:00,Young2020,FST_II_VI_ratio,4.4437,1.29,1.5,PARTIAL,UNVERIFIED,Calibration check only - not independent validation

@@ -6,8 +6,9 @@ STRUCTURAL rather than documented:
   1. Cross-skin-type risk VALUES must be unreadable off this objective. The
      FST susceptibility factor in `vitd_physiology.cancer_risk` is a
      constitutive prior and is not anchored by any epidemiological source in
-     the repo (Elwood & Jopson 1997 adjusts its odds ratios FOR pigmentation
-     -- see docs/workstreams/W-R.md). Within-skin-type comparisons stay usable.
+     the repo (Elwood & Jopson 1997's odds ratios are pigmentation-ADJUSTED,
+     so no cross-FST-type risk comparison is licensed by this repo's
+     evidence). Within-skin-type comparisons stay usable.
 
   2. The session budget is an ADHERENCE assumption, not photobiology, and the
      objective's own output has to say so.

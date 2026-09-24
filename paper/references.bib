@@ -126,8 +126,24 @@
   journal = {British Journal of Dermatology},
   year    = {2016},
   volume  = {175},
+  number  = {6},
   pages   = {1320--1328},
-  doi     = {10.1111/bjd.14863}
+  doi     = {10.1111/bjd.14863},
+  pmid    = {27411377},
+  pmcid   = {PMC5215649},
+  note    = {[CITATION FIX 2026-09-22/2026-09-23, decision B6] This is also the
+             paper vitd\_model.py's compute\_safety\_sidecar() docstring and
+             this file's own former \texttt{rhodes2017} stub called ``P22
+             (Rhodes {L}. {E}. and others, 2017)'' -- there is no such 2017
+             CPD/DNA-damage paper by Rhodes; ``P22'' names THIS paper (Felton
+             is first author, Rhodes is senior/last author, hence the
+             mislabel). Verified via PubMed 2026-09-23: PMID 27411377 returns
+             exactly this title/journal/volume/issue/pages/DOI/author list.
+             The \texttt{rhodes2017} \texttt{@misc} stub is REMOVED rather
+             than filled in, since it was never a second paper -- it was this
+             one, mislabelled and left incomplete. Any future
+             \texttt{\textbackslash cite\{rhodes2017\}} should be
+             \texttt{\textbackslash cite\{felton2016\}} instead.}
 }
 
 @article{shraim2025,
@@ -456,6 +472,67 @@
   pages   = {3700--3706},
   doi     = {10.1096/fj.201701472R},
   pmid    = {29394104}
+}
+
+% NOTE: fajuyigbe2018photochem is a DIFFERENT 2018 Fajuyigbe paper in a
+% different journal from fajuyigbe2018 above -- deliberately keyed apart
+% (see docs/SOURCES.md) after this exact name collision was flagged
+% independently twice while chasing citations for this repo.
+@article{fajuyigbe2018photochem,
+  author  = {Fajuyigbe, D. and Coleman, A. and Sarkany, R. P. E. and Young, A. R. and Schmalwieser, A. W.},
+  title   = {Diffuse reflectance spectroscopy as a reliable means of comparing ultraviolet radiation-induced erythema in extreme skin colours},
+  journal = {Photochemistry and Photobiology},
+  year    = {2018},
+  volume  = {94},
+  number  = {5},
+  pages   = {1066--1070},
+  doi     = {10.1111/php.12947},
+  pmid    = {29869793}
+}
+
+@article{felton2020,
+  author  = {Felton, S. J. and Shih, B. B. and Watson, R. E. B. and Kift, R. and Webb, A. R. and Rhodes, L. E.},
+  title   = {Photoprotection conferred by low level summer sunlight exposures against pro-inflammatory {UVR} insult},
+  journal = {Photochemical \& Photobiological Sciences},
+  year    = {2020},
+  volume  = {19},
+  pages   = {810--818},
+  doi     = {10.1039/c9pp00452a},
+  pmid    = {33856672}
+}
+
+@article{lavker1995,
+  author  = {Lavker, R. M. and Gerberick, G. F. and Veres, D. and Irwin, C. J. and Kaidbey, K. H.},
+  title   = {Cumulative effects from repeated exposures to suberythemal doses of {UVB} and {UVA} in human skin},
+  journal = {Journal of the American Academy of Dermatology},
+  year    = {1995},
+  volume  = {32},
+  pages   = {53--62},
+  doi     = {10.1016/0190-9622(95)90184-1},
+  pmid    = {7822517}
+}
+
+@article{rhodes2010,
+  author  = {Rhodes, L. E. and Webb, A. R. and Fraser, H. I. and Kift, R. and Durkin, M. T. and Allan, D. and O'Brien, S. J. and Vail, A. and Berry, J. L.},
+  title   = {Recommended summer sunlight exposure levels can produce sufficient (>=20 ng ml$^{-1}$) but not the proposed optimal (>=32 ng ml$^{-1}$) 25(OH)D levels at {UK} latitudes},
+  journal = {Journal of Investigative Dermatology},
+  year    = {2010},
+  volume  = {130},
+  number  = {5},
+  pages   = {1411--1418},
+  doi     = {10.1038/jid.2009.417},
+  pmid    = {20072137}
+}
+
+@article{stamatas2008,
+  author  = {Stamatas, G. N. and Zmudzka, B. Z. and Kollias, N. and Beer, J. Z.},
+  title   = {In vivo measurement of skin erythema and pigmentation: new means of implementation of diffuse reflectance spectroscopy with a commercial instrument},
+  journal = {British Journal of Dermatology},
+  year    = {2008},
+  volume  = {159},
+  pages   = {683--690},
+  doi     = {10.1111/j.1365-2133.2008.08642.x},
+  pmid    = {18510669}
 }
 
 @article{mckenzie2012,
@@ -920,14 +997,79 @@
              calibration\_approval.yaml.}
 }
 
-% Named in vitd_model.py compute_safety_sidecar() docstring as "P22 (Rhodes
-% 2017)", alongside Shih/Farrar/Rhodes 2018 (shih2018 above, P24) as the
-% source for CPD/DNA-damage co-occurrence with suberythemal vitamin-D
-% synthesis. Likely overlaps substantially with the Shih 2018 author group
-% but is not confirmed to be the same paper; kept as a separate entry per
-% the repository's own P22 vs P24 numbering.
-@misc{rhodes2017,
-  author = {Rhodes, L. E. and others},
-  title  = {{TODO} verify -- CPD/DNA damage at suberythemal UV doses, cited only as ``P22 (Rhodes 2017)'' in vitd\_model.py; possibly related to, but not confirmed identical to, Shih et al. 2018},
-  year   = {2017}
+% [REMOVED 2026-09-23, decision B6] This entry used to be an misc-type
+% entry keyed rhodes2017 with author = Rhodes, L. E. and others, title =
+% "TODO verify -- CPD/DNA damage at suberythemal UV doses, cited only as
+% 'P22 (Rhodes 2017)' in vitd_model.py; possibly related to, but not
+% confirmed identical to, Shih et al. 2018", year = 2017. It was never
+% cited from manuscript.tex (it only
+% appeared in paper/README.md's list of uncited entries). vitd_model.py's own
+% 2026-09-22 citation-fix note (search "CITATION FIX 2026-09-22, decision
+% B6") already established there is no Rhodes 2017 CPD paper: "P22" is
+% Felton et al. 2016 (Br J Dermatol 175(6):1320-1328, DOI 10.1111/bjd.14863,
+% PMID 27411377), first-authored by Felton with Rhodes as senior author --
+% see the felton2016 entry above, now carrying that PMID and a matching note.
+% Kept as a removal record, not a stub, so a future pass does not re-search
+% for a second paper that never existed.
+
+
+% -----------------------------------------------------------------------------
+% (g) Personal solar UV dosimetry in deeply pigmented / African populations
+%     -- READ, NOT YET CITED from manuscript.tex (decision C5(ii), 2026-09-23)
+% -----------------------------------------------------------------------------
+% These entries exist so the repo stops asserting a literature gap that is not
+% there: field dosimetry in FST V-VI / African-ancestry populations DOES exist;
+% what does not yet exist is its use in this model. None of them feeds any
+% parameter. All fields checked against PubMed 2026-09-23. The fourth source
+% of this set, Fajuyigbe et al. 2018 Photochem Photobiol, is already present
+% above as fajuyigbe2018photochem. Keys carry the PRINT-issue year; the
+% repo's 2026-09 working notes used the epub year (Nkogatse "2018",
+% Blesic "2019") for the first and third entries below.
+
+% Electronic dosimeters, upper arm, 5 days, early spring 2017, South African
+% outdoor car guards "the majority with deeply pigmented skin"; total personal
+% daily exposure = 24% of ambient. BEHAVIOUR-INCLUSIVE (70% sleeved shirts,
+% 80% hats) and occupational: must not be substituted directly for the
+% scenario geometry factor in vitd_scenario.py (double-counts behaviour).
+% Skin type stated qualitatively, not as Fitzpatrick cells. Epub 2018-10-07.
+@article{nkogatse2019,
+  author  = {Nkogatse, M. M. and Ramotsehoa, M. C. and Eloff, F. C. and Wright, C. Y.},
+  title   = {Solar ultraviolet radiation exposure and sun protection behaviors and knowledge among a high-risk and overlooked group of outdoor workers in {South Africa}},
+  journal = {Photochemistry and Photobiology},
+  year    = {2019},
+  volume  = {95},
+  number  = {1},
+  pages   = {439--445},
+  doi     = {10.1111/php.13008},
+  pmid    = {30183090}
+}
+
+% Wavelet-transform analysis of high-frequency electronic-dosimeter records:
+% South African school children, farmers, marathon runners, outdoor workers
+% (plus New Zealand construction workers). Exposure-pattern methodology; no
+% per-phototype dose table.
+@article{blesic2016,
+  author  = {Blesi{\'c}, S. M. and Stratimirovi{\'c}, {\DJ}. I. and Ajti{\'c}, J. V. and Wright, C. Y. and Allen, M. W.},
+  title   = {Novel approach to analysing large data sets of personal sun exposure measurements},
+  journal = {Journal of Exposure Science \& Environmental Epidemiology},
+  year    = {2016},
+  volume  = {26},
+  number  = {6},
+  pages   = {613--620},
+  doi     = {10.1038/jes.2016.43},
+  pmid    = {27553989}
+}
+
+% Detrended fluctuation analysis of personal UV records, including South
+% African outdoor workers (plus European skiers/hikers, NZ golfers). Same
+% dosimeter lineage as blesic2016. Epub 2019-12-02.
+@article{blesic2020,
+  author  = {Blesi{\'c}, S. M. and du Preez, D. J. and Stratimirovi{\'c}, D. I. and Ajti{\'c}, J. V. and Ramotsehoa, M. C. and Allen, M. W. and Wright, C. Y.},
+  title   = {Characterization of personal solar ultraviolet radiation exposure using detrended fluctuation analysis},
+  journal = {Environmental Research},
+  year    = {2020},
+  volume  = {182},
+  pages   = {108976},
+  doi     = {10.1016/j.envres.2019.108976},
+  pmid    = {31830694}
 }

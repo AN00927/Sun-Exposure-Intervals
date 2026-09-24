@@ -2,7 +2,7 @@
 
 Re-verifies the four `data_provenance.yaml` records whose `verified_by`
 pointed at `PAPER_SUMMARIES.md` (gitignored, never committed, absent from
-disk — see `docs/REPO_SCOPE_AUDIT.md` §2b). All four primary sources were
+disk) [reference purged 2026-09-19]. All four primary sources were
 located and read directly, by content, in `Research_Papers/`. Filenames were
 misleading in two of four cases (see below) — confirming `CLAUDE.md`'s
 standing warning not to trust filenames.

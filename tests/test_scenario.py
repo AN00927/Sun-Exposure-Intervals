@@ -113,7 +113,14 @@ class TestScenarioRegistry:
         from vitd_scenario import SCENARIO_REGISTRY
         s = SCENARIO_REGISTRY["farrar2013_fst5_uk"]
         assert s.target_fst == 5
-        assert s.baseline_D0 == 17.2
+        # REBASED 2026-09-22 (W-Y, decision E5): 17.2 was Felton 2016's FST V
+        # baseline (Table 1), copy-pasted into this record in error -- this
+        # record was bit-identical to felton2016_fst5_matched below. The
+        # correct value, derived from Farrar 2013's own printed pooled
+        # >=1.95-SED-subgroup stats (15.7 - 8.7 = 7.0 ng/mL x 2.496 =
+        # 17.472 nmol/L), is used instead. See vitd_scenario.py's inline
+        # W-Y comment on this record for the full derivation.
+        assert s.baseline_D0 == 17.472
         assert s.exposed_bsa == 0.35
         assert s.observed_delta_D == 21.7
         assert len(s.protocol_schedule) == 18
@@ -277,7 +284,10 @@ class TestHelperFunctions:
     def test_farrar2013_delta_plausible(self):
         from vitd_scenario import simulate_scenario
         result = simulate_scenario("farrar2013_fst5_uk")
-        D0 = 17.2
+        # REBASED 2026-09-22 (W-Y, decision E5): matches the scenario's
+        # corrected baseline_D0 (was 17.2, Felton's value copy-pasted in
+        # error; see test_farrar2013_parameters and vitd_scenario.py).
+        D0 = 17.472
         D_final = result["D"][-1]
         delta = D_final - D0
         assert 5.0 < delta < 50.0, f"Farrar delta {delta:.1f} out of range"

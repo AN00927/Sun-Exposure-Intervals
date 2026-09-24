@@ -34,7 +34,17 @@ def test_k_const_is_the_calibrated_value():
     # REBASED 2026-09-06: 0.98 -> 1.15, the coupled refit against the Narea
     # 2026 M_baseline_by_FST table (calibration_approval.yaml, K_const entry;
     # scripts/kconst_recalibration.py run against the new table).
-    assert ModelParams().K_const == pytest.approx(1.15, abs=1e-9)
+    # REBASED 2026-09-21: 1.15 -> 1.17.
+    # REBASED 2026-09-22/23: 1.17 -> 2.096070737357932. Three compounded
+    # causes, separated in vitd_model.py's K_const docstring entry: the
+    # field routes were a stale 2026-08-17 cache and are now re-inverted
+    # live (BUG FIX), the ITA -> M mapping was re-scaled (decision A3, a
+    # reparameterisation that raises K_const 1.4237x for an unchanged
+    # optical factor), and pooling moved to random effects. Shipped at FULL
+    # PRECISION at the joint (K_const, A) fixed point -- the 2 dp rounding
+    # to 2.10 was withdrawn 2026-09-23 because a rounded K_const is not the
+    # fixed point A was then anchored against.
+    assert ModelParams().K_const == pytest.approx(2.096070737357932, abs=1e-9)
 
 
 def test_fst_v_ii_optical_factor_inside_the_approved_band():
@@ -168,12 +178,28 @@ def test_felton_fst_v_over_prediction_is_recorded_not_forgotten():
     FST V, and test_felton_ratio_moved_toward_the_observation still holds.
     TIGHTEN these bounds if a later change improves the numbers; widen them
     only with the same kind of note as this one.
+
+    BOUNDS REBASED 2026-09-23 for the 2026-09-22 parameter pass. Measured
+    at K_const = 2.096070737357932, A = 4.359560972608079:
+
+        config                                    FST II err   FST V err   model II:V
+        ... rows above ...
+        + K_const 2.0961, A 4.3596 (SHIPPED)       +43.4558%    +123.3531%    1.3774
+                                                           observed II:V = 2.145
+
+    The FST V arm IMPROVED sharply (+159.6% -> +123.4%) and FST II improved
+    (+49.1% -> +43.5%) while the II:V ratio moved TOWARD the observation
+    (1.232 -> 1.377 against 2.145). This is the first move in this table
+    where all three numbers go the right way at once, and it is a direct
+    consequence of the larger pigment penalty: FST V is penalised more, so
+    its long-standing over-prediction shrinks. It is still an over-
+    prediction on both arms and the ratio is still well short of 2.145.
     """
     K = ModelParams().K_const
     err5 = _felton_gain(5, K) / FELTON_GAIN[5] - 1.0
     err2 = _felton_gain(2, K) / FELTON_GAIN[2] - 1.0
-    assert 0.42 < err2 < 0.56
-    assert 1.50 < err5 < 1.70
+    assert 0.40 < err2 < 0.47
+    assert 1.18 < err5 < 1.29
 
 
 def test_felton_ratio_regression_from_the_feedback_form_is_pinned():
@@ -205,8 +231,14 @@ def test_felton_ratio_regression_from_the_feedback_form_is_pinned():
     # 3.114 -> 4.125, K_SC held at 1.0). Both ratios fell slightly and the
     # ORDERING -- the actual property under test -- is unchanged:
     # 1.271 -> 1.2316 (biphasic, shipped) and 1.494 -> 1.4389 (legacy linear).
-    assert shipped == pytest.approx(1.2316, abs=0.02)
-    assert linear_ratio == pytest.approx(1.4389, abs=0.02)
+    # PINS REBASED 2026-09-23 for the 2026-09-22 parameter pass (K_const
+    # 1.17 -> 2.096070737357932, A 4.139 -> 4.359560972608079, ITA -> M
+    # re-scaled, SC_max IV-VI 0.36 -> 0.24). Both ratios rose and the
+    # ORDERING -- the property under test -- is unchanged:
+    # 1.2316 -> 1.3774250665791266 (biphasic, shipped) and
+    # 1.4389 -> 1.6229148657306285 (legacy linear).
+    assert shipped == pytest.approx(1.3774250665791266, abs=0.02)
+    assert linear_ratio == pytest.approx(1.6229148657306285, abs=0.02)
     assert linear_ratio > shipped, (
         "the feedback-form regression on Felton's II:V ratio has changed sign; "
         "re-derive it rather than editing this bound")

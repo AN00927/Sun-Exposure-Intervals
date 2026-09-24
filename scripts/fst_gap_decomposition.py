@@ -47,6 +47,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from vitd_model import (ModelParams, simulate, steady_state_D,
                         get_E_source, E_SOURCE_SOLAR_DEFAULT)
+from vitd_physiology import BODY_WEIGHT_REF_KG
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 NGML_TO_NMOL = 2.5
@@ -97,27 +98,44 @@ FARRAR13_SERIES = [  # (total SED, delta 25(OH)D nmol/L, nmol/L per SED)
 # Darling et al. 2013 (Osteoporos Int 24:477) is a WITHIN-STUDY comparison:
 # same location, same protocol, same polysulphone badges, both female cohorts.
 FIELD_COHORTS = {
+    # [A5, 2026-09-22] weight_kg: Darling 2012 Table 1 PUBLISHES cohort body
+    # weights -- Caucasian 69.20 +/- 12.43 kg (n=135), Asian 65.80 +/- 11.33
+    # kg (n=46), read from the accepted manuscript in Research_Papers/. These
+    # are the recruitment-level n's, not the four-visit completer n's carried
+    # in the `n` field below; Darling prints no weight for the completer
+    # subset. Using the paper's own weights instead of the NHANES FST
+    # population default matters here because the two cohorts differ by
+    # 3.40 kg in the direction that makes the South Asian arm synthesise
+    # slightly MORE per SED, which is a real, measured, within-study
+    # difference this inversion should carry.
     "Darling2013_white": dict(
         n=90, fst=2, label="Darling 2013 Caucasian F, Surrey 51.3N",
         sed_summer_week=6.39, sed_winter_week=0.64,
-        d_summer=72.1, d_winter=44.5, amplitude=27.6),
+        d_summer=72.1, d_winter=44.5, amplitude=27.6, weight_kg=69.20),
     "Darling2013_southasian": dict(
         n=35, fst=5, label="Darling 2013 South Asian F, Surrey 51.3N",
         sed_summer_week=2.00, sed_winter_week=0.29,
-        d_summer=26.2, d_winter=19.7, amplitude=6.5),
+        d_summer=26.2, d_winter=19.7, amplitude=6.5, weight_kg=65.80),
     # Kift 2013 (BJD 169:1272, Research_Papers/) vs its own white comparator
     # (Webb 2010 BJD 163:1050, n=109, same city, same protocol, ambient
     # within 5%).  Serum from Kift Fig 1 medians, ng/mL -> nmol/L.
+    # [A5, 2026-09-22] Kift 2013 / Webb 2010 publish BMI medians (24.0 white,
+    # 24.9 South Asian) but NO weight and NO height, so no cohort weight is
+    # recoverable. Both arms therefore sit at BODY_WEIGHT_REF_KG, where the
+    # dilution factor is exactly 1.0 and cancels from the contrast. That is
+    # the neutral choice, not a claim that these cohorts weigh 70 kg.
     "Kift2013_white": dict(
         n=109, fst=2, label="Webb 2010 white, Manchester 53.5N",
         sed_summer_week=3.4, sed_winter_week=0.1,
         d_summer=26.2 * NGML_TO_NMOL, d_winter=18.9 * NGML_TO_NMOL,
-        amplitude=(26.2 - 18.9) * NGML_TO_NMOL),
+        amplitude=(26.2 - 18.9) * NGML_TO_NMOL,
+        weight_kg=BODY_WEIGHT_REF_KG),
     "Kift2013_southasian": dict(
         n=125, fst=5, label="Kift 2013 South Asian FST V, Manchester 53.5N",
         sed_summer_week=1.0, sed_winter_week=0.1,
         d_summer=9.0 * NGML_TO_NMOL, d_winter=5.8 * NGML_TO_NMOL,
-        amplitude=(9.0 - 5.8) * NGML_TO_NMOL),
+        amplitude=(9.0 - 5.8) * NGML_TO_NMOL,
+        weight_kg=BODY_WEIGHT_REF_KG),
 }
 
 # Kift 2013 Table 2, summer: exposed body area (%) from sun-exposure diaries.
@@ -145,7 +163,12 @@ YOUNG20_PAPER_RATIOS = {"ArimedB (SSR)": 1.29, "TL01": 1.43}  # FST II : VI
 YOUNG20_XLSX = os.path.join(
     REPO, "Papers_and_Datasets", "Final skin type vit D database 26_03_2020.xlsx")
 
-# --- NHANES Part B protocol constants (vitd_validation.py) ----------------
+# --- NHANES Part B protocol constants -------------------------------------
+# The "Part B" check these constants once fed was retired from
+# vitd_validation.CHECK_REGISTRY (decision C4, 2026-09-21); there is no
+# live NHANES entry in the registry to point to any more. Kept here only for
+# this diagnostic's own reconstruction of that retired check's assumed dose
+# (S1c below) -- not a pointer to a currently-running check.
 NHANES_SIM_DAYS = 84
 NHANES_SIM_SED = 0.333   # [ASSUMED in the repo, not measured]
 NHANES_SIM_BSA = 0.30    # [ASSUMED in the repo, not measured]
@@ -785,7 +808,18 @@ _E_OVERRIDE = None   # set by s4d_esource_dependence to sweep solar E_source
 
 
 def _predict_summer(fst, weekly_sed, bsa, D0, K_const, scale,
-                    days=NHANES_SIM_DAYS, params=None):
+                    days=NHANES_SIM_DAYS, params=None, weight_kg=None):
+    """Steady-state summer 25(OH)D for one cohort.
+
+    `weight_kg` ([A5], 2026-09-22) is the cohort's own body weight for the
+    volumetric-dilution term. It must be passed explicitly for every field
+    cohort: leaving it None would make simulate() apply the NHANES FST
+    POPULATION default, i.e. substitute a US survey mean for a UK trial
+    cohort AND make the two arms of a within-study contrast differ by a
+    quantity the study never measured. Cohorts whose paper publishes a
+    weight use it; the rest use BODY_WEIGHT_REF_KG, where the factor is
+    exactly 1.0 and cancels from the contrast.
+    """
     p = params or _SENS_PARAMS or ModelParams()
     daily = scale * weekly_sed / 7.0
     if daily <= 0:
@@ -797,11 +831,15 @@ def _predict_summer(fst, weekly_sed, bsa, D0, K_const, scale,
                    D0=D0, K_const_override=K_const,
                    E_source_override=e,
                    exposed_bsa_override=bsa,
+                   body_weight_kg_override=(BODY_WEIGHT_REF_KG
+                                            if weight_kg is None
+                                            else weight_kg),
                    dose_framing="fixed_absolute_SED")
     return steady_state_D(res)
 
 
-def _solve_scale(fst, weekly_sed, bsa, D0, target, K_const):
+def _solve_scale(fst, weekly_sed, bsa, D0, target, K_const, weight_kg=None,
+                 params=None):
     """Find the badge-SED -> effective-SED scale that hits `target`.
 
     Predicted summer level is monotone increasing in the scale factor, so
@@ -810,7 +848,8 @@ def _solve_scale(fst, weekly_sed, bsa, D0, target, K_const):
     lo, hi = 1e-3, 1e4
     for _ in range(45):
         mid = np.sqrt(lo * hi)
-        if _predict_summer(fst, weekly_sed, bsa, D0, K_const, mid) < target:
+        if _predict_summer(fst, weekly_sed, bsa, D0, K_const, mid,
+                           params=params, weight_kg=weight_kg) < target:
             lo = mid
         else:
             hi = mid
@@ -821,7 +860,7 @@ K_MAX = 6.0  # search ceiling for K_const
 
 
 def _invert_cohort_pair(name, light, dark, bsa_light, bsa_dark,
-                        behaviour_blind=False):
+                        behaviour_blind=False, params=None):
     """Solve for the K_const that reproduces BOTH cohorts' summer 25(OH)D
     given a single shared badge->effective-dose scale factor.
 
@@ -830,15 +869,23 @@ def _invert_cohort_pair(name, light, dark, bsa_light, bsa_dark,
     scale refit against the light cohort only partially compensates, so
     the residual is monotone decreasing and bisection applies.
     """
-    p = ModelParams()
+    p = params or _SENS_PARAMS or ModelParams()
     sed_light = light["sed_summer_week"]
     sed_dark = light["sed_summer_week"] if behaviour_blind else dark["sed_summer_week"]
+    # [A5, 2026-09-22] Each cohort carries its own published body weight (or
+    # the reference body where the paper publishes none) -- see
+    # _predict_summer. Both cohorts must be explicit or the inversion picks
+    # up a US population weight difference the study never measured.
+    w_light = light.get("weight_kg")
+    w_dark = dark.get("weight_kg")
 
     def residual(K):
         s = _solve_scale(light["fst"], sed_light, bsa_light,
-                         light["d_winter"], light["d_summer"], K)
+                         light["d_winter"], light["d_summer"], K,
+                         weight_kg=w_light, params=p)
         pred = _predict_summer(dark["fst"], sed_dark, bsa_dark,
-                               dark["d_winter"], K, s)
+                               dark["d_winter"], K, s, params=p,
+                               weight_kg=w_dark)
         return pred - dark["d_summer"], s, pred
 
     r0 = residual(0.0)[0]

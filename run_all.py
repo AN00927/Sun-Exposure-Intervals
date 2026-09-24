@@ -29,6 +29,7 @@ import vitd_scenario
 import vitd_validation
 import vitd_analyses
 import vitd_calibration
+import vitd_optimization_reports
 from vitd_optimization_reports import (analysis_constant_sessions, analysis_spacing_fixed_dose,
                                        analysis_variable_dose,
                                        analysis_joint_schedule,
@@ -747,6 +748,98 @@ def main():
         "0.33, within 6% of it.\n"
     )
 
+    def _scenario_constant_band():
+        """[decision B5] README.md used to attribute an "unexplained ~7.57x"
+        absolute-minutes band to "season and exposed skin area", sourced from
+        a purged document that predated this file. Recompute what range, if
+        any, `vitd_scenario.SCENARIO_REGISTRY` -- the only canonical source of
+        exposure-scenario constants (CLAUDE.md) -- actually documents for
+        each term, and the minutes ratio that range induces. Read-only on
+        vitd_scenario.py; invents nothing it does not carry.
+        """
+        from vitd_objectives import minutes_for_target, SUFFICIENCY_NMOL_L
+        reg = vitd_scenario.SCENARIO_REGISTRY.values()
+        uvis = sorted({s.uvi for s in reg})
+        geoms = sorted({s.geometry_factor for s in reg})
+        bsas = sorted({s.exposed_bsa for s in reg})
+        lo_bsa, hi_bsa = bsas[0], bsas[-1]
+        m_lo = minutes_for_target(fst=3, uv_index=vitd_scenario.UV_INDEX,
+                                   exposed_bsa=lo_bsa,
+                                   target=SUFFICIENCY_NMOL_L,
+                                   geometry_factor=vitd_scenario.GEOMETRY_FACTOR)
+        m_hi = minutes_for_target(fst=3, uv_index=vitd_scenario.UV_INDEX,
+                                   exposed_bsa=hi_bsa,
+                                   target=SUFFICIENCY_NMOL_L,
+                                   geometry_factor=vitd_scenario.GEOMETRY_FACTOR)
+        ratio = None
+        if (m_lo.get("reachable") and m_hi.get("reachable")
+                and m_hi["minutes"] and m_hi["minutes"] > 0):
+            ratio = m_lo["minutes"] / m_hi["minutes"]
+        print(f"  uv_index values in SCENARIO_REGISTRY : {uvis}")
+        print(f"  geometry_factor values in SCENARIO_REGISTRY : {geoms}")
+        print(f"  exposed_bsa values in SCENARIO_REGISTRY : {bsas}")
+        print(f"  minutes at exposed_bsa={lo_bsa:g} : "
+              f"{m_lo.get('minutes')}")
+        print(f"  minutes at exposed_bsa={hi_bsa:g} : "
+              f"{m_hi.get('minutes')}")
+        print(f"  BSA-driven minutes ratio (FST 3, target "
+              f"{SUFFICIENCY_NMOL_L:g} nmol/L) : {ratio}")
+        return {"uvis": uvis, "geoms": geoms, "bsas": bsas,
+                "lo_bsa": lo_bsa, "hi_bsa": hi_bsa, "ratio": ratio,
+                "target": SUFFICIENCY_NMOL_L}
+
+    _scen_log, _scen_res, _scen_err = capture_log_safe(
+        "B5 scenario-constant band", _scenario_constant_band)
+    report.append(
+        "\n### The README's absolute-minutes uncertainty band, recomputed\n"
+        "\n**Corrected 2026-09-23 (decision B5).** `README.md` used to "
+        "attribute an unexplained ~7.57x band on absolute minutes to "
+        "\"season and exposed skin area\", sourced from a document that "
+        "predates `vitd_scenario.py` and no longer exists in this "
+        "repository's history. It cannot be reproduced. Recomputed here "
+        "from `vitd_scenario.SCENARIO_REGISTRY` alone, the only canonical "
+        "source of these constants:\n")
+    if _scen_err:
+        report.append("\n> **This computation failed on this run** (`%s`).\n"
+                       % _scen_err)
+    else:
+        r = _scen_res
+        ratio_txt = (f"{r['ratio']:.6f}x" if r["ratio"] is not None
+                     else "not computable (one or both endpoints "
+                          "unreachable at this run's parameters)")
+        report.append(
+            "\n- **`uv_index` (ambient, the \"season\" proxy): %s -- a "
+            "single fixed value in every registry entry, not a range. "
+            "`vitd_scenario.py` carries zero season-driven uncertainty; "
+            "the original disclaimer's \"season\" term is not "
+            "representable from this file at all.\n"
+            "- **`geometry_factor`: %s -- also a single fixed value in "
+            "every registry entry. `vitd_scenario.py` imports "
+            "`vitd_objectives.PERSONAL_DOSE_GEOMETRY_FACTOR` but never "
+            "varies it; a literature range for this term exists, but in "
+            "`vitd_objectives.py` and `calibration_approval.yaml`, not in "
+            "`vitd_scenario.py`, so it is out of scope for a band derived "
+            "from this file alone.\n"
+            "- **`exposed_bsa`: %s to %s** -- the one term with a genuine, "
+            "in-file range, spanning `deboer2025_barrier` to "
+            "`young2021_fst2_solar`. At FST III, target %.0f nmol/L, this "
+            "alone induces a minutes ratio of **%s**.\n\n"
+            "**So the band `vitd_scenario.py` itself supports is the "
+            "`exposed_bsa` ratio above, and only that -- not 7.57x, and "
+            "not attributable to season at all.** README.md's disclaimer "
+            "is corrected accordingly; this paragraph is regenerated on "
+            "every run rather than restating a fixed figure.\n"
+            % (r["uvis"], r["geoms"], r["lo_bsa"], r["hi_bsa"],
+               r["target"], ratio_txt))
+    report.append("\n```\n" + _scen_log + "\n```\n")
+
+    report.append(
+        "\n### FST VI, point of use (decision B2)\n\n"
+        + vitd_optimization_reports.FST_VI_RESOLUTION_NOTE.strip() +
+        "\n\nThis note is repeated at every FST VI output below rather than "
+        "stated once and assumed remembered.\n"
+    )
+
     report.append("\n## 0. Which number is the answer — the objective hierarchy\n")
     report.append(
         "\n**Read this section before any other.** This repository carries "
@@ -777,7 +870,22 @@ def main():
         "sufficiency on sun alone at that session budget without burning "
         "(C1) or without a session longer than anyone will sit through "
         f"(C7, {PRACTICAL_MAX_MINUTES:.0f} min). FST VI is the priority "
-        "population for this project and is included throughout.\n"
+        "population for this project and is included throughout.\n\n"
+        "**FST V and VI are reported as a band below, not a point "
+        "(decisions B1, A1, A2).** Three dispersions in this cluster are "
+        "carried into the primary table rather than collapsed to a single "
+        "number, all computed live against this run's parameters: (B1) a "
+        "+/-1 SD band on `M_baseline_by_FST`, from Narea-Jimenez et al. "
+        "2026's own constitutive-ITA dispersion, mapped through a live "
+        "linear fit to the model's current ITA -> M mapping (not a "
+        "hardcoded formula, so it tracks that mapping if it moves again); "
+        "(A1) both ends of the carried `SC_max_by_FST` IV-VI range "
+        "(`vitd_model.SC_MAX_IV_VI_RANGE`); and (A2) the `A`-threshold at "
+        "which FST V's twice-weekly (N=104) exclusion would flip, with the "
+        "shipped `A`'s headroom against it — the point anchor is kept and "
+        "`A_by_FST` is not adopted (unidentifiable from `K_const`, see the "
+        "`vitd_model.py` docstring), so this is a disclosure, not a "
+        "calibration change.\n"
     )
     report.append("\n```\n" + hierarchy_log + "\n```\n")
 
@@ -1472,11 +1580,20 @@ def main():
     # checks above.
     katten_log, katten_res, katten_err = capture_log_safe(
         "14d. K_ATTEN vs Matsuoka 1990", vitd_calibration.run)
+    # C3: tables/debug/young2020_check.csv had no pipeline owner -- only
+    # tests/test_validation_suite_integrity.py asserted the file exists, so
+    # nothing regenerated it and it drifted (2.9071 -> 2.9288) between runs.
+    # Wired in here, next to the other vitd_calibration.py checks, so it now
+    # has a PIPELINE owner and is regenerated on every run like the rest.
+    young2020_log, young2020_res, young2020_err = capture_log_safe(
+        "14e. Young 2020 FST II:VI calibration check",
+        vitd_calibration.young2020_calibration_check)
     print(obj_log)
     print(bench_log)
     print(sens_log)
     print(risk_log)
     print(katten_log)
+    print(young2020_log)
 
     report.append("\n## 14. Decision problems (recommended objectives)\n")
     report.append(
@@ -1540,6 +1657,29 @@ def main():
         report.append(
             "\n> **This section failed on this run** (`%s`).\n" % katten_err)
     report.append("\n```\n" + katten_log + "\n```\n")
+
+    # ---- 14e. Young 2020 FST II:VI calibration check (decision C3) --------
+    report.append("\n### 14e. Young 2020 FST II:VI calibration check\n")
+    report.append(
+        "\n`tables/debug/young2020_check.csv` used to have no pipeline "
+        "owner — nothing in `run_all.py` called its generator, only "
+        "`tests/test_validation_suite_integrity.py` asserted the file "
+        "exists, which is exactly why it drifted between runs without "
+        "anyone noticing. `vitd_calibration.young2020_calibration_check` is "
+        "now called here on every run, alongside the other calibration "
+        "checks in this file. This is a **calibration check, not "
+        "independent validation** — see the caveat printed in the log "
+        "below if `K_ATTEN` was derived from the same Young 2020 dataset."
+        "%s\n"
+        % ("" if young2020_res is None else
+           " On this run it is **%s** (FST II:VI ratio %.4f, target %.2f-%.2f)."
+           % (young2020_res["result"], young2020_res["ratio"],
+              young2020_res["target_low"], young2020_res["target_high"])))
+    if young2020_err:
+        report.append(
+            "\n> **This section failed on this run** (`%s`).\n"
+            % young2020_err)
+    report.append("\n```\n" + young2020_log + "\n```\n")
 
     report.append("\n## 15. Held-out external benchmark (Webb/Kift 2018)\n")
     report.append(
@@ -1622,10 +1762,18 @@ def main():
                    "failure.)*" if sens_err or not sens_res else None)
     if _IDENT_PARA is None:
         _ident5 = sens_res[5]["identifiability"]
+        # Honour section 16's DEGENERATE verdict: a ridge caused by an inert
+        # parameter (zero standalone sensitivity) is a rank-1 artefact, not a
+        # data-driven tradeoff, and must not be listed as unidentifiable.
         _bad = sorted(
             ((k, v["ridge_fraction"], v["output_spread"])
-             for k, v in _ident5.items() if v["ridge_fraction"] > 0.99),
+             for k, v in _ident5.items()
+             if v["ridge_fraction"] > 0.99 and not v.get("degenerate")),
             key=lambda r: -r[2])
+        _degen = sorted(
+            ((k, ", ".join(v.get("inert_parameters", [])))
+             for k, v in _ident5.items() if v.get("degenerate")),
+            key=lambda r: r[0])
         _IDENT_PARA = (
             "%d parameter pair(s) are jointly unidentifiable from the "
             "current data on THIS run, at FST 5 (>99%% of the "
@@ -1637,7 +1785,15 @@ def main():
             "involving `A`, the top driver in the sensitivity table."
             % (len(_bad),
                ", ".join("`%s` (ridge %.4f, ss_D spread %.2f)" % b
-                         for b in _bad)))
+                         for b in _bad) or "none"))
+        if _degen:
+            _IDENT_PARA += (
+                " Section 16 also flags %s as DEGENERATE: the ridge there "
+                "is a rank-1 artefact of an inert parameter (%s, zero "
+                "standalone sensitivity), not evidence that more granular "
+                "data would resolve a tradeoff."
+                % (", ".join("`%s`" % d[0] for d in _degen),
+                   "; ".join("%s: %s" % d for d in _degen)))
 
     # G-heading: derive section 17's out-of-sample heading from the same
     # bench_res used to headline section 15, so the two can never disagree
@@ -1684,9 +1840,25 @@ disabling `g(D)` entirely leaves the ordering unchanged and *widens* daily
 dosing's margin rather than narrowing it. Turning off every state mechanism at
 once leaves daily winning by more still. What remains, and what actually carries
 the result, is that `S = A * ln(1 + UV * E)` is **concave** -- so at a fixed
-total UV budget, dividing that budget into more and smaller sessions always
+total UV budget (dose framed as absolute SED, not fractional MED -- the two
+framings give materially different FST response patterns, see `CLAUDE.md`
+"Agent guidelines"), dividing that budget into more and smaller sessions always
 yields more 25(OH)D. D-feedback and photoadaptation both modulate the *size* of
 the gap; neither creates it.
+
+**This splitting/spacing claim is scoped to budgets of roughly 0.5 SED/day
+absolute dose or more, not to any budget whatsoever.** The idealised kernel
+above is concave everywhere, but the published per-session dose-response
+evidence bounding how well that idealisation holds does not: four sources
+(Bogh 2011, Farrar 2013 FST V, Shih 2018 all-FST, Jäger 2018) straddle
+linearity rather than confirming concavity, and `tests/test_concavity_assumption.py`
+finds that the ranking is safe by a wide margin at the roughly-1-SED/day
+budgets this report's headline schedules use, but is *not* protected by the
+data at budgets at or below 0.25 SED/day -- the flip point there falls at or
+below the cleanest single measured exponent (Shih 2018). Read the current
+margins from that test's own report, not from this paragraph, since they move
+with the model's live parameters; do not extrapolate the splitting claim below
+roughly half an SED per day without that caveat.
 
 The induced-melanin coefficient `K_ATTEN` was never a candidate cause: its value
 is {K_ATTEN_NOW:g} (see the `vitd_model.py` docstring), so that term is inert
@@ -1696,12 +1868,13 @@ is {K_ATTEN_NOW:g} (see the `vitd_model.py` docstring), so that term is inert
 under a matched total budget.
 
 The practical consequence is worth stating plainly, because it is
-counter-intuitive and it is this report's cleanest result: **the schedule that
-is best for vitamin D is also the one that is safest.** Frequent small sessions
-maximise synthesis (log concavity, above) and simultaneously minimise
-melanoma/BCC risk (which tracks intermittent intensity, not cumulative dose --
-see "Skin cancer is now scored" below). The two objectives agree rather than
-trade off.
+counter-intuitive and it is this report's cleanest result: **at budgets of
+roughly 0.5 SED/day (absolute dose) or more, the schedule that is best for
+vitamin D is also the one that is safest.** Frequent small sessions maximise
+synthesis (log concavity, above) and simultaneously minimise melanoma/BCC risk
+(which tracks intermittent intensity, not cumulative dose -- see "Skin cancer
+is now scored" below). The two objectives agree rather than trade off at those
+budgets; the scoping note above applies here too.
 
 `net_final_D_change_per_SED` is **DIAGNOSTIC-tier** in the section 0 hierarchy,
 not a recommendation: it repairs the retired metric's net-loss failure by being

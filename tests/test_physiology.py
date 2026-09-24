@@ -8,7 +8,8 @@ import numpy as np
 import pytest
 
 from vitd_model import (ModelParams, simulate, build_pulse_schedule,
-                        build_weekly_schedule, synthesis_per_session)
+                        build_weekly_schedule, synthesis_per_session,
+                        BODY_WEIGHT_DILUTION_EXPONENT)
 from vitd_physiology import (body_weight_dilution_factor,
                              photodegradation_factor,
                              personal_geometry_factor,
@@ -50,9 +51,19 @@ class TestBodyWeightDilution:
         assert body_weight_dilution_factor(55.0) > 1.0
 
     def test_hyperbolic_not_linear(self):
-        """1/weight: doubling weight must halve the factor exactly."""
-        assert (body_weight_dilution_factor(140.0)
-                == pytest.approx(0.5 * body_weight_dilution_factor(70.0)))
+        """1/weight: doubling weight must halve the factor exactly.
+
+        [PIN FIX 2026-09-22, mechanical, A5 wire-in design-trap fix] This
+        test's own subject is the LITERAL Drincic/Ekwaru hyperbolic form
+        (exponent exactly 1.0). That form is no longer the function's
+        default -- the calibrated BODY_WEIGHT_DILUTION_EXPONENT now is, per
+        vitd_physiology.py's own comment ("Callers wanting the literal
+        Drincic/Ekwaru hyperbolic form must now ask for it explicitly with
+        exponent=1.0") -- so this test must ask for it explicitly rather than
+        rely on the default. Nothing about what this test checks changed.
+        """
+        assert (body_weight_dilution_factor(140.0, exponent=1.0)
+                == pytest.approx(0.5 * body_weight_dilution_factor(70.0, exponent=1.0)))
 
     def test_applies_to_the_cutaneous_route(self):
         """Dilution is a distribution-volume effect, not a skin effect.
@@ -73,10 +84,81 @@ class TestBodyWeightDilution:
 
         Ekwaru measured this orally; the factor here is a distribution-volume
         term and applies to cutaneous input for the same reason.
+
+        [PIN FIX 2026-09-22, mechanical] Same reason as
+        test_hyperbolic_not_linear above: this checks the LITERAL
+        exponent=1.0 form against the Ekwaru literature ratio, which is no
+        longer the function's default, so it must be requested explicitly.
         """
-        ratio = (body_weight_dilution_factor(70.0)
-                 / body_weight_dilution_factor(140.0))
+        ratio = (body_weight_dilution_factor(70.0, exponent=1.0)
+                 / body_weight_dilution_factor(140.0, exponent=1.0))
         assert 1.8 <= ratio <= 2.2
+
+
+class TestBodyWeightDilutionExponentCalibration:
+    """A5, 2026-09-22 (user-approved): the exponent is now overridable, and
+    vitd_model.py's own synthesis path overrides it with an NHANES-measured
+    value -- see calibration_approval.yaml BODY_WEIGHT_DILUTION_EXPONENT and
+    the BODY_WEIGHT_DILUTION_EXPONENT entry in vitd_model.py's docstring.
+
+    These tests validate the NEW `exponent=` parameter itself. They do NOT
+    touch TestBodyWeightDilution above, but that class's two tests of the
+    literal hyperbolic form (test_hyperbolic_not_linear,
+    test_heavier_body_needs_roughly_double_dose) were themselves updated
+    2026-09-22 to pass `exponent=1.0` explicitly -- see the design-trap-fix
+    comment below.
+
+    [DESIGN CHANGED 2026-09-22, decision A5 wire-in] This class's own
+    docstring, and the test immediately below, previously asserted the
+    OPPOSITE of what is now true: that the function's default stayed at the
+    literal exponent 1.0. That was itself the design trap CLAUDE.md's A5
+    brief named ("fix the function's default exponent still being 1.0") --
+    vitd_model.py's one call site passed the calibrated exponent explicitly
+    while the function's own default silently stayed at the superseded
+    value, so any OTHER caller got the wrong answer by omission. The
+    function's default is now BODY_WEIGHT_DILUTION_EXPONENT itself; a caller
+    wanting the literal Drincic/Ekwaru form must ask for `exponent=1.0`
+    explicitly (see vitd_physiology.body_weight_dilution_factor's docstring).
+    """
+
+    def test_default_is_the_calibrated_exponent_not_one(self):
+        """The function's own default must now be the calibrated exponent.
+
+        REPLACES test_default_exponent_unchanged_at_one (2026-09-22, decision
+        A5 wire-in), which asserted the design this repository deliberately
+        moved away from -- see the class docstring above. The old assertion
+        (default == exponent=1.0) is now FALSE by construction and would be
+        the wrong thing to guard; this test guards the new invariant instead:
+        calling with no `exponent=` must reproduce calling with
+        `exponent=BODY_WEIGHT_DILUTION_EXPONENT` explicitly, and must NOT
+        reproduce the literal hyperbolic form.
+        """
+        assert (body_weight_dilution_factor(140.0)
+                == pytest.approx(body_weight_dilution_factor(
+                    140.0, exponent=BODY_WEIGHT_DILUTION_EXPONENT)))
+        assert (body_weight_dilution_factor(140.0)
+                != pytest.approx(body_weight_dilution_factor(140.0, exponent=1.0)))
+
+    def test_calibrated_constant_matches_nhanes_measurement(self):
+        """BODY_WEIGHT_DILUTION_EXPONENT is the full-precision NHANES
+        unsupplemented-adults estimate (magnitude of gamma_ln_weight_kg),
+        tables/nhanes_weight_dilution_check.csv, not a rounded figure."""
+        assert BODY_WEIGHT_DILUTION_EXPONENT == pytest.approx(0.24226563069970553,
+                                                               abs=1e-12)
+
+    def test_calibrated_exponent_dilutes_less_steeply_than_default(self):
+        """0 < BODY_WEIGHT_DILUTION_EXPONENT < 1: the NHANES-measured
+        exponent is between flat (0, no weight association) and the old
+        exact-hyperbolic default (1) -- a real, weaker-than-hyperbolic
+        weight association, not a null result and not the prior value."""
+        assert 0.0 < BODY_WEIGHT_DILUTION_EXPONENT < 1.0
+
+    def test_calibrated_exponent_used_by_the_model(self):
+        """simulate() with body_weight_kg set must reproduce
+        body_weight_dilution_factor's own value at the calibrated exponent,
+        not at the function's default of 1.0."""
+        assert (body_weight_dilution_factor(140.0, exponent=BODY_WEIGHT_DILUTION_EXPONENT)
+                != pytest.approx(body_weight_dilution_factor(140.0, exponent=1.0)))
 
 
 class TestPhotodegradation:
@@ -528,10 +610,27 @@ class TestBackwardCompatibility:
         the endpoint. Net across the whole 2026-09-06 pass: 53.64 -> 57.77,
         i.e. the melanin term's fall is more than offset by the larger A.
         Neither the scenario nor the tolerance changed.
+
+        Pin REBASED 2026-09-23: 57.77 -> 54.44427408025138 nmol/L, for the
+        2026-09-22 parameter pass. FOUR changes land on this FST V scenario
+        at once and they do not all point the same way:
+          K_const   1.17 -> 2.096070737357932   (down)
+          M_baseline(V) 0.7539 -> 0.5295867768595042  (up, the A3 ITA -> M
+                        re-scale; the pair is a reparameterisation, so the
+                        NET melanin term barely moves)
+          A         4.139 -> 4.359560972608079  (up)
+          body weight  inert -> BODY_WEIGHT_BY_FST[5] = 83.337561944132 kg
+                        (down: dilution factor
+                        (70/83.337561944132)**0.24226563069970553)
+        The body-weight term is the one that was not there before at all:
+        before 2026-09-22 nothing set a weight and the factor was exactly
+        1.0 everywhere, so a default FST V run is now stated at a US
+        population body rather than at the 70 kg reference. Neither the
+        scenario nor the tolerance changed.
         """
         r = simulate(fst=5, schedule=build_pulse_schedule(84, 1.0, 1),
                      duration_days=84, params=ModelParams(), D0=25.0)
-        assert r["D"][-1] == pytest.approx(57.77, abs=0.5)
+        assert r["D"][-1] == pytest.approx(54.44427408025138, abs=0.5)
 
 
 class TestTwoProcessSC:

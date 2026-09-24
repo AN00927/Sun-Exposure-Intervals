@@ -268,7 +268,23 @@ class TestObjectiveHierarchy:
         """Drift guard for the bug this phase fixed. run_all.py stated a
         personal-dose geometry factor of 0.55 while the code held a different
         value; the fix was to interpolate it. Re-hardcoding the value,
-        right or wrong, puts the drift back."""
+        right or wrong, puts the drift back.
+
+        REWRITTEN: previously split on the literal heading
+        "## 17. Interpretation" with no check that the split actually found
+        it. `str.split` on an absent substring is a no-op (returns the whole
+        string as a single-element list), so a renumbered/renamed heading
+        made `report = src.split(...)[-1]` silently become the WHOLE file
+        rather than just the Interpretation section -- the two assertions
+        below would then still run, just scoped wrong, so a genuine
+        reintroduction of the bug inside the (mis-scoped) section would
+        still have been caught by luck, but the test's own stated scope
+        ("the generated report") would have quietly become "everything",
+        which is not what it claims to check and would also start flagging
+        unrelated, legitimate uses of "0.55" elsewhere in the file. Now
+        asserts the anchor is found exactly once before scoping the scan,
+        so a renumber fails loudly instead of silently drifting the scope.
+        """
         import io
         import os
         from vitd_objectives import PERSONAL_DOSE_GEOMETRY_FACTOR
@@ -279,7 +295,17 @@ class TestObjectiveHierarchy:
         src = io.open(path, encoding="utf-8").read()
         assert "PERSONAL_DOSE_GEOMETRY_FACTOR" in src, (
             "run_all.py no longer reads the geometry factor from the code")
-        report = src.split("## 17. Interpretation")[-1]
+
+        heading = "## 17. Interpretation"
+        occurrences = src.count(heading)
+        assert occurrences == 1, (
+            f"expected exactly one {heading!r} anchor in run_all.py to "
+            f"scope this check to the Interpretation section, found "
+            f"{occurrences}; the section was likely renumbered or "
+            "duplicated -- update this test's anchor string to match "
+            "rather than let the scan silently fall back to the whole file"
+        )
+        report = src.split(heading, 1)[1]
         assert repr(PERSONAL_DOSE_GEOMETRY_FACTOR) not in report, (
             "the geometry factor is hardcoded in the generated report again")
         assert "0.55" not in report.replace(
