@@ -193,7 +193,7 @@ TESTING WITHOUT NETWORK
 `exposure_sed()` (the deterministic core) takes an already-known ambient UV
 Index and makes no network call. `exposure_sed_live()` (the convenience
 wrapper that also fetches ambient UVI) accepts the same injectable
-`http_get` seam as vitd_ambient.fetch_ambient_uvi(), so tests/test_exposure.py
+`http_get` seam as vitd_ambient.fetch_ambient_uvi(), so tests/exploratory/test_exposure.py
 can exercise it with the SAME recorded fixtures vitd_ambient's own tests use,
 with zero real network access.
 """
@@ -603,8 +603,8 @@ def exposure_sed_live(latitude: float, longitude: float, when: dt.datetime,
                       ) -> ExposureResult:
     """Convenience wrapper: fetches ambient UVI via vitd_ambient.fetch_ambient_uvi()
     (live network call unless `http_get` is injected -- see that module's
-    "TESTING WITHOUT NETWORK" section, and tests/test_exposure.py, which
-    reuses the SAME recorded fixtures as tests/test_ambient.py) and then
+    "TESTING WITHOUT NETWORK" section, and tests/exploratory/test_exposure.py, which
+    reuses the SAME recorded fixtures as tests/exploratory/test_ambient.py) and then
     calls exposure_sed(). Raises AmbientUVIUnavailable on any fetch failure
     (see vitd_ambient.py) -- never substitutes a guessed UVI.
     """

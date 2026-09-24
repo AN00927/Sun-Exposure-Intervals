@@ -29,11 +29,11 @@ import vitd_scenario
 import vitd_validation
 import vitd_analyses
 import vitd_calibration
-from vitd_optimization import (analysis_constant_sessions, analysis_spacing_fixed_dose,
-                               analysis_variable_dose,
-                               analysis_joint_schedule,
-                               analysis_objective_hierarchy,
-                               analysis_tri_objective)
+from vitd_optimization_reports import (analysis_constant_sessions, analysis_spacing_fixed_dose,
+                                       analysis_variable_dose,
+                                       analysis_joint_schedule,
+                                       analysis_objective_hierarchy,
+                                       analysis_tri_objective)
 
 
 REPORT_PATH = "RESULTS.md"
@@ -560,11 +560,34 @@ def main():
         analysis_objective_hierarchy,
         analysis_tri_objective,
     ]
-    alpha_log, k_log, beta_log, frame_log, fine_log, scipy_log, \
-        maxint_log, load_log, split_log, sun_log, traj_log, const_log, \
-        spacing_log, vardose_log, joint_log, hierarchy_log, tri_log = [
-            capture_log(fn) for fn in analyses
-        ]
+    analysis_logs = {
+        name: capture_log(fn)
+        for name, fn in zip(
+            (
+                "alpha", "k", "beta", "frame", "fine", "scipy", "maxint",
+                "load", "split", "sun", "traj", "const", "spacing", "vardose",
+                "joint", "hierarchy", "tri",
+            ),
+            analyses,
+        )
+    }
+    alpha_log = analysis_logs["alpha"]
+    k_log = analysis_logs["k"]
+    beta_log = analysis_logs["beta"]
+    frame_log = analysis_logs["frame"]
+    fine_log = analysis_logs["fine"]
+    scipy_log = analysis_logs["scipy"]
+    maxint_log = analysis_logs["maxint"]
+    load_log = analysis_logs["load"]
+    split_log = analysis_logs["split"]
+    sun_log = analysis_logs["sun"]
+    traj_log = analysis_logs["traj"]
+    const_log = analysis_logs["const"]
+    spacing_log = analysis_logs["spacing"]
+    vardose_log = analysis_logs["vardose"]
+    joint_log = analysis_logs["joint"]
+    hierarchy_log = analysis_logs["hierarchy"]
+    tri_log = analysis_logs["tri"]
 
     # Echo to console
     print(hierarchy_log)

@@ -70,7 +70,7 @@ So the correct Eq. 7 must read:
     cos(theta_z) = cos(delta) cos(phi) cos(omega) + sin(delta) sin(phi)
 i.e. "sin(delta)" in the FIRST term of the printed Eq. 7 should be
 "cos(delta)" -- exactly the erratum this repo had already identified. This
-derivation is checked numerically in tests/test_solar.py
+derivation is checked numerically in tests/exploratory/test_solar.py
 (TestErratumEq7::test_corrected_form_is_the_only_one_consistent_with_eq8),
 which shows the corrected form satisfies theta_z + alpha_s == 90 deg to
 floating-point precision over a wide grid of latitude/declination/hour-angle
@@ -95,11 +95,11 @@ default in equation_of_time_minutes() and solar_declination_deg(). The
 as-printed Kallioglu coefficients are kept in
 _equation_of_time_minutes_as_printed_ERRATUM() and
 _solar_declination_deg_as_printed_ERRATUM() purely so the erratum stays
-demonstrable and regression-tested (tests/test_solar.py::TestErratumCoefficients
+demonstrable and regression-tested (tests/exploratory/test_solar.py::TestErratumCoefficients
 pins the measured divergence below), and must never be used for real output.
 
 QUANTIFIED IMPACT of Erratum 2 (measured, not estimated -- see
-tests/test_solar.py::TestErratumCoefficients for the exact assertions):
+tests/exploratory/test_solar.py::TestErratumCoefficients for the exact assertions):
     declination        max |Kallioglu - NOAA| = 0.0454 deg   (at n=1)
     equation of time   max |Kallioglu - NOAA| = 0.1654 min = 0.0414 deg of hour angle (at n=319)
     combined worst case (declination + hour-angle error added directly) ~0.087 deg
@@ -119,7 +119,7 @@ CROSS-CHECK against an independent source (not Kallioglu's own equations)
 ---------------------------------------------------------------------------
 NOAA Global Monitoring Division, "General Solar Position Calculations"
 (https://gml.noaa.gov/grad/solcalc/solareqns.PDF — fetched and read directly
-for this module; copy in tests/test_solar.py) publishes the SAME
+for this module; copy in tests/exploratory/test_solar.py) publishes the SAME
 Spencer-family fractional-year / equation-of-time / declination / zenith-angle
 formulas, derived independently:
 
@@ -140,7 +140,7 @@ This confirms, independently of Kallioglu 2024:
      longitude sign convention is translated (see time_correction_minutes()
      docstring) — independent confirmation Eq. 1/5/6 have the right sign.
 Since this module's public functions now implement NOAA's own coefficients
-directly, tests/test_solar.py::TestNOAACrossCheck asserts agreement to float
+directly, tests/exploratory/test_solar.py::TestNOAACrossCheck asserts agreement to float
 precision (not a loose tolerance) wherever the two formulations are
 genuinely identical -- a loose tolerance with no remaining source of
 discrepancy would hide future regressions instead of documenting one.
@@ -192,7 +192,7 @@ radians conversion, declination peaks at +23.4 deg on the summer solstice
 formula's own ~0.03 deg truncation error) and crosses ~0 deg at the equinoxes
 (n=80, n=266); without the conversion (treating the printed number 168.66 as
 168.66 RADIANS), the result does not correspond to any known solar geometry.
-See tests/test_solar.py::TestFractionalYearAndDeclination.
+See tests/exploratory/test_solar.py::TestFractionalYearAndDeclination.
 
 References
 ----------
@@ -269,7 +269,7 @@ def _equation_of_time_minutes_as_printed_ERRATUM(
     typo'd digit-drops of NOAA's 0.000075, 229.18, 0.040849 (module
     docstring, ERRATUM 2). NOT used anywhere in this module's real output;
     kept only so the erratum's measured impact stays regression-tested
-    (tests/test_solar.py::TestErratumCoefficients) and so a future edit
+    (tests/exploratory/test_solar.py::TestErratumCoefficients) and so a future edit
     cannot silently reintroduce the typo'd values into
     equation_of_time_minutes().
     """
@@ -319,7 +319,7 @@ def _solar_declination_deg_as_printed_ERRATUM(
     digit-drop of NOAA's 0.399912 (module docstring, ERRATUM 2). NOT used
     anywhere in this module's real output; kept only so the erratum's
     measured impact stays regression-tested
-    (tests/test_solar.py::TestErratumCoefficients) and so a future edit
+    (tests/exploratory/test_solar.py::TestErratumCoefficients) and so a future edit
     cannot silently reintroduce the typo'd value into
     solar_declination_deg().
     """
@@ -416,7 +416,7 @@ def _zenith_angle_deg_as_printed_eq7_ERRATUM(latitude_deg: float,
     """The paper's Eq. 7 EXACTLY as printed, sin(delta) typo and all.
 
     NOT used anywhere in this module's real output. Kept only so
-    tests/test_solar.py can demonstrate numerically why it is wrong (see
+    tests/exploratory/test_solar.py can demonstrate numerically why it is wrong (see
     module ERRATUM section) and so a future edit cannot silently reintroduce
     the typo into solar_zenith_angle_deg().
     """

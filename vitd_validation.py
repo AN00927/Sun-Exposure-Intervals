@@ -468,7 +468,8 @@ def sanity_photoadaptation_reduction(verbose=True):
         reduction = 1 - exp(-K_ATTEN * M_TAN_HEADROOM)
 
     This is not an approximation; it is an algebraic identity, and it is
-    asserted as such in tests/test_vitd_validation.py. Two consequences:
+    asserted as such in tests/test_vitd_model.py (the K_ATTEN/M_TAN_HEADROOM
+    coupling tests) and tests/test_matsuoka1990.py. Two consequences:
 
       * The 2026-08-17 K_const move (0.33 -> 0.98) CANNOT have changed this
         check, and neither can the 2026-08-18 A and feedback-form changes.

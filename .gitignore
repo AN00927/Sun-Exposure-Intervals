@@ -90,7 +90,7 @@ tmp_katten/
 # Claude / validation / exploratory local state
 .claude/
 .superpowers/
-validation_exploratory/
+validation_exploratory/*
 # Exception: tests/test_validation_suite_integrity.py:27-28 asserts this file
 # exists. It is already tracked (added before the directory-wide ignore
 # above), so the ignore has no retroactive effect on it, but the negation

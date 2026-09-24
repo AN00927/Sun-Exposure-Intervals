@@ -1,5 +1,5 @@
 """
-tests/test_exposure.py
+tests/exploratory/test_exposure.py
 =======================
 Tests for vitd_exposure.py, the PHASE 1 entry point joining vitd_solar.py
 (where is the sun), vitd_ambient.py (ambient UV Index) and
@@ -9,7 +9,7 @@ vitd_physiology.py/vitd_objectives.py (personal-dose geometry) into
 NO NETWORK ACCESS. exposure_sed() takes an already-known ambient UV Index.
 exposure_sed_live() is tested with an injected `http_get` stub reusing the
 same real recorded fixture (tests/fixtures/open_meteo_forecast_la_20260817.json)
-that tests/test_ambient.py uses.
+that tests/exploratory/test_ambient.py uses.
 
 Test groups
 -----------
@@ -325,7 +325,7 @@ class TestExposureSED:
 # ---------------------------------------------------------------------------
 class TestExposureSEDLive:
     def test_matches_recorded_la_uvi(self):
-        # Same instant/place as tests/test_ambient.py's happy-path test:
+        # Same instant/place as tests/exploratory/test_ambient.py's happy-path test:
         # uv_index_live == 8.10 at 2026-08-17T20:00Z. Confirms
         # exposure_sed_live() threads the fetched UVI through, not a placeholder.
         when = dt.datetime(2026, 8, 17, 20, 0, tzinfo=UTC)

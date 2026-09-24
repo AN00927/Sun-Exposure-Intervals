@@ -73,6 +73,16 @@ constants (`UV_INDEX`, `GEOMETRY_FACTOR`, `EXPOSED_BSA`, `SED_PER_MINUTE`) —
 quote `vitd_scenario.LIMITATION_STATEMENT` or `vitd_scenario.describe()`
 instead of retyping the numbers.
 
+**EXEMPTION:** `docs/SC_MODEL.md` and `docs/MELANIN_MODEL.md` carry historical
+parameter values (marked with `[SUPERSEDED ...]` or `[RE-ANCHOR ...]` inline)
+for calibration-change audit and provenance tracking. These files document the
+derivation context when a parameter changed, so the reader can understand why
+the current value differs from its predecessor. Use `[read from code ...]`
+markers and explicit section tags to distinguish current values (which link to
+`vitd_model.py`) from historical ones (which are labelled as superseded). This
+exemption applies to these two files only; all other `.md` files must follow
+the "do not restate" rule.
+
 - `calibration_approval.yaml` gates **calibration** (changing a scientific
   parameter to fit data) — that needs explicit user approval. **Bug fixes**
   (code that does not implement the documented model: unit errors, state-update

@@ -1,5 +1,5 @@
 """
-tests/test_ambient.py
+tests/exploratory/test_ambient.py
 ======================
 Tests for vitd_ambient.py. No test makes a real network call. fetch_ambient_uvi()
 always gets a stub `http_get` returning either a recorded fixture

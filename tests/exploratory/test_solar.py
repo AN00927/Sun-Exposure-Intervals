@@ -1,5 +1,5 @@
 """
-tests/test_solar.py
+tests/exploratory/test_solar.py
 ====================
 Pins vitd_solar.py against:
   (a) NOAA Global Monitoring Division's "General Solar Position

@@ -392,3 +392,224 @@ def test_manifest_pipeline_scripts_are_not_gitignored():
         ".gitignore; a fresh clone could not run the pipeline:\n"
         + "\n".join(f"  {p}" for p in ignored)
     )
+
+
+def test_manifest_run_all_pointers_still_name_the_script_import():
+    """Live run_all.py pointers in docs/SCRIPTS.md must retain their value.
+
+    Checking only that a cited line exists is insufficient: a line shift can
+    land on a different valid statement. The manifest's cited line must still
+    be the dynamic script import and must contain the row's script name.
+    """
+    import re
+
+    with open(SCRIPTS_MANIFEST, encoding="utf-8") as f:
+        manifest_text = f.read()
+
+    problems = []
+    for script_name, line_number in re.findall(
+        r"`([\w./-]+\.py)`[^\n]*?`run_all\.py:(\d+)`", manifest_text
+    ):
+        source_path = os.path.join(REPO_ROOT, "run_all.py")
+        with open(source_path, encoding="utf-8") as f:
+            source_lines = f.readlines()
+        index = int(line_number) - 1
+        if not 0 <= index < len(source_lines):
+            problems.append(f"{script_name}: run_all.py:{line_number} is out of range")
+            continue
+        target = source_lines[index]
+        if "_import_script_module" not in target or script_name[:-3] not in target:
+            problems.append(
+                f"{script_name}: run_all.py:{line_number} points to {target.strip()!r}"
+            )
+
+    assert not problems, "Stale docs/SCRIPTS.md run_all.py pointers:\n" + "\n".join(
+        f"  {problem}" for problem in problems
+    )
+
+
+# ---------------------------------------------------------------------------
+# Stage 1: Pointer & Value Integrity Guard Tests
+# ---------------------------------------------------------------------------
+
+def test_stratum_corneum_parameter_invariants():
+    """Verify stratum corneum parameters in ModelParams match documented specifications."""
+    import numpy as np
+    from vitd_model import ModelParams
+
+    params = ModelParams()
+    assert params.SC_max == 0.30
+    assert params.SC_max_by_FST == {
+        1: 0.24, 2: 0.24, 3: 0.24,
+        4: 0.36, 5: 0.36, 6: 0.36,
+    }
+    for fst in (1, 2, 3):
+        assert params.SC_max_by_FST[fst] == 0.24
+    for fst in (4, 5, 6):
+        assert params.SC_max_by_FST[fst] == 0.36
+    assert params.alpha_SC == 0.12
+    assert np.isclose(params.k_decay_SC, np.log(2) / 28.0)
+    assert np.isclose(params.k_repair_SC, np.log(2) / 7.0)
+    assert params.k_damage == 0.0
+
+    assert ModelParams.SC_PRIOR_RANGES["SC_max"] == (0.20, 0.40)
+    assert ModelParams.SC_PRIOR_RANGES["alpha_SC"] == (0.08, 0.20)
+    assert ModelParams.SC_PRIOR_RANGES["K_SC"] == (0.5, 2.0)
+
+
+def test_melanin_parameter_invariants():
+    """Verify constitutive and facultative melanin parameters match documented specifications."""
+    from vitd_model import ModelParams
+
+    params = ModelParams()
+    assert params.alpha == 0.0025
+    assert params.alpha_by_FST == {
+        1: 0.0025, 2: 0.0025, 3: 0.0025,
+        4: 0.002, 5: 0.002, 6: 0.002,
+    }
+    assert params.K_const == 1.15
+    assert params.M_baseline_by_FST == {
+        1: 0.0381, 2: 0.1715, 3: 0.3231,
+        4: 0.5241, 5: 0.7539, 6: 1.00,
+    }
+    assert params.M_TAN_HEADROOM == 0.238
+
+
+def test_m_ceiling_logic_and_m_max_dead():
+    """Verify M_ceiling logic allows tanning above 1.0 and M_max is not read in simulate/M_ceiling."""
+    import numpy as np
+    from vitd_model import ModelParams
+
+    params = ModelParams()
+    ceiling_6 = params.M_ceiling(6)
+    assert ceiling_6 > 1.0, f"FST VI ceiling {ceiling_6} must exceed 1.0 (not capped at 1.0)"
+    expected_ceiling = params.M_baseline(6) + params.M_TAN_HEADROOM
+    assert np.isclose(ceiling_6, expected_ceiling)
+    assert np.isclose(ceiling_6, 1.238)
+
+    # AST check: in vitd_model.py, M_max must NOT be read or used in simulate() or M_ceiling()
+    vitd_path = os.path.join(REPO_ROOT, "vitd_model.py")
+    with open(vitd_path, encoding="utf-8") as f:
+        tree = ast.parse(f.read(), filename=vitd_path)
+
+    target_funcs = {}
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            if node.name in ("simulate", "M_ceiling"):
+                target_funcs[node.name] = node
+
+    assert "simulate" in target_funcs, "simulate function not found in vitd_model.py AST"
+    assert "M_ceiling" in target_funcs, "M_ceiling function not found in vitd_model.py AST"
+
+    for func_name, func_node in target_funcs.items():
+        for subnode in ast.walk(func_node):
+            if isinstance(subnode, ast.Attribute) and subnode.attr == "M_max":
+                pytest.fail(
+                    f"vitd_model.{func_name}() accesses attribute 'M_max' at line {subnode.lineno}; "
+                    "M_max is dead code and should not be read."
+                )
+            if isinstance(subnode, ast.Name) and subnode.id == "M_max":
+                pytest.fail(
+                    f"vitd_model.{func_name}() references symbol 'M_max' at line {subnode.lineno}."
+                )
+
+
+def test_e_source_deprecation_warning():
+    """Calling get_E_source('solar_broadband') must emit a UserWarning."""
+    from vitd_model import get_E_source
+
+    with pytest.warns(UserWarning, match=r"DEPRECATED"):
+        val = get_E_source("solar_broadband")
+    assert val == 1.0
+
+
+def test_doc_citation_line_pointers_valid():
+    """Verify vitd_model.py line citations in SC_MODEL.md and MELANIN_MODEL.md are valid."""
+    import re
+
+    vitd_path = os.path.join(REPO_ROOT, "vitd_model.py")
+    with open(vitd_path, encoding="utf-8") as f:
+        vitd_text = f.read()
+        vitd_lines = vitd_text.splitlines()
+
+    total_lines = len(vitd_lines)
+    tree = ast.parse(vitd_text, filename=vitd_path)
+
+    mp_node = None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef) and node.name == "ModelParams":
+            mp_node = node
+            break
+    assert mp_node is not None, "ModelParams class not found in vitd_model.py"
+    mp_start = mp_node.lineno
+    mp_end = mp_node.end_lineno
+
+    # Map field/method symbol -> line definition inside ModelParams
+    mp_symbols = {}
+    for item in mp_node.body:
+        if isinstance(item, ast.AnnAssign) and isinstance(item.target, ast.Name):
+            mp_symbols[item.target.id] = item.lineno
+        elif isinstance(item, ast.Assign):
+            for t in item.targets:
+                if isinstance(t, ast.Name):
+                    mp_symbols[t.id] = item.lineno
+        elif isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            mp_symbols[item.name] = item.lineno
+
+    # Load-bearing symbols to check
+    load_bearing_symbols = {
+        "SC_max", "SC_max_by_FST", "alpha_SC", "k_decay_SC", "k_damage",
+        "k_repair_SC", "K_SC", "K_const", "M_TAN_HEADROOM", "M_ceiling", "M_baseline"
+    }
+
+    docs = ["docs/SC_MODEL.md", "docs/MELANIN_MODEL.md"]
+    all_citations = []
+    load_bearing_checked = []
+
+    for doc_rel in docs:
+        doc_path = os.path.join(REPO_ROOT, doc_rel)
+        assert os.path.exists(doc_path), f"{doc_rel} does not exist"
+        with open(doc_path, encoding="utf-8") as f:
+            doc_lines = f.readlines()
+
+        current_section_symbol = None
+        for doc_idx, line in enumerate(doc_lines, 1):
+            if line.startswith("### "):
+                bt = re.findall(r"`([A-Za-z_]\w*)`", line)
+                current_section_symbol = bt[0] if bt else None
+
+            citations = [int(x) for x in re.findall(r"vitd_model\.py:(\d+)", line)]
+            for c in citations:
+                all_citations.append((doc_rel, doc_idx, c))
+                assert 1 <= c <= total_lines, (
+                    f"{doc_rel}:{doc_idx} cites line {c} outside vitd_model.py bounds (1..{total_lines})"
+                )
+
+                # Identify symbols associated with this line/section
+                syms = set(re.findall(r"ModelParams\.([A-Za-z_]\w*)", line))
+                if current_section_symbol in load_bearing_symbols and any(
+                    kw in line for kw in ("Code:", "Symbols:", "Symbol:")
+                ):
+                    syms.add(current_section_symbol)
+
+                for sym in syms:
+                    if sym in load_bearing_symbols and sym in mp_symbols:
+                        load_bearing_checked.append((sym, doc_rel, doc_idx, c))
+                        sym_def = mp_symbols[sym]
+                        directly_contains = sym in vitd_lines[c - 1]
+                        within_50 = abs(c - sym_def) <= 50
+                        within_mp = mp_start <= c <= mp_end
+                        assert directly_contains or within_50 or within_mp, (
+                            f"{doc_rel}:{doc_idx} cites line {c} for {sym}, "
+                            f"which is neither directly named on that line, nor within 50 lines "
+                            f"of definition (line {sym_def}), nor inside ModelParams class "
+                            f"({mp_start}..{mp_end}). Citation is completely stale or misplaced."
+                        )
+
+    # Sanity checks
+    assert len(all_citations) >= 10, f"Expected >= 10 citations across docs, found {len(all_citations)}"
+    for req_sym in ("SC_max", "K_const", "M_TAN_HEADROOM"):
+        assert any(item[0] == req_sym for item in load_bearing_checked), (
+            f"Expected {req_sym} to be verified among load-bearing citations, checked: {load_bearing_checked}"
+        )
+

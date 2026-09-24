@@ -10,7 +10,7 @@ import glob
 
 def test_no_invalid_tests_in_main_suite():
     """No file in the main validation suite contains STATUS: INVALID_FOR_PHYSIOLOGICAL_VALIDATION."""
-    main_files = glob.glob("vitd_validation.py") + glob.glob("test_vitd_validation.py")
+    main_files = glob.glob("vitd_validation.py") + glob.glob("tests/test_vitd_validation.py")
 
     for filepath in main_files:
         if not os.path.exists(filepath):

@@ -156,7 +156,7 @@ TESTING WITHOUT NETWORK
 ------------------------
 fetch_ambient_uvi() takes an injectable `http_get(url, timeout) -> str`
 callable. Production code omits it and gets the real
-urllib.request-backed implementation (_default_http_get); tests/test_ambient.py
+urllib.request-backed implementation (_default_http_get); tests/exploratory/test_ambient.py
 supplies a stub that returns the text of a recorded fixture, so the entire
 test suite runs with zero network access. Fixtures in tests/fixtures/ were
 captured live via `curl` against the real API on 2026-08-17 (see each
@@ -287,7 +287,7 @@ class AmbientUVI:
 def _default_http_get(url: str, timeout: float) -> str:
     """Real HTTP GET, used when fetch_ambient_uvi() is not given a stub.
 
-    Not exercised by tests/test_ambient.py (that suite injects a fake
+    Not exercised by tests/exploratory/test_ambient.py (that suite injects a fake
     `http_get` so it never touches the network); production callers get real
     data without knowing about the injection seam.
     """
