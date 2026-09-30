@@ -42,12 +42,12 @@ where:
 
 ### 1.2 What the code actually does
 
-`simulate()` in `vitd_model.py` (`vitd_model.py:1082-1145`) never integrates continuous
+`simulate()` in `vitd_model.py` (`vitd_model.py:2343-2582`) never integrates continuous
 differential equations numerically with Euler steps. It evaluates a **hybrid pulse process**:
 exact analytic exponential relaxations between sessions, and instantaneous pulse updates at
 each session.
 
-**Between pulses** — sub-stepped at $\Delta t = 0.5\text{ d}$ (`vitd_model.py:1102-1104`):
+**Between pulses** — sub-stepped at $\Delta t = 0.5\text{ d}$ (`vitd_model.py:2474-2479`):
 
 ```python
 SC_build = SC_build * np.exp(-k_decay_SC * delta_time)
@@ -57,7 +57,7 @@ SC_damage = SC_damage * np.exp(-k_repair_SC * delta_time)
 Both state channels are solved analytically over the interval $\Delta t$ with zero ambient UV.
 There is zero discretization error in the decay/repair channels.
 
-**At each pulse** (`vitd_model.py:1142-1145`):
+**At each pulse** (`vitd_model.py:2516-2524`):
 
 ```python
 SC_max_p = params.SC_max_by_FST.get(fst, params.SC_max)
@@ -103,9 +103,11 @@ SC = SC_build - SC_damage
 
 ### 2.1 `SC_max` / `SC_max_by_FST` — hyperplasia thickening ceiling
 
-- **Symbols:** `ModelParams.SC_max: float = 0.30` (`vitd_model.py:1594`),
-  `ModelParams.SC_max_by_FST: Dict[int, float]` (`vitd_model.py:598, 1730-1736`).
-- **Prior range:** $[0.20, 0.40]$ (`SC_PRIOR_RANGES["SC_max"]`, `vitd_model.py:1731`).
+- **Symbols:** `ModelParams.SC_max: float = 0.30` (`vitd_model.py:1790`),
+  `ModelParams.SC_max_by_FST: Dict[int, float]` (`vitd_model.py:1828-1831`).
+- **Prior range:** `SC_PRIOR_RANGES["SC_max"]` (`vitd_model.py:2039`), ceiling
+  widened 2026-09-22 (`calibration_approval.yaml`,
+  `SC_max_prior_ceiling_2026_09_22`) — read the interval from the code.
 - **Default value:** `0.30` (midpoint across phototypes).
 - **Per-FST breakdown:**
   - FST I–III: `0.23` (+23% excess thickness)
@@ -136,6 +138,24 @@ SC = SC_build - SC_damage
   *Caveat:* Miyamura's text states this change was **not statistically significant** ("did not change
   significantly in any of the specimens"), so it corroborates magnitude, not a second independent
   rejection of the null hypothesis. It enrolled no dark-skin participants (FST IV–VI).
+- **Further corroboration and an above-ceiling data point [ADDED 2026-09-23]:**
+  Lavker RM, Gerberick GF, Veres D, Irwin CJ, Kaidbey KH. Cumulative effects from repeated exposures
+  to suberythemal doses of UVB and UVA in human skin. *J Am Acad Dermatol* 1995;32:53-62.
+  DOI 10.1016/0190-9622(95)90184-1, PMID 7822517. Obtained and read in full 2026-09-21 (see
+  `docs/SOURCES.md`). FST I–III, $n=23$; three arms at matched biological dose (~0.5×MED):
+  solar-simulated radiation (SSR) SC thickness $+22.2\%$ (viable epidermis $-2.1\%$, n.s.) —
+  within one point of de Boer's own $+23.2\%$ FST I–III figure, a third independent corroboration
+  at matched dose; UVA-only arm $+85.2\%$; UVA-dominant SSRSS arm $+35.8\%$ — the same biological
+  dose producing a nearly 4x spread in SC thickening depending on source spectrum, an axis
+  `SC_max` does not currently carry (see limitation below).
+  Felton SJ, Shih BB, Watson REB, Kift R, Webb AR, Rhodes LE. Photoprotection conferred by low level
+  summer sunlight exposures against pro-inflammatory UVR insult. *Photochem Photobiol Sci* 2020;19:810-818.
+  DOI 10.1039/c9pp00452a, PMID 33856672. FST II, $n=10$: SC thickness $+41.6\%$ ($29.3 \to 41.5\ \mu\text{m}$)
+  over a 6-week, 1.3 SED x 18-session course — a fourth data point, but one that sits ABOVE the
+  pre-2026-09-22 prior ceiling (0.40) -- read the current interval from `SC_PRIOR_RANGES['SC_max']`
+  above; see `calibration_approval.yaml`'s `SC_max_prior_ceiling_2026_09_22`, which widened the
+  ceiling citing this source alongside Bruls 1984. Not adopted as a fifth per-FST cell here;
+  flagged for a future ceiling review.
 - **Pearse 1987 comparison:**
   Pearse AD, Gaskell SA, Marks R. Epidermal changes in human skin following irradiation with either
   UVB or UVA. *J Invest Dermatol* 1987;88:83-87.
@@ -149,8 +169,8 @@ SC = SC_build - SC_damage
 
 ### 2.2 `alpha_SC` — hyperplasia induction rate per SED
 
-- **Symbol:** `ModelParams.alpha_SC: float = 0.12` (`vitd_model.py:1598`).
-- **Prior range:** $[0.08, 0.20]$ (`SC_PRIOR_RANGES["alpha_SC"]`, `vitd_model.py:1732`).
+- **Symbol:** `ModelParams.alpha_SC: float = 0.12` (`vitd_model.py:1789`).
+- **Prior range:** $[0.08, 0.20]$ (`SC_PRIOR_RANGES["alpha_SC"]`, `vitd_model.py:2039`).
 - **Default value:** `0.12`.
 - **Primary source:** Fitted to de Boer et al. (2025) protocol trajectory.
 - **Derivation from source:**
@@ -180,7 +200,7 @@ SC = SC_build - SC_damage
 
 ### 2.3 `k_decay_SC` — hyperplasia regression rate (1/day)
 
-- **Symbol:** `ModelParams.k_decay_SC: float = np.log(2) / 28.0` ($\approx 0.024755\text{ d}^{-1}$, `vitd_model.py:1599-1714`).
+- **Symbol:** `ModelParams.k_decay_SC: float = np.log(2) / 28.0` ($\approx 0.024755\text{ d}^{-1}$, `vitd_model.py:1788`).
 - **Prior range:** $[\ln(2)/28, \ln(2)/21]$ ($\approx 0.02476\text{–}0.03301\text{ d}^{-1}$, half-life 21–28 days).
 - **Status:** **[STRUCTURAL PRIOR, UNCALIBRATED]**. No source in the scientific literature directly
   measures the post-UV regression rate of human stratum corneum hyperplasia.
@@ -228,8 +248,8 @@ SC = SC_build - SC_damage
 
 ### 2.4 `k_damage` — acute barrier disruption per SED
 
-- **Symbol:** `ModelParams.k_damage: float = 0.0` (`vitd_model.py:1577, 1718-1729`).
-- **Prior range:** $[0.0, 0.15]$ (`SC_PRIOR_RANGES["k_damage"]`, `vitd_model.py:1735`).
+- **Symbol:** `ModelParams.k_damage: float = 0.0` (`vitd_model.py:1871`).
+- **Prior range:** $[0.0, 0.15]$ (`SC_PRIOR_RANGES["k_damage"]`, `vitd_model.py:2039`).
 - **Default value:** `0.0`.
 - **Primary source:** de Boer et al. (2025), Supplementary Table S1.
 - **The Empirical Week-5 Dip:**
@@ -266,7 +286,7 @@ SC = SC_build - SC_damage
 
 ### 2.5 `k_repair_SC` — barrier repair rate constant (1/day)
 
-- **Symbol:** `ModelParams.k_repair_SC: float = np.log(2) / 7.0` ($\approx 0.099021\text{ d}^{-1}$, `vitd_model.py:1578-1591`).
+- **Symbol:** `ModelParams.k_repair_SC: float = np.log(2) / 7.0` ($\approx 0.099021\text{ d}^{-1}$, `vitd_model.py:1885`).
 - **Prior range:** $[\ln(2)/14, \ln(2)/3]$ (half-life 3–14 days).
 - **Status:** **[STRUCTURAL PRIOR, UNCITED]**.
 - **Evidence Search & Biological Context:**
@@ -288,8 +308,8 @@ SC = SC_build - SC_damage
 
 ### 2.6 `K_SC` — stratum corneum synthesis attenuation coefficient
 
-- **Symbol:** `ModelParams.K_SC: float = 1.0` (`vitd_model.py:1560-1570, 1715-1717`).
-- **Prior range:** $[0.5, 2.0]$ (`SC_PRIOR_RANGES["K_SC"]`, `vitd_model.py:1734`).
+- **Symbol:** `ModelParams.K_SC: float = 1.0` (`vitd_model.py:1864`).
+- **Prior range:** $[0.5, 2.0]$ (`SC_PRIOR_RANGES["K_SC"]`, `vitd_model.py:2039`).
 - **Default value:** `1.0`.
 - **Status:** **[DERIVED BOUND, UNCALIBRATED PRIOR]**.
 - **Theoretical Derivation & Optical Bound:**
@@ -360,6 +380,11 @@ impact on vitamin D synthesis, but both are secondary to constitutive melanin.
 7. **All turnover literature is all-Caucasian:**
    Weinstein & Van Scott (1965), Jansen et al. (1974), and Grove & Kligman (1983) enrolled light-skinned
    cohorts with no FST typing. Extrapolating their transit rates to FST IV–VI is unvalidated.
+8. **SC-thickening magnitude may be source-spectrum dependent, not just FST/study dependent
+   [ADDED 2026-09-23]:** Lavker et al. 1995, at matched biological dose (~0.5×MED), found SC
+   thickening ranging from $+22.2\%$ (solar-spectrum SSR) to $+85.2\%$ (UVA-only) to $+35.8\%$
+   (UVA-dominant SSRSS) within the same study, same subjects. `SC_max` is currently a single value
+   per FST with no spectral axis, so this source-spectrum dependence is entirely unrepresented.
 
 ---
 
