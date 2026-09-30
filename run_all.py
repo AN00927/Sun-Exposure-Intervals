@@ -458,6 +458,103 @@ def _frontload_headline(df):
         return ("\n*(Headline numbers unavailable: %s: %s. Read them from the "
                 "log and CSVs below.)*\n" % (type(exc).__name__, exc))
 
+def _frontload_rung_magnitudes(df):
+    """Section 5a headline magnitudes recomputed at EVERY rung, as one table.
+
+    The prose headline above is read off `melanin_only` (the advisor's
+    staging: melanin dynamics first). That rung licenses rankings, not levels,
+    so a reader who needs a magnitude must take it from `melanin_plus_sc`,
+    the rung the parameters were fitted under. This table gives the same
+    statistics side by side so no level is ever quoted from the wrong rung.
+    """
+    try:
+        import numpy as _np
+        DEF = "AUC_deficit_below_sufficiency"
+        rows = []
+        for rung in sorted(df["rung"].unique()):
+            a = df[(df["arm"] == "within_week") & (df["rung"] == rung)]
+            pcts, mono, n = [], 0, 0
+            for _, g in a.groupby(["FST", "weekly_budget_SED"]):
+                g = g.sort_values("sessions_per_week")
+                hi = g[g["sessions_per_week"] == g["sessions_per_week"].max()]
+                lo = g[g["sessions_per_week"] == g["sessions_per_week"].min()]
+                if hi.empty or lo.empty:
+                    continue
+                n += 1
+                pcts.append(100.0 * (float(lo["steady_state_D"].iloc[0])
+                                     / float(hi["steady_state_D"].iloc[0]) - 1.0))
+                mono += int(g["steady_state_D"].is_monotonic_increasing)
+            # FST V at the largest weekly budget, daily split: the cell the
+            # manuscript's deficiency paragraph quotes.
+            cell = a[(a["FST"] == 5) &
+                     (a["weekly_budget_SED"] == a["weekly_budget_SED"].max())]
+            daily = cell[cell["sessions_per_week"] == cell["sessions_per_week"].max()]
+            weekly = cell[cell["sessions_per_week"] == cell["sessions_per_week"].min()]
+
+            def _dts(frame):
+                if frame.empty:
+                    return "n/a"
+                v = float(frame["days_to_sufficiency"].iloc[0])
+                return ("%.0f" % v) if _np.isfinite(v) else "never"
+
+            b = df[(df["arm"] == "horizon_taper") & (df["rung"] == rung)]
+            per_h = []
+            for horizon in sorted(b["horizon_days"].unique()):
+                bh = b[b["horizon_days"] == horizon]
+                pg, dg = [], []
+                for _, g in bh.groupby(["FST", "weekly_budget_SED",
+                                        "n_sessions_planned"]):
+                    ref = g[(g["gamma"] == 1.0) & (g["family"] == "uniform")]
+                    if ref.empty:
+                        continue
+                    r_ss = float(ref["steady_state_D"].iloc[0])
+                    r_def = float(ref[DEF].iloc[0])
+                    front = g[g["gamma"] > 1.0]
+                    if not front.empty and r_ss > 0:
+                        pg.append(100.0 * (float(front["steady_state_D"].max())
+                                           / r_ss - 1.0))
+                    if r_def > 0:
+                        dg.append(100.0 * (1.0 - float(g[DEF].min()) / r_def))
+                per_h.append("%dd: plateau %s / deficit %s" % (
+                    horizon,
+                    ("%+.2f%%" % (sum(pg) / len(pg))) if pg else "n/a",
+                    ("-%.1f%%" % (sum(dg) / len(dg))) if dg else "n/a"))
+            rows.append(
+                "| `%s`%s | %s | %d/%d | %s -> %s | %s -> %s | %s |"
+                % (rung,
+                   " (**quote levels from here**)" if rung == "melanin_plus_sc"
+                   else "",
+                   ("%+.2f%% to %+.2f%%" % (max(pcts), min(pcts))) if pcts
+                   else "n/a",
+                   mono, n,
+                   ("%.1f" % float(daily[DEF].iloc[0])) if not daily.empty
+                   else "n/a",
+                   ("%.1f" % float(weekly[DEF].iloc[0])) if not weekly.empty
+                   else "n/a",
+                   _dts(daily), _dts(weekly),
+                   "; ".join(per_h) or "n/a"))
+        if not rows:
+            return ""
+        return (
+            "\n**Headline magnitudes by rung.** The prose above is read off "
+            "`melanin_only`, which licenses rankings only. Any 25(OH)D *level* "
+            "or deficit quoted from this section must come from the "
+            "`melanin_plus_sc` row, the rung the parameters were fitted under "
+            "(`melanin_sc_risk` is dynamically identical to it). Arm (a) "
+            "columns: daily-to-weekly change in steady-state 25(OH)D across "
+            "cells; monotone cells; and, for FST V at the largest weekly "
+            "budget, the deficit AUC below sufficiency (nmol/L.d) and days to "
+            "sufficiency, daily -> one session a week. Arm (b): mean best "
+            "front-loaded plateau change and mean deficit reduction versus "
+            "flat-and-uniform at matched session count.\n\n"
+            "| rung | arm (a) change | monotone | FST V deficit AUC | "
+            "FST V days to sufficiency | arm (b) by horizon |\n"
+            "|---|---|---|---|---|---|\n" + "\n".join(rows) + "\n")
+    except Exception as exc:                       # pragma: no cover - guard
+        return ("\n*(Rung magnitude table unavailable: %s: %s.)*\n"
+                % (type(exc).__name__, exc))
+
+
 def main():
     _wall_start = time.time()
     parser = argparse.ArgumentParser(
@@ -1180,6 +1277,8 @@ def main():
         "not cosmetic.\n")
     report.append(_frontload_headline(frontload_df)
                   if frontload_df is not None else "")
+    report.append(_frontload_rung_magnitudes(frontload_df)
+                  if frontload_df is not None else "")
     report.append(
         "\n**Limitations — these three constrain what may be read off this "
         "section.**\n\n"
@@ -1568,6 +1667,19 @@ def main():
     if risk_err:
         print("WARNING: risk-aware scheduling section failed (%s) -- "
               "pipeline continued." % risk_err)
+    # 14b.1 / 14b.2: robustness of the 14b recommendation, added 2026-09-30
+    # for the mock-review roadmap (R2, R6, R7). Same isolation as 14b: a
+    # failure costs its own subsection only.
+    def _run_risk_law_sensitivity():
+        return _import_script_module("risk_law_sensitivity").main()
+
+    def _run_fixed_budget_robustness():
+        return _import_script_module("fixed_budget_robustness").main()
+
+    risklaw_log, risklaw_res, risklaw_err = capture_log_safe(
+        "14b.1 Risk-law sensitivity", _run_risk_law_sensitivity)
+    fbr_log, fbr_res, fbr_err = capture_log_safe(
+        "14b.2 Fixed-budget ranking robustness", _run_fixed_budget_robustness)
     risk_anchor_log = "\n".join(
         capture_log(fn) for fn in (
             vitd_calibration.elwood1997_intermittency_check,
@@ -1592,6 +1704,8 @@ def main():
     print(bench_log)
     print(sens_log)
     print(risk_log)
+    print(risklaw_log)
+    print(fbr_log)
     print(katten_log)
     print(young2020_log)
 
@@ -1622,6 +1736,60 @@ def main():
     report.append("\n![deficiency vs risk frontier](figs/deficiency_risk_frontier.png)\n")
     report.append("\nPer-skin-type table: [`tables/risk_aware_schedule_by_fst.csv`]"
                   "(tables/risk_aware_schedule_by_fst.csv).\n")
+
+    report.append("\n### 14b.1 Does the 14b optimum survive a different risk law?\n")
+    report.append(
+        "\nThe agreement between the vitamin D optimum and the risk optimum in "
+        "14b depends on the form of the intermittent risk term, which is an "
+        "input, not a finding. This subsection keeps the 14b constraints and "
+        "each interval's minimum sufficient dose, and re-scores the feasible "
+        "intervals under alternative intermittent-axis laws: a power law in "
+        "per-session fractional MED with the exponent swept (1 removes all "
+        "per-session super-linearity), a burn-threshold law, and a law in "
+        "which damage carries over between sessions with timescale tau (the "
+        "one mechanism here that can make spacing safer). **None of the "
+        "alternative-law knobs is sourced**; they bracket behaviour, and in "
+        "particular tau is not a measured repair time. Index values are "
+        "comparable within a law, not across laws; only the argmin within a "
+        "skin type carries across.\n")
+    if risklaw_err:
+        report.append("\n> **This subsection failed on this run** (`%s`).\n"
+                      % risklaw_err)
+    report.append("\n```\n" + risklaw_log + "\n```\n")
+    report.append("\nTable: [`tables/risk_law_sensitivity.csv`]"
+                  "(tables/risk_law_sensitivity.csv).\n")
+
+    report.append("\n### 14b.2 Is the fixed-budget ranking robust where the "
+                  "14b schedules sit?\n")
+    report.append(
+        "\nThree checks the section 16 analyses do not make. **(A)** At each "
+        "skin type's 14b operating point (about 8-10% MED per daily session, "
+        "below the >= 0.5 SED/day budgets at which the concavity test finds "
+        "the ordering protected), the daily budget is held fixed and the "
+        "interval varied, and the curvature exponent at which daily stops "
+        "winning is bisected with the concavity test's own warp. It is "
+        "compared with the measured per-session exponents on two scales, "
+        "because the warp exponent and a measured log-log slope coincide "
+        "only as dose goes to zero. **(B)** The scale of the log argument "
+        "(`sed * E_source`), which sets where the kernel's knee falls and "
+        "which no multiplicative-scalar argument covers, is swept by a factor "
+        "lambda; lambda is a sensitivity knob, not a sourced prior. **(C)** "
+        "The documented prior ranges are propagated jointly through the "
+        "ranking at a FIXED budget. Section 16's Monte Carlo instead fixes the "
+        "dose per session and ranks on a diagnostic-tier per-SED metric, so "
+        "it does not test this claim.\n")
+    if fbr_err:
+        report.append("\n> **This subsection failed on this run** (`%s`).\n"
+                      % fbr_err)
+    report.append("\n```\n" + fbr_log + "\n```\n")
+    report.append("\n![fixed-budget ranking robustness]"
+                  "(figs/fixed_budget_robustness.png)\n")
+    report.append(
+        "\nTables: [`tables/low_dose_regime.csv`](tables/low_dose_regime.csv), "
+        "[`tables/log_scale_sweep.csv`](tables/log_scale_sweep.csv), "
+        "[`tables/fixed_budget_mc.csv`](tables/fixed_budget_mc.csv) (per-draw "
+        "values in [`tables/fixed_budget_mc_draws.csv`]"
+        "(tables/fixed_budget_mc_draws.csv)).\n")
 
     report.append("\n### 14c. What anchors the three axes of the risk index\n")
     report.append(

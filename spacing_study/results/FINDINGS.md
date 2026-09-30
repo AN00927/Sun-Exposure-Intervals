@@ -5,7 +5,7 @@ this reports what the repo's forward model implies, not what a human body does.*
 
 > **GENERATED PROVENANCE — emitted by `spacing_study/run_spacing_study.py`, not hand-added. Re-derived on every run.**
 >
-> Generated 2026-09-21 12:18:31 Eastern Daylight Time from commit `6a1585f+dirty`.
+> Generated 2026-09-30 15:21:36 Eastern Daylight Time from commit `5e77aab+dirty`.
 >
 > `K_ATTEN` was **ACTIVE and calibrated** when this was generated (reinstated 2026-08-21, user-approved). Its value is in the `vitd_model.py` module docstring, the only canonical source; it is deliberately not restated here.
 >
@@ -29,28 +29,28 @@ Three refinements to that headline, all of which point the same way:
 
 1. **At a matched TOTAL UV budget, spreading the dose out further is strictly
    worse, not neutral.** Splitting a fixed annual SED budget into every-2-day
-   instead of daily sessions costs 9.5% of steady-state mean
-   25(OH)D at FST V (9.1% at FST II); weekly costs
-   29.4% at FST V. This is the **log-dose concavity** term:
+   instead of daily sessions costs 9.7% of steady-state mean
+   25(OH)D at FST V (9.2% at FST II); weekly costs
+   30.0% at FST V. This is the **log-dose concavity** term:
    `A * ln(1 + UV*E)` means two 1-SED sessions beat one 2-SED session, so more
    sessions always wins. Photoadaptation never overcomes it.
 2. **At a fixed duty cycle (total UV identical), even spacing does beat
-   clustering — but by at most 0.049%.** An exhaustive search
+   clustering — but by at most 0.044%.** An exhaustive search
    over every rotation-distinct 14-day on/off pattern at duty 2/14, 4/14 and
    7/14 finds the perfectly-even arrangement first every time and the maximally
    clustered one last. The effect is real and consistently signed, and it is
    also small enough to be scientifically uninteresting next to the ~30%
    penalty for simply going out less often.
 3. **Both photoadaptation channels are live, and both are far too weak to matter.**
-   `K_ATTEN`, the facultative-melanin (tanning) attenuation coefficient, was retired and pinned at zero when this study was first written; it is an active, calibrated parameter in the configuration this was generated under (see the provenance block above), so ablating melanin adaptation is no longer a no-op. It is simply small. At FST V, steady state, removing melanin adaptation moves the every-2-day/daily ratio by 0.118 percentage points under matched per-session dose and 0.097 under a matched budget, and the two framings disagree about its sign — the tanning channel helps spacing under per-session matching and hurts it under a matched budget. Set that against a 19.4-point deficit that daily has to give up before spacing can win. The stratum-corneum channel is the larger of the two at 0.740 points -- still 26x too small, with the melanin channel 165x too small.
+   `K_ATTEN`, the facultative-melanin (tanning) attenuation coefficient, was retired and pinned at zero when this study was first written; it is an active, calibrated parameter in the configuration this was generated under (see the provenance block above), so ablating melanin adaptation is no longer a no-op. It is simply small. At FST V, steady state, removing melanin adaptation moves the every-2-day/daily ratio by 0.118 percentage points under matched per-session dose and 0.098 under a matched budget, and the two framings disagree about its sign — the tanning channel helps spacing under per-session matching and hurts it under a matched budget. Set that against a 20.1-point deficit that daily has to give up before spacing can win. The stratum-corneum channel is the larger of the two at 0.471 points -- still 43x too small, with the melanin channel 171x too small.
    At shipped parameters a fully-thickened SC still passes
-   70% of synthesis at FST IV-VI.
+   79% of synthesis at FST IV-VI.
 
    A non-daily optimum **does** appear if either coefficient is pushed far
    enough — but only far past any defensible value, and only into a regime
    where exposure has stopped working at all:
    - **`K_ATTEN` threshold = 50** under matched per-session dose (about 152x the top of the [0.00, 0.33] range its own objective was ever flat over). Under a **matched total UV budget it never flips** (checked to 100).
-   - **`K_SC` threshold = 13 at FST V / 19 at FST II** under matched per-session dose (6x and 10x the top of the documented 0.5-2.0 prior range), and 23 at FST V under a matched budget. At the FST V flip a fully-thickened stratum corneum would have to pass 0.93% of synthesis instead of the shipped 70%.
+   - **`K_SC` threshold = 19 at FST V / 19 at FST II** under matched per-session dose (10x and 10x the top of the documented 0.5-2.0 prior range), and 33 at FST V under a matched budget. At the FST V flip a fully-thickened stratum corneum would have to pass 1.05% of synthesis instead of the shipped 79%.
    Both thresholds sit in a regime where the winning "spaced" schedule
    produces roughly the no-exposure baseline, so spacing wins only in the
    sense that nothing works. This is the answer to "would spacing beat daily
@@ -83,45 +83,45 @@ Fixed SED per session; only the interval changes, so total UV is `horizon / inte
 
 |   fst |     1 |     2 |     3 |     4 |     5 |     7 |    10 |    14 |
 |------:|------:|------:|------:|------:|------:|------:|------:|------:|
-|     1 | 87.61 | 70.78 | 62.36 | 56.99 | 53.16 | 47.95 | 43.16 | 39.34 |
-|     2 | 83.3  | 67.2  | 59.2  | 54.12 | 50.51 | 45.64 | 41.21 | 37.72 |
-|     3 | 78.63 | 63.35 | 55.81 | 51.06 | 47.71 | 43.22 | 39.2  | 36.07 |
-|     4 | 70.95 | 57.46 | 50.88 | 46.77 | 43.9  | 40.08 | 36.68 | 34.07 |
-|     5 | 64.9  | 52.58 | 46.69 | 43.07 | 40.56 | 37.29 | 34.43 | 32.28 |
-|     6 | 58.98 | 47.92 | 42.76 | 39.64 | 37.52 | 34.79 | 32.46 | 30.73 |
+|     1 | 87.39 | 70.59 | 62.2  | 56.84 | 53.02 | 47.82 | 43.06 | 39.25 |
+|     2 | 82.1  | 66.2  | 58.32 | 53.32 | 49.78 | 45    | 40.68 | 37.28 |
+|     3 | 76.24 | 61.39 | 54.1  | 49.52 | 46.31 | 42.03 | 38.21 | 35.27 |
+|     4 | 69.31 | 55.75 | 49.21 | 45.17 | 42.38 | 38.71 | 35.52 | 33.11 |
+|     5 | 61.67 | 49.69 | 44.08 | 40.69 | 38.38 | 35.43 | 32.91 | 31.06 |
+|     6 | 53.16 | 43.21 | 38.75 | 36.14 | 34.41 | 32.25 | 30.46 | 29.18 |
 
 **mean 25(OH)D (nmol/L) over a 365-day horizon, 1 SED per session**
 
 |   fst |      1 |     2 |     3 |     4 |     5 |     7 |    10 |    14 |
 |------:|-------:|------:|------:|------:|------:|------:|------:|------:|
-|     1 | 100.51 | 81.51 | 71.98 | 65.87 | 61.48 | 55.41 | 49.71 | 45    |
-|     2 |  95.68 | 77.45 | 68.34 | 62.52 | 58.34 | 52.61 | 47.27 | 42.89 |
-|     3 |  90.42 | 73.05 | 64.42 | 58.92 | 54.99 | 49.64 | 44.7  | 40.71 |
-|     4 |  81.49 | 65.94 | 58.31 | 53.5  | 50.1  | 45.5  | 41.29 | 37.92 |
-|     5 |  74.66 | 60.3  | 53.35 | 49.02 | 45.99 | 41.94 | 38.31 | 35.46 |
-|     6 |  67.89 | 54.81 | 48.59 | 44.78 | 42.14 | 38.67 | 35.62 | 33.28 |
+|     1 | 100.26 | 81.3  | 71.8  | 65.7  | 61.31 | 55.27 | 49.58 | 44.89 |
+|     2 |  94.32 | 76.31 | 67.32 | 61.58 | 57.47 | 51.84 | 46.59 | 42.32 |
+|     3 |  87.73 | 70.81 | 62.42 | 57.09 | 53.3  | 48.16 | 43.43 | 39.63 |
+|     4 |  80.04 | 64.38 | 56.71 | 51.9  | 48.51 | 43.98 | 39.9  | 36.69 |
+|     5 |  71.34 | 57.27 | 50.52 | 46.36 | 43.48 | 39.69 | 36.36 | 33.82 |
+|     6 |  61.47 | 49.45 | 43.87 | 40.53 | 38.27 | 35.37 | 32.91 | 31.09 |
 
 **mean 25(OH)D (nmol/L) over a 365-day horizon, 4 SED per session**
 
 |   fst |      1 |     2 |     3 |     4 |     5 |     7 |    10 |    14 |
 |------:|-------:|------:|------:|------:|------:|------:|------:|------:|
-|     1 | 122.73 | 99.8  | 88.33 | 80.99 | 75.7  | 68.4  | 61.46 | 55.6  |
-|     2 | 117.02 | 94.98 | 83.97 | 76.92 | 71.87 | 64.89 | 58.29 | 52.75 |
-|     3 | 110.8  | 89.73 | 79.23 | 72.53 | 67.72 | 61.12 | 54.9  | 49.73 |
-|     4 |  99.66 | 80.64 | 71.22 | 65.25 | 61    | 55.2  | 49.82 | 45.41 |
-|     5 |  91.74 | 74.02 | 65.28 | 59.76 | 55.86 | 50.59 | 45.76 | 41.86 |
-|     6 |  83.73 | 67.35 | 59.35 | 54.35 | 50.84 | 46.15 | 41.93 | 38.59 |
+|     1 | 122.44 | 99.55 | 88.11 | 80.78 | 75.5  | 68.21 | 61.29 | 55.45 |
+|     2 | 115.42 | 93.62 | 82.74 | 75.79 | 70.79 | 63.91 | 57.4  | 51.96 |
+|     3 | 107.61 | 87.05 | 76.81 | 70.28 | 65.61 | 59.2  | 53.2  | 48.22 |
+|     4 |  98.47 | 79.43 | 69.97 | 63.96 | 59.68 | 53.85 | 48.44 | 44.04 |
+|     5 |  88.24 | 70.91 | 62.37 | 56.98 | 53.18 | 48.07 | 43.42 | 39.73 |
+|     6 |  76.36 | 61.15 | 53.78 | 49.22 | 46.05 | 41.88 | 38.21 | 35.39 |
 
 **mean 25(OH)D over a 90-day horizon, 1 SED per session**
 
 |   fst |     1 |     2 |     3 |     4 |     5 |     7 |    10 |    14 |
 |------:|------:|------:|------:|------:|------:|------:|------:|------:|
-|     1 | 83.6  | 67.51 | 60.1  | 55.68 | 52.67 | 48.83 | 45.55 | 43.18 |
-|     2 | 79.28 | 64.2  | 57.35 | 53.3  | 50.56 | 47.1  | 44.18 | 42.08 |
-|     3 | 74.68 | 60.74 | 54.5  | 50.86 | 48.42 | 45.37 | 42.81 | 40.99 |
-|     4 | 67.35 | 55.65 | 50.55 | 47.61 | 45.65 | 43.21 | 41.17 | 39.73 |
-|     5 | 61.86 | 51.72 | 47.43 | 44.99 | 43.39 | 41.41 | 39.78 | 38.64 |
-|     6 | 56.75 | 48.2  | 44.68 | 42.72 | 41.44 | 39.89 | 38.62 | 37.74 |
+|     1 | 83.37 | 67.34 | 59.96 | 55.55 | 52.56 | 48.74 | 45.48 | 43.12 |
+|     2 | 78.08 | 63.29 | 56.6  | 52.65 | 49.99 | 46.64 | 43.81 | 41.79 |
+|     3 | 72.37 | 59.02 | 53.11 | 49.67 | 47.39 | 44.53 | 42.16 | 40.48 |
+|     4 | 65.89 | 54.29 | 49.31 | 46.48 | 44.61 | 42.33 | 40.45 | 39.14 |
+|     5 | 59.08 | 49.55 | 45.61 | 43.41 | 41.99 | 40.27 | 38.88 | 37.92 |
+|     6 | 52.08 | 44.92 | 42.1  | 40.56 | 39.59 | 38.42 | 37.49 | 36.85 |
 
 **Winning interval across all 90 (FST x dose x horizon) cells and all 4 outcome metrics: interval = 1 day in 360 of 360 cases.**
 
@@ -131,12 +131,12 @@ No cell, at any dose, horizon, skin type or outcome metric, prefers a non-daily 
 
 |   fst |      1 |     2 |     3 |     4 |     5 |     7 |    10 |    14 |
 |------:|-------:|------:|------:|------:|------:|------:|------:|------:|
-|     1 | 107.03 | 87.44 | 77.4  | 70.82 | 65.99 | 59.11 | 52.3  | 46.29 |
-|     2 | 102.12 | 83.23 | 73.54 | 67.18 | 62.51 | 55.87 | 49.29 | 43.5  |
-|     3 |  96.76 | 78.62 | 69.31 | 63.2  | 58.71 | 52.32 | 46.01 | 40.46 |
-|     4 |  87.5  | 70.94 | 62.48 | 56.93 | 52.85 | 47.05 | 41.31 | 36.28 |
-|     5 |  80.39 | 64.79 | 56.8  | 51.58 | 47.74 | 42.3  | 36.95 | 32.3  |
-|     6 |  73.21 | 58.58 | 51.1  | 46.2  | 42.62 | 37.57 | 32.65 | 28.45 |
+|     1 | 106.77 | 87.22 | 77.2  | 70.63 | 65.81 | 58.94 | 52.14 | 46.15 |
+|     2 | 100.74 | 82.04 | 72.45 | 66.15 | 61.53 | 54.95 | 48.44 | 42.71 |
+|     3 |  94    | 76.25 | 67.13 | 61.15 | 56.75 | 50.5  | 44.32 | 38.91 |
+|     4 |  86.12 | 69.38 | 60.79 | 55.15 | 51.02 | 45.15 | 39.39 | 34.39 |
+|     5 |  76.98 | 61.5  | 53.56 | 48.35 | 44.54 | 39.16 | 33.93 | 29.48 |
+|     6 |  66.3  | 52.31 | 45.14 | 40.47 | 37.08 | 32.35 | 27.86 | 24.17 |
 
 
 ### B. Matched TOTAL UV budget
@@ -147,34 +147,34 @@ Total SED over the horizon is held fixed; per-session dose is scaled up as the i
 
 |   fst |     1 |     2 |     3 |     4 |     7 |    14 |
 |------:|------:|------:|------:|------:|------:|------:|
-|     1 | 74.26 | 70.73 | 68.03 | 65.77 | 60.92 | 54.44 |
-|     2 | 70.54 | 67.16 | 64.58 | 62.42 | 57.8  | 51.67 |
-|     3 | 66.51 | 63.31 | 60.87 | 58.83 | 54.47 | 48.73 |
-|     4 | 60.31 | 57.42 | 55.24 | 53.43 | 49.59 | 44.58 |
-|     5 | 55.17 | 52.55 | 50.58 | 48.95 | 45.53 | 41.14 |
-|     6 | 50.23 | 47.89 | 46.15 | 44.72 | 41.74 | 37.98 |
+|     1 | 74.07 | 70.55 | 67.85 | 65.6  | 60.76 | 54.3  |
+|     2 | 69.5  | 66.16 | 63.62 | 61.49 | 56.93 | 50.9  |
+|     3 | 64.46 | 61.35 | 58.98 | 57    | 52.79 | 47.26 |
+|     4 | 58.53 | 55.71 | 53.59 | 51.82 | 48.08 | 43.21 |
+|     5 | 52.13 | 49.66 | 47.81 | 46.29 | 43.11 | 39.04 |
+|     6 | 45.2  | 43.19 | 41.69 | 40.48 | 37.97 | 34.87 |
 
 **mean 25(OH)D (nmol/L), 365-day horizon, total budget = 1 SED/day x 365 d = 365 SED**
 
 |   fst |      1 |     2 |     3 |     4 |     7 |    14 |
 |------:|-------:|------:|------:|------:|------:|------:|
-|     1 | 100.51 | 91.15 | 85.23 | 80.91 | 72.64 | 63.04 |
-|     2 |  95.68 | 86.68 | 81    | 76.85 | 68.92 | 59.75 |
-|     3 |  90.42 | 81.83 | 76.41 | 72.46 | 64.92 | 56.24 |
-|     4 |  81.49 | 73.76 | 68.81 | 65.19 | 58.35 | 50.71 |
-|     5 |  74.66 | 67.55 | 63.02 | 59.71 | 53.43 | 46.49 |
-|     6 |  67.89 | 61.39 | 57.28 | 54.29 | 48.67 | 42.54 |
+|     1 | 100.26 | 90.92 | 85.01 | 80.7  | 72.45 | 62.87 |
+|     2 |  94.32 | 85.43 | 79.81 | 75.71 | 67.89 | 58.84 |
+|     3 |  87.73 | 79.35 | 74.06 | 70.21 | 62.88 | 54.47 |
+|     4 |  80.04 | 72.39 | 67.49 | 63.9  | 57.1  | 49.45 |
+|     5 |  71.34 | 64.48 | 60.12 | 56.93 | 50.89 | 44.22 |
+|     6 |  61.47 | 55.56 | 51.85 | 49.17 | 44.17 | 38.81 |
 
 **mean 25(OH)D (nmol/L), 365-day horizon, total budget = 2 SED/day x 365 d = 730 SED**
 
 |   fst |      1 |     2 |     3 |     4 |     7 |    14 |
 |------:|-------:|------:|------:|------:|------:|------:|
-|     1 | 112.17 | 99.77 | 92.43 | 87.25 | 77.62 | 66.85 |
-|     2 | 106.87 | 94.95 | 87.89 | 82.92 | 73.67 | 63.35 |
-|     3 | 101.11 | 89.71 | 82.97 | 78.22 | 69.4  | 59.61 |
-|     4 |  91.18 | 80.61 | 74.39 | 70.05 | 62.13 | 53.57 |
-|     5 |  83.78 | 73.99 | 68.18 | 64.13 | 56.79 | 49    |
-|     6 |  76.31 | 67.33 | 62.01 | 58.3  | 51.63 | 44.69 |
+|     1 | 111.89 | 99.52 | 92.2  | 87.03 | 77.41 | 66.66 |
+|     2 | 105.38 | 93.59 | 86.62 | 81.7  | 72.56 | 62.38 |
+|     3 |  98.15 | 87.02 | 80.45 | 75.81 | 67.23 | 57.71 |
+|     4 |  89.9  | 79.4  | 73.21 | 68.89 | 60.96 | 52.3  |
+|     5 |  80.37 | 70.89 | 65.26 | 61.33 | 54.2  | 46.6  |
+|     6 |  69.38 | 61.13 | 56.25 | 52.88 | 46.85 | 40.65 |
 
 **Optimal interval per budget level: interval = 1 day in 360 of 360 (FST x budget x horizon x metric) cases.**
 
@@ -182,12 +182,12 @@ Total SED over the horizon is held fixed; per-session dose is scaled up as the i
 
 |   fst |      1 |     2 |     3 |     4 |     7 |    14 |
 |------:|-------:|------:|------:|------:|------:|------:|
-|     1 | 107.03 | 97.36 | 91.15 | 86.65 | 77.82 | 67.22 |
-|     2 | 102.12 | 92.8  | 86.8  | 82.46 | 73.92 | 63.65 |
-|     3 |  96.76 | 87.81 | 82.04 | 77.87 | 69.65 | 59.76 |
-|     4 |  87.5  | 79.32 | 73.95 | 70.02 | 62.33 | 53.23 |
-|     5 |  80.39 | 72.76 | 67.74 | 64.05 | 56.75 | 48.08 |
-|     6 |  73.21 | 66.07 | 61.38 | 57.93 | 51.08 | 42.92 |
+|     1 | 106.77 | 97.13 | 90.93 | 86.44 | 77.62 | 67.03 |
+|     2 | 100.74 | 91.51 | 85.57 | 81.27 | 72.82 | 62.65 |
+|     3 |  94    | 85.23 | 79.59 | 75.5  | 67.45 | 57.75 |
+|     4 |  86.12 | 78    | 72.65 | 68.74 | 61.05 | 51.85 |
+|     5 |  76.98 | 69.55 | 64.64 | 61.03 | 53.86 | 45.27 |
+|     6 |  66.3  | 59.59 | 55.17 | 51.92 | 45.43 | 37.69 |
 
 
 ### C. Matched total time outdoors
@@ -198,21 +198,21 @@ Fixed minutes outdoors per week, converted at a single constant 0.09 SED/minute 
 
 |   minutes_per_week |      1 |      2 |     3 |     4 |     7 |
 |-------------------:|-------:|-------:|------:|------:|------:|
-|                 35 |  81.36 |  75.94 | 72.07 | 69.08 | 62.99 |
-|                 70 |  93.86 |  85.38 | 79.91 | 75.95 | 68.28 |
-|                140 | 105.24 |  93.77 | 86.91 | 82.1  | 73.08 |
-|                210 | 111.38 |  98.31 | 90.71 | 85.44 | 75.72 |
-|                350 | 118.66 | 103.68 | 95.21 | 89.43 | 78.91 |
+|                 35 |  80.18 |  74.83 | 71    | 68.05 | 62.04 |
+|                 70 |  92.53 |  84.14 | 78.74 | 74.82 | 67.26 |
+|                140 | 103.77 |  92.43 | 85.65 | 80.89 | 71.98 |
+|                210 | 109.84 |  96.92 | 89.4  | 84.19 | 74.59 |
+|                350 | 117.03 | 102.23 | 93.84 | 88.13 | 77.74 |
 
 **FST 5 — mean 25(OH)D (nmol/L), 365 d; rows = minutes outdoors per week, columns = interval (days)**
 
 |   minutes_per_week |     1 |     2 |     3 |     4 |     7 |
 |-------------------:|------:|------:|------:|------:|------:|
-|                 35 | 63.4  | 59.14 | 56.15 | 53.86 | 49.23 |
-|                 70 | 73.2  | 66.52 | 62.19 | 59.04 | 52.99 |
-|                140 | 82.46 | 73.1  | 67.46 | 63.53 | 56.36 |
-|                210 | 87.37 | 76.52 | 70.25 | 65.99 | 58.3  |
-|                350 | 92.98 | 80.56 | 73.66 | 69.01 | 60.73 |
+|                 35 | 60.19 | 56.13 | 53.28 | 51.11 | 46.73 |
+|                 70 | 69.89 | 63.45 | 59.29 | 56.26 | 50.45 |
+|                140 | 79.07 | 70.01 | 64.54 | 60.74 | 53.78 |
+|                210 | 83.93 | 73.39 | 67.31 | 63.16 | 55.67 |
+|                350 | 89.46 | 77.38 | 70.66 | 66.12 | 58.01 |
 
 Interval = 1 day wins in 240 of 240 cells.
 
@@ -223,103 +223,103 @@ Interval = 1 day wins in 240 of 240 cells.
 
 | pattern   |   duty_cycle |   cum_SED |   ss_mean_D |   ss_min_D |   ss_frac_days_ge_50 |   final_D |
 |:----------|-------------:|----------:|------------:|-----------:|---------------------:|----------:|
-| 1on0off   |        1     |       728 |     102.12  |    101.785 |                    1 |   101.785 |
-| 5on2off   |        0.714 |       520 |      92.55  |     91.695 |                    1 |    91.695 |
-| 4on3off   |        0.571 |       416 |      86.623 |     85.608 |                    1 |    85.608 |
-| 1on1off   |        0.5   |       364 |      83.23  |     82.759 |                    1 |    82.759 |
-| 2on2off   |        0.5   |       364 |      83.228 |     82.522 |                    1 |    82.522 |
-| 7on7off   |        0.5   |       364 |      83.207 |     81.306 |                    1 |    81.306 |
-| 10on10off |        0.5   |       368 |      83.182 |     80.557 |                    1 |    84.425 |
-| 14on14off |        0.5   |       364 |      83.138 |     79.541 |                    1 |    79.541 |
-| 3on4off   |        0.429 |       312 |      79.432 |     78.345 |                    1 |    78.345 |
-| 5on9off   |        0.357 |       260 |      75.095 |     73.122 |                    1 |    73.123 |
-| 1on2off   |        0.333 |       243 |      73.539 |     72.97  |                    1 |    73.348 |
-| 2on5off   |        0.286 |       208 |      70.076 |     69.029 |                    1 |    69.029 |
-| 1on3off   |        0.25  |       182 |      67.181 |     66.531 |                    1 |    66.531 |
-| 1on6off   |        0.143 |       104 |      55.865 |     55.04  |                    1 |    55.041 |
-| 1on13off  |        0.071 |        52 |      43.499 |     42.432 |                    0 |    42.432 |
+| 1on0off   |        1     |       728 |     100.737 |    100.41  |                    1 |   100.41  |
+| 5on2off   |        0.714 |       520 |      91.268 |     90.432 |                    1 |    90.432 |
+| 4on3off   |        0.571 |       416 |      85.401 |     84.411 |                    1 |    84.411 |
+| 1on1off   |        0.5   |       364 |      82.043 |     81.584 |                    1 |    81.584 |
+| 2on2off   |        0.5   |       364 |      82.041 |     81.352 |                    1 |    81.352 |
+| 7on7off   |        0.5   |       364 |      82.02  |     80.166 |                    1 |    80.166 |
+| 10on10off |        0.5   |       368 |      81.996 |     79.436 |                    1 |    83.208 |
+| 14on14off |        0.5   |       364 |      81.953 |     78.444 |                    1 |    78.444 |
+| 3on4off   |        0.429 |       312 |      78.283 |     77.223 |                    1 |    77.223 |
+| 5on9off   |        0.357 |       260 |      73.99  |     72.067 |                    1 |    72.067 |
+| 1on2off   |        0.333 |       243 |      72.45  |     71.894 |                    1 |    72.263 |
+| 2on5off   |        0.286 |       208 |      69.021 |     68     |                    1 |    68.001 |
+| 1on3off   |        0.25  |       182 |      66.154 |     65.522 |                    1 |    65.522 |
+| 1on6off   |        0.143 |       104 |      54.951 |     54.149 |                    1 |    54.15  |
+| 1on13off  |        0.071 |        52 |      42.714 |     41.68  |                    0 |    41.68  |
 
 **D1. Burst-then-rest, FST 5, 1 SED per session, steady state.** Total UV is NOT matched across rows here (duty cycle differs) — read it as 'more days on is better'.
 
 | pattern   |   duty_cycle |   cum_SED |   ss_mean_D |   ss_min_D |   ss_frac_days_ge_50 |   final_D |
 |:----------|-------------:|----------:|------------:|-----------:|---------------------:|----------:|
-| 1on0off   |        1     |       728 |      80.388 |     80.166 |                    1 |    80.166 |
-| 5on2off   |        0.714 |       520 |      72.48  |     71.918 |                    1 |    71.918 |
-| 4on3off   |        0.571 |       416 |      67.586 |     66.924 |                    1 |    66.924 |
-| 1on1off   |        0.5   |       364 |      64.787 |     64.481 |                    1 |    64.481 |
-| 2on2off   |        0.5   |       364 |      64.786 |     64.326 |                    1 |    64.326 |
-| 7on7off   |        0.5   |       364 |      64.768 |     63.532 |                    1 |    63.532 |
-| 10on10off |        0.5   |       368 |      64.748 |     63.042 |                    1 |    65.551 |
-| 14on14off |        0.5   |       364 |      64.713 |     62.374 |                    1 |    62.375 |
-| 3on4off   |        0.429 |       312 |      61.657 |     60.953 |                    1 |    60.953 |
-| 5on9off   |        0.357 |       260 |      58.085 |     56.815 |                    1 |    56.815 |
-| 1on2off   |        0.333 |       243 |      56.805 |     56.439 |                    1 |    56.682 |
-| 2on5off   |        0.286 |       208 |      53.956 |     53.287 |                    1 |    53.287 |
-| 1on3off   |        0.25  |       182 |      51.576 |     51.164 |                    1 |    51.164 |
-| 1on6off   |        0.143 |       104 |      42.298 |     41.786 |                    0 |    41.786 |
-| 1on13off  |        0.071 |        52 |      32.302 |     31.661 |                    0 |    31.661 |
+| 1on0off   |        1     |       728 |      76.981 |     76.775 |                    1 |    76.775 |
+| 5on2off   |        0.714 |       520 |      69.148 |     68.631 |                    1 |    68.631 |
+| 4on3off   |        0.571 |       416 |      64.289 |     63.682 |                    1 |    63.682 |
+| 1on1off   |        0.5   |       364 |      61.505 |     61.225 |                    1 |    61.225 |
+| 2on2off   |        0.5   |       364 |      61.504 |     61.084 |                    1 |    61.084 |
+| 7on7off   |        0.5   |       364 |      61.49  |     60.363 |                    1 |    60.363 |
+| 10on10off |        0.5   |       368 |      61.476 |     59.92  |                    1 |    62.206 |
+| 14on14off |        0.5   |       364 |      61.45  |     59.32  |                    1 |    59.32  |
+| 3on4off   |        0.429 |       312 |      58.39  |     57.749 |                    1 |    57.75  |
+| 5on9off   |        0.357 |       260 |      54.838 |     53.688 |                    1 |    53.689 |
+| 1on2off   |        0.333 |       243 |      53.555 |     53.225 |                    1 |    53.444 |
+| 2on5off   |        0.286 |       208 |      50.719 |     50.118 |                    1 |    50.118 |
+| 1on3off   |        0.25  |       182 |      48.349 |     47.98  |                    0 |    47.98  |
+| 1on6off   |        0.143 |       104 |      39.16  |     38.712 |                    0 |    38.712 |
+| 1on13off  |        0.071 |        52 |      29.478 |     28.93  |                    0 |    28.93  |
 
 **D2. Free search over 14-day on/off patterns at a FIXED duty cycle.** Total UV is identical within each duty block, so this isolates ARRANGEMENT alone. `gap_std` = 0 means perfectly even spacing; large `max_gap` means clustered.
 
-*duty 2/14, FST 2* — 7 rotation-distinct patterns; best-to-worst spread in mean 25(OH)D = 0.0210 nmol/L (0.038%); corr(gap_std, mean D) = -0.961 (negative = even spacing wins). Top 3 and worst 2:
+*duty 2/14, FST 2* — 7 rotation-distinct patterns; best-to-worst spread in mean 25(OH)D = 0.0205 nmol/L (0.037%); corr(gap_std, mean D) = -0.962 (negative = even spacing wins). Top 3 and worst 2:
 
 |        pattern |   max_gap |   gap_std |   ss_mean_D |   ss_min_D |
 |---------------:|----------:|----------:|------------:|-----------:|
-| 00000010000001 |         6 |         0 |     55.8648 |    55.0398 |
-| 00000001000001 |         7 |         1 |     55.8642 |    54.9185 |
-| 00000000100001 |         8 |         2 |     55.8624 |    54.7977 |
-| 00000000000101 |        11 |         5 |     55.8502 |    54.4386 |
-| 00000000000011 |        12 |         6 |     55.8438 |    54.32   |
+| 00000010000001 |         6 |         0 |     54.9509 |    54.1489 |
+| 00000001000001 |         7 |         1 |     54.9503 |    54.0309 |
+| 00000000100001 |         8 |         2 |     54.9485 |    53.9135 |
+| 00000000000101 |        11 |         5 |     54.9366 |    53.5644 |
+| 00000000000011 |        12 |         6 |     54.9304 |    53.449  |
 
-*duty 2/14, FST 5* — 7 rotation-distinct patterns; best-to-worst spread in mean 25(OH)D = 0.0189 nmol/L (0.045%); corr(gap_std, mean D) = -0.964 (negative = even spacing wins). Top 3 and worst 2:
-
-|        pattern |   max_gap |   gap_std |   ss_mean_D |   ss_min_D |
-|---------------:|----------:|----------:|------------:|-----------:|
-| 00000010000001 |         6 |         0 |     42.2962 |    41.7842 |
-| 00000001000001 |         7 |         1 |     42.2955 |    41.7088 |
-| 00000000100001 |         8 |         2 |     42.2939 |    41.6333 |
-| 00000000000101 |        11 |         5 |     42.2829 |    41.4066 |
-| 00000000000011 |        12 |         6 |     42.2773 |    41.3309 |
-
-*duty 4/14, FST 2* — 73 rotation-distinct patterns; best-to-worst spread in mean 25(OH)D = 0.0310 nmol/L (0.044%); corr(gap_std, mean D) = -0.948 (negative = even spacing wins). Top 3 and worst 2:
+*duty 2/14, FST 5* — 7 rotation-distinct patterns; best-to-worst spread in mean 25(OH)D = 0.0136 nmol/L (0.035%); corr(gap_std, mean D) = -0.967 (negative = even spacing wins). Top 3 and worst 2:
 
 |        pattern |   max_gap |   gap_std |   ss_mean_D |   ss_min_D |
 |---------------:|----------:|----------:|------------:|-----------:|
-| 00010010001001 |         3 |    0.5    |     70.082  |    69.3818 |
-| 00010001001001 |         3 |    0.5    |     70.0818 |    69.2931 |
-| 00001001001001 |         4 |    0.866  |     70.081  |    69.1987 |
-| 00000000011101 |         9 |    3.7749 |     70.0578 |    68.2245 |
-| 00000000001111 |        10 |    4.3301 |     70.0511 |    68.1342 |
+| 00000010000001 |         6 |         0 |     39.1576 |    38.7092 |
+| 00000001000001 |         7 |         1 |     39.1571 |    38.6436 |
+| 00000000100001 |         8 |         2 |     39.1558 |    38.5778 |
+| 00000000000101 |        11 |         5 |     39.148  |    38.3806 |
+| 00000000000011 |        12 |         6 |     39.144  |    38.3149 |
 
-*duty 4/14, FST 5* — 73 rotation-distinct patterns; best-to-worst spread in mean 25(OH)D = 0.0264 nmol/L (0.049%); corr(gap_std, mean D) = -0.949 (negative = even spacing wins). Top 3 and worst 2:
-
-|        pattern |   max_gap |   gap_std |   ss_mean_D |   ss_min_D |
-|---------------:|----------:|----------:|------------:|-----------:|
-| 00010010001001 |         3 |    0.5    |     53.9606 |    53.5135 |
-| 00010001001001 |         3 |    0.5    |     53.9604 |    53.457  |
-| 00001001001001 |         4 |    0.866  |     53.9598 |    53.3968 |
-| 00000000011101 |         9 |    3.7749 |     53.94   |    52.7688 |
-| 00000000001111 |        10 |    4.3301 |     53.9343 |    52.7094 |
-
-*duty 7/14, FST 2* — 246 rotation-distinct patterns; best-to-worst spread in mean 25(OH)D = 0.0234 nmol/L (0.028%); corr(gap_std, mean D) = -0.864 (negative = even spacing wins). Top 3 and worst 2:
+*duty 4/14, FST 2* — 73 rotation-distinct patterns; best-to-worst spread in mean 25(OH)D = 0.0302 nmol/L (0.044%); corr(gap_std, mean D) = -0.948 (negative = even spacing wins). Top 3 and worst 2:
 
 |        pattern |   max_gap |   gap_std |   ss_mean_D |   ss_min_D |
 |---------------:|----------:|----------:|------------:|-----------:|
-| 01010101010101 |         1 |    0      |     83.2299 |    82.7593 |
-| 00101010101011 |         2 |    0.5345 |     83.2291 |    82.6836 |
-| 00110101010101 |         2 |    0.5345 |     83.2291 |    82.3523 |
-| 00000011111101 |         6 |    2.0702 |     83.2108 |    81.3781 |
-| 00000001111111 |         7 |    2.4495 |     83.2065 |    81.3059 |
+| 00010010001001 |         3 |    0.5    |     69.0269 |    68.3446 |
+| 00010001001001 |         3 |    0.5    |     69.0266 |    68.2583 |
+| 00001001001001 |         4 |    0.866  |     69.0259 |    68.1664 |
+| 00000000011101 |         9 |    3.7749 |     69.0032 |    67.2171 |
+| 00000000001111 |        10 |    4.3301 |     68.9967 |    67.129  |
 
-*duty 7/14, FST 5* — 246 rotation-distinct patterns; best-to-worst spread in mean 25(OH)D = 0.0191 nmol/L (0.030%); corr(gap_std, mean D) = -0.865 (negative = even spacing wins). Top 3 and worst 2:
+*duty 4/14, FST 5* — 73 rotation-distinct patterns; best-to-worst spread in mean 25(OH)D = 0.0192 nmol/L (0.038%); corr(gap_std, mean D) = -0.950 (negative = even spacing wins). Top 3 and worst 2:
 
 |        pattern |   max_gap |   gap_std |   ss_mean_D |   ss_min_D |
 |---------------:|----------:|----------:|------------:|-----------:|
-| 01010101010101 |         1 |    0      |     64.787  |    64.4809 |
-| 00110101010101 |         2 |    0.5345 |     64.7864 |    64.2162 |
-| 00101010101011 |         2 |    0.5345 |     64.7864 |    64.4319 |
-| 00000011111101 |         6 |    2.0702 |     64.7713 |    63.5798 |
-| 00000001111111 |         7 |    2.4495 |     64.7678 |    63.5321 |
+| 00010010001001 |         3 |    0.5    |     50.7223 |    50.3203 |
+| 00010001001001 |         3 |    0.5    |     50.7221 |    50.2697 |
+| 00001001001001 |         4 |    0.866  |     50.7216 |    50.2162 |
+| 00000000010111 |         9 |    3.7749 |     50.7072 |    49.7522 |
+| 00000000001111 |        10 |    4.3301 |     50.7031 |    49.6026 |
+
+*duty 7/14, FST 2* — 246 rotation-distinct patterns; best-to-worst spread in mean 25(OH)D = 0.0228 nmol/L (0.028%); corr(gap_std, mean D) = -0.864 (negative = even spacing wins). Top 3 and worst 2:
+
+|        pattern |   max_gap |   gap_std |   ss_mean_D |   ss_min_D |
+|---------------:|----------:|----------:|------------:|-----------:|
+| 01010101010101 |         1 |    0      |     82.0425 |    81.5835 |
+| 00101010101011 |         2 |    0.5345 |     82.0418 |    81.5096 |
+| 00110101010101 |         2 |    0.5345 |     82.0418 |    81.1864 |
+| 00000011111101 |         6 |    2.0702 |     82.0239 |    80.2361 |
+| 00000001111111 |         7 |    2.4495 |     82.0198 |    80.1658 |
+
+*duty 7/14, FST 5* — 246 rotation-distinct patterns; best-to-worst spread in mean 25(OH)D = 0.0143 nmol/L (0.023%); corr(gap_std, mean D) = -0.865 (negative = even spacing wins). Top 3 and worst 2:
+
+|        pattern |   max_gap |   gap_std |   ss_mean_D |   ss_min_D |
+|---------------:|----------:|----------:|------------:|-----------:|
+| 01010101010101 |         1 |    0      |     61.5044 |    61.2245 |
+| 00110101010101 |         2 |    0.5345 |     61.504  |    60.983  |
+| 00101010101011 |         2 |    0.5345 |     61.504  |    61.1805 |
+| 00000011111101 |         6 |    2.0702 |     61.4928 |    60.4056 |
+| 00000001111111 |         7 |    2.4495 |     61.4902 |    60.3627 |
 
 
 ### E. Mechanism decomposition
@@ -330,58 +330,58 @@ Each mechanism switched off one at a time. `ratio_iv2_iv1` is mean 25(OH)D on an
 
 |                                  |   meanD_daily |   meanD_every2 |   meanD_weekly |   ratio_iv2_iv1 |   ratio_iv7_iv1 |   best_iv |
 |:---------------------------------|--------------:|---------------:|---------------:|----------------:|----------------:|----------:|
-| ('full', 2)                      |      102.12   |        83.2299 |        55.8653 |          0.815  |          0.5471 |         1 |
-| ('full', 5)                      |       80.3881 |        64.7871 |        42.2981 |          0.8059 |          0.5262 |         1 |
-| ('no_photoadapt', 2)             |      109.173  |        88.1562 |        57.8386 |          0.8075 |          0.5298 |         1 |
-| ('no_photoadapt', 5)             |       88.6962 |        70.7249 |        44.7105 |          0.7974 |          0.5041 |         1 |
-| ('no_SC', 2)                     |      108.437  |        87.7841 |        57.7483 |          0.8095 |          0.5326 |         1 |
-| ('no_SC', 5)                     |       88.3972 |        70.5874 |        44.6802 |          0.7985 |          0.5054 |         1 |
-| ('no_melanin_adapt', 2)          |      102.822  |        83.5877 |        55.9538 |          0.8129 |          0.5442 |         1 |
-| ('no_melanin_adapt', 5)          |       80.6672 |        64.9169 |        42.3273 |          0.8047 |          0.5247 |         1 |
-| ('no_feedback', 2)               |      238.433  |       163.133  |        82.7139 |          0.6842 |          0.3469 |         1 |
-| ('no_feedback', 5)               |      153.656  |       105.795  |        54.6357 |          0.6885 |          0.3556 |         1 |
-| ('no_D_decay', 2)                |      261.46   |       206.943  |       134.167  |          0.7915 |          0.5131 |         1 |
-| ('no_D_decay', 5)                |      199.204  |       157.205  |       102.164  |          0.7892 |          0.5129 |         1 |
-| ('no_photoadapt_no_feedback', 2) |      270.74   |       181.001  |        87.3667 |          0.6685 |          0.3227 |         1 |
-| ('no_photoadapt_no_feedback', 5) |      183.479  |       122.645  |        59.1417 |          0.6684 |          0.3223 |         1 |
+| ('full', 2)                      |      100.737  |        82.0425 |        54.9515 |          0.8144 |          0.5455 |         1 |
+| ('full', 5)                      |       76.9809 |        61.5046 |        39.16   |          0.799  |          0.5087 |         1 |
+| ('no_photoadapt', 2)             |      107.716  |        86.9178 |        56.9042 |          0.8069 |          0.5283 |         1 |
+| ('no_photoadapt', 5)             |       82.3821 |        65.3369 |        40.6888 |          0.7931 |          0.4939 |         1 |
+| ('no_SC', 2)                     |      106.987  |        86.5496 |        56.8148 |          0.809  |          0.531  |         1 |
+| ('no_SC', 5)                     |       82.0987 |        65.2065 |        40.6603 |          0.7942 |          0.4953 |         1 |
+| ('no_melanin_adapt', 2)          |      101.433  |        82.3967 |        55.039  |          0.8123 |          0.5426 |         1 |
+| ('no_melanin_adapt', 5)          |       77.2516 |        61.6301 |        39.1877 |          0.7978 |          0.5073 |         1 |
+| ('no_feedback', 2)               |      232.381  |       158.99   |        80.609  |          0.6842 |          0.3469 |         1 |
+| ('no_feedback', 5)               |      142.328  |        97.1133 |        49.064  |          0.6823 |          0.3447 |         1 |
+| ('no_D_decay', 2)                |      257.382  |       203.635  |       131.918  |          0.7912 |          0.5125 |         1 |
+| ('no_D_decay', 5)                |      189.74   |       148.641  |        95.138  |          0.7834 |          0.5014 |         1 |
+| ('no_photoadapt_no_feedback', 2) |      263.868  |       176.406  |        85.1439 |          0.6685 |          0.3227 |         1 |
+| ('no_photoadapt_no_feedback', 5) |      160.527  |       107.292  |        51.7337 |          0.6684 |          0.3223 |         1 |
 
 **Framing: matched_total_SED**
 
 |                                  |   meanD_daily |   meanD_every2 |   meanD_weekly |   ratio_iv2_iv1 |   ratio_iv7_iv1 |   best_iv |
 |:---------------------------------|--------------:|---------------:|---------------:|----------------:|----------------:|----------:|
-| ('full', 2)                      |      102.12   |        92.7961 |        73.9193 |          0.9087 |          0.7238 |         1 |
-| ('full', 5)                      |       80.3881 |        72.76   |        56.7464 |          0.9051 |          0.7059 |         1 |
-| ('no_photoadapt', 2)             |      109.173  |        99.5884 |        79.5518 |          0.9122 |          0.7287 |         1 |
-| ('no_photoadapt', 5)             |       88.6962 |        80.4916 |        63.2433 |          0.9075 |          0.713  |         1 |
-| ('no_SC', 2)                     |      108.437  |        98.5946 |        78.5155 |          0.9092 |          0.7241 |         1 |
-| ('no_SC', 5)                     |       88.3972 |        80.138  |        62.5915 |          0.9066 |          0.7081 |         1 |
-| ('no_melanin_adapt', 2)          |      102.822  |        93.7448 |        74.9125 |          0.9117 |          0.7286 |         1 |
-| ('no_melanin_adapt', 5)          |       80.6672 |        73.0906 |        57.3581 |          0.9061 |          0.711  |         1 |
-| ('no_feedback', 2)               |      238.433  |       198.847  |       131.076  |          0.834  |          0.5497 |         1 |
-| ('no_feedback', 5)               |      153.656  |       128.768  |        84.7742 |          0.838  |          0.5517 |         1 |
-| ('no_D_decay', 2)                |      261.46   |       234.053  |       180.795  |          0.8952 |          0.6915 |         1 |
-| ('no_D_decay', 5)                |      199.204  |       178.266  |       136.486  |          0.8949 |          0.6852 |         1 |
-| ('no_photoadapt_no_feedback', 2) |      270.74   |       226.772  |       148.917  |          0.8376 |          0.55   |         1 |
-| ('no_photoadapt_no_feedback', 5) |      183.479  |       153.675  |       100.893  |          0.8376 |          0.5499 |         1 |
+| ('full', 2)                      |      100.737  |        91.5093 |        72.8188 |          0.9084 |          0.7229 |         1 |
+| ('full', 5)                      |       76.9809 |        69.5464 |        53.8602 |          0.9034 |          0.6997 |         1 |
+| ('no_photoadapt', 2)             |      107.716  |        98.2302 |        78.3929 |          0.9119 |          0.7278 |         1 |
+| ('no_photoadapt', 5)             |       82.3821 |        74.5969 |        58.2076 |          0.9055 |          0.7066 |         1 |
+| ('no_SC', 2)                     |      106.987  |        97.2469 |        77.3673 |          0.909  |          0.7231 |         1 |
+| ('no_SC', 5)                     |       82.0987 |        74.2617 |        57.5901 |          0.9045 |          0.7015 |         1 |
+| ('no_melanin_adapt', 2)          |      101.433  |        92.4481 |        73.8017 |          0.9114 |          0.7276 |         1 |
+| ('no_melanin_adapt', 5)          |       77.2516 |        69.8669 |        54.4518 |          0.9044 |          0.7049 |         1 |
+| ('no_feedback', 2)               |      232.381  |       193.798  |       127.747  |          0.834  |          0.5497 |         1 |
+| ('no_feedback', 5)               |      142.328  |       119.182  |        78.1374 |          0.8374 |          0.549  |         1 |
+| ('no_D_decay', 2)                |      257.382  |       230.36   |       177.853  |          0.895  |          0.691  |         1 |
+| ('no_D_decay', 5)                |      189.74   |       169.6    |       129.296  |          0.8939 |          0.6814 |         1 |
+| ('no_photoadapt_no_feedback', 2) |      263.868  |       221.016  |       145.135  |          0.8376 |          0.55   |         1 |
+| ('no_photoadapt_no_feedback', 5) |      160.527  |       134.447  |        88.2536 |          0.8375 |          0.5498 |         1 |
 
 **Arrangement at a fixed 7/14 duty cycle (total UV identical).** `spread_minus_clustered` > 0 means even spacing beats burst-then-rest.
 
 |                                  |   alternating |   7on7off |   clustered_3_4 |   spread_minus_clustered |
 |:---------------------------------|--------------:|----------:|----------------:|-------------------------:|
-| ('full', 2)                      |       83.2299 |   83.2065 |         83.2236 |                   0.0234 |
-| ('full', 5)                      |       64.787  |   64.768  |         64.7819 |                   0.019  |
-| ('no_photoadapt', 2)             |       88.1562 |   88.1413 |         88.1522 |                   0.0149 |
-| ('no_photoadapt', 5)             |       70.7248 |   70.7166 |         70.7226 |                   0.0082 |
-| ('no_SC', 2)                     |       87.7841 |   87.7692 |         87.7801 |                   0.0149 |
-| ('no_SC', 5)                     |       70.5873 |   70.5791 |         70.5852 |                   0.0082 |
-| ('no_melanin_adapt', 2)          |       83.5877 |   83.5643 |         83.5814 |                   0.0234 |
-| ('no_melanin_adapt', 5)          |       64.9168 |   64.8978 |         64.9117 |                   0.019  |
-| ('no_feedback', 2)               |      163.133  |  163.075  |        163.117  |                   0.0574 |
-| ('no_feedback', 5)               |      105.794  |  105.753  |        105.783  |                   0.0406 |
-| ('no_D_decay', 2)                |      206.325  |  206.599  |        206.39   |                  -0.274  |
-| ('no_D_decay', 5)                |      156.72   |  156.923  |        156.768  |                  -0.2029 |
-| ('no_photoadapt_no_feedback', 2) |      181.001  |  180.976  |        180.994  |                   0.0257 |
-| ('no_photoadapt_no_feedback', 5) |      122.645  |  122.635  |        122.642  |                   0.0095 |
+| ('full', 2)                      |       82.0425 |   82.0198 |         82.0364 |                   0.0228 |
+| ('full', 5)                      |       61.5045 |   61.4904 |         61.5007 |                   0.014  |
+| ('no_photoadapt', 2)             |       86.9178 |   86.9035 |         86.914  |                   0.0143 |
+| ('no_photoadapt', 5)             |       65.3368 |   65.3303 |         65.3351 |                   0.0065 |
+| ('no_SC', 2)                     |       86.5496 |   86.5352 |         86.5458 |                   0.0144 |
+| ('no_SC', 5)                     |       65.2065 |   65.1999 |         65.2047 |                   0.0066 |
+| ('no_melanin_adapt', 2)          |       82.3966 |   82.3738 |         82.3905 |                   0.0228 |
+| ('no_melanin_adapt', 5)          |       61.6299 |   61.6159 |         61.6261 |                   0.014  |
+| ('no_feedback', 2)               |      158.99   |  158.935  |        158.976  |                   0.0552 |
+| ('no_feedback', 5)               |       97.1116 |   97.0849 |         97.1044 |                   0.0268 |
+| ('no_D_decay', 2)                |      203.025  |  203.295  |        203.089  |                  -0.2701 |
+| ('no_D_decay', 5)                |      148.18   |  148.385  |        148.228  |                  -0.2048 |
+| ('no_photoadapt_no_feedback', 2) |      176.406  |  176.381  |        176.399  |                   0.0241 |
+| ('no_photoadapt_no_feedback', 5) |      107.291  |  107.284  |        107.289  |                   0.0064 |
 
 
 ### E'. K_ATTEN sweep — would tanning attenuation create a non-daily optimum?
@@ -392,35 +392,35 @@ Each mechanism switched off one at a time. `ratio_iv2_iv1` is mean 25(OH)D on an
 
 |   K_ATTEN |   best_iv_FST1 |   ratio2_1_FST1 |   best_iv_FST2 |   ratio2_1_FST2 |   best_iv_FST3 |   ratio2_1_FST3 |   best_iv_FST4 |   ratio2_1_FST4 |   best_iv_FST5 |   ratio2_1_FST5 |   best_iv_FST6 |   ratio2_1_FST6 |
 |----------:|---------------:|----------------:|---------------:|----------------:|---------------:|----------------:|---------------:|----------------:|---------------:|----------------:|---------------:|----------------:|
-|      0    |              1 |          0.8149 |              1 |          0.8129 |              1 |          0.8105 |              1 |          0.8095 |              1 |          0.8047 |              1 |          0.799  |
-|      0.1  |              1 |          0.8156 |              1 |          0.8137 |              1 |          0.8112 |              1 |          0.8099 |              1 |          0.8052 |              1 |          0.7994 |
-|      0.33 |              1 |          0.8173 |              1 |          0.8153 |              1 |          0.8129 |              1 |          0.811  |              1 |          0.8061 |              1 |          0.8003 |
-|      0.5  |              1 |          0.8185 |              1 |          0.8166 |              1 |          0.8141 |              1 |          0.8118 |              1 |          0.8068 |              1 |          0.801  |
-|      1    |              1 |          0.8222 |              1 |          0.8202 |              1 |          0.8178 |              1 |          0.8141 |              1 |          0.8088 |              1 |          0.803  |
-|      2    |              1 |          0.8295 |              1 |          0.8276 |              1 |          0.8252 |              1 |          0.8187 |              1 |          0.813  |              1 |          0.8071 |
-|      3    |              1 |          0.837  |              1 |          0.8351 |              1 |          0.8327 |              1 |          0.8234 |              1 |          0.8172 |              1 |          0.8112 |
-|      5    |              1 |          0.8524 |              1 |          0.8505 |              1 |          0.8482 |              1 |          0.8329 |              1 |          0.8257 |              1 |          0.8195 |
-|     10    |              1 |          0.8932 |              1 |          0.8916 |              1 |          0.8897 |              1 |          0.8578 |              1 |          0.8477 |              1 |          0.8411 |
-|     20    |              1 |          0.9888 |              1 |          0.9885 |              1 |          0.9881 |              1 |          0.9123 |              1 |          0.8958 |              1 |          0.8884 |
-|     50    |              4 |          1.4601 |              4 |          1.4603 |              4 |          1.4575 |              2 |          1.133  |              2 |          1.0838 |              2 |          1.0732 |
-|    100    |             14 |          1.3713 |             14 |          1.3329 |             14 |          1.293  |              7 |          1.6242 |              4 |          1.5188 |              4 |          1.4719 |
+|      0    |              1 |          0.8148 |              1 |          0.8123 |              1 |          0.8091 |              1 |          0.8044 |              1 |          0.7978 |              1 |          0.7878 |
+|      0.1  |              1 |          0.8155 |              1 |          0.8131 |              1 |          0.8098 |              1 |          0.8048 |              1 |          0.7982 |              1 |          0.7882 |
+|      0.33 |              1 |          0.8172 |              1 |          0.8147 |              1 |          0.8115 |              1 |          0.8059 |              1 |          0.7991 |              1 |          0.7891 |
+|      0.5  |              1 |          0.8184 |              1 |          0.816  |              1 |          0.8127 |              1 |          0.8067 |              1 |          0.7998 |              1 |          0.7898 |
+|      1    |              1 |          0.8221 |              1 |          0.8196 |              1 |          0.8164 |              1 |          0.8089 |              1 |          0.8019 |              1 |          0.7918 |
+|      2    |              1 |          0.8294 |              1 |          0.827  |              1 |          0.8238 |              1 |          0.8136 |              1 |          0.806  |              1 |          0.7959 |
+|      3    |              1 |          0.8369 |              1 |          0.8345 |              1 |          0.8314 |              1 |          0.8182 |              1 |          0.8102 |              1 |          0.8    |
+|      5    |              1 |          0.8523 |              1 |          0.85   |              1 |          0.8469 |              1 |          0.8277 |              1 |          0.8186 |              1 |          0.8084 |
+|     10    |              1 |          0.8932 |              1 |          0.8912 |              1 |          0.8886 |              1 |          0.8524 |              1 |          0.8407 |              1 |          0.8303 |
+|     20    |              1 |          0.9888 |              1 |          0.9884 |              1 |          0.9879 |              1 |          0.9068 |              1 |          0.8888 |              1 |          0.8784 |
+|     50    |              4 |          1.4602 |              4 |          1.4599 |              4 |          1.4545 |              2 |          1.1269 |              2 |          1.0782 |              2 |          1.0677 |
+|    100    |             14 |          1.3692 |             14 |          1.3224 |             14 |          1.2733 |              4 |          1.6075 |              4 |          1.4974 |              4 |          1.4289 |
 
 **Framing: matched_total_SED** (best interval, and the every-2-day / daily mean-D ratio)
 
 |   K_ATTEN |   best_iv_FST1 |   ratio2_1_FST1 |   best_iv_FST2 |   ratio2_1_FST2 |   best_iv_FST3 |   ratio2_1_FST3 |   best_iv_FST4 |   ratio2_1_FST4 |   best_iv_FST5 |   ratio2_1_FST5 |   best_iv_FST6 |   ratio2_1_FST6 |
 |----------:|---------------:|----------------:|---------------:|----------------:|---------------:|----------------:|---------------:|----------------:|---------------:|----------------:|---------------:|----------------:|
-|      0    |              1 |          0.9127 |              1 |          0.9117 |              1 |          0.9105 |              1 |          0.9084 |              1 |          0.9061 |              1 |          0.9033 |
-|      0.1  |              1 |          0.9116 |              1 |          0.9107 |              1 |          0.9095 |              1 |          0.9078 |              1 |          0.9057 |              1 |          0.903  |
-|      0.33 |              1 |          0.9093 |              1 |          0.9083 |              1 |          0.907  |              1 |          0.9063 |              1 |          0.905  |              1 |          0.9024 |
-|      0.5  |              1 |          0.9075 |              1 |          0.9065 |              1 |          0.9052 |              1 |          0.9052 |              1 |          0.9044 |              1 |          0.902  |
-|      1    |              1 |          0.9024 |              1 |          0.9013 |              1 |          0.8999 |              1 |          0.902  |              1 |          0.9027 |              1 |          0.9008 |
-|      2    |              1 |          0.892  |              1 |          0.8907 |              1 |          0.8892 |              1 |          0.8956 |              1 |          0.8994 |              1 |          0.8983 |
-|      3    |              1 |          0.8816 |              1 |          0.8802 |              1 |          0.8784 |              1 |          0.8892 |              1 |          0.896  |              1 |          0.8958 |
-|      5    |              1 |          0.8606 |              1 |          0.8588 |              1 |          0.8567 |              1 |          0.8762 |              1 |          0.8891 |              1 |          0.8908 |
-|     10    |              1 |          0.8068 |              1 |          0.804  |              1 |          0.8005 |              1 |          0.8433 |              1 |          0.8716 |              1 |          0.8779 |
-|     20    |              1 |          0.6912 |              1 |          0.6859 |              1 |          0.6798 |              1 |          0.7749 |              1 |          0.8347 |              1 |          0.8505 |
-|     50    |              1 |          0.5207 |              1 |          0.5366 |              1 |          0.5565 |              1 |          0.575  |              1 |          0.7161 |              1 |          0.7637 |
-|    100    |              1 |          0.9082 |              1 |          0.9159 |              1 |          0.9244 |              1 |          0.6457 |              1 |          0.692  |              1 |          0.7538 |
+|      0    |              1 |          0.9126 |              1 |          0.9114 |              1 |          0.9099 |              1 |          0.9076 |              1 |          0.9044 |              1 |          0.8995 |
+|      0.1  |              1 |          0.9116 |              1 |          0.9104 |              1 |          0.9088 |              1 |          0.907  |              1 |          0.9041 |              1 |          0.8993 |
+|      0.33 |              1 |          0.9092 |              1 |          0.908  |              1 |          0.9063 |              1 |          0.9055 |              1 |          0.9033 |              1 |          0.8987 |
+|      0.5  |              1 |          0.9075 |              1 |          0.9062 |              1 |          0.9045 |              1 |          0.9044 |              1 |          0.9027 |              1 |          0.8983 |
+|      1    |              1 |          0.9023 |              1 |          0.9009 |              1 |          0.8991 |              1 |          0.9012 |              1 |          0.901  |              1 |          0.897  |
+|      2    |              1 |          0.8919 |              1 |          0.8904 |              1 |          0.8883 |              1 |          0.8947 |              1 |          0.8976 |              1 |          0.8944 |
+|      3    |              1 |          0.8815 |              1 |          0.8798 |              1 |          0.8775 |              1 |          0.8883 |              1 |          0.8941 |              1 |          0.8918 |
+|      5    |              1 |          0.8605 |              1 |          0.8583 |              1 |          0.8554 |              1 |          0.8752 |              1 |          0.8871 |              1 |          0.8865 |
+|     10    |              1 |          0.8067 |              1 |          0.8031 |              1 |          0.7986 |              1 |          0.8421 |              1 |          0.8693 |              1 |          0.8729 |
+|     20    |              1 |          0.6909 |              1 |          0.6844 |              1 |          0.6766 |              1 |          0.7733 |              1 |          0.8316 |              1 |          0.8443 |
+|     50    |              1 |          0.5215 |              1 |          0.5415 |              1 |          0.5679 |              1 |          0.5741 |              1 |          0.7132 |              1 |          0.7603 |
+|    100    |              1 |          0.9086 |              1 |          0.9181 |              1 |          0.9288 |              1 |          0.6518 |              1 |          0.7049 |              1 |          0.7798 |
 
 **Threshold (matched_per_session_SED): the smallest swept K_ATTEN at which any skin type prefers a non-daily interval is 50.** Winning intervals there: FST 1 -> 4 d; FST 2 -> 4 d; FST 3 -> 4 d; FST 4 -> 2 d; FST 5 -> 2 d; FST 6 -> 2 d.
 
@@ -436,15 +436,15 @@ Each mechanism switched off one at a time. `ratio_iv2_iv1` is mean 25(OH)D on an
 | ('matched_per_session_SED', 1) |              1 |               0.7866 |          19 |            0.01046   |
 | ('matched_per_session_SED', 2) |              1 |               0.7866 |          19 |            0.01046   |
 | ('matched_per_session_SED', 3) |              1 |               0.7866 |          19 |            0.01046   |
-| ('matched_per_session_SED', 4) |              1 |               0.6977 |          13 |            0.009279  |
-| ('matched_per_session_SED', 5) |              1 |               0.6977 |          13 |            0.009279  |
-| ('matched_per_session_SED', 6) |              1 |               0.6977 |          13 |            0.009279  |
+| ('matched_per_session_SED', 4) |              1 |               0.7866 |          19 |            0.01046   |
+| ('matched_per_session_SED', 5) |              1 |               0.7866 |          19 |            0.01046   |
+| ('matched_per_session_SED', 6) |              1 |               0.7866 |          19 |            0.01046   |
 | ('matched_total_SED', 1)       |              1 |               0.7866 |          34 |            0.0002859 |
 | ('matched_total_SED', 2)       |              1 |               0.7866 |          34 |            0.0002859 |
 | ('matched_total_SED', 3)       |              1 |               0.7866 |          34 |            0.0002859 |
-| ('matched_total_SED', 4)       |              1 |               0.6977 |          23 |            0.0002535 |
-| ('matched_total_SED', 5)       |              1 |               0.6977 |          23 |            0.0002535 |
-| ('matched_total_SED', 6)       |              1 |               0.6977 |          22 |            0.0003634 |
+| ('matched_total_SED', 4)       |              1 |               0.7866 |          34 |            0.0002859 |
+| ('matched_total_SED', 5)       |              1 |               0.7866 |          33 |            0.0003634 |
+| ('matched_total_SED', 6)       |              1 |               0.7866 |          33 |            0.0003634 |
 
 `shipped_throughput` is the fraction of synthesis that survives a fully-thickened stratum corneum at the shipped parameters; `throughput_at_flip` is what it would have to fall to before spacing beats daily. Blank = no flip anywhere on the scanned grid.
 
@@ -455,23 +455,23 @@ Steady-state mean 25(OH)D, 1 SED per session, per-session-matched:
 
 |   fst |      1 |     2 |     3 |     4 |     5 |     7 |    10 |    14 |
 |------:|-------:|------:|------:|------:|------:|------:|------:|------:|
-|     1 | 107.03 | 87.44 | 77.4  | 70.82 | 65.99 | 59.11 | 52.3  | 46.29 |
-|     2 | 102.12 | 83.23 | 73.54 | 67.18 | 62.51 | 55.87 | 49.29 | 43.5  |
-|     3 |  96.76 | 78.62 | 69.31 | 63.2  | 58.71 | 52.32 | 46.01 | 40.46 |
-|     4 |  87.5  | 70.94 | 62.48 | 56.93 | 52.85 | 47.05 | 41.31 | 36.28 |
-|     5 |  80.39 | 64.79 | 56.8  | 51.58 | 47.74 | 42.3  | 36.95 | 32.3  |
-|     6 |  73.21 | 58.58 | 51.1  | 46.2  | 42.62 | 37.57 | 32.65 | 28.45 |
+|     1 | 106.77 | 87.22 | 77.2  | 70.63 | 65.81 | 58.94 | 52.14 | 46.15 |
+|     2 | 100.74 | 82.04 | 72.45 | 66.15 | 61.53 | 54.95 | 48.44 | 42.71 |
+|     3 |  94    | 76.25 | 67.13 | 61.15 | 56.75 | 50.5  | 44.32 | 38.91 |
+|     4 |  86.12 | 69.38 | 60.79 | 55.15 | 51.02 | 45.15 | 39.39 | 34.39 |
+|     5 |  76.98 | 61.5  | 53.56 | 48.35 | 44.54 | 39.16 | 33.93 | 29.48 |
+|     6 |  66.3  | 52.31 | 45.14 | 40.47 | 37.08 | 32.35 | 27.86 | 24.17 |
 
 Relative cost of every-2-day vs daily, by skin type (steady state; negative = spacing is worse):
 
 |   fst |   per_session: %chg iv2 vs iv1 |   per_session: %chg iv7 vs iv1 |   budget: %chg iv2 vs iv1 |   budget: %chg iv7 vs iv1 |   daily mean D |
 |------:|-------------------------------:|-------------------------------:|--------------------------:|--------------------------:|---------------:|
-|     1 |                        -18.299 |                        -44.773 |                    -9.03  |                   -27.286 |        107.027 |
-|     2 |                        -18.498 |                        -45.294 |                    -9.13  |                   -27.615 |        102.12  |
-|     3 |                        -18.742 |                        -45.926 |                    -9.253 |                   -28.016 |         96.759 |
-|     4 |                        -18.92  |                        -46.23  |                    -9.345 |                   -28.761 |         87.5   |
-|     5 |                        -19.407 |                        -47.383 |                    -9.489 |                   -29.409 |         80.388 |
-|     6 |                        -19.983 |                        -48.682 |                    -9.746 |                   -30.23  |         73.207 |
+|     1 |                        -18.309 |                        -44.799 |                    -9.035 |                   -27.303 |        106.773 |
+|     2 |                        -18.558 |                        -45.451 |                    -9.161 |                   -27.714 |        100.737 |
+|     3 |                        -18.881 |                        -46.28  |                    -9.323 |                   -28.243 |         93.997 |
+|     4 |                        -19.43  |                        -47.568 |                    -9.426 |                   -29.108 |         86.116 |
+|     5 |                        -20.104 |                        -49.13  |                    -9.658 |                   -30.034 |         76.981 |
+|     6 |                        -21.106 |                        -51.213 |                   -10.12  |                   -31.476 |         66.304 |
 
 Note on FST VI and tanning headroom: `M_ceiling(fst) = M_baseline(fst) + M_TAN_HEADROOM` and is deliberately NOT capped at 1.0, so every skin type including VI has the same facultative headroom on the melanin scale. Whether that headroom reaches synthesis is governed entirely by `K_ATTEN`: see the generated provenance block at the top of this file for the configuration in force when this was written, and the `melanin adaptation off` row of section 3 for how much the channel is worth at that configuration.
 
@@ -494,45 +494,45 @@ Cells in which the four outcome metrics disagree about the winning interval: **0
 
 |   fst |       1 |      2 |      3 |      4 |      5 |      7 |     10 |     14 |
 |------:|--------:|-------:|-------:|-------:|-------:|-------:|-------:|-------:|
-|     1 | 106.654 | 87.403 | 77.122 | 71.072 | 65.065 | 59.59  | 52.098 | 47.198 |
-|     2 | 101.771 | 83.178 | 73.256 | 67.379 | 61.635 | 56.271 | 49.102 | 44.363 |
-|     3 |  96.432 | 78.555 | 69.022 | 63.337 | 57.882 | 52.656 | 45.861 | 41.331 |
-|     4 |  87.204 | 70.836 | 62.171 | 56.981 | 52.114 | 47.336 | 41.31  | 37.273 |
-|     5 |  80.103 | 64.638 | 56.486 | 51.583 | 47.118 | 42.624 | 37.198 | 33.57  |
-|     6 |  72.919 | 58.387 | 50.789 | 46.221 | 42.193 | 38.071 | 33.316 | 30.164 |
+|     1 | 106.402 | 87.184 | 76.922 | 70.882 | 64.888 | 59.418 | 51.942 | 47.051 |
+|     2 | 100.394 | 81.987 | 72.165 | 66.337 | 60.668 | 55.337 | 48.262 | 43.573 |
+|     3 |  93.681 | 76.169 | 66.837 | 61.254 | 55.948 | 50.803 | 44.21  | 39.803 |
+|     4 |  85.822 | 69.262 | 60.473 | 55.18  | 50.307 | 45.432 | 39.473 | 35.486 |
+|     5 |  76.695 | 61.328 | 53.231 | 48.343 | 44.013 | 39.574 | 34.445 | 31.045 |
+|     6 |  66     | 52.093 | 44.911 | 40.619 | 37.009 | 33.265 | 29.227 | 26.606 |
 
 *mean_D*
 
 |   fst |       1 |      2 |      3 |      4 |      5 |      7 |     10 |     14 |
 |------:|--------:|-------:|-------:|-------:|-------:|-------:|-------:|-------:|
-|     1 | 100.509 | 81.511 | 71.985 | 65.871 | 61.476 | 55.413 | 49.71  | 45     |
-|     2 |  95.677 | 77.451 | 68.343 | 62.517 | 58.344 | 52.614 | 47.266 | 42.893 |
-|     3 |  90.421 | 73.055 | 64.416 | 58.916 | 54.995 | 49.645 | 44.701 | 40.707 |
-|     4 |  81.49  | 65.937 | 58.311 | 53.503 | 50.101 | 45.497 | 41.286 | 37.92  |
-|     5 |  74.659 | 60.3   | 53.35  | 49.021 | 45.99  | 41.941 | 38.306 | 35.457 |
-|     6 |  67.891 | 54.811 | 48.591 | 44.776 | 42.14  | 38.673 | 35.624 | 33.284 |
+|     1 | 100.259 | 81.3   | 71.796 | 65.696 | 61.313 | 55.267 | 49.581 | 44.889 |
+|     2 |  94.319 | 76.314 | 67.325 | 61.582 | 57.473 | 51.839 | 46.593 | 42.317 |
+|     3 |  87.726 | 70.809 | 62.417 | 57.091 | 53.304 | 48.157 | 43.428 | 39.632 |
+|     4 |  80.044 | 64.379 | 56.708 | 51.897 | 48.514 | 43.98  | 39.896 | 36.69  |
+|     5 |  71.336 | 57.274 | 50.521 | 46.359 | 43.477 | 39.687 | 36.36  | 33.817 |
+|     6 |  61.47  | 49.449 | 43.872 | 40.53  | 38.27  | 35.375 | 32.915 | 31.091 |
 
 *min_D_tail*
 
 |   fst |       1 |      2 |      3 |      4 |      5 |      7 |     10 |     14 |
 |------:|--------:|-------:|-------:|-------:|-------:|-------:|-------:|-------:|
-|     1 | 106.577 | 86.712 | 76.459 | 69.697 | 64.717 | 57.679 | 50.747 | 44.783 |
-|     2 | 101.674 | 82.495 | 72.593 | 66.065 | 61.266 | 54.507 | 47.896 | 42.268 |
-|     3 |  96.308 | 77.875 | 68.357 | 62.094 | 57.501 | 51.069 | 44.838 | 39.564 |
-|     4 |  87.02  | 70.156 | 61.52  | 55.878 | 51.771 | 46.066 | 40.613 | 35.82  |
-|     5 |  79.859 | 63.958 | 55.87  | 50.635 | 46.865 | 41.694 | 36.636 | 32.394 |
-|     6 |  72.608 | 57.733 | 50.261 | 45.497 | 42.119 | 37.357 | 32.882 | 29.239 |
+|     1 | 106.324 | 86.494 | 76.259 | 69.51  | 64.539 | 57.515 | 50.599 | 44.652 |
+|     2 | 100.291 | 81.305 | 71.501 | 65.041 | 60.294 | 53.617 | 47.101 | 41.573 |
+|     3 |  93.541 | 75.489 | 66.172 | 60.05  | 55.569 | 49.315 | 43.294 | 38.155 |
+|     4 |  85.623 | 68.571 | 59.817 | 54.109 | 49.974 | 44.277 | 38.836 | 34.166 |
+|     5 |  76.414 | 60.646 | 52.643 | 47.506 | 43.847 | 38.804 | 33.973 | 30.055 |
+|     6 |  65.621 | 51.507 | 44.553 | 40.211 | 37.009 | 32.723 | 28.93  | 25.938 |
 
 *frac_days_ge_50*
 
 |   fst |     1 |     2 |     3 |     4 |     5 |     7 |    10 |   14 |
 |------:|------:|------:|------:|------:|------:|------:|------:|-----:|
-|     1 | 0.989 | 0.978 | 0.964 | 0.945 | 0.926 | 0.866 | 0.62  |    0 |
-|     2 | 0.986 | 0.973 | 0.954 | 0.932 | 0.902 | 0.801 | 0.011 |    0 |
-|     3 | 0.984 | 0.967 | 0.94  | 0.907 | 0.858 | 0.617 | 0     |    0 |
-|     4 | 0.978 | 0.948 | 0.902 | 0.828 | 0.669 | 0     | 0     |    0 |
-|     5 | 0.967 | 0.918 | 0.82  | 0.541 | 0     | 0     | 0     |    0 |
-|     6 | 0.951 | 0.85  | 0.454 | 0     | 0     | 0     | 0     |    0 |
+|     1 | 0.989 | 0.978 | 0.964 | 0.945 | 0.926 | 0.863 | 0.609 |    0 |
+|     2 | 0.986 | 0.973 | 0.951 | 0.926 | 0.893 | 0.773 | 0     |    0 |
+|     3 | 0.984 | 0.962 | 0.929 | 0.885 | 0.82  | 0.249 | 0     |    0 |
+|     4 | 0.975 | 0.937 | 0.88  | 0.77  | 0.432 | 0     | 0     |    0 |
+|     5 | 0.959 | 0.883 | 0.699 | 0     | 0     | 0     | 0     |    0 |
+|     6 | 0.918 | 0.607 | 0     | 0     | 0     | 0     | 0     |    0 |
 
 
 ### Sensitivity: which parameter, if wrong, reverses the answer?
@@ -543,102 +543,102 @@ For each swept value: the winning interval and the every-2-day / daily mean-D ra
 
 | level       |   best_iv[persess,FST2] |   ratio2_1[persess,FST2] |   best_iv[persess,FST5] |   ratio2_1[persess,FST5] |   best_iv[budget,FST2] |   ratio2_1[budget,FST2] |   best_iv[budget,FST5] |   ratio2_1[budget,FST5] |
 |:------------|------------------------:|-------------------------:|------------------------:|-------------------------:|-----------------------:|------------------------:|-----------------------:|------------------------:|
-| alpha=0.0   |                       1 |                   0.8129 |                       1 |                   0.8047 |                      1 |                  0.9117 |                      1 |                  0.9061 |
-| alpha=0.001 |                       1 |                   0.8135 |                       1 |                   0.8053 |                      1 |                  0.9117 |                      1 |                  0.906  |
-| alpha=0.002 |                       1 |                   0.814  |                       1 |                   0.8058 |                      1 |                  0.9117 |                      1 |                  0.906  |
-| alpha=0.005 |                       1 |                   0.8148 |                       1 |                   0.8067 |                      1 |                  0.9116 |                      1 |                  0.9059 |
-| alpha=0.02  |                       1 |                   0.8155 |                       1 |                   0.8073 |                      1 |                  0.9115 |                      1 |                  0.9058 |
-| alpha=0.1   |                       1 |                   0.8138 |                       1 |                   0.8054 |                      1 |                  0.9114 |                      1 |                  0.9056 |
-| alpha=0.5   |                       1 |                   0.8126 |                       1 |                   0.804  |                      1 |                  0.9114 |                      1 |                  0.9056 |
+| alpha=0.0   |                       1 |                   0.8123 |                       1 |                   0.7978 |                      1 |                  0.9114 |                      1 |                  0.9044 |
+| alpha=0.001 |                       1 |                   0.8129 |                       1 |                   0.7984 |                      1 |                  0.9114 |                      1 |                  0.9044 |
+| alpha=0.002 |                       1 |                   0.8134 |                       1 |                   0.7988 |                      1 |                  0.9114 |                      1 |                  0.9043 |
+| alpha=0.005 |                       1 |                   0.8142 |                       1 |                   0.7997 |                      1 |                  0.9113 |                      1 |                  0.9042 |
+| alpha=0.02  |                       1 |                   0.8149 |                       1 |                   0.8003 |                      1 |                  0.9112 |                      1 |                  0.9041 |
+| alpha=0.1   |                       1 |                   0.8132 |                       1 |                   0.7983 |                      1 |                  0.9111 |                      1 |                  0.9039 |
+| alpha=0.5   |                       1 |                   0.8119 |                       1 |                   0.797  |                      1 |                  0.9111 |                      1 |                  0.9039 |
 
 **beta (melanin decay rate)**
 
 | level              |   best_iv[persess,FST2] |   ratio2_1[persess,FST2] |   best_iv[persess,FST5] |   ratio2_1[persess,FST5] |   best_iv[budget,FST2] |   ratio2_1[budget,FST2] |   best_iv[budget,FST5] |   ratio2_1[budget,FST5] |
 |:-------------------|------------------------:|-------------------------:|------------------------:|-------------------------:|-----------------------:|------------------------:|-----------------------:|------------------------:|
-| beta=ln2/1000000.0 |                       1 |                   0.8142 |                       1 |                   0.8087 |                      1 |                  0.9109 |                      1 |                  0.9038 |
-| beta=ln2/224       |                       1 |                   0.8155 |                       1 |                   0.8073 |                      1 |                  0.909  |                      1 |                  0.9042 |
-| beta=ln2/56        |                       1 |                   0.815  |                       1 |                   0.8059 |                      1 |                  0.9087 |                      1 |                  0.9051 |
-| beta=ln2/28        |                       1 |                   0.8143 |                       1 |                   0.8054 |                      1 |                  0.9094 |                      1 |                  0.9055 |
-| beta=ln2/14        |                       1 |                   0.8138 |                       1 |                   0.8051 |                      1 |                  0.9103 |                      1 |                  0.9058 |
-| beta=ln2/3         |                       1 |                   0.8131 |                       1 |                   0.8048 |                      1 |                  0.9114 |                      1 |                  0.906  |
+| beta=ln2/1000000.0 |                       1 |                   0.8136 |                       1 |                   0.8017 |                      1 |                  0.9106 |                      1 |                  0.9021 |
+| beta=ln2/224       |                       1 |                   0.8149 |                       1 |                   0.8004 |                      1 |                  0.9087 |                      1 |                  0.9025 |
+| beta=ln2/56        |                       1 |                   0.8144 |                       1 |                   0.799  |                      1 |                  0.9084 |                      1 |                  0.9034 |
+| beta=ln2/28        |                       1 |                   0.8137 |                       1 |                   0.7985 |                      1 |                  0.9091 |                      1 |                  0.9038 |
+| beta=ln2/14        |                       1 |                   0.8132 |                       1 |                   0.7981 |                      1 |                  0.91   |                      1 |                  0.9041 |
+| beta=ln2/3         |                       1 |                   0.8125 |                       1 |                   0.7979 |                      1 |                  0.9111 |                      1 |                  0.9044 |
 
 **alpha_SC (SC build rate)**
 
 | level         |   best_iv[persess,FST2] |   ratio2_1[persess,FST2] |   best_iv[persess,FST5] |   ratio2_1[persess,FST5] |   best_iv[budget,FST2] |   ratio2_1[budget,FST2] |   best_iv[budget,FST5] |   ratio2_1[budget,FST5] |
 |:--------------|------------------------:|-------------------------:|------------------------:|-------------------------:|-----------------------:|------------------------:|-----------------------:|------------------------:|
-| alpha_SC=0.0  |                       1 |                   0.8095 |                       1 |                   0.7985 |                      1 |                  0.9092 |                      1 |                  0.9066 |
-| alpha_SC=0.04 |                       1 |                   0.8186 |                       1 |                   0.812  |                      1 |                  0.9088 |                      1 |                  0.9055 |
-| alpha_SC=0.08 |                       1 |                   0.8167 |                       1 |                   0.8087 |                      1 |                  0.9087 |                      1 |                  0.9052 |
-| alpha_SC=0.12 |                       1 |                   0.815  |                       1 |                   0.8059 |                      1 |                  0.9087 |                      1 |                  0.9051 |
-| alpha_SC=0.2  |                       1 |                   0.8129 |                       1 |                   0.8024 |                      1 |                  0.9087 |                      1 |                  0.905  |
-| alpha_SC=0.5  |                       1 |                   0.8099 |                       1 |                   0.7976 |                      1 |                  0.9088 |                      1 |                  0.9051 |
-| alpha_SC=2.0  |                       1 |                   0.8081 |                       1 |                   0.7946 |                      1 |                  0.9092 |                      1 |                  0.9057 |
+| alpha_SC=0.0  |                       1 |                   0.809  |                       1 |                   0.7942 |                      1 |                  0.909  |                      1 |                  0.9045 |
+| alpha_SC=0.04 |                       1 |                   0.818  |                       1 |                   0.8031 |                      1 |                  0.9085 |                      1 |                  0.9037 |
+| alpha_SC=0.08 |                       1 |                   0.8161 |                       1 |                   0.8009 |                      1 |                  0.9084 |                      1 |                  0.9035 |
+| alpha_SC=0.12 |                       1 |                   0.8144 |                       1 |                   0.799  |                      1 |                  0.9084 |                      1 |                  0.9034 |
+| alpha_SC=0.2  |                       1 |                   0.8122 |                       1 |                   0.7965 |                      1 |                  0.9084 |                      1 |                  0.9034 |
+| alpha_SC=0.5  |                       1 |                   0.8093 |                       1 |                   0.7933 |                      1 |                  0.9084 |                      1 |                  0.9034 |
+| alpha_SC=2.0  |                       1 |                   0.8075 |                       1 |                   0.7913 |                      1 |                  0.9088 |                      1 |                  0.9038 |
 
 **k_decay_SC (SC regression rate)**
 
 | level                    |   best_iv[persess,FST2] |   ratio2_1[persess,FST2] |   best_iv[persess,FST5] |   ratio2_1[persess,FST5] |   best_iv[budget,FST2] |   ratio2_1[budget,FST2] |   best_iv[budget,FST5] |   ratio2_1[budget,FST5] |
 |:-------------------------|------------------------:|-------------------------:|------------------------:|-------------------------:|-----------------------:|------------------------:|-----------------------:|------------------------:|
-| k_decay_SC=ln2/1000000.0 |                       1 |                   0.8063 |                       1 |                   0.7916 |                      1 |                  0.9077 |                      1 |                  0.9033 |
-| k_decay_SC=ln2/56        |                       1 |                   0.8118 |                       1 |                   0.8007 |                      1 |                  0.9082 |                      1 |                  0.9043 |
-| k_decay_SC=ln2/28        |                       1 |                   0.815  |                       1 |                   0.8059 |                      1 |                  0.9087 |                      1 |                  0.9051 |
-| k_decay_SC=ln2/21        |                       1 |                   0.8164 |                       1 |                   0.8082 |                      1 |                  0.909  |                      1 |                  0.9056 |
-| k_decay_SC=ln2/7         |                       1 |                   0.8192 |                       1 |                   0.8131 |                      1 |                  0.9103 |                      1 |                  0.9079 |
-| k_decay_SC=ln2/2         |                       1 |                   0.8159 |                       1 |                   0.8083 |                      1 |                  0.9115 |                      1 |                  0.9101 |
+| k_decay_SC=ln2/1000000.0 |                       1 |                   0.8057 |                       1 |                   0.7893 |                      1 |                  0.9073 |                      1 |                  0.9022 |
+| k_decay_SC=ln2/56        |                       1 |                   0.8112 |                       1 |                   0.7954 |                      1 |                  0.9079 |                      1 |                  0.9029 |
+| k_decay_SC=ln2/28        |                       1 |                   0.8144 |                       1 |                   0.799  |                      1 |                  0.9084 |                      1 |                  0.9034 |
+| k_decay_SC=ln2/21        |                       1 |                   0.8158 |                       1 |                   0.8005 |                      1 |                  0.9087 |                      1 |                  0.9037 |
+| k_decay_SC=ln2/7         |                       1 |                   0.8187 |                       1 |                   0.8039 |                      1 |                  0.91   |                      1 |                  0.9053 |
+| k_decay_SC=ln2/2         |                       1 |                   0.8154 |                       1 |                   0.8008 |                      1 |                  0.9113 |                      1 |                  0.9069 |
 
 **K_SC (SC attenuation strength)**
 
 | level      |   best_iv[persess,FST2] |   ratio2_1[persess,FST2] |   best_iv[persess,FST5] |   ratio2_1[persess,FST5] |   best_iv[budget,FST2] |   ratio2_1[budget,FST2] |   best_iv[budget,FST5] |   ratio2_1[budget,FST5] |
 |:-----------|------------------------:|-------------------------:|------------------------:|-------------------------:|-----------------------:|------------------------:|-----------------------:|------------------------:|
-| K_SC=0.0   |                       1 |                   0.8095 |                       1 |                   0.7985 |                      1 |                  0.9092 |                      1 |                  0.9066 |
-| K_SC=0.5   |                       1 |                   0.8123 |                       1 |                   0.8022 |                      1 |                  0.909  |                      1 |                  0.9059 |
-| K_SC=1.0   |                       1 |                   0.815  |                       1 |                   0.8059 |                      1 |                  0.9087 |                      1 |                  0.9051 |
-| K_SC=2.0   |                       1 |                   0.8205 |                       1 |                   0.8135 |                      1 |                  0.9081 |                      1 |                  0.9033 |
-| K_SC=5.0   |                       1 |                   0.8375 |                       1 |                   0.8382 |                      1 |                  0.9054 |                      1 |                  0.896  |
-| K_SC=10.0  |                       1 |                   0.8687 |                       1 |                   0.9045 |                      1 |                  0.8981 |                      1 |                  0.8872 |
-| K_SC=20.0  |                      14 |                   0.9711 |                      14 |                   1.0337 |                      1 |                  0.8921 |                      1 |                  0.9749 |
-| K_SC=30.0  |                      14 |                   1.0546 |                      14 |                   1.009  |                      1 |                  0.9579 |                     14 |                  1.0011 |
-| K_SC=50.0  |                      14 |                   1.0089 |                      14 |                   1.0009 |                     14 |                  1.004  |                     14 |                  1.0042 |
-| K_SC=100.0 |                      14 |                   1.0008 |                      14 |                   1.0006 |                     14 |                  1.0086 |                     14 |                  1.0054 |
+| K_SC=0.0   |                       1 |                   0.809  |                       1 |                   0.7942 |                      1 |                  0.909  |                      1 |                  0.9045 |
+| K_SC=0.5   |                       1 |                   0.8117 |                       1 |                   0.7966 |                      1 |                  0.9087 |                      1 |                  0.904  |
+| K_SC=1.0   |                       1 |                   0.8144 |                       1 |                   0.799  |                      1 |                  0.9084 |                      1 |                  0.9034 |
+| K_SC=2.0   |                       1 |                   0.8199 |                       1 |                   0.8037 |                      1 |                  0.9077 |                      1 |                  0.9022 |
+| K_SC=5.0   |                       1 |                   0.8367 |                       1 |                   0.8188 |                      1 |                  0.905  |                      1 |                  0.8974 |
+| K_SC=10.0  |                       1 |                   0.8679 |                       1 |                   0.8509 |                      1 |                  0.8975 |                      1 |                  0.8878 |
+| K_SC=20.0  |                      14 |                   0.9712 |                      14 |                   0.9747 |                      1 |                  0.8925 |                      1 |                  0.9143 |
+| K_SC=30.0  |                      14 |                   1.0531 |                      14 |                   1.0281 |                      1 |                  0.9591 |                      1 |                  0.9793 |
+| K_SC=50.0  |                      14 |                   1.0085 |                      14 |                   1.0041 |                     14 |                  1.0039 |                     14 |                  1.0021 |
+| K_SC=100.0 |                      14 |                   1.0008 |                      14 |                   1.0007 |                     14 |                  1.0083 |                     14 |                  1.004  |
 
 **SC_max (SC ceiling)**
 
 | level       |   best_iv[persess,FST2] |   ratio2_1[persess,FST2] |   best_iv[persess,FST5] |   ratio2_1[persess,FST5] |   best_iv[budget,FST2] |   ratio2_1[budget,FST2] |   best_iv[budget,FST5] |   ratio2_1[budget,FST5] |
 |:------------|------------------------:|-------------------------:|------------------------:|-------------------------:|-----------------------:|------------------------:|-----------------------:|------------------------:|
-| SC_max=0.0  |                       1 |                   0.8095 |                       1 |                   0.7985 |                      1 |                  0.9092 |                      1 |                  0.9066 |
-| SC_max=0.23 |                       1 |                   0.8148 |                       1 |                   0.8032 |                      1 |                  0.9087 |                      1 |                  0.9057 |
-| SC_max=0.36 |                       1 |                   0.8178 |                       1 |                   0.8059 |                      1 |                  0.9084 |                      1 |                  0.9051 |
-| SC_max=0.6  |                       1 |                   0.8233 |                       1 |                   0.8109 |                      1 |                  0.9077 |                      1 |                  0.904  |
-| SC_max=1.0  |                       1 |                   0.8327 |                       1 |                   0.8195 |                      1 |                  0.9062 |                      1 |                  0.9017 |
-| SC_max=3.0  |                       1 |                   0.8875 |                       1 |                   0.8766 |                      1 |                  0.8933 |                      1 |                  0.8872 |
-| SC_max=10.0 |                      14 |                   1.0241 |                      14 |                   1.0133 |                     14 |                  0.9983 |                     14 |                  0.9994 |
+| SC_max=0.0  |                       1 |                   0.809  |                       1 |                   0.7942 |                      1 |                  0.909  |                      1 |                  0.9045 |
+| SC_max=0.23 |                       1 |                   0.8142 |                       1 |                   0.7988 |                      1 |                  0.9084 |                      1 |                  0.9035 |
+| SC_max=0.36 |                       1 |                   0.8172 |                       1 |                   0.8013 |                      1 |                  0.9081 |                      1 |                  0.9028 |
+| SC_max=0.6  |                       1 |                   0.8227 |                       1 |                   0.8061 |                      1 |                  0.9073 |                      1 |                  0.9015 |
+| SC_max=1.0  |                       1 |                   0.832  |                       1 |                   0.8144 |                      1 |                  0.9058 |                      1 |                  0.8989 |
+| SC_max=3.0  |                       1 |                   0.8868 |                       1 |                   0.8746 |                      1 |                  0.8927 |                      1 |                  0.8852 |
+| SC_max=10.0 |                      14 |                   1.0232 |                      14 |                   1.0108 |                     14 |                  0.9984 |                     14 |                  0.9997 |
 
 **k_damage (acute SC disruption)**
 
 | level         |   best_iv[persess,FST2] |   ratio2_1[persess,FST2] |   best_iv[persess,FST5] |   ratio2_1[persess,FST5] |   best_iv[budget,FST2] |   ratio2_1[budget,FST2] |   best_iv[budget,FST5] |   ratio2_1[budget,FST5] |
 |:--------------|------------------------:|-------------------------:|------------------------:|-------------------------:|-----------------------:|------------------------:|-----------------------:|------------------------:|
-| k_damage=0.0  |                       1 |                   0.815  |                       1 |                   0.8059 |                      1 |                  0.9087 |                      1 |                  0.9051 |
-| k_damage=0.05 |                       1 |                   0.7582 |                       1 |                   0.7479 |                      1 |                  0.905  |                      1 |                  0.9022 |
-| k_damage=0.15 |                       1 |                   0.6603 |                       1 |                   0.6503 |                      1 |                  0.8969 |                      1 |                  0.8955 |
-| k_damage=0.5  |                       1 |                   0.4161 |                       1 |                   0.4124 |                      1 |                  0.8642 |                      1 |                  0.8649 |
+| k_damage=0.0  |                       1 |                   0.8144 |                       1 |                   0.799  |                      1 |                  0.9084 |                      1 |                  0.9034 |
+| k_damage=0.05 |                       1 |                   0.7575 |                       1 |                   0.7411 |                      1 |                  0.9048 |                      1 |                  0.9008 |
+| k_damage=0.15 |                       1 |                   0.6597 |                       1 |                   0.6443 |                      1 |                  0.8968 |                      1 |                  0.8944 |
+| k_damage=0.5  |                       1 |                   0.4159 |                       1 |                   0.4094 |                      1 |                  0.8641 |                      1 |                  0.8644 |
 
 **optional mechanisms (default OFF)**
 
 | level               |   best_iv[persess,FST2] |   ratio2_1[persess,FST2] |   best_iv[persess,FST5] |   ratio2_1[persess,FST5] |   best_iv[budget,FST2] |   ratio2_1[budget,FST2] |   best_iv[budget,FST5] |   ratio2_1[budget,FST5] |
 |:--------------------|------------------------:|-------------------------:|------------------------:|-------------------------:|-----------------------:|------------------------:|-----------------------:|------------------------:|
-| photodegradation ON |                       1 |                   0.8133 |                       1 |                   0.8035 |                      1 |                  0.8742 |                      1 |                  0.8679 |
-| transit delay ON    |                       1 |                   0.8146 |                       1 |                   0.8057 |                      1 |                  0.908  |                      1 |                  0.9046 |
-| both ON             |                       1 |                   0.8129 |                       1 |                   0.8033 |                      1 |                  0.8737 |                      1 |                  0.8676 |
+| photodegradation ON |                       1 |                   0.8127 |                       1 |                   0.7964 |                      1 |                  0.8738 |                      1 |                  0.8657 |
+| transit delay ON    |                       1 |                   0.814  |                       1 |                   0.7987 |                      1 |                  0.9077 |                      1 |                  0.9029 |
+| both ON             |                       1 |                   0.8123 |                       1 |                   0.7962 |                      1 |                  0.8732 |                      1 |                  0.8653 |
 
 **D0 (starting 25(OH)D)**
 
 | level   |   best_iv[persess,FST2] |   ratio2_1[persess,FST2] |   best_iv[persess,FST5] |   ratio2_1[persess,FST5] |   best_iv[budget,FST2] |   ratio2_1[budget,FST2] |   best_iv[budget,FST5] |   ratio2_1[budget,FST5] |
 |:--------|------------------------:|-------------------------:|------------------------:|-------------------------:|-----------------------:|------------------------:|-----------------------:|------------------------:|
-| D0=15   |                       1 |                    0.815 |                       1 |                   0.8059 |                      1 |                  0.9087 |                      1 |                  0.9051 |
-| D0=25   |                       1 |                    0.815 |                       1 |                   0.8059 |                      1 |                  0.9087 |                      1 |                  0.9051 |
-| D0=40   |                       1 |                    0.815 |                       1 |                   0.8059 |                      1 |                  0.9087 |                      1 |                  0.9051 |
-| D0=60   |                       1 |                    0.815 |                       1 |                   0.8059 |                      1 |                  0.9087 |                      1 |                  0.9051 |
-| D0=90   |                       1 |                    0.815 |                       1 |                   0.806  |                      1 |                  0.9087 |                      1 |                  0.9051 |
-| D0=130  |                       1 |                    0.815 |                       1 |                   0.806  |                      1 |                  0.9087 |                      1 |                  0.9051 |
+| D0=15   |                       1 |                   0.8144 |                       1 |                   0.7989 |                      1 |                  0.9084 |                      1 |                  0.9034 |
+| D0=25   |                       1 |                   0.8144 |                       1 |                   0.7989 |                      1 |                  0.9084 |                      1 |                  0.9034 |
+| D0=40   |                       1 |                   0.8144 |                       1 |                   0.799  |                      1 |                  0.9084 |                      1 |                  0.9034 |
+| D0=60   |                       1 |                   0.8144 |                       1 |                   0.799  |                      1 |                  0.9084 |                      1 |                  0.9034 |
+| D0=90   |                       1 |                   0.8144 |                       1 |                   0.799  |                      1 |                  0.9084 |                      1 |                  0.9034 |
+| D0=130  |                       1 |                   0.8144 |                       1 |                   0.7991 |                      1 |                  0.9084 |                      1 |                  0.9034 |
 
 **Joint adversarial configuration.** All photoadaptation parameters set simultaneously to their most spacing-favourable value inside the documented prior ranges (`ModelParams.SC_PRIOR_RANGES`), then beyond them:
 
@@ -668,18 +668,18 @@ daily.
 
 | mechanism | ratio, matched per-session | ratio, matched budget | reading |
 |---|---|---|---|
-| full model | 0.8059 | 0.9051 | daily wins by 19.4% / 9.5% |
-| melanin adaptation off | 0.8047 | 0.9061 | differs from the full model — K_ATTEN is contributing (active, not retired, when this was generated) |
-| SC off | 0.7985 | 0.9066 | SC is therefore the *entire* photoadaptation effect |
-| photoadaptation off (M and SC pinned) | 0.7974 | 0.9075 | identical to SC-off, for the same reason |
-| feedback `g(D)` off | 0.6885 | 0.8380 | removing feedback makes spacing **worse**, not better |
-| D decay off | 0.7892 | 0.8949 | serum elimination is not the driver either |
-| photoadaptation + feedback off | — | 0.8376 | strip every state mechanism and daily's margin *widens* |
+| full model | 0.7990 | 0.9034 | daily wins by 20.1% / 9.7% |
+| melanin adaptation off | 0.7978 | 0.9044 | differs from the full model — K_ATTEN is contributing (active, not retired, when this was generated) |
+| SC off | 0.7942 | 0.9045 | SC is therefore the *entire* photoadaptation effect |
+| photoadaptation off (M and SC pinned) | 0.7931 | 0.9055 | identical to SC-off, for the same reason |
+| feedback `g(D)` off | 0.6823 | 0.8374 | removing feedback makes spacing **worse**, not better |
+| D decay off | 0.7834 | 0.8939 | serum elimination is not the driver either |
+| photoadaptation + feedback off | — | 0.8375 | strip every state mechanism and daily's margin *widens* |
 
 **Attribution: the spacing penalty is carried by the concavity of the
 synthesis law, `S = A * ln(1 + UV*E)`, not by any state variable.** The
 signature is the last row: turn off photoadaptation *and* feedback together
-and daily wins by more (16.2% vs 9.5%), not
+and daily wins by more (16.2% vs 9.7%), not
 less. With the state terms gone the only thing distinguishing schedules is how
 the budget is divided, and `ln` says divide it as finely as possible. Every
 state mechanism in the model works to *narrow* that gap; none of them comes
@@ -689,21 +689,21 @@ close to closing it.
 about two orders of magnitude too small.** Two separate measurements:
 
 - *Interval comparison.* Under matched per-session dose, switching SC off
-  moves the every-2-day/daily ratio from 0.8059 to 0.7974 — so SC
-  build-up does help spacing, by 0.85 percentage points,
-  against a 19-point deficit. Under a matched *budget* the
-  sign reverses (0.9051 -> 0.9075): with total UV held fixed the
+  moves the every-2-day/daily ratio from 0.7990 to 0.7931 — so SC
+  build-up does help spacing, by 0.59 percentage points,
+  against a 20-point deficit. Under a matched *budget* the
+  sign reverses (0.9034 -> 0.9055): with total UV held fixed the
   stratum corneum thickens to nearly the same level either way, so it stops
   differentiating schedules at all.
 - *Arrangement at fixed duty cycle.* Even spacing beats burst-then-rest by
-  0.0190 nmol/L in the full model and only 0.0082 nmol/L with
+  0.0140 nmol/L in the full model and only 0.0065 nmol/L with
   photoadaptation off, so SC recovery accounts for about
-  57% of that
-  (already 0.029%-of-level) arrangement
-  effect. Feedback accounts for most of the rest (0.0406 nmol/L with
+  54% of that
+  (already 0.023%-of-level) arrangement
+  effect. Feedback accounts for most of the rest (0.0268 nmol/L with
   feedback removed).
 
-  The `no_D_decay` row of that arrangement table reads -0.2029, i.e.
+  The `no_D_decay` row of that arrangement table reads -0.2048, i.e.
   clustering apparently wins. **Do not read that as a mechanism.** With
   elimination off, D grows without bound and no steady state exists, so the
   "final period" average is still dominated by within-period front-loading.
@@ -713,7 +713,7 @@ about two orders of magnitude too small.** Two separate measurements:
 these sweeps produce comes from the D-feedback term, not from
 photoadaptation; the induced-melanin coefficient `K_ATTEN` cannot be the
 cause ... that term is inert *by calibration*". **Its conclusion survives;
-both of its stated reasons do not.** `K_ATTEN` is no longer inert: ablating melanin adaptation moves the every-2-day/daily ratio from 0.8059 to 0.8047 under matched per-session dose and from 0.9051 to 0.9061 under a matched budget, so the phrase *inert by calibration* describes a configuration (K_ATTEN pinned at zero) that is no longer the one shipped. The conclusion it was offered in support of nevertheless holds, for a stronger reason: K_ATTEN cannot be the cause of the ordering not because it does nothing, but because the ordering is unchanged under its complete removal -- and under the removal of every other state mechanism in the model.
+both of its stated reasons do not.** `K_ATTEN` is no longer inert: ablating melanin adaptation moves the every-2-day/daily ratio from 0.7990 to 0.7978 under matched per-session dose and from 0.9034 to 0.9044 under a matched budget, so the phrase *inert by calibration* describes a configuration (K_ATTEN pinned at zero) that is no longer the one shipped. The conclusion it was offered in support of nevertheless holds, for a stronger reason: K_ATTEN cannot be the cause of the ordering not because it does nothing, but because the ordering is unchanged under its complete removal -- and under the removal of every other state mechanism in the model.
 And the ordering does not come from D-feedback
 either: disable `g(D)` and the ordering is unchanged while daily's margin
 *grows*. The mechanism `run_all.py` describes ("sparse dosing keeps mean D
@@ -731,11 +731,11 @@ ablation in this study can remove.
 
 Two secondary orderings *do* depend on framing and are worth stating so they are not mistaken for a flip:
 
-- **Framing changes the size of the penalty, not its sign.** Under matched per-session dose, going from daily to weekly costs about 47% of steady-state mean 25(OH)D at FST V (because total UV falls 7x as well). Under a matched total budget the same move costs about 29%, which is the pure concavity cost.
+- **Framing changes the size of the penalty, not its sign.** Under matched per-session dose, going from daily to weekly costs about 49% of steady-state mean 25(OH)D at FST V (because total UV falls 7x as well). Under a matched total budget the same move costs about 30%, which is the pure concavity cost.
 - **Skin type changes the stakes, not the ranking.** FST V-VI start from a much lower daily plateau, so the same relative penalty for spacing translates into crossing the 50 nmol/L line where FST I-II would not. On sparse schedules at FST V-VI, steady-state 25(OH)D falls *below* the 40 nmol/L starting value — the schedule loses ground rather than merely gaining less.
 - **Transient vs steady state changes the arrangement ranking.** Over a 365-day window a burst schedule can beat an evenly-spaced one on mean D purely because it front-loads doses inside each period. That reverses in steady state. Anyone rerunning this at a single 365-day horizon will see the artefact; it is not a real photoadaptation effect.
 
-**The answer does flip under counterfactual parameter values, and only there.** Two coefficients can be pushed hard enough to make a spaced schedule win: `K_ATTEN` at 50 (shipped value: active and calibrated; see the vitd_model.py module docstring, the only canonical source) and `K_SC` at 13 at FST V (shipped value: 1.0; documented prior range 0.5-2.0), both under matched per-session dosing. Section 5 quantifies how far outside their evidence those values sit and why the resulting 'win' is degenerate.
+**The answer does flip under counterfactual parameter values, and only there.** Two coefficients can be pushed hard enough to make a spaced schedule win: `K_ATTEN` at 50 (shipped value: active and calibrated; see the vitd_model.py module docstring, the only canonical source) and `K_SC` at 19 at FST V (shipped value: 1.0; documented prior range 0.5-2.0), both under matched per-session dosing. Section 5 quantifies how far outside their evidence those values sit and why the resulting 'win' is degenerate.
 
 ---
 
@@ -797,7 +797,7 @@ which its fitting objective was flat.
 
 - **`K_SC` / `SC_max` (stratum corneum).** The live channel. What matters is
   the maximum steady-state throughput `exp(-K_SC * SC_max)`: shipped, that is
-  0.698 for FST IV-VI and 0.787 for FST I-III, i.e.
+  0.787 for FST IV-VI and 0.787 for FST I-III, i.e.
   a fully-thickened stratum corneum still passes ~70-80% of synthesis. The
   scan below reports where daily stops winning:
 
@@ -806,15 +806,15 @@ which its fitting objective was flat.
 | matched_per_session_SED | 1 | 19 | 1.05e-02 |
 | matched_per_session_SED | 2 | 19 | 1.05e-02 |
 | matched_per_session_SED | 3 | 19 | 1.05e-02 |
-| matched_per_session_SED | 4 | 13 | 9.28e-03 |
-| matched_per_session_SED | 5 | 13 | 9.28e-03 |
-| matched_per_session_SED | 6 | 13 | 9.28e-03 |
+| matched_per_session_SED | 4 | 19 | 1.05e-02 |
+| matched_per_session_SED | 5 | 19 | 1.05e-02 |
+| matched_per_session_SED | 6 | 19 | 1.05e-02 |
 | matched_total_SED | 1 | 34 | 2.86e-04 |
 | matched_total_SED | 2 | 34 | 2.86e-04 |
 | matched_total_SED | 3 | 34 | 2.86e-04 |
-| matched_total_SED | 4 | 23 | 2.54e-04 |
-| matched_total_SED | 5 | 23 | 2.54e-04 |
-| matched_total_SED | 6 | 22 | 3.63e-04 |
+| matched_total_SED | 4 | 34 | 2.86e-04 |
+| matched_total_SED | 5 | 33 | 3.63e-04 |
+| matched_total_SED | 6 | 33 | 3.63e-04 |
 
   Where a flip exists at all it requires the stratum corneum to block
   essentially *all* synthesis once thickened — an order of magnitude beyond
@@ -829,8 +829,8 @@ which its fitting objective was flat.
   places, and any melanin photoadaptation effect read off this model was a
   numerical artefact. At the `K_ATTEN` in force here they are **live but
   negligible**: swept across two-plus orders of magnitude they move the
-  every-2-day/daily ratio at FST V by 0.327 percentage points
-  for `alpha` and 0.389 for `beta`, under matched per-session
+  every-2-day/daily ratio at FST V by 0.333 percentage points
+  for `alpha` and 0.388 for `beta`, under matched per-session
   dose. (Widest-separated swept levels: `alpha=0.5` vs `alpha=0.02`,
   and `beta=ln2/3` vs `beta=ln2/1000000.0` — note the ordering is not monotone
   in either, so these are the extremes of the response, not of the sweep.)
@@ -899,7 +899,7 @@ winning interval.
    excludes risk by design; a fractional-MED sweep would change the FST
    pattern of absolute levels (it would not change the interval ranking,
    which is driven by concavity within a skin type).
-6. **The arrangement effect is real but negligible.** The 0.049%
+6. **The arrangement effect is real but negligible.** The 0.044%
    advantage of even spacing over clustering at a fixed duty cycle is below the
    uncertainty on every parameter that produces it. It is reported because it
    is consistently signed and mechanistically interpretable, not because it is
