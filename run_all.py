@@ -1680,6 +1680,23 @@ def main():
         "14b.1 Risk-law sensitivity", _run_risk_law_sensitivity)
     fbr_log, fbr_res, fbr_err = capture_log_safe(
         "14b.2 Fixed-budget ranking robustness", _run_fixed_budget_robustness)
+
+    def _run_target_and_feedback_sensitivity():
+        return _import_script_module("target_and_feedback_sensitivity").main()
+
+    tfs_log, tfs_res, tfs_err = capture_log_safe(
+        "14b.3 Target and feedback-form sensitivity",
+        _run_target_and_feedback_sensitivity)
+
+    # The manuscript's parameter table (roadmap R13) is generated from the
+    # live code values so it cannot drift; refresh it on every run.
+    def _run_make_parameter_table():
+        return _import_script_module("make_parameter_table").main()
+
+    _, _, param_table_err = capture_log_safe(
+        "Manuscript parameter table", _run_make_parameter_table)
+    if param_table_err:
+        print(f"  [warn] paper/parameters.tex not regenerated: {param_table_err}")
     risk_anchor_log = "\n".join(
         capture_log(fn) for fn in (
             vitd_calibration.elwood1997_intermittency_check,
@@ -1706,6 +1723,7 @@ def main():
     print(risk_log)
     print(risklaw_log)
     print(fbr_log)
+    print(tfs_log)
     print(katten_log)
     print(young2020_log)
 
@@ -1790,6 +1808,28 @@ def main():
         "[`tables/fixed_budget_mc.csv`](tables/fixed_budget_mc.csv) (per-draw "
         "values in [`tables/fixed_budget_mc_draws.csv`]"
         "(tables/fixed_budget_mc_draws.csv)).\n")
+
+    report.append("\n### 14b.3 Does the 14b answer depend on the target or on "
+                  "the feedback form?\n")
+    report.append(
+        "\n**Target.** Every 14b feasibility statement uses one 50 nmol/L "
+        "floor. The 14b problem is re-solved unchanged except for the target, "
+        "at floors bracketing it. The thresholds are conventional reporting "
+        "values, not model parameters. **Feedback form.** The exponent of the "
+        "shipped biphasic g(D) cannot be fitted from its source, and two other "
+        "forms are kept in the code for sensitivity work (`vitd_model.py` "
+        "docstring, `feedback_mode` entry). The interval contrasts at a "
+        "matched budget are recomputed under each. No variant is "
+        "re-calibrated, so only the contrasts and the winning interval carry "
+        "meaning, not the levels.\n")
+    if tfs_err:
+        report.append("\n> **This subsection failed on this run** (`%s`).\n"
+                      % tfs_err)
+    report.append("\n```\n" + tfs_log + "\n```\n")
+    report.append(
+        "\nTables: [`tables/target_sensitivity.csv`](tables/target_sensitivity.csv), "
+        "[`tables/feedback_form_sensitivity.csv`]"
+        "(tables/feedback_form_sensitivity.csv).\n")
 
     report.append("\n### 14c. What anchors the three axes of the risk index\n")
     report.append(

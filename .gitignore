@@ -158,3 +158,6 @@ scripts/skin_type_breakdown.py
 docs/SCRIPTS.md
 docs/SOURCES.md
 docs/INDEX.md
+paper/parameters.tex
+scripts/make_parameter_table.py
+paper/parameters.tex
