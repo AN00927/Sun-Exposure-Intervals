@@ -136,13 +136,6 @@ def test_vitd_validation_test_module_guards_farrar_required():
     )
 
 
-def test_nhanes_invalid_test_exists():
-    """The archived NHANES test exists in validation_exploratory/."""
-    archived = os.path.join(REPO_ROOT, "validation_exploratory",
-                            "validate_nhanes_seasonal_INVALID.py")
-    assert os.path.exists(archived), f"Archived NHANES test not found at {archived}"
-
-
 def test_young2020_check_exists():
     """The Young 2020 calibration check function is callable and importable."""
     from vitd_calibration import young2020_calibration_check

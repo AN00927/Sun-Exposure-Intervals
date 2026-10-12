@@ -250,7 +250,7 @@ Parameters & Sources
     computable in the same run so every previously published figure stays
     reproducible.
 
-    THE SEARCH-CEILING BUG THIS CHANGE ALSO FIXED, recorded because it is a
+    Search-ceiling bug fixed here, noted because it is a
     failure mode rather than a number. `invert_one`'s ceiling was the literal
     K_HI = 3.0, which is a bound in K_const units while the quantity that is
     actually physical -- where the darker arm's modelled net response turns
@@ -268,7 +268,7 @@ Parameters & Sources
     3.1945434824918686 well inside it, and Felton carries 27.49% of the
     random-effects weight -- it is in the pool, not silently absent.
 
-    KIFT 2013 IS EXCLUDED FROM THE POOL, and the exclusion is bounded rather
+    Kift 2013 is excluded from the pool, and the exclusion is bounded rather
     than assumed harmless. Kift publishes a 95% CI on its RAW diet-adjusted
     serum ratio, but this route inverts the contrast AFTER behaviour removal,
     whose uncertainty is unquantified anywhere in this repository; using the
@@ -279,7 +279,7 @@ Parameters & Sources
     K_const, i.e. about 8.8% of the pooled value and well inside the
     tau^2-driven interval. Independently reproduced 2026-09-23.
 
-    THE LEAVE-ONE-OUT ENVELOPE IS STILL CARRIED (decision A4). Under random
+    Leave-one-out envelope still carried (decision A4). Under random
     effects the envelope is K_const 1.588440 to 3.183999 (width 1.595559) --
     20.2326x WIDER than the tau^2-estimator range, so WHICH routes are in
     the pool moves the answer far more than HOW tau^2 is estimated does.
@@ -299,13 +299,13 @@ Parameters & Sources
     session budget up to daily. Any FST V/VI feasibility claim must carry
     this envelope.
 
-    APPROVED-BAND CHECK. The FST V:II optical factor at the shipped value is
+    Approved-band check. The FST V:II optical factor at the shipped value is
     2.3572212372489663x, INSIDE the approved 1.7-2.7x band from
     a1_diagnosis_result_2026_08_17. The band was not re-opened. Across the
     LOO envelope the factor runs 1.9152x to 3.6783x, i.e. the high end sits
     outside the band; reported, not silently absorbed.
 
-    DARLING 2013 -- TWO FLAGS THAT TRAVEL WITH THIS NUMBER.
+    DARLING 2013 -- two caveats that travel with this number.
     (a) VEILING, and it biases K_const UPWARD. Darling's Discussion states
         that 75% of the South Asian arm "were of Pakistani origin and were
         partly veiled (showing hands and face only)". Darling publishes no
@@ -328,7 +328,7 @@ Parameters & Sources
         0.9313042843755703 at a quarter-step, i.e. the local linearisation
         under-states the curvature by about 1.4% -- small enough not to
         change the pooling, recorded rather than absorbed.
-    (b) DARLING NEVER USES FITZPATRICK TYPE. The words "Fitzpatrick",
+    (b) Darling does not use Fitzpatrick type. The words "Fitzpatrick",
         "phototype" and "skin type" do not appear anywhere in the paper. Its
         groups are "Caucasian" and "Asian". The FST II and FST V labels this
         repository attaches to them are INFERRED FROM ETHNICITY here, and
@@ -747,7 +747,7 @@ Parameters & Sources
     {I: 0.0381, II: 0.1715, III: 0.3231, IV: 0.5241, V: 0.7539,
     VI: 1.0427 -> clipped 1.00}.
     [CALIBRATION 2026-09-22, user-approved (decision A3, option 1C) -- THE
-    SHIPPED TABLE, superseding both blocks above] THE CLIP IS RELEASED. The
+    SHIPPED TABLE, superseding both blocks above] Clip released. The
     ITA -> M mapping is re-scaled from M = 1 - (ITA_U + 30) / 85 to
     M = (55 - ITA_U) / 121, and all six cells are recomputed from the SAME
     Narea 2026 constitutive ITA means through the new mapping. Shipped
@@ -767,13 +767,13 @@ Parameters & Sources
     penalty. That is a mapping-shape defect, not a sampling one, and more n
     would not have fixed it. The new lower anchor, ITA -66, is Linde's own
     printed constitutive minimum.
-    DIRECTION -- COUNTER-INTUITIVE, AND IT MUST NOT BE MIS-SOLD AS DARK-SKIN
-    RELIEF. Releasing the clip makes the FST VI burden LARGER. The FST V:II
+    Direction -- counter-intuitive, and it should not be read as dark-skin
+    relief. Releasing the clip makes the FST VI burden LARGER. The FST V:II
     M-gap narrows 0.582400 -> 0.409091, so holding the MEASURED optical
     factor fixed forces K_const UP by 1.4237x faster than M_VI comes down.
     K_const was refitted and A re-anchored in the SAME change, iterated to a
     joint fixed point -- see their entries.
-    STILL UNSOURCED: the upper anchor (+55) and the denominator (121) are
+    Still unsourced: the upper anchor (+55) and the denominator (121) are
     not independently sourced; only the lower anchor is now tied to a
     measurement, and Linde's ITA values are DIGITISED FROM BOX PLOTS (the
     paper has no results table), with residual error about +/-0.5 deg ITA,
@@ -858,7 +858,7 @@ Parameters & Sources
     or VI but is NOT broken out by phototype, so it gives a large-n POOLED V+VI
     constitutive mean of M = 0.9773 (n approx 61) and nothing that resolves the
     V-vs-VI contrast the shipped table asserts.
-    (3) THE CLIP IS LOAD-BEARING, NOT A RARE EDGE CASE. This is the most
+    (3) The clip is load-bearing, not a rare edge case. This is the most
     consequential finding in this pass. M = 1.0 falls exactly at ITA = -30,
     which is also Del Bino's Brown/Dark boundary — i.e. the MIDDLE of the
     observed dark-skin range, not its edge. Consequences, from two unrelated
@@ -1549,22 +1549,10 @@ K_CONST_LOO_ENVELOPE: Tuple[float, float] = (1.5884400707455726,
 
 
 # ---------------------------------------------------------------------------
-# Retired parameters
+# Retired parameters (none currently retired).
+# A retired parameter keeps its value; sweeps use
+# allow_retired_parameter_sweep() so they read as sweeps, not recalibration.
 # ---------------------------------------------------------------------------
-# A RETIRED parameter keeps its mechanism and value but loses calibratable
-# status — it can no longer be moved to improve agreement with data. The
-# machinery below makes "retired" enforceable in code, not just asserted in a
-# comment.
-#
-# Rules:
-#   - value lives in a module-level constant, named here;
-#   - ModelParams refuses to hold any other value for it;
-#   - ablation and sensitivity work goes through
-#     `allow_retired_parameter_sweep()`, deliberately verbose at the call
-#     site so a sweep can never be mistaken for a calibration;
-#   - reinstating a parameter means deleting its RETIRED_PARAMETERS entry,
-#     a code change reviewable in a diff, gated by
-#     calibration_approval.yaml like any other calibration.
 
 # [CALIBRATION 2026-08-25, user-approved] 0.34 -> 0.288972. Facultative-melanin
 # attenuation coefficient, anchored to Matsuoka 1990 (PMID 2165512)
@@ -2119,12 +2107,7 @@ class ModelParams:
     })
 
     def __setattr__(self, name, value):
-        """Refuse to hold a non-structural value for a RETIRED parameter.
-
-        [A6, 2026-08-18] Retirement is enforceable, not advisory. Assigning
-        the pinned value is always allowed (the dataclass __init__ does that).
-        Anything else raises unless the caller is running a sweep.
-        """
+        """Keep retired parameters pinned outside explicit sweep blocks."""
         if name in RETIRED_PARAMETERS and _retired_sweep_depth == 0:
             pinned = _RETIRED_VALUES[name]
             if value != pinned:

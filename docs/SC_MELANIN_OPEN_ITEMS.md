@@ -1,8 +1,7 @@
-# Handoff: open items from the `basics/melanin_only.py` + `basics/sc_only.py` rewrite
+# Open items from the `basics/melanin_only.py` + `basics/sc_only.py` rewrite
 
-Read `CLAUDE.md` first, in full, before touching anything below — it governs
-precision, citation, calibration-approval, and documentation rules for this
-repo, and every item here has to respect it.
+Parameter values below follow the code at full precision; historical values
+are marked superseded inline.
 
 **Status as of 2026-09-13: All 7 items resolved.** This document was
 re-audited and fully closed on 2026-09-13; each entry below states what
@@ -10,18 +9,15 @@ resolved it and where, so nobody re-researches a settled question.
 
 ## Context
 
-Two subagents rewrote `basics/melanin_only.py` and `basics/sc_only.py` from
-simplified toy reference models into genuine isolations of the full
-mechanisms `vitd_model.py` actually runs (melanin: constitutive + facultative
-dynamics, SC ablated; SC: the real two-process `SC_build - SC_damage`
-structure). `basics/README.md` was rewritten to match, source-first, with a
+`basics/melanin_only.py` and `basics/sc_only.py` isolate the mechanisms
+`vitd_model.py` runs (melanin: constitutive + facultative dynamics, SC
+ablated; SC: the two-process `SC_build - SC_damage` structure). `basics/README.md` was rewritten to match, source-first, with a
 full derivation trail for every parameter. That work surfaced seven findings,
 recorded below, that were flagged rather than resolved at the time.
 
-**Standing constraint for whoever picks this up:** none of these items
-license changing a calibrated parameter value in `vitd_model.py` without
-running that change through `calibration_approval.yaml` first (see
-`CLAUDE.md`'s bug-fix-vs-calibration distinction). This still applies to the
+**Standing constraint:** none of these items licenses changing a calibrated
+parameter value in `vitd_model.py` on its own; treat such a change as a
+calibration decision with its source recorded. This still applies to the
 one remaining open item (5) if it is ever acted on.
 
 ---

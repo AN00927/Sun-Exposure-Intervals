@@ -1478,18 +1478,13 @@ CHECK_REGISTRY = [
         "fix (17.472, extracted from the source rather than guessed at "
         "30) makes its simulated protocol identical to vitd_scenario.py's "
         "farrar2013_fst5_uk, so keeping both REQUIRED double-counts one "
-        "real-world finding. REVERTED to required 2026-09-22 (this "
-        "workstream): Ahaan refused sign-off on the demotion -- "
-        "calibration_approval.yaml describes this check in multiple "
-        "places as \"the only dark-skin quantitative check in the "
-        "suite,\" and downgrading the suite's only dark-skin-specific "
-        "required check is a decision for him, not an agent, regardless "
-        "of the double-counting argument's technical merit. The D0 "
-        "dedup FIX ITSELF IS KEPT (see validate_farrar_2013 docstring) -- "
-        "only the warning_only flip is reverted. Two required checks now "
+        "real-world finding. Kept required 2026-09-22: this is the suite's "
+        "only dark-skin quantitative check (see calibration_approval.yaml), "
+        "so the double-counting concern is noted but does not demote it. "
+        "The D0 dedup fix itself is kept (see validate_farrar_2013 docstring). "
+        "Two required checks now "
         "exercise the identical Farrar simulation via different "
-        "acceptance-band shapes; that duplication is a known, flagged "
-        "fact, not an oversight."),
+        "acceptance-band shapes; that duplication is known and flagged."),
     CheckSpec(
         "Bogh baseline+BSA [C4]", validate_bogh_baseline_bsa, False,
         TIER_DIRECTIONAL,

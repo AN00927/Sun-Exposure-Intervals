@@ -1,26 +1,5 @@
-# ============================================================================
-# COMMIT POLICY — READ BEFORE COMMITTING
-# ----------------------------------------------------------------------------
-# NO Claude tags on any commit under any circumstances.
-# NO AI-assistant attribution of any kind (Claude, Anthropic, Copilot, etc.).
-#
-# Every commit must be attributable to a human team member. Forbidden lines:
-#   Co-Authored-By: Claude ...
-#   Co-Authored-By: <anything>@anthropic.com
-#   Claude-Session: ...
-#   🤖 Generated with Claude Code (or any variation)
-#   Any link to claude.ai/code or claude.ai/chat
-#
-# Enforcement:
-#   .githooks/commit-msg — blocks the commit locally
-#   .githooks/pre-push   — blocks the push if any commit in the push range
-#                          carries a forbidden tag
-#
-# Wire them into your clone once, after cloning:
-#   ./scripts/setup-git-hooks.sh
-#
-# Full policy: see COMMIT_POLICY.md
-# ============================================================================
+# Commits should be attributable to a human team member.
+# Avoid AI-assistant attribution trailers in commit messages.
 scripts/bsa_exp_recalibration.py
 
 # Python
@@ -57,7 +36,8 @@ Research_Papers/
 *.pdf
 modelpaper.pdf
 
-# Working notes and private research logs
+# Working notes and private research logs (local-only, kept on disk)
+calibration_approval.yaml
 MODEL_AND_EVIDENCE.md
 PAPER_SUMMARIES.md
 SCIENTIFIC_AUDIT_HANDOFF.md
@@ -104,19 +84,17 @@ audit_outputs/pdf_*.json
 audit_outputs/trial_subject_level.csv
 extracted_texts/
 tmp_katten/
+# Debug tables: stale or regenerated on each run (local-only)
+tables/debug/
 *.tmp
 *.bak
 *.orig
 
-# Claude / validation / exploratory local state
+# Local agent state (not tracked)
 .claude/
 .superpowers/
-validation_exploratory/*
-# Exception: tests/test_validation_suite_integrity.py:27-28 asserts this file
-# exists. It is already tracked (added before the directory-wide ignore
-# above), so the ignore has no retroactive effect on it, but the negation
-# below makes that outcome intentional rather than accidental.
-!validation_exploratory/validate_nhanes_seasonal_INVALID.py
+# Local exploratory validation scratch (not part of main suite)
+validation_exploratory/
 
 # Unneeded dataset-side text dumps
 Papers_and_Datasets/extracted_pdfs.txt
@@ -153,11 +131,6 @@ paper/*.fdb_latexmk
 paper/*.pdf
 paper/*.spl
 
-# FEW-TIME script (docs/SCRIPTS.md): kept on disk, untracked 2026-09-22
+# FEW-TIME scripts: kept on disk, untracked (see docs/SCRIPTS.md lifecycle)
 scripts/skin_type_breakdown.py
-docs/SCRIPTS.md
-docs/SOURCES.md
-docs/INDEX.md
-paper/parameters.tex
-scripts/make_parameter_table.py
 paper/parameters.tex

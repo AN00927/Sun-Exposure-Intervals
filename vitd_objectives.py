@@ -134,9 +134,9 @@ OBJECTIVE_HIERARCHY: Tuple[ObjectiveSpec, ...] = (
         question=("What is the LEAST I have to do -- fewest sessions, smallest "
                   "dose -- to reach 50 nmol/L and then stay there?"),
         minimise=("n_sessions", "total_sed"),
-        subject_to=("C3 sufficiency floor holds for every day after ramp-in",
-                    "C1 per-session dose <= GAMMA_MED * MED(FST)",
-                    "C7 per-session dose deliverable in PRACTICAL_MAX_MINUTES"),
+        subject_to=("C3 sufficiency floor (>=50 nmol/L) holds after ramp-in",
+                    "C1 per-session dose <= 0.7 MED (erythema safety)",
+                    "C7 session fits in 120 min (practical limit)"),
         implemented_by="vitd_optimization.minimum_schedule_for_sufficiency",
         status=("HEADLINE. Infeasible cells are a RESULT -- dark skin at low "
                 "session budgets -- not a gap to be filled by relaxing C1/C7."),
@@ -148,9 +148,9 @@ OBJECTIVE_HIERARCHY: Tuple[ObjectiveSpec, ...] = (
                   "sessions against shortest gaps against least skin-cancer "
                   "risk, and how steep is that trade?"),
         minimise=("n_sessions", "max_gap_days", "risk_within_fst_ratio"),
-        subject_to=("C3 sufficiency floor holds for every day after ramp-in",
-                    "C1 per-session dose <= GAMMA_MED * MED(FST)",
-                    "C7 per-session dose deliverable in PRACTICAL_MAX_MINUTES"),
+        subject_to=("C3 sufficiency floor (>=50 nmol/L) holds after ramp-in",
+                    "C1 per-session dose <= 0.7 MED (erythema safety)",
+                    "C7 session fits in 120 min (practical limit)"),
         implemented_by="vitd_optimization.tri_objective_frontier",
         status=("A frontier, not advice. The three axes genuinely conflict: "
                 "fewer sessions forces longer gaps AND a larger per-session "
@@ -162,8 +162,8 @@ OBJECTIVE_HIERARCHY: Tuple[ObjectiveSpec, ...] = (
         question=("I can manage exactly N sessions a year. What is the "
                   "lowest-cancer-risk way to spend them?"),
         minimise=("combined_risk",),
-        subject_to=("C3 sufficiency floor holds for every day after ramp-in",
-                    "C1 per-session dose <= GAMMA_MED * MED(FST)",
+        subject_to=("C3 sufficiency floor (>=50 nmol/L) holds after ramp-in",
+                    "C1 per-session dose <= 0.7 MED (erythema safety)",
                     "session budget fixed by the user"),
         implemented_by=("vitd_optimization.optimise_joint_schedule / "
                         "optimise_variable_dose / "

@@ -13,26 +13,13 @@
 >   than confirming it, and the flip point falls at or below the cleanest
 >   single measured exponent (Shih 2018). See `tests/test_concavity_assumption.py`
 >   and `run_all.py`'s "## 17. Interpretation" section for the current margins.
-> - **"How many minutes?"** -- not reliable yet. **Corrected 2026-09-23
->   (decision B5):** the previous "**unexplained ~7.57x band**, driven by
->   season and exposed skin area" could not be reproduced from any file
->   currently on disk (the document it cited no longer exists in this
->   repository's history) and predates `vitd_scenario.py`, the current
->   canonical source for these constants. `vitd_scenario.SCENARIO_REGISTRY`
->   itself fixes ambient UV index and geometry factor to a single value in
->   *every* entry -- it carries no season-driven or geometry-driven range at
->   all -- and its only genuine in-file range is exposed body-surface area
->   (10%-85%), which alone induces roughly a **2.34x** minutes ratio at FST
->   III (computed 2026-09-23 at the settled `K_const`/`A` fixed point,
->   `calibration_approval.yaml`'s `K_const_A_full_precision_2026_09_23`;
->   regenerated on every `run_all.py` run in `RESULTS.md`'s "Scope and
->   reference conditions" section -- read the band from there, not from this
->   line, once the pipeline has been rerun end to end). Geometry has its own, separately-sourced
->   literature range (see `vitd_objectives.py`'s geometry-factor comments and
->   `calibration_approval.yaml`) that is larger than the BSA term above but
->   is held fixed by `vitd_scenario.py`, contributing zero to the band above.
->   **The number above is a floor, not a ceiling** -- it uses only what
->   `vitd_scenario.py` itself varies.
+> - **"How many minutes?"** -- not reliable yet. An older ~7.57x band
+>   was withdrawn (decision B5, 2026-09-23) when it could not be reproduced
+>   from the current `vitd_scenario.py` constants. The only range
+>   `vitd_scenario.py` itself varies is exposed body-surface area (10%-85%),
+>   about a **2.34x** minutes ratio at FST III at the settled `K_const`/`A`
+>   point. Read the current band from `RESULTS.md` "Scope and reference
+>   conditions" after a full `run_all.py` run. Treat it as a floor.
 >
 > **Every validation check against real, unsimulated sunlight either fails
 > outright or passes on a band wide enough that it could hardly fail.** Every

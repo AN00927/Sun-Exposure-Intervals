@@ -8,8 +8,7 @@ lock in the arithmetic and, more importantly, the finding that the widely cited
 import numpy as np
 import pytest
 
-from vitd_model import (ModelParams, simulate, steady_state_D,
-                        allow_retired_parameter_sweep)
+from vitd_model import (ModelParams, simulate, steady_state_D)
 from vitd_calibration import (
     derive_K_ATTEN, run,
     UNTANNED_RISE, TANNED_RISE, NAIVE_ATTENUATION,

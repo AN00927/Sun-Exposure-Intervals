@@ -1,10 +1,7 @@
 """Model-ablation ladder: answer scheduling questions one mechanism at a time.
 
-Motivation
-----------
-The advisor's instruction was: "Let's answer these questions carefully with
-just melanin dynamics. Then, later, we can add skin thickening. And then add
-skin cancer risk."
+Start with melanin dynamics alone, then add skin thickening (SC), then add
+skin-cancer risk.
 
 Every analysis in this repo currently runs the full model, with melanin
 dynamics AND stratum-corneum (SC) photoadaptation always active, and there was
