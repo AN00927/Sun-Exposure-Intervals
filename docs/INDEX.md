@@ -47,10 +47,11 @@ Status vocabulary:
 ## Retired documents (substance mapped to live locations below)
 
 Six documents were deleted on 2026-09-19 with zero commits and are
-**unrecoverable**: `MODEL_AND_EVIDENCE.md`, `docs/REPO_SCOPE_AUDIT.md`,
-`docs/OPTIMIZATION_METHODOLOGY.md`, `docs/MODEL_AND_EVIDENCE_RECONSTRUCTED.md`,
-`docs/ABSTRACT_RECONCILIATION.md`, `docs/REPO_HYGIENE.md`. Live documents no
-longer point at them. Do not attempt to reconstruct their contents.
+**unrecoverable**: `MODEL_AND_EVIDENCE.md`, `REPO_SCOPE_AUDIT.md`,
+`OPTIMIZATION_METHODOLOGY.md`, `MODEL_AND_EVIDENCE_RECONSTRUCTED.md`,
+`ABSTRACT_RECONCILIATION.md`, `REPO_HYGIENE.md` (all formerly under `docs/`).
+Live documents no longer point at them. Do not attempt to reconstruct
+their contents.
 
 Where the recoverable substance of those six documents actually went (recorded
 here because the post-manuscript workstream programme's own tracking memos —

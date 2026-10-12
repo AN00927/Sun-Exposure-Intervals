@@ -1,6 +1,5 @@
 # Commits should be attributable to a human team member.
 # Avoid AI-assistant attribution trailers in commit messages.
-scripts/bsa_exp_recalibration.py
 
 # Python
 __pycache__/
@@ -132,5 +131,4 @@ paper/*.pdf
 paper/*.spl
 
 # FEW-TIME scripts: kept on disk, untracked (see docs/SCRIPTS.md lifecycle)
-scripts/skin_type_breakdown.py
 paper/parameters.tex
